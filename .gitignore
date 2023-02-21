@@ -1,20 +1,11 @@
-# dependencies
-/node_modules
+# PyCharm
+/.idea/
 
-# production
-/build
+# VirtualEnv
+/.venv/
 
-# generated files
-.docusaurus
-.cache-loader
+# MyPy
+/.mypy_cache/
 
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# PyTest
+/.pytest_cache/
