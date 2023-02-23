@@ -2,10 +2,13 @@
 /.idea/
 
 # VirtualEnv
-/.venv/
+**/.venv/
 
 # MyPy
-/.mypy_cache/
+**/.mypy_cache/
 
 # PyTest
-/.pytest_cache/
+**/.pytest_cache/
+
+# Egg Info
+**/*egg-info/
