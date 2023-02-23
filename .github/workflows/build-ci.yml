@@ -32,18 +32,26 @@ jobs:
 
       - name: Setup Virtual Environment
         run: |
-          echo $(python --version)
+          set -x
+          python --version
           python -m venv .venv
           source .venv/bin/activate
-          echo $(which python)
+          which python
           python -m pip install --upgrade pip setuptools
+          set +x
 
       - name: Install dependencies
         run: |
+          set -x
+          which pip
           pip install flake8
           pip install -e ./.github/workflows/lint/pylegend_copyright_checker
+          set +x
 
       - name: Lint
         run: |
+          set -x
+          which flake8
           flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics
           flake8 ./pylegend --count --max-line-length=127 --show-source --statistics
+          set +x
