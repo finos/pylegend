@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Checkout, Setup Python 3.11, Setup Virtual Environment
+name: Setup Python 3.11, Setup Virtual Environment
 
-description: Checkout, Setup Python 3.11, Setup Virtual Environment
+description: Setup Python 3.11, Setup Virtual Environment
 
 runs:
   using: "composite"
   steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-
     - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:

@@ -22,6 +22,9 @@ jobs:
     name: Lint Check
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
       - name: Setup
         uses: ./.github/workflows/actions/setup
 
@@ -47,6 +50,9 @@ jobs:
     name: Typing Check
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
       - name: Setup
         uses: ./.github/workflows/actions/setup
 
