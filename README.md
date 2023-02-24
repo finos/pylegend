@@ -2,10 +2,12 @@
 
 # PyLegend
 
-PyLegend is a python library featuring:
+PyLegend is aimed to be a python library featuring:
 
 1. Pandas API to SQL transpiler
 2. Pushdown execution on Legend
+
+<b> -- Library is under active development -- </b>
 
 ## Contributing
 For any questions, bugs or feature requests please open an [issue](https://github.com/finos/pylegend/issues).

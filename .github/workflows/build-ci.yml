@@ -25,22 +25,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.11
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
 
-      - name: Setup Virtual Environment
-        run: |
-          set -x
-          python --version
-          python -m venv .venv
-          source .venv/bin/activate
-          which python
-          python -m pip install --upgrade pip setuptools
-          set +x
-
-      - name: Install dependencies
+      - name: Install Linter
         run: |
           set -x
           source .venv/bin/activate
@@ -49,11 +37,38 @@ jobs:
           pip install -e ./.github/workflows/lint/pylegend_copyright_checker
           set +x
 
-      - name: Lint
+      - name: Perform Lint Check
         run: |
           set -x
           source .venv/bin/activate
           which flake8
           flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics
           flake8 ./pylegend --count --max-line-length=127 --show-source --statistics
+          set +x
+
+  typing_check:
+    name: Typing Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
+
+      - name: Install Type Checker
+        run: |
+          set -x
+          source .venv/bin/activate
+          which pip
+          pip install mypy
+          set +x
+
+      - name: Perform Typing Check
+        run: |
+          set -x
+          source .venv/bin/activate
+          which mypy
+          mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg 
+          mypy ./pylegend/ --config-file=./.github/workflows/typing/config.cfg
           set +x

@@ -12,13 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import setuptools  # type: ignore
+name: Setup Python 3.11, Setup Virtual Environment
 
-setuptools.setup(
-    name="pylegend-copyright-checker",
-    entry_points={
-        "flake8.extension": [
-            "L101 = pylegend_copyright_checker:PyLegendCopyrightCheckerPlugin",
-        ]
-    }
-)
+description: Setup Python 3.11, Setup Virtual Environment
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+
+    - name: Setup Virtual Environment
+      run: |
+        set -x
+        python --version
+        python -m venv .venv
+        source .venv/bin/activate
+        which python
+        python -m pip install --upgrade pip setuptools
+        set +x
+      shell: bash
