@@ -72,3 +72,30 @@ jobs:
           mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg 
           mypy ./pylegend/ --config-file=./.github/workflows/typing/config.cfg
           set +x
+
+  pytest:
+    name: PyTest
+    runs-on: ubuntu-latest
+    needs: [lint, typing_check]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
+
+      - name: Install Dependencies
+        run: |
+          set -x
+          source .venv/bin/activate
+          which pip
+          pip install -r dev.requirements.txt
+          set +x
+
+      - name: Run PyTest
+        run: |
+          set -x
+          source .venv/bin/activate
+          which pytest
+          pytest --cov=pylegend
+          set +x

@@ -11,8 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
--r requirements.txt
-
-pytest >= 7.0.0
-pytest-cov >= 3.0.0

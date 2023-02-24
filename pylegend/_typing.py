@@ -12,7 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
--r requirements.txt
+from typing import (
+    List,
+    Sequence
+)
 
-pytest >= 7.0.0
-pytest-cov >= 3.0.0
+PyLegendList = List
+PyLegendSequence = Sequence
+
+__all__: Sequence[str] = [
+    "PyLegendList",
+    "PyLegendSequence"
+]
