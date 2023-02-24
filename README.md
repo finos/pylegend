@@ -1,5 +1,6 @@
 [![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating)
 ![Build](https://github.com/finos/pylegend/workflows/Build%20CI/badge.svg)
+![CVE Scan](https://github.com/finos/pylegend/workflows/CVE%20Scan/badge.svg)
 
 # PyLegend
 
