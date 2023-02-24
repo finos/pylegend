@@ -17,10 +17,10 @@ from typing import Generator, Tuple, List
 
 class PyLegendCopyrightCheckerPlugin:
 
-    def __init__(self, tree: str, lines: str, filename: str) -> None:
-        self.tree = tree
-        self.lines = lines
-        self.filename = filename
+    def __init__(self, tree: str, lines: List[str], filename: str) -> None:
+        self.tree: str = tree
+        self.lines: List[str] = lines
+        self.filename: str = filename
 
         __license_lines: List[str] = [
             "#\n",
@@ -47,7 +47,7 @@ class PyLegendCopyrightCheckerPlugin:
     def run(self) -> Generator[Tuple[int, int, str, type], None, None]:
 
         if (len(self.lines) < self.__copyright_line_count) or \
-                (self.lines[0: self.__copyright_line_count] not in self.__valid_copyright_lines):
+                (self.lines[0:self.__copyright_line_count] not in self.__valid_copyright_lines):
             yield (
                 1,
                 0,
