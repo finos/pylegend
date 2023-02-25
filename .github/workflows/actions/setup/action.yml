@@ -12,17 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Setup Python 3.11, Setup Virtual Environment
+name: Setup Python, Setup Virtual Environment
 
-description: Setup Python 3.11, Setup Virtual Environment
+description: Setup Python, Setup Virtual Environment
+
+inputs:
+  python-version:
+    description: 'Python Version'
+    required: true
 
 runs:
   using: "composite"
   steps:
-    - name: Set up Python 3.11
+    - name: Set up Python ${{ inputs.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: 3.11
+        python-version: ${{ inputs.python-version }}
 
     - name: Setup Virtual Environment
       run: |
