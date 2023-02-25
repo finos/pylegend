@@ -120,9 +120,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: test-results
-      - name: Display structure of downloaded files
-        run: ls -R
       - uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
-            test-results/result.xml
+            ./pytest_result.xml
