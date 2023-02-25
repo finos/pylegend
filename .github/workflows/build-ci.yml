@@ -120,7 +120,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: test-results
+
       - uses: EnricoMi/publish-unit-test-result-action@v2
         with:
+          check_name: Test Results
           files: |
             ./pytest_result.xml
