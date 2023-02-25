@@ -27,6 +27,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/workflows/actions/setup
+        with:
+          python-version: 3.11
 
       - name: Install Linter
         run: |
@@ -55,6 +57,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/workflows/actions/setup
+        with:
+          python-version: 3.11
 
       - name: Install Type Checker
         run: |
@@ -83,6 +87,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/workflows/actions/setup
+        with:
+          python-version: 3.11
 
       - name: Install Dependencies
         run: |
