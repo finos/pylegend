@@ -32,21 +32,22 @@ jobs:
 
       - name: Install Linter
         run: |
-          set -x
           source .venv/bin/activate
-          which pip
+          echo "Pip executable is:" $(which pip)
+          echo "Installing flake8"
           pip install flake8
           pip install -e ./.github/workflows/lint/pylegend_copyright_checker
-          set +x
+          echo "Done with installing flake8"
 
       - name: Perform Lint Check
         run: |
-          set -x
           source .venv/bin/activate
-          which flake8
+          echo "Flake8 executable is:" $(which flake8)
+          echo "Running flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics"
           flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics
+          echo "Running flake8 ./pylegend --count --max-line-length=127 --show-source --statistics"
           flake8 ./pylegend --count --max-line-length=127 --show-source --statistics
-          set +x
+          echo "Done with lint check"
 
   typing_check:
     name: Typing Check
@@ -62,20 +63,21 @@ jobs:
 
       - name: Install Type Checker
         run: |
-          set -x
           source .venv/bin/activate
-          which pip
+          echo "Pip executable is:" $(which pip)
+          echo "Installing mypy"
           pip install mypy
-          set +x
+          echo "Done with installing mypy"
 
       - name: Perform Typing Check
         run: |
-          set -x
           source .venv/bin/activate
-          which mypy
+          echo "MyPy executable is:" $(which mypy)
+          echo "Running mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg"
           mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg 
+          echo "Running mypy ./pylegend/ --config-file=./.github/workflows/typing/config.cfg"
           mypy ./pylegend/ --config-file=./.github/workflows/typing/config.cfg
-          set +x
+          echo "Done with typing check"
 
   pytest:
     name: PyTest
@@ -97,29 +99,29 @@ jobs:
       - name: Install Dependencies
         shell: bash
         run: |
-          set -x
           if [ "$RUNNER_OS" == "Windows" ]; then
             source .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
-          which pip
+          echo "Pip executable is:" $(which pip)
+          echo "Running pip install -r dev.requirements.txt"
           pip install -r dev.requirements.txt
-          set +x
+          echo "Done with installing dependencies"
 
       - name: Run PyTest
         shell: bash
         run: |
-          set -x
           if [ "$RUNNER_OS" == "Windows" ]; then
             source .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
-          which pytest
-          pytest --cov=pylegend --junitxml=./test-results/pytest_result__${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml
-          set +x
-          
+          echo "Pytest executable is:" $(which pytest)
+          echo "Running pytest --cov=pylegend --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml"
+          pytest --cov=pylegend --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
+          echo "Done with running pytest"
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v3
@@ -128,9 +130,16 @@ jobs:
           path: ./test-results/*.xml
 
       - name: Upload Test Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: ./coverage/*.xml
+
+      - name: CodeCov Coverage Report
         uses: codecov/codecov-action@v3.1.1
         with:
-          files: ./coverage.xml
+          files: ./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
           flags: pytest
 
       - name: Upload CI Event

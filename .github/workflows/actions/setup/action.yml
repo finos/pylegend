@@ -31,15 +31,17 @@ runs:
 
     - name: Setup Virtual Environment
       run: |
-        set -x
-        python --version
+        echo "Python version is:" $(python --version)
+        echo "Creating and activating virtual environment"
         python -m venv .venv
         if [ "$RUNNER_OS" == "Windows" ]; then
           source .venv/Scripts/activate
         else
           source .venv/bin/activate
         fi
-        which python
+        echo "Done with activating virtual environment"
+        echo "Python executable is:" $(which python)
+        echo "Update pip and setuptools"
         python -m pip install --upgrade pip setuptools
-        set +x
+        echo "Setup complete"
       shell: bash
