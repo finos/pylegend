@@ -119,7 +119,7 @@ jobs:
           fi
           echo "Pytest executable is:" $(which pytest)
           echo "Running pytest --cov=pylegend --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml"
-          pytest --cov=pylegend --junitxml=./test-results/pytest_result__${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
+          pytest --cov=pylegend --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
           echo "Done with running pytest"
 
       - name: Upload Test Results
