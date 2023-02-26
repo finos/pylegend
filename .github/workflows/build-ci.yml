@@ -117,7 +117,7 @@ jobs:
             source .venv/bin/activate
           fi
           which pytest
-          pytest --cov=pylegend --junitxml=./test-results/pytest_result__${{ matrix.os }}_${{ matrix.python-version }}.xml
+          pytest --cov=pylegend --junitxml=./test-results/pytest_result__${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml
           set +x
           
       - name: Upload Test Results
@@ -126,6 +126,12 @@ jobs:
         with:
           name: test-results
           path: ./test-results/*.xml
+
+      - name: Upload Test Coverage Report
+        uses: codecov/codecov-action@v3.1.1
+        with:
+          files: ./coverage.xml
+          flags: pytest
 
       - name: Upload CI Event
         if: always()
