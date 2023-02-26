@@ -130,6 +130,13 @@ jobs:
           path: ./test-results/*.xml
 
       - name: Upload Test Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: ./coverage/*.xml
+
+      - name: CodeCov Coverage Report
         uses: codecov/codecov-action@v3.1.1
         with:
           files: ./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
