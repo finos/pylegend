@@ -99,29 +99,29 @@ jobs:
       - name: Install Dependencies
         shell: bash
         run: |
-          set -x
           if [ "$RUNNER_OS" == "Windows" ]; then
             source .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
-          which pip
+          echo "Pip executable is:" $(which pip)
+          echo "Running pip install -r dev.requirements.txt"
           pip install -r dev.requirements.txt
-          set +x
+          echo "Done with installing dependencies"
 
       - name: Run PyTest
         shell: bash
         run: |
-          set -x
           if [ "$RUNNER_OS" == "Windows" ]; then
             source .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
-          which pytest
-          pytest --cov=pylegend --junitxml=./test-results/pytest_result__${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml
-          set +x
-          
+          echo "Pytest executable is:" $(which pytest)
+          echo "Running pytest --cov=pylegend --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml"
+          pytest --cov=pylegend --junitxml=./test-results/pytest_result__${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
+          echo "Done with running pytest"
+
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v3
@@ -132,7 +132,7 @@ jobs:
       - name: Upload Test Coverage Report
         uses: codecov/codecov-action@v3.1.1
         with:
-          files: ./coverage.xml
+          files: ./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
           flags: pytest
 
       - name: Upload CI Event
