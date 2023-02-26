@@ -32,21 +32,22 @@ jobs:
 
       - name: Install Linter
         run: |
-          set -x
           source .venv/bin/activate
-          which pip
+          echo "Pip executable is:" $(which pip)
+          echo "Installing flake8"
           pip install flake8
           pip install -e ./.github/workflows/lint/pylegend_copyright_checker
-          set +x
+          echo "Done with installing flake8"
 
       - name: Perform Lint Check
         run: |
-          set -x
           source .venv/bin/activate
-          which flake8
+          echo "Flake8 executable is:" $(which flake8)
+          echo "Running flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics"
           flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics
+          echo "Running flake8 ./pylegend --count --max-line-length=127 --show-source --statistics"
           flake8 ./pylegend --count --max-line-length=127 --show-source --statistics
-          set +x
+          echo "Done with lint check"
 
   typing_check:
     name: Typing Check
@@ -62,20 +63,21 @@ jobs:
 
       - name: Install Type Checker
         run: |
-          set -x
           source .venv/bin/activate
-          which pip
+          echo "Pip executable is:" $(which pip)
+          echo "Installing mypy"
           pip install mypy
-          set +x
+          echo "Done with installing mypy"
 
       - name: Perform Typing Check
         run: |
-          set -x
           source .venv/bin/activate
-          which mypy
+          echo "MyPy executable is:" $(which mypy)
+          echo "Running mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg"
           mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg 
+          echo "Running mypy ./pylegend/ --config-file=./.github/workflows/typing/config.cfg"
           mypy ./pylegend/ --config-file=./.github/workflows/typing/config.cfg
-          set +x
+          echo "Done with typing check"
 
   pytest:
     name: PyTest
