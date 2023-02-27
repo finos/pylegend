@@ -14,7 +14,7 @@
 
 import pytest  # type: ignore
 
-from pylegend.core.tds_column import PyLegendTdsColumn
+from pylegend.core.tds.tds_column import PyLegendTdsColumn
 
 
 class TestPyLegendTdsColumn:
