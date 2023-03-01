@@ -11,16 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from typing import List as PyLegendList
-from typing import Sequence as PyLegendSequence
-from typing import Type as PyLegendType
-from typing import TypeVar as PyLegendTypeVar
-
-
-__all__: PyLegendSequence[str] = [
-    "PyLegendList",
-    "PyLegendSequence",
-    "PyLegendType",
-    "PyLegendTypeVar"
-]

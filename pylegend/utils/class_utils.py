@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List as PyLegendList
-from typing import Sequence as PyLegendSequence
-from typing import Type as PyLegendType
-from typing import TypeVar as PyLegendTypeVar
+from pylegend._typing import (
+    PyLegendList,
+    PyLegendType,
+    PyLegendTypeVar
+)
 
 
-__all__: PyLegendSequence[str] = [
-    "PyLegendList",
-    "PyLegendSequence",
-    "PyLegendType",
-    "PyLegendTypeVar"
-]
+T = PyLegendTypeVar("T")
+
+
+def find_sub_classes(clazz: PyLegendType[T], recursive: bool = True) -> PyLegendList[PyLegendType[T]]:
+    subclasses = clazz.__subclasses__()
+    if recursive:
+        subclasses = subclasses + [c for s in subclasses for c in find_sub_classes(s, True)]
+    return subclasses
