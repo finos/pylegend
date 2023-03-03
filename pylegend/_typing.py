@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import List as PyLegendList
+from typing import Optional as PyLegendOptional
 from typing import Sequence as PyLegendSequence
 from typing import Type as PyLegendType
 from typing import TypeVar as PyLegendTypeVar
@@ -22,5 +23,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendList",
     "PyLegendSequence",
     "PyLegendType",
-    "PyLegendTypeVar"
+    "PyLegendTypeVar",
+    "PyLegendOptional"
 ]

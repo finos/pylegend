@@ -14,6 +14,7 @@
 
 import pytest  # type: ignore
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator, SqlToStringConfig
+from pylegend.core.sql.metamodel import QuerySpecification, Select
 
 
 class TestSqlToStringGenerator(SqlToStringGenerator):
@@ -25,7 +26,7 @@ class TestSqlToStringGenerator(SqlToStringGenerator):
     def create_sql_generator(cls) -> "SqlToStringGenerator":
         return TestSqlToStringGenerator()
 
-    def generate_sql_string(self, sql: object, config: "SqlToStringConfig") -> str:
+    def generate_sql_string(self, sql: QuerySpecification, config: "SqlToStringConfig") -> str:
         return ""
 
 
@@ -33,7 +34,11 @@ class TestSqlToString:
     def test_find_sql_to_string_generator(self) -> None:
         generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type("TestDB")
         assert isinstance(generator, TestSqlToStringGenerator)
-        assert "" == generator.generate_sql_string(1, SqlToStringConfig())
+        query = QuerySpecification(
+            select=Select(selectItems=[], distinct=False), _from=[], where=None, groupBy=[],
+            having=None, orderBy=[], limit=None, offset=None
+        )
+        assert "" == generator.generate_sql_string(query, SqlToStringConfig())
 
     def test_find_sql_to_string_generator_error(self) -> None:
         with pytest.raises(

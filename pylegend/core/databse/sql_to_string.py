@@ -15,6 +15,7 @@
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import PyLegendSequence
 from pylegend.utils.class_utils import find_sub_classes
+from pylegend.core.sql.metamodel import QuerySpecification
 
 __all__: PyLegendSequence[str] = [
     "SqlToStringGenerator",
@@ -35,7 +36,7 @@ class SqlToStringGenerator(metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
-    def generate_sql_string(self, sql: object, config: "SqlToStringConfig") -> str:
+    def generate_sql_string(self, sql: QuerySpecification, config: "SqlToStringConfig") -> str:
         pass  # pragma: no cover
 
     @classmethod
