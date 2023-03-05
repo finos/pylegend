@@ -32,7 +32,21 @@ from pylegend.core.sql.metamodel import (
     DoubleLiteral,
     StringLiteral,
     NullLiteral,
-    Expression
+    Expression,
+    ComparisonExpression,
+    ComparisonOperator,
+    ArithmeticExpression,
+    ArithmeticType,
+    NegativeExpression,
+    LogicalBinaryExpression,
+    LogicalBinaryType,
+    NotExpression,
+    ColumnType,
+    Cast,
+    InPredicate,
+    InListExpression,
+    WhenClause,
+    SearchedCaseExpression,
 )
 
 
@@ -119,6 +133,28 @@ def expression_processor(
 ) -> str:
     if isinstance(expression, Literal):
         return extension.process_literal(expression, config)
+    elif isinstance(expression, ComparisonExpression):
+        return extension.process_comparison_expression(expression, config)
+    elif isinstance(expression, LogicalBinaryExpression):
+        return extension.process_logical_binary_expression(expression, config)
+    elif isinstance(expression, NotExpression):
+        return extension.process_not_expression(expression, config)
+    elif isinstance(expression, ArithmeticExpression):
+        return extension.process_arithmetic_expression(expression, config)
+    elif isinstance(expression, NegativeExpression):
+        return extension.process_negative_expression(expression, config)
+    elif isinstance(expression, WhenClause):
+        return extension.process_when_clause(expression, config)
+    elif isinstance(expression, SearchedCaseExpression):
+        return extension.process_searched_case_expression(expression, config)
+    elif isinstance(expression, ColumnType):
+        return extension.process_column_type(expression, config)
+    elif isinstance(expression, Cast):
+        return extension.process_cast_expression(expression, config)
+    elif isinstance(expression, InListExpression):
+        return extension.process_in_list_expression(expression, config)
+    elif isinstance(expression, InPredicate):
+        return extension.process_in_predicate(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))
 
@@ -129,6 +165,172 @@ def literal_processor(
     config: SqlToStringConfig
 ) -> str:
     return extension.literal_processor()(literal, config)
+
+
+def comparison_expression_processor(
+    comparison: ComparisonExpression,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
+) -> str:
+    if comparison.operator == ComparisonOperator.EQUAL:
+        cmp = "="
+    elif comparison.operator == ComparisonOperator.NOT_EQUAL:
+        cmp = "<>"
+    elif comparison.operator == ComparisonOperator.GREATER_THAN:
+        cmp = ">"
+    elif comparison.operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
+        cmp = ">="
+    elif comparison.operator == ComparisonOperator.LESS_THAN:
+        cmp = "<"
+    elif comparison.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
+        cmp = "<="
+    else:
+        raise ValueError("Unknown comparison operator type: " + str(comparison.operator))
+
+    return "({left} {op} {right})".format(
+        left=extension.process_expression(comparison.left, config),
+        op=cmp,
+        right=extension.process_expression(comparison.right, config)
+    )
+
+
+def logical_binary_expression_processor(
+        logical: LogicalBinaryExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    op_type = logical._type_
+    if op_type == LogicalBinaryType.AND:
+        op = "and"
+    elif op_type == LogicalBinaryType.OR:
+        op = "or"
+    else:
+        raise ValueError("Unknown logical binary operator type: " + str(op_type))
+
+    return "({left} {op} {right})".format(
+        left=extension.process_expression(logical.left, config),
+        op=op,
+        right=extension.process_expression(logical.right, config)
+    )
+
+
+def not_expression_processor(
+        not_expression: NotExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    expr = extension.process_expression(not_expression.value, config)
+    if isinstance(not_expression.value, (LogicalBinaryExpression, ComparisonExpression)):
+        return "not{expr}".format(expr=expr)
+    else:
+        return "not({expr})".format(expr=expr)
+
+
+def arithmetic_expression_processor(
+    arithmetic: ArithmeticExpression,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
+) -> str:
+    op_type = arithmetic._type_
+    if op_type == ArithmeticType.ADD:
+        to_format = "({left} + {right})"
+    elif op_type == ArithmeticType.SUBTRACT:
+        to_format = "({left} - {right})"
+    elif op_type == ArithmeticType.MULTIPLY:
+        to_format = "({left} * {right})"
+    elif op_type == ArithmeticType.DIVIDE:
+        to_format = "((1.0 * {left}) / {right})"
+    elif op_type == ArithmeticType.MODULUS:
+        to_format = "mod({left}, {right})"
+    else:
+        raise ValueError("Unknown arithmetic operator type: " + str(op_type))
+
+    return to_format.format(
+        left=extension.process_expression(arithmetic.left, config),
+        right=extension.process_expression(arithmetic.right, config)
+    )
+
+
+def negative_expression_processor(
+        negative: NegativeExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    expr = extension.process_expression(negative.value, config)
+    if isinstance(negative.value, Literal):
+        return "-{expr}".format(expr=expr)
+    else:
+        return "(0 - {expr})".format(expr=expr)
+
+
+def when_clause_processor(
+        when: WhenClause,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "when {when} then {then}".format(
+        when=extension.process_expression(when.operand, config),
+        then=extension.process_expression(when.result, config)
+    )
+
+
+def searched_case_expression_processor(
+        case: SearchedCaseExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    else_clause = " else {e}".format(e=extension.process_expression(case.defaultValue, config)) \
+        if case.defaultValue else ""
+    return "case {when_clauses}{default} end".format(
+        when_clauses=" ".join([extension.process_expression(clause, config) for clause in case.whenClauses]),
+        default=else_clause
+    )
+
+
+def column_type_processor(
+        column_type: ColumnType,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    if column_type.parameters:
+        return "{data_type}({params})".format(
+            data_type=column_type.name,
+            params=", ".join([str(p) for p in column_type.parameters])
+        )
+    else:
+        return column_type.name
+
+
+def cast_expression_processor(
+        cast: Cast,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "cast({value} as {data_type})".format(
+        value=extension.process_expression(cast.expression, config),
+        data_type=extension.process_expression(cast._type_, config)
+    )
+
+
+def in_list_expression_processor(
+        in_list: InListExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "({values})".format(
+        values=", ".join([extension.process_expression(value, config) for value in in_list.values])
+    )
+
+
+def in_predicate_processor(
+        in_predicate: InPredicate,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "{value} in {value_list}".format(
+        value=extension.process_expression(in_predicate.value, config),
+        value_list=extension.process_expression(in_predicate.valueList, config)
+    )
 
 
 class SqlToStringDbExtension:
@@ -182,3 +384,36 @@ class SqlToStringDbExtension:
 
     def process_literal(self, literal: Literal, config: SqlToStringConfig) -> str:
         return literal_processor(literal, self, config)
+
+    def process_comparison_expression(self, comparison: ComparisonExpression, config: SqlToStringConfig) -> str:
+        return comparison_expression_processor(comparison, self, config)
+
+    def process_logical_binary_expression(self, logical: LogicalBinaryExpression, config: SqlToStringConfig) -> str:
+        return logical_binary_expression_processor(logical, self, config)
+
+    def process_not_expression(self, not_expression: NotExpression, config: SqlToStringConfig) -> str:
+        return not_expression_processor(not_expression, self, config)
+
+    def process_arithmetic_expression(self, arithmetic: ArithmeticExpression, config: SqlToStringConfig) -> str:
+        return arithmetic_expression_processor(arithmetic, self, config)
+
+    def process_negative_expression(self, negative: NegativeExpression, config: SqlToStringConfig) -> str:
+        return negative_expression_processor(negative, self, config)
+
+    def process_when_clause(self, when: WhenClause, config: SqlToStringConfig) -> str:
+        return when_clause_processor(when, self, config)
+
+    def process_searched_case_expression(self, case: SearchedCaseExpression, config: SqlToStringConfig) -> str:
+        return searched_case_expression_processor(case, self, config)
+
+    def process_column_type(self, column_type: ColumnType, config: SqlToStringConfig) -> str:
+        return column_type_processor(column_type, self, config)
+
+    def process_cast_expression(self, cast: Cast, config: SqlToStringConfig) -> str:
+        return cast_expression_processor(cast, self, config)
+
+    def process_in_list_expression(self, in_list: InListExpression, config: SqlToStringConfig) -> str:
+        return in_list_expression_processor(in_list, self, config)
+
+    def process_in_predicate(self, in_predicate: InPredicate, config: SqlToStringConfig) -> str:
+        return in_predicate_processor(in_predicate, self, config)
