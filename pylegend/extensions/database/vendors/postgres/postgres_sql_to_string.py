@@ -14,14 +14,9 @@
 
 from pylegend.core.databse.sql_to_string import (
     SqlToStringGenerator,
-    SqlToStringConfig
+    SqlToStringDbExtension
 )
-from pylegend.core.sql.metamodel import (
-    QuerySpecification
-)
-from pylegend._typing import (
-    PyLegendSequence
-)
+from pylegend._typing import PyLegendSequence
 
 
 __all__: PyLegendSequence[str] = [
@@ -39,5 +34,5 @@ class PostgresSqlToStringGenerator(SqlToStringGenerator):
     def create_sql_generator(cls) -> SqlToStringGenerator:
         return PostgresSqlToStringGenerator()
 
-    def generate_sql_string(self, sql: QuerySpecification, config: "SqlToStringConfig") -> str:
-        return ""
+    def get_db_extension(self) -> SqlToStringDbExtension:
+        return SqlToStringDbExtension()

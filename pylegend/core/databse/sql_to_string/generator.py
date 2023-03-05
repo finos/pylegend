@@ -15,11 +15,12 @@
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import PyLegendSequence
 from pylegend.utils.class_utils import find_sub_classes
+from pylegend.core.databse.sql_to_string.config import SqlToStringConfig
+from pylegend.core.databse.sql_to_string.db_extension import SqlToStringDbExtension
 from pylegend.core.sql.metamodel import QuerySpecification
 
 __all__: PyLegendSequence[str] = [
-    "SqlToStringGenerator",
-    "SqlToStringConfig"
+    "SqlToStringGenerator"
 ]
 
 
@@ -36,8 +37,11 @@ class SqlToStringGenerator(metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
-    def generate_sql_string(self, sql: QuerySpecification, config: "SqlToStringConfig") -> str:
+    def get_db_extension(self) -> SqlToStringDbExtension:
         pass  # pragma: no cover
+
+    def generate_sql_string(self, query: QuerySpecification, config: "SqlToStringConfig") -> str:
+        return self.get_db_extension().process_query_specification(query, config)
 
     @classmethod
     def find_sql_to_string_generator_for_db_type(cls, database_type: str) -> "SqlToStringGenerator":
@@ -49,7 +53,3 @@ class SqlToStringGenerator(metaclass=ABCMeta):
                 "'. Found generators: [" + ", ".join([str(x) for x in filtered]) + "]"
             )
         return filtered[0].create_sql_generator()
-
-
-class SqlToStringConfig:
-    pass
