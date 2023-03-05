@@ -47,6 +47,18 @@ from pylegend.core.sql.metamodel import (
     InListExpression,
     WhenClause,
     SearchedCaseExpression,
+    QualifiedName,
+    Relation,
+    Table,
+    AliasedRelation,
+    Query,
+    TableSubquery,
+    SubqueryExpression,
+    Join,
+    JoinType,
+    JoinCriteria,
+    JoinOn,
+    JoinUsing
 )
 
 
@@ -58,7 +70,8 @@ __all__: PyLegendSequence[str] = [
 def query_specification_processor(
     query: QuerySpecification,
     extension: "SqlToStringDbExtension",
-    config: SqlToStringConfig
+    config: SqlToStringConfig,
+    nested_subquery: bool
 ) -> str:
     # TODO: code this
     raise RuntimeError("Not supported yet")
@@ -333,6 +346,125 @@ def in_predicate_processor(
     )
 
 
+def qualified_name_processor(
+        qualified_name: QualifiedName,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return ".".join([extension.process_identifier(p, config) for p in qualified_name.parts])
+
+
+def relation_processor(
+        relation: Relation,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig,
+        nested_subquery: bool
+) -> str:
+    if isinstance(relation, Table):
+        return extension.process_table(relation, config)
+    elif isinstance(relation, AliasedRelation):
+        return extension.process_aliased_relation(relation, config, nested_subquery)
+    elif isinstance(relation, QuerySpecification):
+        return extension.process_query_specification(relation, config, nested_subquery)
+    elif isinstance(relation, TableSubquery):
+        return extension.process_table_subquery(relation, config)
+    elif isinstance(relation, Join):
+        return extension.process_join(relation, config)
+    raise ValueError("Unknown relation type: " + str(type(relation)))
+
+
+def table_processor(
+        table: Table,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return extension.process_qualified_name(table.name, config)
+
+
+def aliased_relation_processor(
+        aliased_relation: AliasedRelation,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig,
+        nested_subquery: bool
+) -> str:
+    return "{relation} as {alias}".format(
+        relation=extension.process_relation(aliased_relation.relation, config, nested_subquery),
+        alias=extension.process_identifier(aliased_relation.alias, config)
+    )
+
+
+def query_processor(
+        query: Query,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    # TODO: Use limit, orderBy, offset at query level
+    return "(select * from {relation})".format(relation=extension.process_relation(query.queryBody, config, True))
+
+
+def join_criteria_processor(
+        join_criteria: JoinCriteria,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    if isinstance(join_criteria, JoinOn):
+        return extension.process_join_on(join_criteria, config)
+    elif isinstance(join_criteria, JoinUsing):
+        return extension.process_join_using(join_criteria, config)
+    raise ValueError("Unknown join criteria type: " + str(type(join_criteria)))
+
+
+def join_on_processor(
+        join_on: JoinOn,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    expr = extension.process_expression(join_on.expression, config)
+    if expr[0] == "(" and expr[-1] == ")":
+        return expr[1:-1]
+    else:
+        return expr
+
+
+def join_using_processor(
+        join_using: JoinUsing,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    # TODO: code this
+    raise RuntimeError("Not supported yet!")
+
+
+def join_processor(
+        join: Join,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    left = extension.process_relation(join.left, config)
+    right = extension.process_relation(join.right, config)
+    join_type = join._type_
+    condition = " on ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
+    if join_type == JoinType.CROSS:
+        join_type_str = 'cross join'
+    elif join_type == JoinType.INNER:
+        join_type_str = 'inner join'
+    elif join_type == JoinType.LEFT:
+        join_type_str = 'left outer join'
+    elif join_type == JoinType.RIGHT:
+        join_type_str = 'right outer join'
+    elif join_type == JoinType.FULL:
+        join_type_str = 'full outer join'
+    else:
+        raise ValueError("Unknown join type: " + str(join_type))
+
+    return "{left} {join} {right}{on}".format(
+        left=left,
+        join=join_type_str,
+        right=right,
+        on=condition
+    )
+
+
 class SqlToStringDbExtension:
     @classmethod
     def reserved_keywords(cls) -> PyLegendList[str]:
@@ -361,8 +493,9 @@ class SqlToStringDbExtension:
             raise RuntimeError("Unsupported literal type: " + str(type(literal)))
         return literal_process_function
 
-    def process_query_specification(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
-        return query_specification_processor(query, self, config)
+    def process_query_specification(self, query: QuerySpecification,
+                                    config: SqlToStringConfig, nested_subquery: bool = False) -> str:
+        return query_specification_processor(query, self, config, nested_subquery)
 
     def process_select(self, select: Select, config: SqlToStringConfig) -> str:
         return select_processor(select, self, config)
@@ -417,3 +550,37 @@ class SqlToStringDbExtension:
 
     def process_in_predicate(self, in_predicate: InPredicate, config: SqlToStringConfig) -> str:
         return in_predicate_processor(in_predicate, self, config)
+
+    def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
+        return qualified_name_processor(qualified_name, self, config)
+
+    def process_relation(self, relation: Relation, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
+        return relation_processor(relation, self, config, nested_subquery)
+
+    def process_table(self, table: Table, config: SqlToStringConfig) -> str:
+        return table_processor(table, self, config)
+
+    def process_aliased_relation(self, aliased_relation: AliasedRelation,
+                                 config: SqlToStringConfig, nested_subquery: bool = False) -> str:
+        return aliased_relation_processor(aliased_relation, self, config, nested_subquery)
+
+    def process_query(self, query: Query, config: SqlToStringConfig) -> str:
+        return query_processor(query, self, config)
+
+    def process_table_subquery(self, table_subquery: TableSubquery, config: SqlToStringConfig) -> str:
+        return query_processor(table_subquery.query, self, config)
+
+    def process_subquery_expression(self, subquery_expression: SubqueryExpression, config: SqlToStringConfig) -> str:
+        return query_processor(subquery_expression.query, self, config)
+
+    def process_join_criteria(self, join_criteria: JoinCriteria, config: SqlToStringConfig) -> str:
+        return join_criteria_processor(join_criteria, self, config)
+
+    def process_join_on(self, join_on: JoinOn, config: SqlToStringConfig) -> str:
+        return join_on_processor(join_on, self, config)
+
+    def process_join_using(self, join_using: JoinUsing, config: SqlToStringConfig) -> str:
+        return join_using_processor(join_using, self, config)
+
+    def process_join(self, join: Join, config: SqlToStringConfig) -> str:
+        return join_processor(join, self, config)

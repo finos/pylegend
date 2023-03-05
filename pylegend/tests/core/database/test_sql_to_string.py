@@ -43,13 +43,23 @@ from pylegend.core.sql.metamodel import (
     ColumnType,
     Cast,
     InListExpression,
-    InPredicate
+    InPredicate,
+    QualifiedName,
+    Table,
+    AliasedRelation,
+    TableSubquery,
+    Query,
+    SubqueryExpression,
+    JoinOn,
+    Join,
+    JoinType
 )
 
 
 class TestSqlToStringDbExtension(SqlToStringDbExtension):
     @classmethod
-    def process_query_specification(cls, query: QuerySpecification, config: SqlToStringConfig) -> str:
+    def process_query_specification(cls, query: QuerySpecification,
+                                    config: SqlToStringConfig, nested_subquery: bool = False) -> str:
         return ""
 
 
@@ -284,3 +294,83 @@ class TestSqlToStringDbExtensionProcessing:
         in_list = InListExpression([IntegerLiteral(101), IntegerLiteral(202)])
         in_predicate = InPredicate(IntegerLiteral(101), in_list)
         assert extension.process_expression(in_predicate, config) == "101 in (101, 202)"
+
+    def test_process_qualified_name(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        qualified_name = QualifiedName(["test_db", "test_schema", "test_table"])
+        assert extension.process_qualified_name(qualified_name, config) == "test_db.test_schema.test_table"
+
+        qualified_name = QualifiedName(["test_db", "test_schema", "kerberos"])
+        assert extension.process_qualified_name(qualified_name, config) == 'test_db.test_schema."kerberos"'
+
+    def test_process_table(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
+        assert extension.process_table(table, config) == "test_db.test_schema.test_table"
+
+    def test_process_aliased_relation(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
+        aliased = AliasedRelation(relation=table, alias='"root"', columnNames=[])
+        assert extension.process_aliased_relation(aliased, config) == 'test_db.test_schema.test_table as "root"'
+
+    # def test_process_query(self) -> None:
+    #     # TODO: code this
+    #     pass
+
+    def test_process_table_subquery(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
+        subquery = TableSubquery(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
+        assert extension.process_relation(subquery, config) == '(select * from test_db.test_schema.test_table)'
+
+    def test_process_subquery_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
+        sub = SubqueryExpression(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
+        assert extension.process_subquery_expression(sub, config) == '(select * from test_db.test_schema.test_table)'
+
+    def test_process_join_on(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        join_on = JoinOn(ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN))
+        assert extension.process_join_criteria(join_on, config) == "101 < 202"
+
+    def test_process_join(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        table_a = Table(QualifiedName(["test_db", "test_schema", "test_table_a"]))
+        table_b = Table(QualifiedName(["test_db", "test_schema", "test_table_b"]))
+        criteria = JoinOn(ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN))
+
+        join = Join(JoinType.CROSS, table_a, table_b, criteria)
+        assert extension.process_relation(join, config) == \
+               "test_db.test_schema.test_table_a cross join test_db.test_schema.test_table_b on (101 < 202)"
+
+        join = Join(JoinType.INNER, table_a, table_b, criteria)
+        assert extension.process_relation(join, config) == \
+               "test_db.test_schema.test_table_a inner join test_db.test_schema.test_table_b on (101 < 202)"
+
+        join = Join(JoinType.LEFT, table_a, table_b, criteria)
+        assert extension.process_relation(join, config) == \
+               "test_db.test_schema.test_table_a left outer join test_db.test_schema.test_table_b on (101 < 202)"
+
+        join = Join(JoinType.RIGHT, table_a, table_b, criteria)
+        assert extension.process_relation(join, config) == \
+               "test_db.test_schema.test_table_a right outer join test_db.test_schema.test_table_b on (101 < 202)"
+
+        join = Join(JoinType.FULL, table_a, table_b, criteria)
+        assert extension.process_relation(join, config) == \
+               "test_db.test_schema.test_table_a full outer join test_db.test_schema.test_table_b on (101 < 202)"
