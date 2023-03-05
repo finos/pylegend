@@ -29,7 +29,21 @@ from pylegend.core.sql.metamodel import (
     BooleanLiteral,
     QuerySpecification,
     Select,
-    SingleColumn
+    SingleColumn,
+    ComparisonExpression,
+    ComparisonOperator,
+    LogicalBinaryType,
+    LogicalBinaryExpression,
+    NotExpression,
+    ArithmeticType,
+    ArithmeticExpression,
+    NegativeExpression,
+    SearchedCaseExpression,
+    WhenClause,
+    ColumnType,
+    Cast,
+    InListExpression,
+    InPredicate
 )
 
 
@@ -139,3 +153,134 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_literal(BooleanLiteral(True), config) == "true"
         assert extension.process_literal(BooleanLiteral(False), config) == "false"
         assert extension.process_literal(NullLiteral(), config) == "null"
+
+    def test_process_comparison_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        comparison = ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.EQUAL)
+        assert extension.process_expression(comparison, config) == "(101 = 202)"
+
+        comparison.operator = ComparisonOperator.NOT_EQUAL
+        assert extension.process_expression(comparison, config) == "(101 <> 202)"
+
+        comparison.operator = ComparisonOperator.GREATER_THAN
+        assert extension.process_expression(comparison, config) == "(101 > 202)"
+
+        comparison.operator = ComparisonOperator.LESS_THAN
+        assert extension.process_expression(comparison, config) == "(101 < 202)"
+
+        comparison.operator = ComparisonOperator.GREATER_THAN_OR_EQUAL
+        assert extension.process_expression(comparison, config) == "(101 >= 202)"
+
+        comparison.operator = ComparisonOperator.LESS_THAN_OR_EQUAL
+        assert extension.process_expression(comparison, config) == "(101 <= 202)"
+
+    def test_process_logical_binary_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        c1 = ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN)
+        c2 = ComparisonExpression(IntegerLiteral(303), IntegerLiteral(202), ComparisonOperator.GREATER_THAN)
+
+        binary_expression = LogicalBinaryExpression(LogicalBinaryType.AND, c1, c2)
+        assert extension.process_expression(binary_expression, config) == "((101 < 202) and (303 > 202))"
+
+        binary_expression = LogicalBinaryExpression(LogicalBinaryType.OR, c1, c2)
+        assert extension.process_expression(binary_expression, config) == "((101 < 202) or (303 > 202))"
+
+    def test_process_not_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        c1 = ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN)
+        not_expression = NotExpression(c1)
+        assert extension.process_expression(not_expression, config) == "not(101 < 202)"
+
+        c2 = BooleanLiteral(True)
+        not_expression = NotExpression(c2)
+        assert extension.process_expression(not_expression, config) == "not(true)"
+
+    def test_process_arithmetic_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        add_expression = ArithmeticExpression(ArithmeticType.ADD, IntegerLiteral(202), IntegerLiteral(101))
+        assert extension.process_expression(add_expression, config) == "(202 + 101)"
+
+        sub_expression = ArithmeticExpression(ArithmeticType.SUBTRACT, IntegerLiteral(202), IntegerLiteral(101))
+        assert extension.process_expression(sub_expression, config) == "(202 - 101)"
+
+        mul_expression = ArithmeticExpression(ArithmeticType.MULTIPLY, IntegerLiteral(202), IntegerLiteral(101))
+        assert extension.process_expression(mul_expression, config) == "(202 * 101)"
+
+        div_expression = ArithmeticExpression(ArithmeticType.DIVIDE, IntegerLiteral(202), IntegerLiteral(101))
+        assert extension.process_expression(div_expression, config) == "((1.0 * 202) / 101)"
+
+        mod_expression = ArithmeticExpression(ArithmeticType.MODULUS, IntegerLiteral(202), IntegerLiteral(101))
+        assert extension.process_expression(mod_expression, config) == "mod(202, 101)"
+
+    def test_process_negative_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        negative_expression = NegativeExpression(IntegerLiteral(101))
+        assert extension.process_expression(negative_expression, config) == "-101"
+
+        negative_expression = NegativeExpression(
+            ArithmeticExpression(ArithmeticType.ADD, IntegerLiteral(101), IntegerLiteral(202))
+        )
+        assert extension.process_expression(negative_expression, config) == "(0 - (101 + 202))"
+
+    def test_searched_case_expression_processor(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        case_expression_with_default = SearchedCaseExpression(
+            whenClauses=[
+                WhenClause(operand=BooleanLiteral(False), result=IntegerLiteral(101)),
+                WhenClause(operand=BooleanLiteral(True), result=IntegerLiteral(202))
+            ],
+            defaultValue=IntegerLiteral(303)
+        )
+        assert extension.process_expression(case_expression_with_default, config) == \
+               "case when false then 101 when true then 202 else 303 end"
+
+        case_expression_without_default = SearchedCaseExpression(
+            whenClauses=[
+                WhenClause(operand=BooleanLiteral(False), result=IntegerLiteral(101)),
+                WhenClause(operand=BooleanLiteral(True), result=IntegerLiteral(202))
+            ],
+            defaultValue=None
+        )
+        assert extension.process_expression(case_expression_without_default, config) == \
+               "case when false then 101 when true then 202 end"
+
+    def test_process_column_type(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        column_type = ColumnType("BIGINT", parameters=[])
+        assert extension.process_expression(column_type, config) == "BIGINT"
+
+        column_type = ColumnType("VARCHAR", parameters=[100])
+        assert extension.process_expression(column_type, config) == "VARCHAR(100)"
+
+        column_type = ColumnType("DECIMAL", parameters=[20, 10])
+        assert extension.process_expression(column_type, config) == "DECIMAL(20, 10)"
+
+    def test_process_cast_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        column_type = ColumnType("DECIMAL", parameters=[20, 10])
+        cast = Cast(IntegerLiteral(101), column_type)
+        assert extension.process_expression(cast, config) == "cast(101 as DECIMAL(20, 10))"
+
+    def test_process_in_predicate(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        in_list = InListExpression([IntegerLiteral(101), IntegerLiteral(202)])
+        in_predicate = InPredicate(IntegerLiteral(101), in_list)
+        assert extension.process_expression(in_predicate, config) == "101 in (101, 202)"

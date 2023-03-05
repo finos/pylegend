@@ -77,73 +77,51 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-TrimMode = Enum(
-    'TrimMode',
-    [
-        'LEADING',
-        'TRAILING',
-        'BOTH'
-    ]
-)
+class TrimMode(Enum):
+    LEADING = 1,
+    TRAILING = 2,
+    BOTH = 3
 
-JoinType = Enum(
-    'JoinType',
-    [
-        'CROSS',
-        'INNER',
-        'LEFT',
-        'RIGHT',
-        'FULL'
-    ]
-)
 
-LogicalBinaryType = Enum(
-    'LogicalBinaryType',
-    [
-        'AND',
-        'OR'
-    ]
-)
+class JoinType(Enum):
+    CROSS = 1,
+    INNER = 2,
+    LEFT = 3,
+    RIGHT = 4,
+    FULL = 5
 
-ArithmeticType = Enum(
-    'ArithmeticType',
-    [
-        'ADD',
-        'SUBTRACT',
-        'MULTIPLY',
-        'DIVIDE',
-        'MODULUS'
-    ]
-)
 
-SortItemOrdering = Enum(
-    'SortItemOrdering',
-    [
-        'ASCENDING',
-        'DESCENDING'
-    ]
-)
+class LogicalBinaryType(Enum):
+    AND = 1,
+    OR = 2
 
-SortItemNullOrdering = Enum(
-    'SortItemNullOrdering',
-    [
-        'FIRST',
-        'LAST',
-        'UNDEFINED'
-    ]
-)
 
-ComparisonOperator = Enum(
-    'ComparisonOperator',
-    [
-        'EQUAL',
-        'NOT_EQUAL',
-        'LESS_THAN',
-        'LESS_THAN_OR_EQUAL',
-        'GREATER_THAN',
-        'GREATER_THAN_OR_EQUAL'
-    ]
-)
+class ArithmeticType(Enum):
+    ADD = 1,
+    SUBTRACT = 2,
+    MULTIPLY = 3,
+    DIVIDE = 4,
+    MODULUS = 5
+
+
+class SortItemOrdering(Enum):
+    ASCENDING = 1,
+    DESCENDING = 2
+
+
+class SortItemNullOrdering(Enum):
+    FIRST = 1,
+    LAST = 2,
+    UNDEFINED = 3
+
+
+class ComparisonOperator(Enum):
+    EQUAL = 1,
+    NOT_EQUAL = 2,
+    LESS_THAN = 3,
+    LESS_THAN_OR_EQUAL = 4,
+    GREATER_THAN = 5,
+    GREATER_THAN_OR_EQUAL = 6
 
 
 class Node:
