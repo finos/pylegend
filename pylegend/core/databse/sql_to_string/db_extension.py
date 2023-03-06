@@ -58,7 +58,9 @@ from pylegend.core.sql.metamodel import (
     JoinType,
     JoinCriteria,
     JoinOn,
-    JoinUsing
+    JoinUsing,
+    SortItemOrdering,
+    QualifiedNameReference
 )
 
 
@@ -73,8 +75,72 @@ def query_specification_processor(
     config: SqlToStringConfig,
     nested_subquery: bool
 ) -> str:
-    # TODO: code this
-    raise RuntimeError("Not supported yet")
+    top = extension.process_top(query, config)
+    group_by = extension.process_group_by(query, config)
+    order_by = extension.process_order_by(query, config)
+    limit = extension.process_limit(query, config)
+    select = " " + extension.process_select(query.select, config)
+    _from = " from " + ", ".join([extension.process_relation(f, config) for f in query._from])
+    where_clause = " where " + extension.process_expression(query.where, config) if query.where else ""
+    having_clause = " having " + extension.process_expression(query.having, config) if query.having else ""
+    select_stmt = "select" + top + select + _from + where_clause + group_by + having_clause + order_by + limit
+
+    if nested_subquery:
+        return "({sub_query})".format(sub_query=select_stmt)
+    else:
+        return select_stmt
+
+
+def top_processor(
+    query: QuerySpecification,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
+) -> str:
+    if query.offset is None and query.limit is not None:
+        return " top " + extension.process_expression(query.limit, config)
+    else:
+        return ""
+
+
+def limit_processor(
+    query: QuerySpecification,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
+) -> str:
+    if query.offset is not None and query.limit is not None:
+        return " limit {offset}, {limit}".format(
+            offset=extension.process_expression(query.offset, config),
+            limit=extension.process_expression(query.limit, config)
+        )
+    else:
+        return ""
+
+
+def group_by_processor(
+    query: QuerySpecification,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
+) -> str:
+    if query.groupBy:
+        return " group by " + ", ".join([extension.process_expression(g, config) for g in query.groupBy])
+    else:
+        return ""
+
+
+def order_by_processor(
+    query: QuerySpecification,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
+) -> str:
+    if query.orderBy:
+        return " order by " + ", ".join(
+            [
+                extension.process_expression(o.sortKey, config) +
+                (" desc" if o.ordering == SortItemOrdering.DESCENDING else "") for o in query.orderBy
+            ]
+        )
+    else:
+        return ""
 
 
 def select_processor(
@@ -106,7 +172,7 @@ def all_columns_processor(
     config: SqlToStringConfig
 ) -> str:
     if all_columns.prefix:
-        return extension.process_identifier(all_columns.prefix, config, True) + '.*'
+        return extension.process_identifier(all_columns.prefix, config, False) + '.*'
     else:
         return '*'
 
@@ -168,6 +234,8 @@ def expression_processor(
         return extension.process_in_list_expression(expression, config)
     elif isinstance(expression, InPredicate):
         return extension.process_in_predicate(expression, config)
+    elif isinstance(expression, QualifiedNameReference):
+        return extension.process_qualified_name_reference(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))
 
@@ -352,6 +420,14 @@ def qualified_name_processor(
         config: SqlToStringConfig
 ) -> str:
     return ".".join([extension.process_identifier(p, config) for p in qualified_name.parts])
+
+
+def qualified_name_reference_processor(
+        reference: QualifiedNameReference,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return extension.process_qualified_name(reference.name, config)
 
 
 def relation_processor(
@@ -554,6 +630,9 @@ class SqlToStringDbExtension:
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
 
+    def process_qualified_name_reference(self, reference: QualifiedNameReference, config: SqlToStringConfig) -> str:
+        return qualified_name_reference_processor(reference, self, config)
+
     def process_relation(self, relation: Relation, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
         return relation_processor(relation, self, config, nested_subquery)
 
@@ -584,3 +663,15 @@ class SqlToStringDbExtension:
 
     def process_join(self, join: Join, config: SqlToStringConfig) -> str:
         return join_processor(join, self, config)
+
+    def process_top(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
+        return top_processor(query, self, config)
+
+    def process_limit(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
+        return limit_processor(query, self, config)
+
+    def process_group_by(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
+        return group_by_processor(query, self, config)
+
+    def process_order_by(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
+        return order_by_processor(query, self, config)
