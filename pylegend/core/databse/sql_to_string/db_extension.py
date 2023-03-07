@@ -80,7 +80,7 @@ def query_specification_processor(
     order_by = extension.process_order_by(query, config)
     limit = extension.process_limit(query, config)
     select = " " + extension.process_select(query.select, config)
-    _from = " from " + ", ".join([extension.process_relation(f, config) for f in query._from])
+    _from = " from " + ", ".join([extension.process_relation(f, config) for f in query._from]) if query._from else ""
     where_clause = " where " + extension.process_expression(query.where, config) if query.where else ""
     having_clause = " having " + extension.process_expression(query.having, config) if query.having else ""
     select_stmt = "select" + top + select + _from + where_clause + group_by + having_clause + order_by + limit
@@ -186,7 +186,7 @@ def single_column_processor(
     if single_column.alias:
         return "{expr} as {alias}".format(
             expr=processed_expression,
-            alias=extension.process_identifier(single_column.alias, config, True)
+            alias=extension.process_identifier(single_column.alias, config, False)
         )
     else:
         return processed_expression
