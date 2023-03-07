@@ -85,7 +85,7 @@ class TestSqlToString:
         generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type("TestDB")
         assert isinstance(generator, TestSqlToStringGenerator)
         query = QuerySpecification(
-            select=Select(selectItems=[], distinct=False), _from=[], where=None, groupBy=[],
+            select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
             having=None, orderBy=[], limit=None, offset=None
         )
         assert generator.generate_sql_string(query, SqlToStringConfig(SqlToStringFormat(multi_line=False), False)) == ""
@@ -387,7 +387,7 @@ class TestSqlToStringDbExtensionProcessing:
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
 
         query = QuerySpecification(
-            select=Select(selectItems=[], distinct=False), _from=[], where=None, groupBy=[],
+            select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
             having=None, orderBy=[], limit=None, offset=None
         )
         assert extension.process_top(query, config) == ""
@@ -403,7 +403,7 @@ class TestSqlToStringDbExtensionProcessing:
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
 
         query = QuerySpecification(
-            select=Select(selectItems=[], distinct=False), _from=[], where=None, groupBy=[],
+            select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
             having=None, orderBy=[], limit=None, offset=None
         )
         assert extension.process_limit(query, config) == ""
@@ -419,7 +419,7 @@ class TestSqlToStringDbExtensionProcessing:
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
 
         query = QuerySpecification(
-            select=Select(selectItems=[], distinct=False), _from=[], where=None, groupBy=[],
+            select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
             having=None, orderBy=[], limit=None, offset=None
         )
         assert extension.process_group_by(query, config) == ""
@@ -441,7 +441,7 @@ class TestSqlToStringDbExtensionProcessing:
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
 
         query = QuerySpecification(
-            select=Select(selectItems=[], distinct=False), _from=[], where=None, groupBy=[],
+            select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
             having=None, orderBy=[], limit=None, offset=None
         )
         assert extension.process_order_by(query, config) == ""
@@ -476,7 +476,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         query = QuerySpecification(
             select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
-            _from=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
             where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
             groupBy=[],
             having=None,
@@ -492,7 +492,7 @@ class TestSqlToStringDbExtensionProcessing:
                '(select distinct "root".* from test_db.test_schema.test_table as "root" ' \
                'where (101 < 202) limit 202, 101)'
 
-    def test_process_query_spec_no_from(self) -> None:
+    def test_process_query_spec_nofrom_(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
 
@@ -500,7 +500,7 @@ class TestSqlToStringDbExtensionProcessing:
             select=Select(selectItems=[
                 SingleColumn("a", ArithmeticExpression(ArithmeticType.ADD, IntegerLiteral(101), IntegerLiteral(202)))
             ], distinct=False),
-            _from=[],
+            from_=[],
             where=None,
             groupBy=[],
             having=None,
@@ -517,7 +517,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         query_spec = QuerySpecification(
             select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
-            _from=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
             where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
             groupBy=[],
             having=None,

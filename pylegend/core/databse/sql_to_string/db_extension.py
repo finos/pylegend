@@ -80,7 +80,7 @@ def query_specification_processor(
     order_by = extension.process_order_by(query, config)
     limit = extension.process_limit(query, config)
     select = " " + extension.process_select(query.select, config)
-    _from = " from " + ", ".join([extension.process_relation(f, config) for f in query._from]) if query._from else ""
+    _from = " from " + ", ".join([extension.process_relation(f, config) for f in query.from_]) if query.from_ else ""
     where_clause = " where " + extension.process_expression(query.where, config) if query.where else ""
     having_clause = " having " + extension.process_expression(query.having, config) if query.having else ""
     select_stmt = "select" + top + select + _from + where_clause + group_by + having_clause + order_by + limit
@@ -280,7 +280,7 @@ def logical_binary_expression_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    op_type = logical._type_
+    op_type = logical.type_
     if op_type == LogicalBinaryType.AND:
         op = "and"
     elif op_type == LogicalBinaryType.OR:
@@ -312,7 +312,7 @@ def arithmetic_expression_processor(
     extension: "SqlToStringDbExtension",
     config: SqlToStringConfig
 ) -> str:
-    op_type = arithmetic._type_
+    op_type = arithmetic.type_
     if op_type == ArithmeticType.ADD:
         to_format = "({left} + {right})"
     elif op_type == ArithmeticType.SUBTRACT:
@@ -389,7 +389,7 @@ def cast_expression_processor(
 ) -> str:
     return "cast({value} as {data_type})".format(
         value=extension.process_expression(cast.expression, config),
-        data_type=extension.process_expression(cast._type_, config)
+        data_type=extension.process_expression(cast.type_, config)
     )
 
 
@@ -518,7 +518,7 @@ def join_processor(
 ) -> str:
     left = extension.process_relation(join.left, config)
     right = extension.process_relation(join.right, config)
-    join_type = join._type_
+    join_type = join.type_
     condition = " on ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
     if join_type == JoinType.CROSS:
         join_type_str = 'cross join'
