@@ -125,14 +125,14 @@ class TestSqlToStringDbExtensionProcessing:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
         single_column_without_alias = SingleColumn(expression=IntegerLiteral(101), alias=None)
-        single_column_with_alias = SingleColumn(expression=IntegerLiteral(101), alias="a")
+        single_column_with_alias = SingleColumn(expression=IntegerLiteral(101), alias='"a"')
         assert extension.process_single_column(single_column_without_alias, config) == "101"
         assert extension.process_single_column(single_column_with_alias, config) == '101 as "a"'
 
     def test_process_select_item(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
-        single_column = SingleColumn(expression=IntegerLiteral(101), alias="a")
+        single_column = SingleColumn(expression=IntegerLiteral(101), alias='"a"')
         all_columns = AllColumns(prefix='"root"')
         assert extension.process_select_item(single_column, config) == '101 as "a"'
         assert extension.process_select_item(all_columns, config) == '"root".*'
@@ -142,7 +142,7 @@ class TestSqlToStringDbExtensionProcessing:
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
         select_with_distinct = Select(
             selectItems=[
-                SingleColumn(expression=IntegerLiteral(101), alias="a"),
+                SingleColumn(expression=IntegerLiteral(101), alias='"a"'),
                 SingleColumn(expression=IntegerLiteral(202), alias=None),
             ],
             distinct=True
@@ -491,6 +491,25 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_query_specification(query, config, True) == \
                '(select distinct "root".* from test_db.test_schema.test_table as "root" ' \
                'where (101 < 202) limit 202, 101)'
+
+    def test_process_query_spec_no_from(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        query = QuerySpecification(
+            select=Select(selectItems=[
+                SingleColumn("a", ArithmeticExpression(ArithmeticType.ADD, IntegerLiteral(101), IntegerLiteral(202)))
+            ], distinct=False),
+            _from=[],
+            where=None,
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=None,
+            offset=None
+        )
+        assert extension.process_query_specification(query, config) == \
+               'select (101 + 202) as a'
 
     def test_process_query(self) -> None:
         extension = SqlToStringDbExtension()
