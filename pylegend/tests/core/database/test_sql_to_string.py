@@ -331,10 +331,6 @@ class TestSqlToStringDbExtensionProcessing:
         aliased = AliasedRelation(relation=table, alias='"root"', columnNames=[])
         assert extension.process_aliased_relation(aliased, config) == 'test_db.test_schema.test_table as "root"'
 
-    # def test_process_query(self) -> None:
-    #     # TODO: code this
-    #     pass
-
     def test_process_table_subquery(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
@@ -495,3 +491,22 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_query_specification(query, config, True) == \
                '(select distinct "root".* from test_db.test_schema.test_table as "root" ' \
                'where (101 < 202) limit 202, 101)'
+
+    def test_process_query(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+
+        query_spec = QuerySpecification(
+            select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
+            _from=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=IntegerLiteral(101),
+            offset=IntegerLiteral(202)
+        )
+        query = Query(query_spec, None, [], None)
+        assert extension.process_query(query, config) == \
+               '(select * from (select distinct "root".* from test_db.test_schema.test_table as "root" ' \
+               'where (101 < 202) limit 202, 101))'
