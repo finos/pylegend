@@ -194,7 +194,7 @@ class TableSubquery(QueryBody):
 
 class QuerySpecification(QueryBody):
     select: "Select"
-    _from: "PyLegendList[Relation]"
+    from_: "PyLegendList[Relation]"
     where: "PyLegendOptional[Expression]"
     groupBy: "PyLegendList[Expression]"
     having: "PyLegendOptional[Expression]"
@@ -205,7 +205,7 @@ class QuerySpecification(QueryBody):
     def __init__(
         self,
         select: "Select",
-        _from: "PyLegendList[Relation]",
+        from_: "PyLegendList[Relation]",
         where: "PyLegendOptional[Expression]",
         groupBy: "PyLegendList[Expression]",
         having: "PyLegendOptional[Expression]",
@@ -215,7 +215,7 @@ class QuerySpecification(QueryBody):
     ) -> None:
         super().__init__(_type="querySpecification")
         self.select = select
-        self._from = _from
+        self.from_ = from_
         self.where = where
         self.groupBy = groupBy
         self.having = having
@@ -467,18 +467,18 @@ class ComparisonExpression(Expression):
 
 
 class LogicalBinaryExpression(Expression):
-    _type_: "LogicalBinaryType"
+    type_: "LogicalBinaryType"
     left: "Expression"
     right: "Expression"
 
     def __init__(
         self,
-        _type_: "LogicalBinaryType",
+        type_: "LogicalBinaryType",
         left: "Expression",
         right: "Expression"
     ) -> None:
         super().__init__(_type="logicalBinaryExpression")
-        self._type_ = _type_
+        self.type_ = type_
         self.left = left
         self.right = right
 
@@ -495,18 +495,18 @@ class NotExpression(Expression):
 
 
 class ArithmeticExpression(Expression):
-    _type_: "ArithmeticType"
+    type_: "ArithmeticType"
     left: "Expression"
     right: "Expression"
 
     def __init__(
         self,
-        _type_: "ArithmeticType",
+        type_: "ArithmeticType",
         left: "Expression",
         right: "Expression"
     ) -> None:
         super().__init__(_type="arithmeticExpression")
-        self._type_ = _type_
+        self.type_ = type_
         self.left = left
         self.right = right
 
@@ -526,20 +526,20 @@ class FunctionCall(Expression):
     name: "QualifiedName"
     distinct: "bool"
     arguments: "PyLegendList[Expression]"
-    _filter: "PyLegendOptional[Expression]"
+    filter_: "PyLegendOptional[Expression]"
 
     def __init__(
         self,
         name: "QualifiedName",
         distinct: "bool",
         arguments: "PyLegendList[Expression]",
-        _filter: "PyLegendOptional[Expression]"
+        filter_: "PyLegendOptional[Expression]"
     ) -> None:
         super().__init__(_type="functionCall")
         self.name = name
         self.distinct = distinct
         self.arguments = arguments
-        self._filter = _filter
+        self.filter_ = filter_
 
 
 class SimpleCaseExpression(Expression):
@@ -588,20 +588,20 @@ class WhenClause(Expression):
 
 
 class Join(Relation):
-    _type_: "JoinType"
+    type_: "JoinType"
     left: "Relation"
     right: "Relation"
     criteria: "PyLegendOptional[JoinCriteria]"
 
     def __init__(
         self,
-        _type_: "JoinType",
+        type_: "JoinType",
         left: "Relation",
         right: "Relation",
         criteria: "PyLegendOptional[JoinCriteria]"
     ) -> None:
         super().__init__(_type="join")
-        self._type_ = _type_
+        self.type_ = type_
         self.left = left
         self.right = right
         self.criteria = criteria
@@ -641,16 +641,16 @@ class JoinUsing(JoinCriteria):
 
 class Cast(Expression):
     expression: "Expression"
-    _type_: "ColumnType"
+    type_: "ColumnType"
 
     def __init__(
         self,
         expression: "Expression",
-        _type_: "ColumnType"
+        type_: "ColumnType"
     ) -> None:
         super().__init__(_type="cast")
         self.expression = expression
-        self._type_ = _type_
+        self.type_ = type_
 
 
 class ColumnType(Expression):
