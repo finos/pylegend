@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest  # type: ignore
+from textwrap import dedent
 from pylegend.core.databse.sql_to_string import (
     SqlToStringGenerator,
     SqlToStringConfig,
@@ -147,7 +148,7 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             distinct=True
         )
-        assert extension.process_select(select_with_distinct, config) == 'distinct 101 as "a", 202'
+        assert extension.process_select(select_with_distinct, config) == ' distinct 101 as "a", 202'
 
         select_without_distinct = Select(
             selectItems=[
@@ -155,7 +156,32 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             distinct=False
         )
-        assert extension.process_select(select_without_distinct, config) == '"alias".*'
+        assert extension.process_select(select_without_distinct, config) == ' "alias".*'
+
+    def test_process_select_multi_line_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True, indent_count=1), False)
+        select = Select(
+            selectItems=[
+                SingleColumn(expression=IntegerLiteral(101), alias='a'),
+                SingleColumn(expression=IntegerLiteral(202), alias='b'),
+                SingleColumn(expression=IntegerLiteral(303), alias='c'),
+                SingleColumn(expression=IntegerLiteral(404), alias='d'),
+            ],
+            distinct=True
+        )
+        expected = """\
+        distinct
+            101 as a,
+            202 as b,
+            303 as c,
+            404 as d"""
+
+        d = dedent(expected)
+        assert extension.process_select(select, config) == " " + d
+
+        select.distinct = False
+        assert extension.process_select(select, config) == d[d.find("\n"):]
 
     def test_process_literal(self) -> None:
         extension = SqlToStringDbExtension()
@@ -492,7 +518,7 @@ class TestSqlToStringDbExtensionProcessing:
                '(select distinct "root".* from test_db.test_schema.test_table as "root" ' \
                'where (101 < 202) limit 202, 101)'
 
-    def test_process_query_spec_nofrom_(self) -> None:
+    def test_process_query_spec_no_from(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 

@@ -27,7 +27,7 @@ class SqlToStringFormat:
     @property
     def separator(self) -> str:
         if self.pretty:
-            return "\n" + "".join(["  " for _ in range(self.indent_count)])
+            return "\n" + "".join(["    " for _ in range(self.indent_count)])
         else:
             return " "
 
