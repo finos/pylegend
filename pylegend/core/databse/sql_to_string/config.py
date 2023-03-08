@@ -24,10 +24,9 @@ class SqlToStringFormat:
     def push_indent(self) -> "SqlToStringFormat":
         return SqlToStringFormat(self.pretty, self.indent_count + 1)
 
-    @property
-    def separator(self) -> str:
+    def separator(self, cnt: int = 0) -> str:
         if self.pretty:
-            return "\n" + "".join(["    " for _ in range(self.indent_count)])
+            return "\n" + "".join(["    " for _ in range(self.indent_count + cnt)])
         else:
             return " "
 
@@ -38,8 +37,11 @@ class SqlToStringConfig:
 
     def __init__(
         self,
-        format_config: SqlToStringFormat,
+        format_: SqlToStringFormat,
         quoted_identifiers: bool
     ) -> None:
-        self.format = format_config
+        self.format = format_
         self.quoted_identifiers = quoted_identifiers
+
+    def push_indent(self) -> "SqlToStringConfig":
+        return SqlToStringConfig(self.format.push_indent(), self.quoted_identifiers)
