@@ -149,11 +149,11 @@ def select_processor(
     config: SqlToStringConfig
 ) -> str:
     distinct_flag = " distinct" if select.distinct else ""
-    items = [extension.process_select_item(item, config) for item in select.selectItems]
-    return "{distinct}{separator}{select_items}".format(
+    items = [extension.process_select_item(item, config.push_indent()) for item in select.selectItems]
+    return "{distinct}{sep1}{select_items}".format(
         distinct=distinct_flag,
-        separator=config.format.separator,
-        select_items=("," + config.format.separator).join(items)
+        sep1=config.format.separator(1),
+        select_items=("," + config.format.separator(1)).join(items)
     )
 
 
@@ -353,9 +353,11 @@ def when_clause_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "when {when} then {then}".format(
-        when=extension.process_expression(when.operand, config),
-        then=extension.process_expression(when.result, config)
+    return "when{sep1}{when}{sep0}then{sep1}{then}".format(
+        when=extension.process_expression(when.operand, config.push_indent()),
+        then=extension.process_expression(when.result, config.push_indent()),
+        sep1=config.format.separator(1),
+        sep0=config.format.separator(0)
     )
 
 
@@ -364,11 +366,21 @@ def searched_case_expression_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    else_clause = " else {e}".format(e=extension.process_expression(case.defaultValue, config)) \
-        if case.defaultValue else ""
-    return "case {when_clauses}{default} end".format(
-        when_clauses=" ".join([extension.process_expression(clause, config) for clause in case.whenClauses]),
-        default=else_clause
+    if case.defaultValue:
+        else_clause = "{sep1}else{sep2}{e}".format(
+            sep1=config.format.separator(1),
+            e=extension.process_expression(case.defaultValue, config.push_indent().push_indent()),
+            sep2=config.format.separator(2)
+        )
+    else:
+        else_clause = ""
+    return "case{sep1}{when_clauses}{default}{sep0}end".format(
+        sep1=config.format.separator(1),
+        when_clauses=config.format.separator(1).join(
+            [extension.process_expression(clause, config.push_indent()) for clause in case.whenClauses]
+        ),
+        default=else_clause,
+        sep0=config.format.separator(0)
     )
 
 

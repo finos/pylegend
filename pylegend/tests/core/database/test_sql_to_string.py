@@ -148,7 +148,7 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             distinct=True
         )
-        assert extension.process_select(select_with_distinct, config) == ' distinct 101 as "a", 202'
+        assert "select" + extension.process_select(select_with_distinct, config) == 'select distinct 101 as "a", 202'
 
         select_without_distinct = Select(
             selectItems=[
@@ -156,11 +156,11 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             distinct=False
         )
-        assert extension.process_select(select_without_distinct, config) == ' "alias".*'
+        assert "select" + extension.process_select(select_without_distinct, config) == 'select "alias".*'
 
-    def test_process_select_multi_line_format(self) -> None:
+    def test_process_select_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(pretty=True, indent_count=1), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
         select = Select(
             selectItems=[
                 SingleColumn(expression=IntegerLiteral(101), alias='a'),
@@ -171,17 +171,21 @@ class TestSqlToStringDbExtensionProcessing:
             distinct=True
         )
         expected = """\
-        distinct
+        select distinct
             101 as a,
             202 as b,
             303 as c,
             404 as d"""
-
-        d = dedent(expected)
-        assert extension.process_select(select, config) == " " + d
+        assert "select" + extension.process_select(select, config) == dedent(expected)
 
         select.distinct = False
-        assert extension.process_select(select, config) == d[d.find("\n"):]
+        expected = """\
+        select
+            101 as a,
+            202 as b,
+            303 as c,
+            404 as d"""
+        assert "select" + extension.process_select(select, config) == dedent(expected)
 
     def test_process_literal(self) -> None:
         extension = SqlToStringDbExtension()
@@ -295,6 +299,128 @@ class TestSqlToStringDbExtensionProcessing:
         )
         assert extension.process_expression(case_expression_without_default, config) == \
                "case when false then 101 when true then 202 end"
+
+    def test_searched_case_expression_processor_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True, indent_count=0), False)
+
+        case_expression_with_default = SearchedCaseExpression(
+            whenClauses=[
+                WhenClause(operand=BooleanLiteral(False), result=IntegerLiteral(101)),
+                WhenClause(operand=BooleanLiteral(True), result=IntegerLiteral(202))
+            ],
+            defaultValue=IntegerLiteral(303)
+        )
+        expected = """\
+        case
+            when
+                false
+            then
+                101
+            when
+                true
+            then
+                202
+            else
+                303
+        end"""
+        assert extension.process_expression(case_expression_with_default, config) == dedent(expected)
+
+        case_expression_without_default = SearchedCaseExpression(
+            whenClauses=[
+                WhenClause(operand=BooleanLiteral(False), result=IntegerLiteral(101)),
+                WhenClause(operand=BooleanLiteral(True), result=IntegerLiteral(202))
+            ],
+            defaultValue=None
+        )
+        expected = """\
+        case
+            when
+                false
+            then
+                101
+            when
+                true
+            then
+                202
+        end"""
+        assert extension.process_expression(case_expression_without_default, config) == dedent(expected)
+
+    def test_select_with_case_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True, indent_count=0), False)
+
+        case_expression_with_default = SearchedCaseExpression(
+            whenClauses=[
+                WhenClause(operand=BooleanLiteral(False), result=IntegerLiteral(101)),
+                WhenClause(operand=BooleanLiteral(True), result=IntegerLiteral(202))
+            ],
+            defaultValue=IntegerLiteral(303)
+        )
+        select_with_case = Select(False, [SingleColumn(None, case_expression_with_default)])
+        expected = """\
+                select
+                    case
+                        when
+                            false
+                        then
+                            101
+                        when
+                            true
+                        then
+                            202
+                        else
+                            303
+                    end"""
+        assert "select" + extension.process_select(select_with_case, config) == dedent(expected)
+
+    def test_nested_case_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True, indent_count=0), False)
+
+        case_expression_with_default = SearchedCaseExpression(
+            whenClauses=[
+                WhenClause(
+                    operand=BooleanLiteral(False),
+                    result=SearchedCaseExpression(
+                        whenClauses=[
+                            WhenClause(operand=BooleanLiteral(False), result=IntegerLiteral(101)),
+                            WhenClause(operand=BooleanLiteral(True), result=IntegerLiteral(202))
+                        ],
+                        defaultValue=IntegerLiteral(303)
+                    )
+                ),
+                WhenClause(operand=BooleanLiteral(True), result=IntegerLiteral(202))
+            ],
+            defaultValue=IntegerLiteral(303)
+        )
+        select_with_case = Select(True, [SingleColumn(None, case_expression_with_default)])
+        expected = """\
+                select distinct
+                    case
+                        when
+                            false
+                        then
+                            case
+                                when
+                                    false
+                                then
+                                    101
+                                when
+                                    true
+                                then
+                                    202
+                                else
+                                    303
+                            end
+                        when
+                            true
+                        then
+                            202
+                        else
+                            303
+                    end"""
+        assert "select" + extension.process_select(select_with_case, config) == dedent(expected)
 
     def test_process_column_type(self) -> None:
         extension = SqlToStringDbExtension()
