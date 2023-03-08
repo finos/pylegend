@@ -14,25 +14,26 @@
 
 
 class SqlToStringFormat:
-    multi_line: bool
-    space: str
+    pretty: bool
     indent_count: int
 
-    def __init__(self, multi_line: bool = True, space: str = "  ", indent_count: int = 0) -> None:
-        self.multi_line = multi_line
-        self.space = space
+    def __init__(self, pretty: bool = True, indent_count: int = 0) -> None:
+        self.pretty = pretty
         self.indent_count = indent_count
 
     def push_indent(self) -> "SqlToStringFormat":
-        return SqlToStringFormat(self.multi_line, self.space, self.indent_count + 1)
+        return SqlToStringFormat(self.pretty, self.indent_count + 1)
 
     @property
-    def indent(self) -> str:
-        return "".join([self.space for _ in range(self.indent_count)])
+    def separator(self) -> str:
+        if self.pretty:
+            return "\n" + "".join(["  " for _ in range(self.indent_count)])
+        else:
+            return " "
 
 
 class SqlToStringConfig:
-    format_config: SqlToStringFormat
+    format: SqlToStringFormat
     quoted_identifiers: bool
 
     def __init__(
@@ -40,5 +41,5 @@ class SqlToStringConfig:
         format_config: SqlToStringFormat,
         quoted_identifiers: bool
     ) -> None:
-        self.format_config = format_config
+        self.format = format_config
         self.quoted_identifiers = quoted_identifiers

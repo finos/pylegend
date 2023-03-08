@@ -88,7 +88,7 @@ class TestSqlToString:
             select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
             having=None, orderBy=[], limit=None, offset=None
         )
-        assert generator.generate_sql_string(query, SqlToStringConfig(SqlToStringFormat(multi_line=False), False)) == ""
+        assert generator.generate_sql_string(query, SqlToStringConfig(SqlToStringFormat(pretty=False), False)) == ""
 
     def test_find_sql_to_string_generator_error(self) -> None:
         with pytest.raises(
@@ -108,8 +108,8 @@ class TestSqlToStringDbExtensionProcessing:
 
         plain_extension = SqlToStringDbExtension()
         backtick_extension = ExtensionWithBackTick()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
-        config_quoted_identifiers = SqlToStringConfig(SqlToStringFormat(multi_line=False), True)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
+        config_quoted_identifiers = SqlToStringConfig(SqlToStringFormat(pretty=False), True)
         assert plain_extension.process_identifier("A", config) == "A"
         assert plain_extension.process_identifier("date", config) == '"date"'
         assert plain_extension.process_identifier("A", config_quoted_identifiers) == '"A"'
@@ -117,13 +117,13 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_all_columns(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
         assert extension.process_all_columns(AllColumns(prefix=None), config) == "*"
         assert extension.process_all_columns(AllColumns(prefix='"root"'), config) == '"root".*'
 
     def test_process_single_column(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
         single_column_without_alias = SingleColumn(expression=IntegerLiteral(101), alias=None)
         single_column_with_alias = SingleColumn(expression=IntegerLiteral(101), alias='"a"')
         assert extension.process_single_column(single_column_without_alias, config) == "101"
@@ -131,7 +131,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_select_item(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
         single_column = SingleColumn(expression=IntegerLiteral(101), alias='"a"')
         all_columns = AllColumns(prefix='"root"')
         assert extension.process_select_item(single_column, config) == '101 as "a"'
@@ -139,7 +139,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_select(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
         select_with_distinct = Select(
             selectItems=[
                 SingleColumn(expression=IntegerLiteral(101), alias='"a"'),
@@ -159,7 +159,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_literal(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
         assert extension.process_literal(IntegerLiteral(101), config) == '101'
         assert extension.process_literal(LongLiteral(202), config) == '202'
         assert extension.process_literal(DoubleLiteral(303.3), config) == "303.3"
@@ -170,7 +170,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_comparison_expression(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         comparison = ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.EQUAL)
         assert extension.process_expression(comparison, config) == "(101 = 202)"
@@ -192,7 +192,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_logical_binary_expression(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         c1 = ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN)
         c2 = ComparisonExpression(IntegerLiteral(303), IntegerLiteral(202), ComparisonOperator.GREATER_THAN)
@@ -205,7 +205,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_not_expression(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         c1 = ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN)
         not_expression = NotExpression(c1)
@@ -217,7 +217,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_arithmetic_expression(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         add_expression = ArithmeticExpression(ArithmeticType.ADD, IntegerLiteral(202), IntegerLiteral(101))
         assert extension.process_expression(add_expression, config) == "(202 + 101)"
@@ -236,7 +236,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_negative_expression(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         negative_expression = NegativeExpression(IntegerLiteral(101))
         assert extension.process_expression(negative_expression, config) == "-101"
@@ -248,7 +248,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_searched_case_expression_processor(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         case_expression_with_default = SearchedCaseExpression(
             whenClauses=[
@@ -272,7 +272,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_column_type(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         column_type = ColumnType("BIGINT", parameters=[])
         assert extension.process_expression(column_type, config) == "BIGINT"
@@ -285,7 +285,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_cast_expression(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         column_type = ColumnType("DECIMAL", parameters=[20, 10])
         cast = Cast(IntegerLiteral(101), column_type)
@@ -293,7 +293,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_in_predicate(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         in_list = InListExpression([IntegerLiteral(101), IntegerLiteral(202)])
         in_predicate = InPredicate(IntegerLiteral(101), in_list)
@@ -301,7 +301,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_qualified_name(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         qualified_name = QualifiedName(["test_db", "test_schema", "test_table"])
         assert extension.process_qualified_name(qualified_name, config) == "test_db.test_schema.test_table"
@@ -311,21 +311,21 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_qualified_name_reference(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table"]))
         assert extension.process_expression(ref, config) == "test_db.test_schema.test_table"
 
     def test_process_table(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         assert extension.process_table(table, config) == "test_db.test_schema.test_table"
 
     def test_process_aliased_relation(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         aliased = AliasedRelation(relation=table, alias='"root"', columnNames=[])
@@ -333,7 +333,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_table_subquery(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         subquery = TableSubquery(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
@@ -341,7 +341,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_subquery_expression(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         sub = SubqueryExpression(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
@@ -349,14 +349,14 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_join_on(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         join_on = JoinOn(ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN))
         assert extension.process_join_criteria(join_on, config) == "101 < 202"
 
     def test_process_join(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         table_a = Table(QualifiedName(["test_db", "test_schema", "test_table_a"]))
         table_b = Table(QualifiedName(["test_db", "test_schema", "test_table_b"]))
@@ -384,7 +384,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_top(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         query = QuerySpecification(
             select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
@@ -400,7 +400,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_limit(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         query = QuerySpecification(
             select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
@@ -416,7 +416,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_group_by(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         query = QuerySpecification(
             select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
@@ -438,7 +438,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_order_by(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         query = QuerySpecification(
             select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
@@ -472,7 +472,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_simple_query_specification(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         query = QuerySpecification(
             select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
@@ -494,7 +494,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_query_spec_nofrom_(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         query = QuerySpecification(
             select=Select(selectItems=[
@@ -513,7 +513,7 @@ class TestSqlToStringDbExtensionProcessing:
 
     def test_process_query(self) -> None:
         extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(multi_line=False), False)
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
 
         query_spec = QuerySpecification(
             select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
