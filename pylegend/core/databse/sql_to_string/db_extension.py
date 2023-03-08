@@ -79,7 +79,7 @@ def query_specification_processor(
     group_by = extension.process_group_by(query, config)
     order_by = extension.process_order_by(query, config)
     limit = extension.process_limit(query, config)
-    select = " " + extension.process_select(query.select, config)
+    select = extension.process_select(query.select, config)
     _from = " from " + ", ".join([extension.process_relation(f, config) for f in query.from_]) if query.from_ else ""
     where_clause = " where " + extension.process_expression(query.where, config) if query.where else ""
     having_clause = " having " + extension.process_expression(query.having, config) if query.having else ""
@@ -148,9 +148,13 @@ def select_processor(
     extension: "SqlToStringDbExtension",
     config: SqlToStringConfig
 ) -> str:
-    distinct_flag = "distinct " if select.distinct else ""
+    distinct_flag = " distinct" if select.distinct else ""
     items = [extension.process_select_item(item, config) for item in select.selectItems]
-    return distinct_flag + ", ".join(items)
+    return "{distinct}{separator}{select_items}".format(
+        distinct=distinct_flag,
+        separator=config.format.separator,
+        select_items=("," + config.format.separator).join(items)
+    )
 
 
 def select_item_processor(
