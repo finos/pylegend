@@ -214,7 +214,7 @@ def select_item_processor(
     elif isinstance(select_item, SingleColumn):
         return extension.process_single_column(select_item, config)
     else:
-        raise ValueError("Unsupported select item type: " + str(type(select_item)))
+        raise ValueError("Unsupported select item type: " + str(type(select_item)))  # pragma: no cover
 
 
 def all_columns_processor(
@@ -294,7 +294,7 @@ def expression_processor(
     elif isinstance(expression, CurrentTime):
         return extension.process_current_time(expression, config)
     else:
-        raise ValueError("Unsupported expression type: " + str(type(expression)))
+        raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
 
 def literal_processor(
@@ -323,7 +323,7 @@ def comparison_expression_processor(
     elif comparison.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
         cmp = "<="
     else:
-        raise ValueError("Unknown comparison operator type: " + str(comparison.operator))
+        raise ValueError("Unknown comparison operator type: " + str(comparison.operator))  # pragma: no cover
 
     return "({left} {op} {right})".format(
         left=extension.process_expression(comparison.left, config),
@@ -343,7 +343,7 @@ def logical_binary_expression_processor(
     elif op_type == LogicalBinaryType.OR:
         op = "or"
     else:
-        raise ValueError("Unknown logical binary operator type: " + str(op_type))
+        raise ValueError("Unknown logical binary operator type: " + str(op_type))  # pragma: no cover
 
     return "({left} {op} {right})".format(
         left=extension.process_expression(logical.left, config),
@@ -381,7 +381,7 @@ def arithmetic_expression_processor(
     elif op_type == ArithmeticType.MODULUS:
         to_format = "mod({left}, {right})"
     else:
-        raise ValueError("Unknown arithmetic operator type: " + str(op_type))
+        raise ValueError("Unknown arithmetic operator type: " + str(op_type))  # pragma: no cover
 
     return to_format.format(
         left=extension.process_expression(arithmetic.left, config),
@@ -511,7 +511,7 @@ def current_time_processor(
     elif current_time.type_ == CurrentTimeType.TIME:
         return "CURRENT_TIME(" + (str(current_time.precision) if current_time.precision else "") + ")"
     else:
-        raise ValueError("Unknown current time type: " + str(current_time.type_))
+        raise ValueError("Unknown current time type: " + str(current_time.type_))  # pragma: no cover
 
 
 def qualified_name_processor(
@@ -546,7 +546,7 @@ def relation_processor(
         return extension.process_table_subquery(relation, config)
     elif isinstance(relation, Join):
         return extension.process_join(relation, config)
-    raise ValueError("Unknown relation type: " + str(type(relation)))
+    raise ValueError("Unknown relation type: " + str(type(relation)))  # pragma: no cover
 
 
 def table_processor(
@@ -592,7 +592,7 @@ def join_criteria_processor(
         return extension.process_join_on(join_criteria, config)
     elif isinstance(join_criteria, JoinUsing):
         return extension.process_join_using(join_criteria, config)
-    raise ValueError("Unknown join criteria type: " + str(type(join_criteria)))
+    raise ValueError("Unknown join criteria type: " + str(type(join_criteria)))  # pragma: no cover
 
 
 def join_on_processor(
@@ -636,7 +636,7 @@ def join_processor(
     elif join_type == JoinType.FULL:
         join_type_str = 'full outer join'
     else:
-        raise ValueError("Unknown join type: " + str(join_type))
+        raise ValueError("Unknown join type: " + str(join_type))  # pragma: no cover
 
     return "{left}{sep0}{join}{sep1}{right}{sep1}{on}".format(
         sep0=config.format.separator(0),
