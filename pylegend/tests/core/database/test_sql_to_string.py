@@ -57,7 +57,11 @@ from pylegend.core.sql.metamodel import (
     SortItem,
     SortItemOrdering,
     SortItemNullOrdering,
-    QualifiedNameReference
+    QualifiedNameReference,
+    IsNullPredicate,
+    IsNotNullPredicate,
+    CurrentTime,
+    CurrentTimeType,
 )
 
 
@@ -467,6 +471,33 @@ class TestSqlToStringDbExtensionProcessing:
 
         ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table"]))
         assert extension.process_expression(ref, config) == "test_db.test_schema.test_table"
+
+    def test_process_is_null_predicate(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
+
+        column_ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        check = IsNullPredicate(column_ref)
+        assert extension.process_expression(check, config) == "(test_db.test_schema.test_table.test_col is NULL)"
+
+    def test_process_is_not_null_predicate(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
+
+        column_ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        check = IsNotNullPredicate(column_ref)
+        assert extension.process_expression(check, config) == "(test_db.test_schema.test_table.test_col is not NULL)"
+
+    def test_process_current_time(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
+
+        assert extension.process_expression(CurrentTime(CurrentTimeType.TIME, 2), config) == "CURRENT_TIME(2)"
+        assert extension.process_expression(CurrentTime(CurrentTimeType.TIME, None), config) == "CURRENT_TIME()"
+        assert extension.process_expression(CurrentTime(CurrentTimeType.TIMESTAMP, 8), config) == "CURRENT_TIMESTAMP(8)"
+        assert extension.process_expression(CurrentTime(CurrentTimeType.TIMESTAMP, None), config) == \
+               "CURRENT_TIMESTAMP()"
+        assert extension.process_expression(CurrentTime(CurrentTimeType.DATE, None), config) == "CURRENT_DATE"
 
     def test_process_table(self) -> None:
         extension = SqlToStringDbExtension()

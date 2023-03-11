@@ -60,7 +60,11 @@ from pylegend.core.sql.metamodel import (
     JoinOn,
     JoinUsing,
     SortItemOrdering,
-    QualifiedNameReference
+    QualifiedNameReference,
+    IsNullPredicate,
+    IsNotNullPredicate,
+    CurrentTime,
+    CurrentTimeType,
 )
 
 
@@ -283,6 +287,12 @@ def expression_processor(
         return extension.process_in_predicate(expression, config)
     elif isinstance(expression, QualifiedNameReference):
         return extension.process_qualified_name_reference(expression, config)
+    elif isinstance(expression, IsNullPredicate):
+        return extension.process_is_null_predicate(expression, config)
+    elif isinstance(expression, IsNotNullPredicate):
+        return extension.process_is_not_null_predicate(expression, config)
+    elif isinstance(expression, CurrentTime):
+        return extension.process_current_time(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))
 
@@ -471,6 +481,37 @@ def in_predicate_processor(
         value=extension.process_expression(in_predicate.value, config),
         value_list=extension.process_expression(in_predicate.valueList, config)
     )
+
+
+def is_null_predicate_processor(
+        is_null_predicate: IsNullPredicate,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "({value} is NULL)".format(value=extension.process_expression(is_null_predicate.value, config))
+
+
+def is_not_null_predicate_processor(
+        is_not_null_predicate: IsNotNullPredicate,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "({value} is not NULL)".format(value=extension.process_expression(is_not_null_predicate.value, config))
+
+
+def current_time_processor(
+        current_time: CurrentTime,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    if current_time.type_ == CurrentTimeType.DATE:
+        return "CURRENT_DATE"
+    elif current_time.type_ == CurrentTimeType.TIMESTAMP:
+        return "CURRENT_TIMESTAMP(" + (str(current_time.precision) if current_time.precision else "") + ")"
+    elif current_time.type_ == CurrentTimeType.TIME:
+        return "CURRENT_TIME(" + (str(current_time.precision) if current_time.precision else "") + ")"
+    else:
+        raise ValueError("Unknown current time type: " + str(current_time.type_))
 
 
 def qualified_name_processor(
@@ -692,6 +733,15 @@ class SqlToStringDbExtension:
 
     def process_in_predicate(self, in_predicate: InPredicate, config: SqlToStringConfig) -> str:
         return in_predicate_processor(in_predicate, self, config)
+
+    def process_is_null_predicate(self, is_null_predicate: IsNullPredicate, config: SqlToStringConfig) -> str:
+        return is_null_predicate_processor(is_null_predicate, self, config)
+
+    def process_is_not_null_predicate(self, is_not_null_predicate: IsNotNullPredicate, config: SqlToStringConfig) -> str:
+        return is_not_null_predicate_processor(is_not_null_predicate, self, config)
+
+    def process_current_time(self, current_time: CurrentTime, config: SqlToStringConfig) -> str:
+        return current_time_processor(current_time, self, config)
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
