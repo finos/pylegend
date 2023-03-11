@@ -29,6 +29,7 @@ __all__: PyLegendSequence[str] = [
     'SortItemOrdering',
     'SortItemNullOrdering',
     'ComparisonOperator',
+    'CurrentTimeType',
     'Node',
     'Statement',
     'Query',
@@ -60,6 +61,9 @@ __all__: PyLegendSequence[str] = [
     'NotExpression',
     'ArithmeticExpression',
     'NegativeExpression',
+    'IsNullPredicate',
+    'IsNotNullPredicate',
+    'CurrentTime',
     'FunctionCall',
     'SimpleCaseExpression',
     'SearchedCaseExpression',
@@ -122,6 +126,12 @@ class ComparisonOperator(Enum):
     LESS_THAN_OR_EQUAL = 4,
     GREATER_THAN = 5,
     GREATER_THAN_OR_EQUAL = 6
+
+
+class CurrentTimeType(Enum):
+    DATE = 1,
+    TIME = 2,
+    TIMESTAMP = 3
 
 
 class Node:
@@ -520,6 +530,42 @@ class NegativeExpression(Expression):
     ) -> None:
         super().__init__(_type="negativeExpression")
         self.value = value
+
+
+class IsNullPredicate(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression"
+    ) -> None:
+        super().__init__(_type="isNullPredicate")
+        self.value = value
+
+
+class IsNotNullPredicate(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression"
+    ) -> None:
+        super().__init__(_type="isNotNullPredicate")
+        self.value = value
+
+
+class CurrentTime(Expression):
+    type_: "CurrentTimeType"
+    precision: "PyLegendOptional[int]"
+
+    def __init__(
+        self,
+        type_: "CurrentTimeType",
+        precision: "PyLegendOptional[int]"
+    ) -> None:
+        super().__init__(_type="currentTime")
+        self.type_ = type_
+        self.precision = precision
 
 
 class FunctionCall(Expression):
