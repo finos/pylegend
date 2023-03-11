@@ -75,20 +75,52 @@ def query_specification_processor(
     config: SqlToStringConfig,
     nested_subquery: bool
 ) -> str:
+    sep0 = config.format.separator(0)
+    sep1 = config.format.separator(1)
+
+    if nested_subquery:
+        return "({sep1}{sub_query}{sep0})".format(
+            sep0=sep0,
+            sep1=sep1,
+            sub_query=extension.process_query_specification(query, config.push_indent(), False)
+        )
+
     top = extension.process_top(query, config)
     group_by = extension.process_group_by(query, config)
     order_by = extension.process_order_by(query, config)
     limit = extension.process_limit(query, config)
-    select = extension.process_select(query.select, config)
-    _from = " from " + ", ".join([extension.process_relation(f, config) for f in query.from_]) if query.from_ else ""
-    where_clause = " where " + extension.process_expression(query.where, config) if query.where else ""
-    having_clause = " having " + extension.process_expression(query.having, config) if query.having else ""
-    select_stmt = "select" + top + select + _from + where_clause + group_by + having_clause + order_by + limit
+    columns = extension.process_select(query.select, config)
 
-    if nested_subquery:
-        return "({sub_query})".format(sub_query=select_stmt)
-    else:
-        return select_stmt
+    _from = "{sep0}from{sep1}{relations}".format(
+        sep0=sep0,
+        sep1=sep1,
+        relations=("," + sep1).join([
+            extension.process_relation(f, config.push_indent()) for f in query.from_
+        ])
+    ) if query.from_ else ""
+
+    where_clause = "{sep0}where{sep1}{expr}".format(
+        sep0=sep0,
+        sep1=sep1,
+        expr=extension.process_expression(query.where, config.push_indent())
+    ) if query.where else ""
+
+    having_clause = "{sep0}having{sep1}{expr}".format(
+        sep0=sep0,
+        sep1=sep1,
+        expr=extension.process_expression(query.having, config.push_indent())
+    ) if query.having else ""
+
+    return "select{top}{columns}{_from}{where}{group_by}{having}{order_by}{limit}".format(
+        top=top,
+        columns=columns,
+        _from=_from,
+        where=where_clause,
+        group_by=group_by,
+        having=having_clause,
+        order_by=order_by,
+        limit=limit
+    )
 
 
 def top_processor(
@@ -108,7 +140,8 @@ def limit_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.offset is not None and query.limit is not None:
-        return " limit {offset}, {limit}".format(
+        return "{sep0}limit {offset}, {limit}".format(
+            sep0=config.format.separator(0),
             offset=extension.process_expression(query.offset, config),
             limit=extension.process_expression(query.limit, config)
         )
@@ -122,7 +155,13 @@ def group_by_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.groupBy:
-        return " group by " + ", ".join([extension.process_expression(g, config) for g in query.groupBy])
+        return "{sep0}group by{sep1}{group_by_args}".format(
+            sep0=config.format.separator(0),
+            sep1=config.format.separator(1),
+            group_by_args=("," + config.format.separator(1)).join(
+                [extension.process_expression(g, config.push_indent()) for g in query.groupBy]
+            )
+        )
     else:
         return ""
 
@@ -133,11 +172,15 @@ def order_by_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.orderBy:
-        return " order by " + ", ".join(
-            [
-                extension.process_expression(o.sortKey, config) +
-                (" desc" if o.ordering == SortItemOrdering.DESCENDING else "") for o in query.orderBy
-            ]
+        return "{sep0}order by{sep1}{order_by_args}".format(
+            sep0=config.format.separator(0),
+            sep1=config.format.separator(1),
+            order_by_args=("," + config.format.separator(1)).join(
+                [
+                    extension.process_expression(o.sortKey, config.push_indent()) +
+                    (" desc" if o.ordering == SortItemOrdering.DESCENDING else "") for o in query.orderBy
+                ]
+            )
         )
     else:
         return ""
@@ -491,7 +534,12 @@ def query_processor(
         config: SqlToStringConfig
 ) -> str:
     # TODO: Use limit, orderBy, offset at query level
-    return "(select * from {relation})".format(relation=extension.process_relation(query.queryBody, config, True))
+    return "({sep1}select{sep2}*{sep1}from{sep2}{relation}{sep0})".format(
+        sep0=config.format.separator(0),
+        sep1=config.format.separator(1),
+        sep2=config.format.separator(2),
+        relation=extension.process_relation(query.queryBody, config.push_indent().push_indent(), True)
+    )
 
 
 def join_criteria_processor(
@@ -535,7 +583,7 @@ def join_processor(
     left = extension.process_relation(join.left, config)
     right = extension.process_relation(join.right, config)
     join_type = join.type_
-    condition = " on ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
+    condition = "on ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
     if join_type == JoinType.CROSS:
         join_type_str = 'cross join'
     elif join_type == JoinType.INNER:
@@ -549,7 +597,9 @@ def join_processor(
     else:
         raise ValueError("Unknown join type: " + str(join_type))
 
-    return "{left} {join} {right}{on}".format(
+    return "{left}{sep0}{join}{sep1}{right}{sep1}{on}".format(
+        sep0=config.format.separator(0),
+        sep1=config.format.separator(1),
         left=left,
         join=join_type_str,
         right=right,

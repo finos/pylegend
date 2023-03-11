@@ -489,7 +489,22 @@ class TestSqlToStringDbExtensionProcessing:
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         subquery = TableSubquery(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
-        assert extension.process_relation(subquery, config) == '(select * from test_db.test_schema.test_table)'
+        assert extension.process_relation(subquery, config) == '( select * from test_db.test_schema.test_table )'
+
+    def test_process_table_subquery_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
+
+        table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
+        subquery = TableSubquery(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
+        expected = """\
+                (
+                    select
+                        *
+                    from
+                        test_db.test_schema.test_table
+                )"""
+        assert extension.process_relation(subquery, config) == dedent(expected)
 
     def test_process_subquery_expression(self) -> None:
         extension = SqlToStringDbExtension()
@@ -497,7 +512,22 @@ class TestSqlToStringDbExtensionProcessing:
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         sub = SubqueryExpression(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
-        assert extension.process_subquery_expression(sub, config) == '(select * from test_db.test_schema.test_table)'
+        assert extension.process_subquery_expression(sub, config) == '( select * from test_db.test_schema.test_table )'
+
+    def test_process_subquery_expression_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
+
+        table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
+        sub = SubqueryExpression(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
+        expected = """\
+                (
+                    select
+                        *
+                    from
+                        test_db.test_schema.test_table
+                )"""
+        assert extension.process_subquery_expression(sub, config) == dedent(expected)
 
     def test_process_join_on(self) -> None:
         extension = SqlToStringDbExtension()
@@ -533,6 +563,22 @@ class TestSqlToStringDbExtensionProcessing:
         join = Join(JoinType.FULL, table_a, table_b, criteria)
         assert extension.process_relation(join, config) == \
                "test_db.test_schema.test_table_a full outer join test_db.test_schema.test_table_b on (101 < 202)"
+
+    def test_process_join_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
+
+        table_a = Table(QualifiedName(["test_db", "test_schema", "test_table_a"]))
+        table_b = Table(QualifiedName(["test_db", "test_schema", "test_table_b"]))
+        criteria = JoinOn(ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN))
+
+        join = Join(JoinType.CROSS, table_a, table_b, criteria)
+        expected = """\
+                test_db.test_schema.test_table_a
+                cross join
+                    test_db.test_schema.test_table_b
+                    on (101 < 202)"""
+        assert extension.process_relation(join, config) == dedent(expected)
 
     def test_process_top(self) -> None:
         extension = SqlToStringDbExtension()
@@ -588,6 +634,34 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_group_by(query, config) == \
                " group by test_db.test_schema.test_table.test_col1, test_db.test_schema.test_table.test_col2"
 
+    def test_process_group_by_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
+
+        query = QuerySpecification(
+            select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
+            having=None, orderBy=[], limit=None, offset=None
+        )
+        assert extension.process_group_by(query, config) == ""
+
+        query.groupBy = [
+            QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col1"]))
+        ]
+        expected = """\
+                group by
+                    test_db.test_schema.test_table.test_col1"""
+        assert extension.process_group_by(query, config) == "\n" + dedent(expected)
+
+        query.groupBy = [
+            QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col1"])),
+            QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col2"]))
+        ]
+        expected = """\
+                group by
+                    test_db.test_schema.test_table.test_col1,
+                    test_db.test_schema.test_table.test_col2"""
+        assert extension.process_group_by(query, config) == "\n" + dedent(expected)
+
     def test_process_order_by(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
@@ -622,6 +696,46 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_order_by(query, config) == \
                " order by test_db.test_schema.test_table.test_col1, test_db.test_schema.test_table.test_col2 desc"
 
+    def test_process_order_by_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
+
+        query = QuerySpecification(
+            select=Select(selectItems=[], distinct=False), from_=[], where=None, groupBy=[],
+            having=None, orderBy=[], limit=None, offset=None
+        )
+        assert extension.process_order_by(query, config) == ""
+
+        query.orderBy = [
+            SortItem(
+                QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col1"])),
+                SortItemOrdering.ASCENDING,
+                SortItemNullOrdering.UNDEFINED
+            )
+        ]
+        expected = """\
+                order by
+                    test_db.test_schema.test_table.test_col1"""
+        assert extension.process_order_by(query, config) == "\n" + dedent(expected)
+
+        query.orderBy = [
+            SortItem(
+                QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col1"])),
+                SortItemOrdering.ASCENDING,
+                SortItemNullOrdering.UNDEFINED
+            ),
+            SortItem(
+                QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col2"])),
+                SortItemOrdering.DESCENDING,
+                SortItemNullOrdering.UNDEFINED
+            )
+        ]
+        expected = """\
+                order by
+                    test_db.test_schema.test_table.test_col1,
+                    test_db.test_schema.test_table.test_col2 desc"""
+        assert extension.process_order_by(query, config) == "\n" + dedent(expected)
+
     def test_process_simple_query_specification(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False), False)
@@ -641,8 +755,44 @@ class TestSqlToStringDbExtensionProcessing:
                'where (101 < 202) limit 202, 101'
 
         assert extension.process_query_specification(query, config, True) == \
-               '(select distinct "root".* from test_db.test_schema.test_table as "root" ' \
-               'where (101 < 202) limit 202, 101)'
+               '( select distinct "root".* from test_db.test_schema.test_table as "root" ' \
+               'where (101 < 202) limit 202, 101 )'
+
+    def test_process_simple_query_specification_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
+
+        query = QuerySpecification(
+            select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=IntegerLiteral(101),
+            offset=IntegerLiteral(202)
+        )
+        expected = """\
+            select distinct
+                "root".*
+            from
+                test_db.test_schema.test_table as "root"
+            where
+                (101 < 202)
+            limit 202, 101"""
+        assert extension.process_query_specification(query, config) == dedent(expected)
+
+        expected = """\
+            (
+                select distinct
+                    "root".*
+                from
+                    test_db.test_schema.test_table as "root"
+                where
+                    (101 < 202)
+                limit 202, 101
+            )"""
+        assert extension.process_query_specification(query, config, True) == dedent(expected)
 
     def test_process_query_spec_no_from(self) -> None:
         extension = SqlToStringDbExtension()
@@ -679,5 +829,37 @@ class TestSqlToStringDbExtensionProcessing:
         )
         query = Query(query_spec, None, [], None)
         assert extension.process_query(query, config) == \
-               '(select * from (select distinct "root".* from test_db.test_schema.test_table as "root" ' \
-               'where (101 < 202) limit 202, 101))'
+               '( select * from ( select distinct "root".* from test_db.test_schema.test_table as "root" ' \
+               'where (101 < 202) limit 202, 101 ) )'
+
+    def test_process_query_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True), False)
+
+        query_spec = QuerySpecification(
+            select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=IntegerLiteral(101),
+            offset=IntegerLiteral(202)
+        )
+        query = Query(query_spec, None, [], None)
+        expected = """\
+            (
+                select
+                    *
+                from
+                    (
+                        select distinct
+                            "root".*
+                        from
+                            test_db.test_schema.test_table as "root"
+                        where
+                            (101 < 202)
+                        limit 202, 101
+                    )
+            )"""
+        assert extension.process_query(query, config) == dedent(expected)
