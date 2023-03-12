@@ -106,11 +106,6 @@ class TestSqlToString:
 
 class TestSqlToStringDbExtensionProcessing:
     def test_process_identifier(self) -> None:
-        class ExtensionWithBackTick(SqlToStringDbExtension):
-            @classmethod
-            def quote_character(cls) -> str:
-                return "`"
-
         plain_extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
         assert plain_extension.process_identifier("A", config) == "A"
