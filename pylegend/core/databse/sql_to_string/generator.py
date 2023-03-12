@@ -13,7 +13,10 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
-from pylegend._typing import PyLegendSequence
+from pylegend._typing import (
+    PyLegendSequence,
+    PyLegendDict
+)
 from pylegend.utils.class_utils import find_sub_classes
 from pylegend.core.databse.sql_to_string.config import SqlToStringConfig
 from pylegend.core.databse.sql_to_string.db_extension import SqlToStringDbExtension
@@ -25,6 +28,7 @@ __all__: PyLegendSequence[str] = [
 
 
 class SqlToStringGenerator(metaclass=ABCMeta):
+    sql_generator_extensions: PyLegendDict[str, "SqlToStringGenerator"] = {}
 
     @classmethod
     @abstractmethod
@@ -45,11 +49,16 @@ class SqlToStringGenerator(metaclass=ABCMeta):
 
     @classmethod
     def find_sql_to_string_generator_for_db_type(cls, database_type: str) -> "SqlToStringGenerator":
-        subclasses = find_sub_classes(SqlToStringGenerator, True)  # type: ignore
-        filtered = [s for s in subclasses if s.database_type() == database_type]
-        if len(filtered) != 1:
-            raise RuntimeError(
-                "Found no (or multiple) sql to string generators for database type '" + database_type +
-                "'. Found generators: [" + ", ".join([str(x) for x in filtered]) + "]"
-            )
-        return filtered[0].create_sql_generator()
+        if database_type in SqlToStringGenerator.sql_generator_extensions:
+            return SqlToStringGenerator.sql_generator_extensions[database_type]
+        else:
+            subclasses = find_sub_classes(SqlToStringGenerator, True)  # type: ignore
+            filtered = [s for s in subclasses if s.database_type() == database_type]
+            if len(filtered) != 1:
+                raise RuntimeError(
+                    "Found no (or multiple) sql to string generators for database type '" + database_type +
+                    "'. Found generators: [" + ", ".join([str(x) for x in filtered]) + "]"
+                )
+            generator = filtered[0].create_sql_generator()
+            SqlToStringGenerator.sql_generator_extensions[database_type] = generator
+            return generator

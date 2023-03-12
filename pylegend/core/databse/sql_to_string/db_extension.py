@@ -250,7 +250,7 @@ def identifier_processor(
     should_quote: bool,
     quote_character: str
 ) -> str:
-    if should_quote or config.quoted_identifiers or identifier in extension.reserved_keywords():
+    if should_quote or identifier in extension.reserved_keywords():
         return "{q}{i}{q}".format(q=quote_character, i=identifier)
     else:
         return identifier
@@ -660,6 +660,10 @@ class SqlToStringDbExtension:
     @classmethod
     def quote_character(cls) -> str:
         return '"'
+
+    @classmethod
+    def quote_identifier(cls, identifier: str) -> str:
+        return "{quote}{identifier}{quote}".format(quote=cls.quote_character(), identifier=identifier)
 
     @classmethod
     def literal_processor(cls) -> PyLegendCallable[[Literal, SqlToStringConfig], str]:

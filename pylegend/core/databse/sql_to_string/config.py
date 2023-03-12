@@ -33,15 +33,12 @@ class SqlToStringFormat:
 
 class SqlToStringConfig:
     format: SqlToStringFormat
-    quoted_identifiers: bool
 
     def __init__(
         self,
-        format_: SqlToStringFormat,
-        quoted_identifiers: bool
+        format_: SqlToStringFormat
     ) -> None:
         self.format = format_
-        self.quoted_identifiers = quoted_identifiers
 
     def push_indent(self) -> "SqlToStringConfig":
-        return SqlToStringConfig(self.format.push_indent(), self.quoted_identifiers)
+        return SqlToStringConfig(self.format.push_indent())
