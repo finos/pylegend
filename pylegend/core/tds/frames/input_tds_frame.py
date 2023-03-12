@@ -12,21 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable as PyLegendCallable
-from typing import Dict as PyLegendDict
-from typing import List as PyLegendList
-from typing import Optional as PyLegendOptional
-from typing import Sequence as PyLegendSequence
-from typing import Type as PyLegendType
-from typing import TypeVar as PyLegendTypeVar
+from abc import ABCMeta
+from pylegend._typing import (
+    PyLegendSequence
+)
+from pylegend.core.tds.frames.base_tds_frame import BaseTdsFrame
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendCallable",
-    "PyLegendDict",
-    "PyLegendList",
-    "PyLegendSequence",
-    "PyLegendType",
-    "PyLegendTypeVar",
-    "PyLegendOptional"
+    "ExecutableInputTdsFrame",
+    "NonExecutableInputTdsFrame"
 ]
+
+
+class InputTdsFrame(BaseTdsFrame, metaclass=ABCMeta):
+    pass
+
+
+class ExecutableInputTdsFrame(InputTdsFrame, metaclass=ABCMeta):
+    pass
+
+
+class NonExecutableInputTdsFrame(InputTdsFrame, metaclass=ABCMeta):
+    pass

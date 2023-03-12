@@ -36,6 +36,9 @@ class PyLegendTdsColumn:
                              "Known types are: " + ", ".join(self.__valid_types))
         self.__type = _type
 
+    def get_name(self) -> str:
+        return self.__name
+
     def __str__(self) -> str:
         return "PyLegendTdsColumn(Name: " + self.__name + ", Type: " + self.__type + ")"
 
