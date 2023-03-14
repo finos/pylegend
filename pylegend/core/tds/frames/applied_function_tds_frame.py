@@ -16,9 +16,17 @@ from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence
 )
+from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    LongLiteral
+    LongLiteral,
+    SingleColumn,
+    QualifiedName,
+    QualifiedNameReference,
+    AliasedRelation,
+    Select,
+    TableSubquery,
+    Query
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.frames.base_tds_frame import BaseTdsFrame
@@ -52,8 +60,55 @@ class TakeFunction(AppliedFunction):
         self.row_count = row_count
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query.limit = LongLiteral(value=self.row_count)
-        return base_query  # TODO: avoid parameter mutation
+        if base_query.limit:
+            new_query = create_sub_query(base_query, config, "root")
+            new_query.limit = LongLiteral(value=self.row_count)
+            return new_query
+        else:
+            base_query.limit = LongLiteral(value=self.row_count)
+            return base_query  # TODO: avoid parameter mutation
+
+
+def create_sub_query(query: QuerySpecification, config: FrameToSqlConfig, alias: str) -> QuerySpecification:
+    generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
+    db_extension = generator.get_db_extension()
+    table_alias = db_extension.quote_identifier(alias)
+
+    columns = []
+    for col in query.select.selectItems:
+        if not isinstance(col, SingleColumn):
+            raise ValueError("Subquery creation not supported for queries "
+                             "with columns other than SingleColumn")  # pragma: no cover
+        if col.alias is None:
+            raise ValueError("Subquery creation not supported for queries "
+                             "with SingleColumns with missing alias")  # pragma: no cover
+        columns.append(col.alias)
+
+    return QuerySpecification(
+        select=Select(
+            selectItems=[
+                SingleColumn(
+                    alias=x,
+                    expression=QualifiedNameReference(name=QualifiedName(parts=[table_alias, x]))
+                )
+                for x in columns
+            ],
+            distinct=False
+        ),
+        from_=[
+            AliasedRelation(
+                relation=TableSubquery(query=Query(queryBody=query, limit=None, offset=None, orderBy=[])),
+                alias=table_alias,
+                columnNames=columns
+            )
+        ],
+        where=None,
+        groupBy=[],
+        having=None,
+        orderBy=[],
+        limit=None,
+        offset=None
+    )
 
 
 class AppliedFunctionTdsFrame(BaseTdsFrame):

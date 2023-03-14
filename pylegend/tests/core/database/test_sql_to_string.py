@@ -851,8 +851,8 @@ class TestSqlToStringDbExtensionProcessing:
         )
         query = Query(query_spec, None, [], None)
         assert extension.process_query(query, config) == \
-               '( select * from ( select distinct "root".* from test_db.test_schema.test_table as "root" ' \
-               'where (101 < 202) limit 202, 101 ) )'
+               'select distinct "root".* from test_db.test_schema.test_table as "root" ' \
+               'where (101 < 202) limit 202, 101'
 
     def test_process_query_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -870,18 +870,11 @@ class TestSqlToStringDbExtensionProcessing:
         )
         query = Query(query_spec, None, [], None)
         expected = """\
-            (
-                select
-                    *
-                from
-                    (
-                        select distinct
-                            "root".*
-                        from
-                            test_db.test_schema.test_table as "root"
-                        where
-                            (101 < 202)
-                        limit 202, 101
-                    )
-            )"""
+            select distinct
+                "root".*
+            from
+                test_db.test_schema.test_table as "root"
+            where
+                (101 < 202)
+            limit 202, 101"""
         assert extension.process_query(query, config) == dedent(expected)

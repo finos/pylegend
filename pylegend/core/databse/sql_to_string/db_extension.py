@@ -572,15 +572,22 @@ def aliased_relation_processor(
 def query_processor(
         query: Query,
         extension: "SqlToStringDbExtension",
-        config: SqlToStringConfig
+        config: SqlToStringConfig,
+        nested_subquery: bool = False
 ) -> str:
-    # TODO: Use limit, orderBy, offset at query level
-    return "({sep1}select{sep2}*{sep1}from{sep2}{relation}{sep0})".format(
-        sep0=config.format.separator(0),
-        sep1=config.format.separator(1),
-        sep2=config.format.separator(2),
-        relation=extension.process_relation(query.queryBody, config.push_indent().push_indent(), True)
-    )
+    if isinstance(query.queryBody, QuerySpecification) and \
+            (query.limit is None) and \
+            (query.offset is None) and \
+            (query.orderBy is None or len(query.orderBy) == 0):
+        return extension.process_relation(query.queryBody, config, nested_subquery)
+    else:
+        # TODO: Use limit, orderBy, offset at query level
+        return "({sep1}select{sep2}*{sep1}from{sep2}{relation}{sep0})".format(
+            sep0=config.format.separator(0),
+            sep1=config.format.separator(1),
+            sep2=config.format.separator(2),
+            relation=extension.process_relation(query.queryBody, config.push_indent().push_indent(), True)
+        )
 
 
 def join_criteria_processor(
@@ -764,13 +771,13 @@ class SqlToStringDbExtension:
         return aliased_relation_processor(aliased_relation, self, config, nested_subquery)
 
     def process_query(self, query: Query, config: SqlToStringConfig) -> str:
-        return query_processor(query, self, config)
+        return query_processor(query, self, config, False)
 
     def process_table_subquery(self, table_subquery: TableSubquery, config: SqlToStringConfig) -> str:
-        return query_processor(table_subquery.query, self, config)
+        return query_processor(table_subquery.query, self, config, True)
 
     def process_subquery_expression(self, subquery_expression: SubqueryExpression, config: SqlToStringConfig) -> str:
-        return query_processor(subquery_expression.query, self, config)
+        return query_processor(subquery_expression.query, self, config, True)
 
     def process_join_criteria(self, join_criteria: JoinCriteria, config: SqlToStringConfig) -> str:
         return join_criteria_processor(join_criteria, self, config)
