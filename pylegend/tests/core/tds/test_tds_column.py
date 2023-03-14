@@ -32,6 +32,19 @@ class TestPyLegendTdsColumn:
         c4 = PyLegendTdsColumn('C4', 'Boolean')
         assert "PyLegendTdsColumn(Name: C4, Type: Boolean)" == str(c4)
 
+    def test_tds_column_creation_with_class_methods(self) -> None:
+        c1 = PyLegendTdsColumn.integer_column('C1')
+        assert "PyLegendTdsColumn(Name: C1, Type: Integer)" == str(c1)
+
+        c2 = PyLegendTdsColumn.float_column('C2')
+        assert "PyLegendTdsColumn(Name: C2, Type: Float)" == str(c2)
+
+        c3 = PyLegendTdsColumn.string_column('C3')
+        assert "PyLegendTdsColumn(Name: C3, Type: String)" == str(c3)
+
+        c4 = PyLegendTdsColumn.boolean_column('C4')
+        assert "PyLegendTdsColumn(Name: C4, Type: Boolean)" == str(c4)
+
     def test_error_on_unknown_type(self) -> None:
         with pytest.raises(ValueError, match="Unknown type provided for TDS column: 'SomeType'. "
                                              "Known types are: Integer, Float, String, Boolean"):

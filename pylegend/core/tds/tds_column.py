@@ -42,6 +42,22 @@ class PyLegendTdsColumn:
     def __str__(self) -> str:
         return "PyLegendTdsColumn(Name: " + self.__name + ", Type: " + self.__type + ")"
 
+    @classmethod
+    def integer_column(cls, name: str) -> "PyLegendTdsColumn":
+        return PyLegendTdsColumn(name, 'Integer')
+
+    @classmethod
+    def float_column(cls, name: str) -> "PyLegendTdsColumn":
+        return PyLegendTdsColumn(name, 'Float')
+
+    @classmethod
+    def string_column(cls, name: str) -> "PyLegendTdsColumn":
+        return PyLegendTdsColumn(name, 'String')
+
+    @classmethod
+    def boolean_column(cls, name: str) -> "PyLegendTdsColumn":
+        return PyLegendTdsColumn(name, 'Boolean')
+
 
 __all__: PyLegendSequence[str] = [
     "PyLegendTdsColumn"

@@ -25,8 +25,8 @@ importlib.import_module(postgres_ext)
 class TestTableSpecInputFrame:
     def test_frame_creation(self) -> None:
         columns = [
-            PyLegendTdsColumn("col1", "Integer"),
-            PyLegendTdsColumn("col2", "String")
+            PyLegendTdsColumn.integer_column("col1"),
+            PyLegendTdsColumn.string_column("col2")
         ]
         frame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
         expected = """\
@@ -39,8 +39,8 @@ class TestTableSpecInputFrame:
 
     def test_frame_with_head_operation(self) -> None:
         columns = [
-            PyLegendTdsColumn("col1", "Integer"),
-            PyLegendTdsColumn("col2", "String")
+            PyLegendTdsColumn.integer_column("col1"),
+            PyLegendTdsColumn.string_column("col2")
         ]
         frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(10)
