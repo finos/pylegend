@@ -15,24 +15,48 @@
 import importlib
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PyLegendTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToSqlConfig
 from pylegend.extensions.tds.frames.table_spec_input_frame import TableSpecInputFrame
 
 postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
 importlib.import_module(postgres_ext)
 
 
-class TestTableSpecInputFrame:
-    def test_table_spec_frame_creation(self) -> None:
+class TestAppliedFunctionFrameSqlGen:
+
+    def test_head_operation_no_top(self) -> None:
         columns = [
             PyLegendTdsColumn.integer_column("col1"),
             PyLegendTdsColumn.string_column("col2")
         ]
-        frame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.head(10)
         expected = '''\
-            select
+            select top 10
                 "root".col1 as "col1",
                 "root".col2 as "col2"
             from
                 test_schema.test_table as "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_head_operation_with_existing_top(self) -> None:
+        columns = [
+            PyLegendTdsColumn.integer_column("col1"),
+            PyLegendTdsColumn.string_column("col2")
+        ]
+        frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.head(10)
+        frame = frame.head(20)
+        expected = '''\
+            select top 20
+                "root"."col1" as "col1",
+                "root"."col2" as "col2"
+            from
+                (
+                    select top 10
+                        "root".col1 as "col1",
+                        "root".col2 as "col2"
+                    from
+                        test_schema.test_table as "root"
+                ) as "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
