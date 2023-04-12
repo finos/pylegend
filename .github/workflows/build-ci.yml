@@ -68,6 +68,9 @@ jobs:
           echo "Installing mypy"
           pip install mypy
           echo "Done with installing mypy"
+          echo "Running pip install -r dev.requirements.txt"
+          pip install -r dev.requirements.txt
+          echo "Done with installing dependencies"
 
       - name: Perform Typing Check
         run: |
