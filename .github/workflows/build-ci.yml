@@ -115,7 +115,7 @@ jobs:
       - name: Build Legend Server
         shell: bash
         run: |
-          mvn clean package ./pylegend/tests/resources/legend/server/pylegend-sql-server
+          mvn clean package -f ./pylegend/tests/resources/legend/server/pylegend-sql-server/pom.xml
 
       - name: Run PyTest
         shell: bash
