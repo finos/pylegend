@@ -15,6 +15,7 @@
 import shlex
 import time
 import subprocess
+import os
 import pylegend
 from abc import ABCMeta
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -29,7 +30,7 @@ class E2ETestWithLegendServer(metaclass=ABCMeta):
     def setup_class(self) -> None:
         self.engine_port = generate_dynamic_port()
         metadata_port = generate_dynamic_port()
-        relative_path = pylegend.tests.__file__[0: pylegend.tests.__file__.rindex("/")]
+        relative_path = os.path.abspath(pylegend.tests.__file__)[0: os.path.abspath(pylegend.tests.__file__).rindex("/")]
         self.engine_process = subprocess.Popen(
             shlex.split(
                 'java -jar '
