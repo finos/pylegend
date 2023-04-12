@@ -24,17 +24,17 @@ class LegendClient(ServiceClient):
             host: str,
             port: int,
             secure_http: bool = True,
-            retry_count: int = 3
+            retry_count: int = 2
     ) -> None:
         super().__init__(host=host, port=port, secure_http=secure_http, retry_count=retry_count)
 
-    def get_sql_schema(
+    def get_sql_string_schema(
             self,
             sql: str
     ) -> str:
         response = super()._execute_service(
             method=RequestMethod.POST,
-            path="sql/v1/execution/getSchemaFromQueryString/PROD-123",
+            path="api/sql/v1/execution/getSchemaFromQueryString",
             data=sql,
             headers={"Content-Type": "text/plain"},
             stream=False

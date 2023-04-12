@@ -15,7 +15,8 @@
 from abc import ABCMeta
 from enum import Enum
 
-import requests  # type: ignore
+import requests
+from requests.adapters import HTTPAdapter, Retry
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
@@ -62,35 +63,38 @@ class ServiceClient(metaclass=ABCMeta):
             stream: bool = True
     ) -> requests.Response:
 
-        try_no = 0
-        while try_no < self.__retry_count:
-            try_no += 1
+        scheme = "https" if self.__secure_http else "http"
+        url = "{scheme}://{host}:{port}/{path}".format(
+            scheme=scheme,
+            host=self.__host,
+            port=self.__port,
+            path=path
+        )
 
-            scheme = "https" if self.__secure_http else "http"
-            url = "{scheme}://{host}:{port}/{path}".format(
-                scheme=scheme,
-                host=self.__host,
-                port=self.__port,
-                path=path
+        request = requests.Request(
+            method=method.name,
+            url=url,
+            headers=headers,
+            data=data,
+            params=query_params
+        )
+
+        session = requests.Session()
+        adapter = HTTPAdapter(max_retries=Retry(
+            self.__retry_count,
+            allowed_methods=["GET", "POST"],
+            status_forcelist=[500, 501, 502, 503, 504],
+            raise_on_status=False
+        ))
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        response = session.send(request.prepare(), stream=stream)
+
+        if not response.ok:
+            raise RuntimeError(
+                "API call " + response.url + " failed with error: \n" +
+                response.text.replace("\\n", "\n").replace("\\t", "\t") +
+                "\nHeaders: " + str(response.headers)
             )
 
-            request = requests.Request(
-                method=method.name,
-                url=url,
-                headers=headers,
-                data=data,
-                params=query_params
-            )
-
-            session = requests.Session()
-            response = session.send(request.prepare(), stream=stream)
-
-            if response.ok:
-                return response
-            elif response.status_code == 401:
-                response.raise_for_status()
-            else:
-                last_response = response
-
-        last_response.raise_for_status()
-        return last_response
+        return response

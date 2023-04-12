@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest  # type: ignore
+import pytest
 from textwrap import dedent
 from pylegend.core.databse.sql_to_string import (
     SqlToStringGenerator,

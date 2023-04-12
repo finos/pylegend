@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest  # type: ignore
+import pytest
 import json
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from requests.exceptions import HTTPError  # type: ignore
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.tests.test_helpers.dynamic_port_generator import generate_dynamic_port
 
@@ -30,7 +29,7 @@ class TestLegendClient:
                 content_len = int(self.headers.get_all('content-length')[0])  # type: ignore
                 data = self.rfile.read(content_len).decode()
 
-                if self.path == "/sql/v1/execution/getSchemaFromQueryString/PROD-123" and \
+                if self.path == "/api/sql/v1/execution/getSchemaFromQueryString" and \
                         data == "select 1+2 as a":
                     output = json.dumps({"a": "Integer"})
                     self.send_response(200)
@@ -50,13 +49,13 @@ class TestLegendClient:
 
     def test_legend_client(self) -> None:
         client = LegendClient("localhost", self.dynamic_port, secure_http=False)
-        assert '{"a": "Integer"}' == client.get_sql_schema("select 1+2 as a")
+        assert client.get_sql_string_schema("select 1+2 as a") == '{"a": "Integer"}'
 
     def test_legend_client_retry_error_message(self) -> None:
         with pytest.raises(ValueError, match="Retry count should be a number greater than 1. Got 0"):
             LegendClient("localhost", self.dynamic_port, secure_http=False, retry_count=0)
 
     def test_legend_client_unhandled_error_message(self) -> None:
-        with pytest.raises(HTTPError, match=".*Unexpected error when executing on path.*"):
+        with pytest.raises(RuntimeError, match=".*Unexpected error when executing on path.*"):
             client = LegendClient("localhost", self.dynamic_port, secure_http=False)
-            client.get_sql_schema("unknown sql")
+            client.get_sql_string_schema("unknown sql")
