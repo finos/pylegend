@@ -112,6 +112,11 @@ jobs:
           pip install -r dev.requirements.txt
           echo "Done with installing dependencies"
 
+      - name: Build Legend Server
+        shell: bash
+        run: |
+          mvn clean package ./pylegend/tests/resources/legend/server/pylegend-sql-server
+
       - name: Run PyTest
         shell: bash
         run: |
