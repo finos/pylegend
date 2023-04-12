@@ -26,7 +26,7 @@ class TestLegendClient:
     def setup_class(self) -> None:
         class MockLegendServerHandler(BaseHTTPRequestHandler):
             def do_POST(self) -> None:
-                content_len = int(self.headers.get_all('content-length')[0])
+                content_len = int(self.headers.get_all('content-length')[0])  # type: ignore
                 data = self.rfile.read(content_len).decode()
 
                 if self.path == "/api/sql/v1/execution/getSchemaFromQueryString" and \
