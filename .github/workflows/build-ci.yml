@@ -111,6 +111,12 @@ jobs:
           echo "Running pip install -r dev.requirements.txt"
           pip install -r dev.requirements.txt
           echo "Done with installing dependencies"
+          
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: "zulu"
+          java-version: "11"
 
       - name: Build Legend Server
         shell: bash
