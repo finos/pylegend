@@ -67,7 +67,7 @@ class E2ETestWithLegendServer(metaclass=ABCMeta):
         metadata_server_thread.daemon = True
         metadata_server_thread.start()
 
-        time.sleep(5)
+        time.sleep(10)
 
     def teardown_class(self) -> None:
         if self.engine_process:
