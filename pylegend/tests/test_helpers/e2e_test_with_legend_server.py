@@ -14,6 +14,7 @@
 
 import shlex
 import time
+import requests
 import subprocess
 import pylegend
 from abc import ABCMeta
@@ -67,7 +68,18 @@ class E2ETestWithLegendServer(metaclass=ABCMeta):
         metadata_server_thread.daemon = True
         metadata_server_thread.start()
 
-        time.sleep(10)
+        try_count = 0
+        while True:
+            try_count += 1
+            try:
+                requests.get("http://localhost:" + str(self.engine_port) + "/api/server/v1/info").raise_for_status()
+            except Exception:
+                if try_count == 15:
+                    raise RuntimeError("Unable to start legend server for testing")
+                else:
+                    time.sleep(2)
+                    continue
+            break
 
     def teardown_class(self) -> None:
         if self.engine_process:
