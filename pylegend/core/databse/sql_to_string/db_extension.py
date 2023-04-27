@@ -59,12 +59,18 @@ from pylegend.core.sql.metamodel import (
     JoinCriteria,
     JoinOn,
     JoinUsing,
+    SortItem,
     SortItemOrdering,
     QualifiedNameReference,
     IsNullPredicate,
     IsNotNullPredicate,
     CurrentTime,
     CurrentTimeType,
+    Extract,
+    FunctionCall,
+    NamedArgumentExpression,
+    Window,
+    TableFunction,
 )
 
 
@@ -170,6 +176,15 @@ def group_by_processor(
         return ""
 
 
+def sort_item_processor(
+    sort_item: SortItem,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
+) -> str:
+    return extension.process_expression(sort_item.sortKey, config.push_indent()) + \
+        (" desc" if sort_item.ordering == SortItemOrdering.DESCENDING else "")
+
+
 def order_by_processor(
     query: QuerySpecification,
     extension: "SqlToStringDbExtension",
@@ -180,10 +195,7 @@ def order_by_processor(
             sep0=config.format.separator(0),
             sep1=config.format.separator(1),
             order_by_args=("," + config.format.separator(1)).join(
-                [
-                    extension.process_expression(o.sortKey, config.push_indent()) +
-                    (" desc" if o.ordering == SortItemOrdering.DESCENDING else "") for o in query.orderBy
-                ]
+                [extension.process_sort_item(o, config) for o in query.orderBy]
             )
         )
     else:
@@ -293,6 +305,12 @@ def expression_processor(
         return extension.process_is_not_null_predicate(expression, config)
     elif isinstance(expression, CurrentTime):
         return extension.process_current_time(expression, config)
+    elif isinstance(expression, Extract):
+        return extension.process_extract(expression, config)
+    elif isinstance(expression, FunctionCall):
+        return extension.process_function_call(expression, config)
+    elif isinstance(expression, NamedArgumentExpression):
+        return extension.process_named_argument_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -514,6 +532,41 @@ def current_time_processor(
         raise ValueError("Unknown current time type: " + str(current_time.type_))  # pragma: no cover
 
 
+def extract_processor(
+        extract: Extract,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "extract({field} from {source})".format(
+        field=extract.field.name,
+        source=extension.process_expression(extract.expression, config)
+    )
+
+
+def function_call_processor(
+        function_call: FunctionCall,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    # TODO: Handle distinct and filter
+    return "{name}({args}){window}".format(
+        name=extension.process_qualified_name(function_call.name, config),
+        args=", ".join([extension.process_expression(arg, config) for arg in function_call.arguments]),
+        window=" over" + extension.process_window(function_call.window, config) if function_call.window else ""
+    )
+
+
+def named_argument_processor(
+        named_arg: NamedArgumentExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "{name} => {expr}".format(
+        name=named_arg.name,
+        expr=extension.process_expression(named_arg.expression, config)
+    )
+
+
 def qualified_name_processor(
         qualified_name: QualifiedName,
         extension: "SqlToStringDbExtension",
@@ -546,6 +599,8 @@ def relation_processor(
         return extension.process_table_subquery(relation, config)
     elif isinstance(relation, Join):
         return extension.process_join(relation, config)
+    elif isinstance(relation, TableFunction):
+        return extension.process_table_function(relation, config)
     raise ValueError("Unknown relation type: " + str(type(relation)))  # pragma: no cover
 
 
@@ -655,6 +710,34 @@ def join_processor(
     )
 
 
+def window_processor(
+        window: Window,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    if window.windowRef:
+        return window.windowRef
+
+    partitions = " partition by " + (", ".join([extension.process_expression(e, config) for e in window.partitions])) \
+        if window.partitions else ""
+
+    order_by = " order by " + (", ".join([extension.process_sort_item(o, config) for o in window.orderBy])) \
+        if window.orderBy else ""
+
+    # TODO: Handle window frame
+    return "{partitions}{order_by}{window_frame}".format(
+        partitions=partitions, order_by=order_by, window_frame=""
+    )
+
+
+def table_function_processor(
+        table_func: TableFunction,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return extension.process_function_call(table_func.functionCall, config)
+
+
 class SqlToStringDbExtension:
     @classmethod
     def reserved_keywords(cls) -> PyLegendList[str]:
@@ -754,6 +837,15 @@ class SqlToStringDbExtension:
     def process_current_time(self, current_time: CurrentTime, config: SqlToStringConfig) -> str:
         return current_time_processor(current_time, self, config)
 
+    def process_extract(self, extract: Extract, config: SqlToStringConfig) -> str:
+        return extract_processor(extract, self, config)
+
+    def process_function_call(self, function_call: FunctionCall, config: SqlToStringConfig) -> str:
+        return function_call_processor(function_call, self, config)
+
+    def process_named_argument_expression(self, named_arg: NamedArgumentExpression, config: SqlToStringConfig) -> str:
+        return named_argument_processor(named_arg, self, config)
+
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
 
@@ -800,5 +892,14 @@ class SqlToStringDbExtension:
     def process_group_by(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
         return group_by_processor(query, self, config)
 
+    def process_sort_item(self, sort_item: SortItem, config: SqlToStringConfig) -> str:
+        return sort_item_processor(sort_item, self, config)
+
     def process_order_by(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
         return order_by_processor(query, self, config)
+
+    def process_window(self, window: Window, config: SqlToStringConfig) -> str:
+        return window_processor(window, self, config)
+
+    def process_table_function(self, table_func: TableFunction, config: SqlToStringConfig) -> str:
+        return table_function_processor(table_func, self, config)

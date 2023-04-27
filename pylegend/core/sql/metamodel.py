@@ -22,6 +22,8 @@ from pylegend._typing import (
 
 
 __all__: PyLegendSequence[str] = [
+    'WindowFrameMode',
+    'FrameBoundType',
     'TrimMode',
     'JoinType',
     'LogicalBinaryType',
@@ -30,6 +32,7 @@ __all__: PyLegendSequence[str] = [
     'SortItemNullOrdering',
     'ComparisonOperator',
     'CurrentTimeType',
+    'ExtractField',
     'Node',
     'Statement',
     'Query',
@@ -45,6 +48,7 @@ __all__: PyLegendSequence[str] = [
     'AllColumns',
     'SingleColumn',
     'Table',
+    'TableFunction',
     'Expression',
     'SubqueryExpression',
     'Literal',
@@ -55,6 +59,8 @@ __all__: PyLegendSequence[str] = [
     'StringLiteral',
     'ArrayLiteral',
     'NullLiteral',
+    'IntervalLiteral',
+    'NamedArgumentExpression',
     'SortItem',
     'ComparisonExpression',
     'LogicalBinaryExpression',
@@ -68,6 +74,7 @@ __all__: PyLegendSequence[str] = [
     'SimpleCaseExpression',
     'SearchedCaseExpression',
     'WhenClause',
+    'Extract',
     'Join',
     'JoinCriteria',
     'JoinOn',
@@ -77,8 +84,24 @@ __all__: PyLegendSequence[str] = [
     'QualifiedName',
     'QualifiedNameReference',
     'InListExpression',
-    'InPredicate'
+    'InPredicate',
+    'Window',
+    'WindowFrame',
+    'FrameBound'
 ]
+
+
+class WindowFrameMode(Enum):
+    RANGE = 1,
+    ROWS = 2
+
+
+class FrameBoundType(Enum):
+    UNBOUNDED_PRECEDING = 1,
+    PRECEDING = 2,
+    CURRENT_ROW = 3,
+    FOLLOWING = 4,
+    UNBOUNDED_FOLLOWING = 5
 
 
 class TrimMode(Enum):
@@ -132,6 +155,26 @@ class CurrentTimeType(Enum):
     DATE = 1,
     TIME = 2,
     TIMESTAMP = 3
+
+
+class ExtractField(Enum):
+    CENTURY = 1,
+    YEAR = 2,
+    QUARTER = 3,
+    MONTH = 4,
+    WEEK = 5,
+    DAY = 6,
+    DAY_OF_MONTH = 7,
+    DAY_OF_WEEK = 8,
+    DOW = 9,
+    DAY_OF_YEAR = 10,
+    DOY = 11,
+    HOUR = 12,
+    MINUTE = 13,
+    SECOND = 14,
+    TIMEZONE_HOUR = 15,
+    TIMEZONE_MINUTE = 16,
+    EPOCH = 17
 
 
 class Node:
@@ -336,6 +379,17 @@ class Table(QueryBody):
         self.name = name
 
 
+class TableFunction(QueryBody):
+    functionCall: "FunctionCall"
+
+    def __init__(
+        self,
+        functionCall: "FunctionCall"
+    ) -> None:
+        super().__init__(_type="tableFunction")
+        self.functionCall = functionCall
+
+
 class Expression(Node):
 
     def __init__(
@@ -440,6 +494,52 @@ class NullLiteral(Literal):
         self
     ) -> None:
         super().__init__(_type="nullLiteral")
+
+
+class IntervalLiteral(Literal):
+    ago: "PyLegendOptional[bool]"
+    years: "PyLegendOptional[int]"
+    months: "PyLegendOptional[int]"
+    weeks: "PyLegendOptional[int]"
+    days: "PyLegendOptional[int]"
+    hours: "PyLegendOptional[int]"
+    minutes: "PyLegendOptional[int]"
+    seconds: "PyLegendOptional[int]"
+
+    def __init__(
+        self,
+        ago: "PyLegendOptional[bool]",
+        years: "PyLegendOptional[int]",
+        months: "PyLegendOptional[int]",
+        weeks: "PyLegendOptional[int]",
+        days: "PyLegendOptional[int]",
+        hours: "PyLegendOptional[int]",
+        minutes: "PyLegendOptional[int]",
+        seconds: "PyLegendOptional[int]"
+    ) -> None:
+        super().__init__(_type="intervalLiteral")
+        self.ago = ago
+        self.years = years
+        self.months = months
+        self.weeks = weeks
+        self.days = days
+        self.hours = hours
+        self.minutes = minutes
+        self.seconds = seconds
+
+
+class NamedArgumentExpression(Expression):
+    name: "str"
+    expression: "Expression"
+
+    def __init__(
+        self,
+        name: "str",
+        expression: "Expression"
+    ) -> None:
+        super().__init__(_type="namedArgumentExpression")
+        self.name = name
+        self.expression = expression
 
 
 class SortItem(Node):
@@ -573,19 +673,22 @@ class FunctionCall(Expression):
     distinct: "bool"
     arguments: "PyLegendList[Expression]"
     filter_: "PyLegendOptional[Expression]"
+    window: "PyLegendOptional[Window]"
 
     def __init__(
         self,
         name: "QualifiedName",
         distinct: "bool",
         arguments: "PyLegendList[Expression]",
-        filter_: "PyLegendOptional[Expression]"
+        filter_: "PyLegendOptional[Expression]",
+        window: "PyLegendOptional[Window]"
     ) -> None:
         super().__init__(_type="functionCall")
         self.name = name
         self.distinct = distinct
         self.arguments = arguments
         self.filter_ = filter_
+        self.window = window
 
 
 class SimpleCaseExpression(Expression):
@@ -631,6 +734,20 @@ class WhenClause(Expression):
         super().__init__(_type="whenClause")
         self.operand = operand
         self.result = result
+
+
+class Extract(Expression):
+    expression: "Expression"
+    field: "ExtractField"
+
+    def __init__(
+        self,
+        expression: "Expression",
+        field: "ExtractField"
+    ) -> None:
+        super().__init__(_type="extract")
+        self.expression = expression
+        self.field = field
 
 
 class Join(Relation):
@@ -757,3 +874,54 @@ class InPredicate(Expression):
         super().__init__(_type="inPredicate")
         self.value = value
         self.valueList = valueList
+
+
+class Window(Statement):
+    windowRef: "PyLegendOptional[str]"
+    partitions: "PyLegendList[Expression]"
+    orderBy: "PyLegendList[SortItem]"
+    windowFrame: "PyLegendOptional[WindowFrame]"
+
+    def __init__(
+        self,
+        windowRef: "PyLegendOptional[str]",
+        partitions: "PyLegendList[Expression]",
+        orderBy: "PyLegendList[SortItem]",
+        windowFrame: "PyLegendOptional[WindowFrame]"
+    ) -> None:
+        super().__init__(_type="window")
+        self.windowRef = windowRef
+        self.partitions = partitions
+        self.orderBy = orderBy
+        self.windowFrame = windowFrame
+
+
+class WindowFrame(Node):
+    mode: "WindowFrameMode"
+    start: "FrameBound"
+    end: "PyLegendOptional[FrameBound]"
+
+    def __init__(
+        self,
+        mode: "WindowFrameMode",
+        start: "FrameBound",
+        end: "PyLegendOptional[FrameBound]"
+    ) -> None:
+        super().__init__(_type="windowFrame")
+        self.mode = mode
+        self.start = start
+        self.end = end
+
+
+class FrameBound(Node):
+    type_: "FrameBoundType"
+    value: "PyLegendOptional[Expression]"
+
+    def __init__(
+        self,
+        type_: "FrameBoundType",
+        value: "PyLegendOptional[Expression]"
+    ) -> None:
+        super().__init__(_type="frameBound")
+        self.type_ = type_
+        self.value = value
