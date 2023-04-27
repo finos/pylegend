@@ -62,6 +62,12 @@ from pylegend.core.sql.metamodel import (
     IsNotNullPredicate,
     CurrentTime,
     CurrentTimeType,
+    Extract,
+    ExtractField,
+    NamedArgumentExpression,
+    FunctionCall,
+    Window,
+    TableFunction,
 )
 
 
@@ -490,12 +496,91 @@ class TestSqlToStringDbExtensionProcessing:
                "CURRENT_TIMESTAMP()"
         assert extension.process_expression(CurrentTime(CurrentTimeType.DATE, None), config) == "CURRENT_DATE"
 
+    def test_process_extract(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        assert extension.process_expression(Extract(ref, ExtractField.DAY), config) == \
+               "extract(DAY from test_db.test_schema.test_table.test_col)"
+
+    def test_process_named_argument_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        assert extension.process_expression(NamedArgumentExpression("param1", ref), config) == \
+               "param1 => test_db.test_schema.test_table.test_col"
+
+    def test_process_function_call(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        func_call = FunctionCall(
+            name=QualifiedName(["test", "func"]),
+            distinct=False,
+            filter_=None,
+            arguments=[
+                ref,
+                NamedArgumentExpression("param1", ref)
+            ],
+            window=None
+        )
+        assert extension.process_expression(func_call, config) == \
+               "test.func(test_db.test_schema.test_table.test_col, param1 => test_db.test_schema.test_table.test_col)"
+
+        func_call = FunctionCall(
+            name=QualifiedName(["rowNumber"]),
+            distinct=False,
+            filter_=None,
+            arguments=[],
+            window=Window(
+                windowRef=None,
+                partitions=[
+                    QualifiedNameReference(QualifiedName(["partition_col1"])),
+                    QualifiedNameReference(QualifiedName(["partition_col2"]))
+                ],
+                orderBy=[
+                    SortItem(
+                        QualifiedNameReference(QualifiedName(["sort_col1"])),
+                        SortItemOrdering.DESCENDING,
+                        SortItemNullOrdering.UNDEFINED
+                    ),
+                    SortItem(
+                        QualifiedNameReference(QualifiedName(["sort_col2"])),
+                        SortItemOrdering.ASCENDING,
+                        SortItemNullOrdering.UNDEFINED
+                    )
+                ],
+                windowFrame=None
+            )
+        )
+
+        assert extension.process_expression(func_call, config) == \
+               "rowNumber() over partition by partition_col1, partition_col2 order by sort_col1 desc, sort_col2"
+
     def test_process_table(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
-        assert extension.process_table(table, config) == "test_db.test_schema.test_table"
+        assert extension.process_relation(table, config) == "test_db.test_schema.test_table"
+
+    def test_process_table_function(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        table_func = TableFunction(functionCall=FunctionCall(
+            name=QualifiedName(["test", "func"]),
+            distinct=False,
+            filter_=None,
+            arguments=[
+                NamedArgumentExpression("param1", QualifiedNameReference(QualifiedName(["test_table", "test_col"])))
+            ],
+            window=None
+        ))
+        assert extension.process_relation(table_func, config) == "test.func(param1 => test_table.test_col)"
 
     def test_process_aliased_relation(self) -> None:
         extension = SqlToStringDbExtension()
