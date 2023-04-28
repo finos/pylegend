@@ -14,7 +14,11 @@
 
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendCallable,
+    PyLegendTypeVar,
+    PyLegendIterator,
+    PyLegendList
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.databse.sql_to_string import (
@@ -32,6 +36,8 @@ __all__: PyLegendSequence[str] = [
     "BaseTdsFrame"
 ]
 
+R = PyLegendTypeVar('R')
+
 
 class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     def head(self, row_count: int = 5) -> "PyLegendTdsFrame":
@@ -45,6 +51,10 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass
 
+    @abstractmethod
+    def get_all_tds_frames(self) -> PyLegendList["BaseTdsFrame"]:
+        pass
+
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         query = self.to_sql_query_object(config)
         sql_to_string_generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
@@ -54,3 +64,36 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             )
         )
         return sql_to_string_generator.generate_sql_string(query, sql_to_string_config)
+
+    def execute_frame(
+            self,
+            result_handler: PyLegendCallable[[PyLegendIterator[bytes]], R],
+            chunk_size: int = 1024
+    ) -> R:
+        from pylegend.core.tds.frames.input_tds_frame import InputTdsFrame, ExecutableInputTdsFrame
+
+        tds_frames = self.get_all_tds_frames()
+        input_frames = [x for x in tds_frames if isinstance(x, InputTdsFrame)]
+
+        non_exec_frames = [x for x in input_frames if not isinstance(x, ExecutableInputTdsFrame)]
+        if non_exec_frames:
+            raise ValueError(
+                "Cannot execute frame as its built on top of non-executable input frames: [" +
+                (", ".join([str(f) for f in non_exec_frames]) + "]")
+            )
+
+        exec_frames = [x for x in input_frames if isinstance(x, ExecutableInputTdsFrame)]
+
+        all_legend_clients = []
+        for e in exec_frames:
+            c = e.get_legend_client()
+            if c not in all_legend_clients:
+                all_legend_clients.append(c)
+        if len(all_legend_clients) > 1:
+            raise ValueError(
+                "Found tds frames with multiple legend_clients (which is not supported): [" +
+                (", ".join([str(f) for f in all_legend_clients]) + "]")
+            )
+        legend_client = all_legend_clients[0]
+        result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
+        return result_handler(result)

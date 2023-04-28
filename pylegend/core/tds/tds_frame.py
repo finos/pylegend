@@ -14,7 +14,10 @@
 
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendCallable,
+    PyLegendIterator,
+    PyLegendTypeVar,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -36,6 +39,9 @@ class FrameToSqlConfig:
         self.pretty = pretty
 
 
+R = PyLegendTypeVar('R')
+
+
 class PyLegendTdsFrame(metaclass=ABCMeta):
 
     @abstractmethod
@@ -44,4 +50,12 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
 
     @abstractmethod
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
+        pass
+
+    @abstractmethod
+    def execute_frame(
+            self,
+            result_handler: PyLegendCallable[[PyLegendIterator[bytes]], R],
+            chunk_size: int = 1024
+    ) -> R:
         pass
