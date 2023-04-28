@@ -26,6 +26,7 @@ import org.eclipse.collections.api.list.MutableList;
 import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.authentication.credentialprovider.CredentialProviderProvider;
 import org.finos.legend.engine.authentication.LegendDefaultDatabaseAuthenticationFlowProviderConfiguration;
+import org.finos.legend.engine.language.pure.compiler.Compiler;
 import org.finos.legend.engine.language.pure.compiler.toPureGraph.PureModel;
 import org.finos.legend.engine.language.pure.modelManager.ModelManager;
 import org.finos.legend.engine.language.pure.modelManager.sdlc.SDLCLoader;
@@ -38,6 +39,7 @@ import org.finos.legend.engine.plan.execution.stores.relational.plugin.Relationa
 import org.finos.legend.engine.plan.execution.stores.relational.plugin.RelationalStoreExecutor;
 import org.finos.legend.engine.plan.generation.extension.PlanGeneratorExtension;
 import org.finos.legend.engine.protocol.pure.v1.PureProtocolObjectMapperFactory;
+import org.finos.legend.engine.protocol.pure.v1.model.context.PureModelContextData;
 import org.finos.legend.engine.query.sql.api.execute.SqlExecute;
 import org.finos.legend.engine.query.sql.api.grammar.SqlGrammar;
 import org.finos.legend.engine.server.Server;
@@ -104,5 +106,7 @@ public class PyLegendSqlServer<T extends ServerConfiguration> extends Server<T>
         environment.jersey().register(new SqlExecute(modelManager, planExecutor, routerExtensions, FastList.newListWith(new LegendServiceSQLSourceProvider()), generatorExtensions.flatCollect(PlanGeneratorExtension::getExtraPlanTransformers)));
         environment.jersey().register(new SqlGrammar());
         environment.jersey().register(new CatchAllExceptionMapper());
+
+        Compiler.compile(PureModelContextData.newBuilder().build(), DeploymentMode.TEST_IGNORE_FUNCTION_MATCH, Lists.mutable.empty());
     }
 }

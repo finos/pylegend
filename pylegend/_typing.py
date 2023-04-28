@@ -20,6 +20,8 @@ from typing import Sequence as PyLegendSequence
 from typing import Type as PyLegendType
 from typing import TypeVar as PyLegendTypeVar
 from typing import Tuple as PyLegendTuple
+from typing import Generator as PyLegendGenerator
+from typing import Union as PyLegendUnion
 
 
 __all__: PyLegendSequence[str] = [
@@ -31,4 +33,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendTypeVar",
     "PyLegendOptional",
     "PyLegendTuple",
+    "PyLegendGenerator",
+    "PyLegendUnion",
 ]

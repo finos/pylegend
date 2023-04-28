@@ -132,8 +132,8 @@ jobs:
             source .venv/bin/activate
           fi
           echo "Pytest executable is:" $(which pytest)
-          echo "Running pytest --cov=pylegend --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml"
-          pytest --cov=pylegend --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
+          echo "Running pytest --cov=pylegend -o log_cli=true -o log_cli_level=INFO -o log_cli_format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)" -o log_cli_date_format="%Y-%m-%d %H:%M:%S" --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml"
+          pytest --cov=pylegend -o log_cli=true -o log_cli_level=INFO -o log_cli_format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)" -o log_cli_date_format="%Y-%m-%d %H:%M:%S" --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
           echo "Done with running pytest"
 
       - name: Upload Test Results
