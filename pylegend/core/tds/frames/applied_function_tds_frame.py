@@ -14,7 +14,8 @@
 
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendList
 )
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.sql.metamodel import (
@@ -48,6 +49,10 @@ class AppliedFunction(metaclass=ABCMeta):
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
         pass
 
+    @abstractmethod
+    def tds_frame_parameters(self) -> PyLegendList["BaseTdsFrame"]:
+        pass
+
 
 class TakeFunction(AppliedFunction):
     row_count: int
@@ -67,6 +72,9 @@ class TakeFunction(AppliedFunction):
         else:
             base_query.limit = LongLiteral(value=self.row_count)
             return base_query  # TODO: avoid parameter mutation
+
+    def tds_frame_parameters(self) -> PyLegendList["BaseTdsFrame"]:
+        return []
 
 
 def create_sub_query(query: QuerySpecification, config: FrameToSqlConfig, alias: str) -> QuerySpecification:
@@ -122,3 +130,10 @@ class AppliedFunctionTdsFrame(BaseTdsFrame):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.base_frame.to_sql_query_object(config)
         return self.applied_function.to_sql(base_query, config)
+
+    def get_all_tds_frames(self) -> PyLegendList["BaseTdsFrame"]:
+        return [
+            y
+            for x in [self.base_frame] + self.applied_function.tds_frame_parameters()
+            for y in x.get_all_tds_frames()
+        ] + [self]

@@ -139,4 +139,4 @@ class TestLegendClientE2E:
            ]
         }"""
 
-        assert json.loads(res.text)["result"] == json.loads(expected)
+        assert json.loads(b"".join(res))["result"] == json.loads(expected)

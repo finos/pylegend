@@ -14,23 +14,33 @@
 
 from abc import ABCMeta
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendList
 )
 from pylegend.core.tds.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.request.legend_client import LegendClient
 
 
 __all__: PyLegendSequence[str] = [
     "ExecutableInputTdsFrame",
-    "NonExecutableInputTdsFrame"
+    "NonExecutableInputTdsFrame",
+    "InputTdsFrame"
 ]
 
 
 class InputTdsFrame(BaseTdsFrame, metaclass=ABCMeta):
-    pass
+    def get_all_tds_frames(self) -> PyLegendList["BaseTdsFrame"]:
+        return [self]
 
 
 class ExecutableInputTdsFrame(InputTdsFrame, metaclass=ABCMeta):
-    pass
+    __legend_client: LegendClient
+
+    def __init__(self, legend_client: LegendClient) -> None:
+        self.__legend_client = legend_client
+
+    def get_legend_client(self) -> LegendClient:
+        return self.__legend_client
 
 
 class NonExecutableInputTdsFrame(InputTdsFrame, metaclass=ABCMeta):

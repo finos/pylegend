@@ -73,3 +73,6 @@ class TableSpecInputFrame(NonExecutableInputTdsFrame):
             limit=None,
             offset=None
         )
+
+    def __str__(self) -> str:
+        return "TableSpecInputFrame({qualified})".format(qualified=".".join(self.table.parts))

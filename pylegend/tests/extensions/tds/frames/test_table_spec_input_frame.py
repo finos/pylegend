@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import importlib
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PyLegendTdsColumn
@@ -36,3 +37,21 @@ class TestTableSpecInputFrame:
             from
                 test_schema.test_table as "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_table_spec_frame_execution_error(self) -> None:
+        columns = [
+            PyLegendTdsColumn.integer_column("col1"),
+            PyLegendTdsColumn.string_column("col2")
+        ]
+        frame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(ValueError) as v:
+            frame.execute_frame(lambda res: b"".join(res))
+        assert v.value.args[0] == "Cannot execute frame as its built on top of non-executable " \
+                                  "input frames: [TableSpecInputFrame(test_schema.test_table)]"
+
+        with pytest.raises(ValueError) as v:
+            new_frame = frame.head(10)
+            new_frame.execute_frame(lambda r: b"".join(r))
+        assert v.value.args[0] == "Cannot execute frame as its built on top of non-executable " \
+                                  "input frames: [TableSpecInputFrame(test_schema.test_table)]"
