@@ -22,9 +22,9 @@ postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_st
 importlib.import_module(postgres_ext)
 
 
-class TestAppliedFunctionFrameSqlGen:
+class TestHeadAppliedFunction:
 
-    def test_head_operation_no_top(self) -> None:
+    def test_head_function_no_top(self) -> None:
         columns = [
             PyLegendTdsColumn.integer_column("col1"),
             PyLegendTdsColumn.string_column("col2")
@@ -39,7 +39,7 @@ class TestAppliedFunctionFrameSqlGen:
                 test_schema.test_table as "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
-    def test_head_operation_with_existing_top(self) -> None:
+    def test_head_function_existing_top(self) -> None:
         columns = [
             PyLegendTdsColumn.integer_column("col1"),
             PyLegendTdsColumn.string_column("col2")
