@@ -14,13 +14,13 @@
 
 import json
 from pylegend.core.request.legend_client import LegendClient
-from pylegend.tests.test_helpers.e2e_test_with_legend_server import E2ETestWithLegendServer
+from pylegend._typing import PyLegendDict, PyLegendUnion
 
 
-class TestLegendClientE2E(E2ETestWithLegendServer):
+class TestLegendClientE2E:
 
-    def test_e2e_schema_api(self) -> None:
-        client = LegendClient("localhost", self.engine_port, False)
+    def test_e2e_schema_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient("localhost", legend_test_server["engine_port"], False)
         res = client.get_sql_string_schema(
             "SELECT * FROM "
             "   legend_service("
