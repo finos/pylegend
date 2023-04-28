@@ -19,7 +19,7 @@ from pylegend._typing import PyLegendDict, PyLegendUnion
 
 class TestLegendClientE2E:
 
-    def test_e2e_schema_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_schema_string_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         client = LegendClient("localhost", legend_test_server["engine_port"], False)
         res = client.get_sql_string_schema(
             "SELECT * FROM "
@@ -59,3 +59,84 @@ class TestLegendClientE2E:
         }"""
 
         assert json.loads(res) == json.loads(expected)
+
+    def test_e2e_execute_string_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient("localhost", legend_test_server["engine_port"], False)
+        res = client.execute_sql_string(
+            "SELECT * FROM "
+            "   legend_service("
+            "       '/simplePersonService', "
+            "       groupId => 'org.finos.legend.pylegend',"
+            "       artifactId => 'pylegend-test-models',"
+            "       version => '0.0.1-SNAPSHOT'"
+            "   )"
+        )
+        expected = """\
+        {
+           "columns": [
+              "First Name",
+              "Last Name",
+              "Age",
+              "Firm/Legal Name"
+           ],
+           "rows": [
+              {
+                 "values": [
+                    "Peter",
+                    "Smith",
+                    23,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "John",
+                    "Johnson",
+                    22,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "John",
+                    "Hill",
+                    12,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "Anthony",
+                    "Allen",
+                    22,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "Fabrice",
+                    "Roberts",
+                    34,
+                    "Firm A"
+                 ]
+              },
+              {
+                 "values": [
+                    "Oliver",
+                    "Hill",
+                    32,
+                    "Firm B"
+                 ]
+              },
+              {
+                 "values": [
+                    "David",
+                    "Harris",
+                    35,
+                    "Firm C"
+                 ]
+              }
+           ]
+        }"""
+
+        assert json.loads(res.text)["result"] == json.loads(expected)

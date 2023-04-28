@@ -16,6 +16,7 @@ from pylegend.core.request.service_client import (
     ServiceClient,
     RequestMethod
 )
+from requests import Response
 
 
 class LegendClient(ServiceClient):
@@ -41,3 +42,15 @@ class LegendClient(ServiceClient):
         )
         response_text: str = response.text
         return response_text
+
+    def execute_sql_string(
+            self,
+            sql: str
+    ) -> Response:
+        return super()._execute_service(
+            method=RequestMethod.POST,
+            path="api/sql/v1/execution/executeQueryString",
+            data=sql,
+            headers={"Content-Type": "text/plain"},
+            stream=True
+        )
