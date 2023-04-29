@@ -101,7 +101,7 @@ def query_specification_processor(
     limit = extension.process_limit(query, config)
     columns = extension.process_select(query.select, config)
 
-    _from = "{sep0}from{sep1}{relations}".format(
+    _from = "{sep0}FROM{sep1}{relations}".format(
         sep0=sep0,
         sep1=sep1,
         relations=("," + sep1).join([
@@ -109,19 +109,19 @@ def query_specification_processor(
         ])
     ) if query.from_ else ""
 
-    where_clause = "{sep0}where{sep1}{expr}".format(
+    where_clause = "{sep0}WHERE{sep1}{expr}".format(
         sep0=sep0,
         sep1=sep1,
         expr=extension.process_expression(query.where, config.push_indent())
     ) if query.where else ""
 
-    having_clause = "{sep0}having{sep1}{expr}".format(
+    having_clause = "{sep0}HAVING{sep1}{expr}".format(
         sep0=sep0,
         sep1=sep1,
         expr=extension.process_expression(query.having, config.push_indent())
     ) if query.having else ""
 
-    return "select{top}{columns}{_from}{where}{group_by}{having}{order_by}{limit}".format(
+    return "SELECT{top}{columns}{_from}{where}{group_by}{having}{order_by}{limit}".format(
         top=top,
         columns=columns,
         _from=_from,
@@ -139,7 +139,7 @@ def top_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.offset is None and query.limit is not None:
-        return " top " + extension.process_expression(query.limit, config)
+        return " TOP " + extension.process_expression(query.limit, config)
     else:
         return ""
 
@@ -150,7 +150,7 @@ def limit_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.offset is not None and query.limit is not None:
-        return "{sep0}limit {offset}, {limit}".format(
+        return "{sep0}LIMIT {offset}, {limit}".format(
             sep0=config.format.separator(0),
             offset=extension.process_expression(query.offset, config),
             limit=extension.process_expression(query.limit, config)
@@ -165,7 +165,7 @@ def group_by_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.groupBy:
-        return "{sep0}group by{sep1}{group_by_args}".format(
+        return "{sep0}GROUP BY{sep1}{group_by_args}".format(
             sep0=config.format.separator(0),
             sep1=config.format.separator(1),
             group_by_args=("," + config.format.separator(1)).join(
@@ -182,7 +182,7 @@ def sort_item_processor(
     config: SqlToStringConfig
 ) -> str:
     return extension.process_expression(sort_item.sortKey, config.push_indent()) + \
-        (" desc" if sort_item.ordering == SortItemOrdering.DESCENDING else "")
+        (" DESC" if sort_item.ordering == SortItemOrdering.DESCENDING else "")
 
 
 def order_by_processor(
@@ -191,7 +191,7 @@ def order_by_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.orderBy:
-        return "{sep0}order by{sep1}{order_by_args}".format(
+        return "{sep0}ORDER BY{sep1}{order_by_args}".format(
             sep0=config.format.separator(0),
             sep1=config.format.separator(1),
             order_by_args=("," + config.format.separator(1)).join(
@@ -207,7 +207,7 @@ def select_processor(
     extension: "SqlToStringDbExtension",
     config: SqlToStringConfig
 ) -> str:
-    distinct_flag = " distinct" if select.distinct else ""
+    distinct_flag = " DISTINCT" if select.distinct else ""
     items = [extension.process_select_item(item, config.push_indent()) for item in select.selectItems]
     return "{distinct}{sep1}{select_items}".format(
         distinct=distinct_flag,
@@ -247,7 +247,7 @@ def single_column_processor(
 ) -> str:
     processed_expression = extension.process_expression(single_column.expression, config)
     if single_column.alias:
-        return "{expr} as {alias}".format(
+        return "{expr} AS {alias}".format(
             expr=processed_expression,
             alias=extension.process_identifier(single_column.alias, config, False)
         )
@@ -357,9 +357,9 @@ def logical_binary_expression_processor(
 ) -> str:
     op_type = logical.type_
     if op_type == LogicalBinaryType.AND:
-        op = "and"
+        op = "AND"
     elif op_type == LogicalBinaryType.OR:
-        op = "or"
+        op = "OR"
     else:
         raise ValueError("Unknown logical binary operator type: " + str(op_type))  # pragma: no cover
 
@@ -377,9 +377,9 @@ def not_expression_processor(
 ) -> str:
     expr = extension.process_expression(not_expression.value, config)
     if isinstance(not_expression.value, (LogicalBinaryExpression, ComparisonExpression)):
-        return "not{expr}".format(expr=expr)
+        return "NOT{expr}".format(expr=expr)
     else:
-        return "not({expr})".format(expr=expr)
+        return "NOT({expr})".format(expr=expr)
 
 
 def arithmetic_expression_processor(
@@ -424,7 +424,7 @@ def when_clause_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "when{sep1}{when}{sep0}then{sep1}{then}".format(
+    return "WHEN{sep1}{when}{sep0}THEN{sep1}{then}".format(
         when=extension.process_expression(when.operand, config.push_indent()),
         then=extension.process_expression(when.result, config.push_indent()),
         sep1=config.format.separator(1),
@@ -438,14 +438,14 @@ def searched_case_expression_processor(
         config: SqlToStringConfig
 ) -> str:
     if case.defaultValue:
-        else_clause = "{sep1}else{sep2}{e}".format(
+        else_clause = "{sep1}ELSE{sep2}{e}".format(
             sep1=config.format.separator(1),
             e=extension.process_expression(case.defaultValue, config.push_indent().push_indent()),
             sep2=config.format.separator(2)
         )
     else:
         else_clause = ""
-    return "case{sep1}{when_clauses}{default}{sep0}end".format(
+    return "CASE{sep1}{when_clauses}{default}{sep0}END".format(
         sep1=config.format.separator(1),
         when_clauses=config.format.separator(1).join(
             [extension.process_expression(clause, config.push_indent()) for clause in case.whenClauses]
@@ -474,7 +474,7 @@ def cast_expression_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "cast({value} as {data_type})".format(
+    return "CAST({value} AS {data_type})".format(
         value=extension.process_expression(cast.expression, config),
         data_type=extension.process_expression(cast.type_, config)
     )
@@ -495,7 +495,7 @@ def in_predicate_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "{value} in {value_list}".format(
+    return "{value} IN {value_list}".format(
         value=extension.process_expression(in_predicate.value, config),
         value_list=extension.process_expression(in_predicate.valueList, config)
     )
@@ -506,7 +506,7 @@ def is_null_predicate_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "({value} is NULL)".format(value=extension.process_expression(is_null_predicate.value, config))
+    return "({value} IS NULL)".format(value=extension.process_expression(is_null_predicate.value, config))
 
 
 def is_not_null_predicate_processor(
@@ -514,7 +514,7 @@ def is_not_null_predicate_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "({value} is not NULL)".format(value=extension.process_expression(is_not_null_predicate.value, config))
+    return "({value} IS NOT NULL)".format(value=extension.process_expression(is_not_null_predicate.value, config))
 
 
 def current_time_processor(
@@ -537,7 +537,7 @@ def extract_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "extract({field} from {source})".format(
+    return "EXTRACT({field} FROM {source})".format(
         field=extract.field.name,
         source=extension.process_expression(extract.expression, config)
     )
@@ -552,7 +552,7 @@ def function_call_processor(
     return "{name}({args}){window}".format(
         name=extension.process_qualified_name(function_call.name, config),
         args=", ".join([extension.process_expression(arg, config) for arg in function_call.arguments]),
-        window=" over" + extension.process_window(function_call.window, config) if function_call.window else ""
+        window=" OVER" + extension.process_window(function_call.window, config) if function_call.window else ""
     )
 
 
@@ -618,7 +618,7 @@ def aliased_relation_processor(
         config: SqlToStringConfig,
         nested_subquery: bool
 ) -> str:
-    return "{relation} as {alias}".format(
+    return "{relation} AS {alias}".format(
         relation=extension.process_relation(aliased_relation.relation, config, nested_subquery),
         alias=extension.process_identifier(aliased_relation.alias, config)
     )
@@ -637,7 +637,7 @@ def query_processor(
         return extension.process_relation(query.queryBody, config, nested_subquery)
     else:
         # TODO: Use limit, orderBy, offset at query level
-        return "({sep1}select{sep2}*{sep1}from{sep2}{relation}{sep0})".format(
+        return "({sep1}SELECT{sep2}*{sep1}FROM{sep2}{relation}{sep0})".format(
             sep0=config.format.separator(0),
             sep1=config.format.separator(1),
             sep2=config.format.separator(2),
@@ -686,17 +686,17 @@ def join_processor(
     left = extension.process_relation(join.left, config)
     right = extension.process_relation(join.right, config)
     join_type = join.type_
-    condition = "on ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
+    condition = "ON ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
     if join_type == JoinType.CROSS:
-        join_type_str = 'cross join'
+        join_type_str = 'CROSS JOIN'
     elif join_type == JoinType.INNER:
-        join_type_str = 'inner join'
+        join_type_str = 'INNER JOIN'
     elif join_type == JoinType.LEFT:
-        join_type_str = 'left outer join'
+        join_type_str = 'LEFT OUTER JOIN'
     elif join_type == JoinType.RIGHT:
-        join_type_str = 'right outer join'
+        join_type_str = 'RIGHT OUTER JOIN'
     elif join_type == JoinType.FULL:
-        join_type_str = 'full outer join'
+        join_type_str = 'FULL OUTER JOIN'
     else:
         raise ValueError("Unknown join type: " + str(join_type))  # pragma: no cover
 
@@ -718,10 +718,10 @@ def window_processor(
     if window.windowRef:
         return window.windowRef
 
-    partitions = " partition by " + (", ".join([extension.process_expression(e, config) for e in window.partitions])) \
+    partitions = " PARTITION BY " + (", ".join([extension.process_expression(e, config) for e in window.partitions])) \
         if window.partitions else ""
 
-    order_by = " order by " + (", ".join([extension.process_sort_item(o, config) for o in window.orderBy])) \
+    order_by = " ORDER BY " + (", ".join([extension.process_sort_item(o, config) for o in window.orderBy])) \
         if window.orderBy else ""
 
     # TODO: Handle window frame

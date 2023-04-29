@@ -129,14 +129,14 @@ class TestSqlToStringDbExtensionProcessing:
         single_column_without_alias = SingleColumn(expression=IntegerLiteral(101), alias=None)
         single_column_with_alias = SingleColumn(expression=IntegerLiteral(101), alias='"a"')
         assert extension.process_single_column(single_column_without_alias, config) == "101"
-        assert extension.process_single_column(single_column_with_alias, config) == '101 as "a"'
+        assert extension.process_single_column(single_column_with_alias, config) == '101 AS "a"'
 
     def test_process_select_item(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
         single_column = SingleColumn(expression=IntegerLiteral(101), alias='"a"')
         all_columns = AllColumns(prefix='"root"')
-        assert extension.process_select_item(single_column, config) == '101 as "a"'
+        assert extension.process_select_item(single_column, config) == '101 AS "a"'
         assert extension.process_select_item(all_columns, config) == '"root".*'
 
     def test_process_select(self) -> None:
@@ -149,7 +149,7 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             distinct=True
         )
-        assert "select" + extension.process_select(select_with_distinct, config) == 'select distinct 101 as "a", 202'
+        assert "SELECT" + extension.process_select(select_with_distinct, config) == 'SELECT DISTINCT 101 AS "a", 202'
 
         select_without_distinct = Select(
             selectItems=[
@@ -157,7 +157,7 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             distinct=False
         )
-        assert "select" + extension.process_select(select_without_distinct, config) == 'select "alias".*'
+        assert "SELECT" + extension.process_select(select_without_distinct, config) == 'SELECT "alias".*'
 
     def test_process_select_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -172,21 +172,21 @@ class TestSqlToStringDbExtensionProcessing:
             distinct=True
         )
         expected = """\
-        select distinct
-            101 as a,
-            202 as b,
-            303 as c,
-            404 as d"""
-        assert "select" + extension.process_select(select, config) == dedent(expected)
+        SELECT DISTINCT
+            101 AS a,
+            202 AS b,
+            303 AS c,
+            404 AS d"""
+        assert "SELECT" + extension.process_select(select, config) == dedent(expected)
 
         select.distinct = False
         expected = """\
-        select
-            101 as a,
-            202 as b,
-            303 as c,
-            404 as d"""
-        assert "select" + extension.process_select(select, config) == dedent(expected)
+        SELECT
+            101 AS a,
+            202 AS b,
+            303 AS c,
+            404 AS d"""
+        assert "SELECT" + extension.process_select(select, config) == dedent(expected)
 
     def test_process_literal(self) -> None:
         extension = SqlToStringDbExtension()
@@ -229,10 +229,10 @@ class TestSqlToStringDbExtensionProcessing:
         c2 = ComparisonExpression(IntegerLiteral(303), IntegerLiteral(202), ComparisonOperator.GREATER_THAN)
 
         binary_expression = LogicalBinaryExpression(LogicalBinaryType.AND, c1, c2)
-        assert extension.process_expression(binary_expression, config) == "((101 < 202) and (303 > 202))"
+        assert extension.process_expression(binary_expression, config) == "((101 < 202) AND (303 > 202))"
 
         binary_expression = LogicalBinaryExpression(LogicalBinaryType.OR, c1, c2)
-        assert extension.process_expression(binary_expression, config) == "((101 < 202) or (303 > 202))"
+        assert extension.process_expression(binary_expression, config) == "((101 < 202) OR (303 > 202))"
 
     def test_process_not_expression(self) -> None:
         extension = SqlToStringDbExtension()
@@ -240,11 +240,11 @@ class TestSqlToStringDbExtensionProcessing:
 
         c1 = ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN)
         not_expression = NotExpression(c1)
-        assert extension.process_expression(not_expression, config) == "not(101 < 202)"
+        assert extension.process_expression(not_expression, config) == "NOT(101 < 202)"
 
         c2 = BooleanLiteral(True)
         not_expression = NotExpression(c2)
-        assert extension.process_expression(not_expression, config) == "not(true)"
+        assert extension.process_expression(not_expression, config) == "NOT(true)"
 
     def test_process_arithmetic_expression(self) -> None:
         extension = SqlToStringDbExtension()
@@ -289,7 +289,7 @@ class TestSqlToStringDbExtensionProcessing:
             defaultValue=IntegerLiteral(303)
         )
         assert extension.process_expression(case_expression_with_default, config) == \
-               "case when false then 101 when true then 202 else 303 end"
+               "CASE WHEN false THEN 101 WHEN true THEN 202 ELSE 303 END"
 
         case_expression_without_default = SearchedCaseExpression(
             whenClauses=[
@@ -299,7 +299,7 @@ class TestSqlToStringDbExtensionProcessing:
             defaultValue=None
         )
         assert extension.process_expression(case_expression_without_default, config) == \
-               "case when false then 101 when true then 202 end"
+               "CASE WHEN false THEN 101 WHEN true THEN 202 END"
 
     def test_searched_case_expression_processor_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -313,18 +313,18 @@ class TestSqlToStringDbExtensionProcessing:
             defaultValue=IntegerLiteral(303)
         )
         expected = """\
-        case
-            when
+        CASE
+            WHEN
                 false
-            then
+            THEN
                 101
-            when
+            WHEN
                 true
-            then
+            THEN
                 202
-            else
+            ELSE
                 303
-        end"""
+        END"""
         assert extension.process_expression(case_expression_with_default, config) == dedent(expected)
 
         case_expression_without_default = SearchedCaseExpression(
@@ -335,16 +335,16 @@ class TestSqlToStringDbExtensionProcessing:
             defaultValue=None
         )
         expected = """\
-        case
-            when
+        CASE
+            WHEN
                 false
-            then
+            THEN
                 101
-            when
+            WHEN
                 true
-            then
+            THEN
                 202
-        end"""
+        END"""
         assert extension.process_expression(case_expression_without_default, config) == dedent(expected)
 
     def test_select_with_case_pretty_format(self) -> None:
@@ -360,20 +360,20 @@ class TestSqlToStringDbExtensionProcessing:
         )
         select_with_case = Select(False, [SingleColumn(None, case_expression_with_default)])
         expected = """\
-                select
-                    case
-                        when
+                SELECT
+                    CASE
+                        WHEN
                             false
-                        then
+                        THEN
                             101
-                        when
+                        WHEN
                             true
-                        then
+                        THEN
                             202
-                        else
+                        ELSE
                             303
-                    end"""
-        assert "select" + extension.process_select(select_with_case, config) == dedent(expected)
+                    END"""
+        assert "SELECT" + extension.process_select(select_with_case, config) == dedent(expected)
 
     def test_nested_case_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -397,31 +397,31 @@ class TestSqlToStringDbExtensionProcessing:
         )
         select_with_case = Select(True, [SingleColumn(None, case_expression_with_default)])
         expected = """\
-                select distinct
-                    case
-                        when
+                SELECT DISTINCT
+                    CASE
+                        WHEN
                             false
-                        then
-                            case
-                                when
+                        THEN
+                            CASE
+                                WHEN
                                     false
-                                then
+                                THEN
                                     101
-                                when
+                                WHEN
                                     true
-                                then
+                                THEN
                                     202
-                                else
+                                ELSE
                                     303
-                            end
-                        when
+                            END
+                        WHEN
                             true
-                        then
+                        THEN
                             202
-                        else
+                        ELSE
                             303
-                    end"""
-        assert "select" + extension.process_select(select_with_case, config) == dedent(expected)
+                    END"""
+        assert "SELECT" + extension.process_select(select_with_case, config) == dedent(expected)
 
     def test_process_column_type(self) -> None:
         extension = SqlToStringDbExtension()
@@ -442,7 +442,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         column_type = ColumnType("DECIMAL", parameters=[20, 10])
         cast = Cast(IntegerLiteral(101), column_type)
-        assert extension.process_expression(cast, config) == "cast(101 as DECIMAL(20, 10))"
+        assert extension.process_expression(cast, config) == "CAST(101 AS DECIMAL(20, 10))"
 
     def test_process_in_predicate(self) -> None:
         extension = SqlToStringDbExtension()
@@ -450,7 +450,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         in_list = InListExpression([IntegerLiteral(101), IntegerLiteral(202)])
         in_predicate = InPredicate(IntegerLiteral(101), in_list)
-        assert extension.process_expression(in_predicate, config) == "101 in (101, 202)"
+        assert extension.process_expression(in_predicate, config) == "101 IN (101, 202)"
 
     def test_process_qualified_name(self) -> None:
         extension = SqlToStringDbExtension()
@@ -475,7 +475,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         column_ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
         check = IsNullPredicate(column_ref)
-        assert extension.process_expression(check, config) == "(test_db.test_schema.test_table.test_col is NULL)"
+        assert extension.process_expression(check, config) == "(test_db.test_schema.test_table.test_col IS NULL)"
 
     def test_process_is_not_null_predicate(self) -> None:
         extension = SqlToStringDbExtension()
@@ -483,7 +483,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         column_ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
         check = IsNotNullPredicate(column_ref)
-        assert extension.process_expression(check, config) == "(test_db.test_schema.test_table.test_col is not NULL)"
+        assert extension.process_expression(check, config) == "(test_db.test_schema.test_table.test_col IS NOT NULL)"
 
     def test_process_current_time(self) -> None:
         extension = SqlToStringDbExtension()
@@ -502,7 +502,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
         assert extension.process_expression(Extract(ref, ExtractField.DAY), config) == \
-               "extract(DAY from test_db.test_schema.test_table.test_col)"
+               "EXTRACT(DAY FROM test_db.test_schema.test_table.test_col)"
 
     def test_process_named_argument_expression(self) -> None:
         extension = SqlToStringDbExtension()
@@ -558,7 +558,7 @@ class TestSqlToStringDbExtensionProcessing:
         )
 
         assert extension.process_expression(func_call, config) == \
-               "rowNumber() over partition by partition_col1, partition_col2 order by sort_col1 desc, sort_col2"
+               "rowNumber() OVER PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2"
 
     def test_process_table(self) -> None:
         extension = SqlToStringDbExtension()
@@ -588,7 +588,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         aliased = AliasedRelation(relation=table, alias='"root"', columnNames=[])
-        assert extension.process_aliased_relation(aliased, config) == 'test_db.test_schema.test_table as "root"'
+        assert extension.process_aliased_relation(aliased, config) == 'test_db.test_schema.test_table AS "root"'
 
     def test_process_table_subquery(self) -> None:
         extension = SqlToStringDbExtension()
@@ -596,7 +596,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         subquery = TableSubquery(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
-        assert extension.process_relation(subquery, config) == '( select * from test_db.test_schema.test_table )'
+        assert extension.process_relation(subquery, config) == '( SELECT * FROM test_db.test_schema.test_table )'
 
     def test_process_table_subquery_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -606,9 +606,9 @@ class TestSqlToStringDbExtensionProcessing:
         subquery = TableSubquery(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
         expected = """\
                 (
-                    select
+                    SELECT
                         *
-                    from
+                    FROM
                         test_db.test_schema.test_table
                 )"""
         assert extension.process_relation(subquery, config) == dedent(expected)
@@ -619,7 +619,7 @@ class TestSqlToStringDbExtensionProcessing:
 
         table = Table(QualifiedName(["test_db", "test_schema", "test_table"]))
         sub = SubqueryExpression(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
-        assert extension.process_subquery_expression(sub, config) == '( select * from test_db.test_schema.test_table )'
+        assert extension.process_subquery_expression(sub, config) == '( SELECT * FROM test_db.test_schema.test_table )'
 
     def test_process_subquery_expression_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -629,9 +629,9 @@ class TestSqlToStringDbExtensionProcessing:
         sub = SubqueryExpression(query=Query(queryBody=table, limit=None, offset=None, orderBy=[]))
         expected = """\
                 (
-                    select
+                    SELECT
                         *
-                    from
+                    FROM
                         test_db.test_schema.test_table
                 )"""
         assert extension.process_subquery_expression(sub, config) == dedent(expected)
@@ -653,23 +653,23 @@ class TestSqlToStringDbExtensionProcessing:
 
         join = Join(JoinType.CROSS, table_a, table_b, criteria)
         assert extension.process_relation(join, config) == \
-               "test_db.test_schema.test_table_a cross join test_db.test_schema.test_table_b on (101 < 202)"
+               "test_db.test_schema.test_table_a CROSS JOIN test_db.test_schema.test_table_b ON (101 < 202)"
 
         join = Join(JoinType.INNER, table_a, table_b, criteria)
         assert extension.process_relation(join, config) == \
-               "test_db.test_schema.test_table_a inner join test_db.test_schema.test_table_b on (101 < 202)"
+               "test_db.test_schema.test_table_a INNER JOIN test_db.test_schema.test_table_b ON (101 < 202)"
 
         join = Join(JoinType.LEFT, table_a, table_b, criteria)
         assert extension.process_relation(join, config) == \
-               "test_db.test_schema.test_table_a left outer join test_db.test_schema.test_table_b on (101 < 202)"
+               "test_db.test_schema.test_table_a LEFT OUTER JOIN test_db.test_schema.test_table_b ON (101 < 202)"
 
         join = Join(JoinType.RIGHT, table_a, table_b, criteria)
         assert extension.process_relation(join, config) == \
-               "test_db.test_schema.test_table_a right outer join test_db.test_schema.test_table_b on (101 < 202)"
+               "test_db.test_schema.test_table_a RIGHT OUTER JOIN test_db.test_schema.test_table_b ON (101 < 202)"
 
         join = Join(JoinType.FULL, table_a, table_b, criteria)
         assert extension.process_relation(join, config) == \
-               "test_db.test_schema.test_table_a full outer join test_db.test_schema.test_table_b on (101 < 202)"
+               "test_db.test_schema.test_table_a FULL OUTER JOIN test_db.test_schema.test_table_b ON (101 < 202)"
 
     def test_process_join_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -682,9 +682,9 @@ class TestSqlToStringDbExtensionProcessing:
         join = Join(JoinType.CROSS, table_a, table_b, criteria)
         expected = """\
                 test_db.test_schema.test_table_a
-                cross join
+                CROSS JOIN
                     test_db.test_schema.test_table_b
-                    on (101 < 202)"""
+                    ON (101 < 202)"""
         assert extension.process_relation(join, config) == dedent(expected)
 
     def test_process_top(self) -> None:
@@ -698,7 +698,7 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_top(query, config) == ""
 
         query.limit = IntegerLiteral(101)
-        assert extension.process_top(query, config) == " top 101"
+        assert extension.process_top(query, config) == " TOP 101"
 
         query.offset = IntegerLiteral(202)
         assert extension.process_top(query, config) == ""
@@ -717,7 +717,7 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_limit(query, config) == ""
 
         query.offset = IntegerLiteral(202)
-        assert extension.process_limit(query, config) == " limit 202, 101"
+        assert extension.process_limit(query, config) == " LIMIT 202, 101"
 
     def test_process_group_by(self) -> None:
         extension = SqlToStringDbExtension()
@@ -732,14 +732,14 @@ class TestSqlToStringDbExtensionProcessing:
         query.groupBy = [
             QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col1"]))
         ]
-        assert extension.process_group_by(query, config) == " group by test_db.test_schema.test_table.test_col1"
+        assert extension.process_group_by(query, config) == " GROUP BY test_db.test_schema.test_table.test_col1"
 
         query.groupBy = [
             QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col1"])),
             QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col2"]))
         ]
         assert extension.process_group_by(query, config) == \
-               " group by test_db.test_schema.test_table.test_col1, test_db.test_schema.test_table.test_col2"
+               " GROUP BY test_db.test_schema.test_table.test_col1, test_db.test_schema.test_table.test_col2"
 
     def test_process_group_by_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -755,7 +755,7 @@ class TestSqlToStringDbExtensionProcessing:
             QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col1"]))
         ]
         expected = """\
-                group by
+                GROUP BY
                     test_db.test_schema.test_table.test_col1"""
         assert extension.process_group_by(query, config) == "\n" + dedent(expected)
 
@@ -764,7 +764,7 @@ class TestSqlToStringDbExtensionProcessing:
             QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col2"]))
         ]
         expected = """\
-                group by
+                GROUP BY
                     test_db.test_schema.test_table.test_col1,
                     test_db.test_schema.test_table.test_col2"""
         assert extension.process_group_by(query, config) == "\n" + dedent(expected)
@@ -786,7 +786,7 @@ class TestSqlToStringDbExtensionProcessing:
                 SortItemNullOrdering.UNDEFINED
             )
         ]
-        assert extension.process_order_by(query, config) == " order by test_db.test_schema.test_table.test_col1"
+        assert extension.process_order_by(query, config) == " ORDER BY test_db.test_schema.test_table.test_col1"
 
         query.orderBy = [
             SortItem(
@@ -801,7 +801,7 @@ class TestSqlToStringDbExtensionProcessing:
             )
         ]
         assert extension.process_order_by(query, config) == \
-               " order by test_db.test_schema.test_table.test_col1, test_db.test_schema.test_table.test_col2 desc"
+               " ORDER BY test_db.test_schema.test_table.test_col1, test_db.test_schema.test_table.test_col2 DESC"
 
     def test_process_order_by_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -821,7 +821,7 @@ class TestSqlToStringDbExtensionProcessing:
             )
         ]
         expected = """\
-                order by
+                ORDER BY
                     test_db.test_schema.test_table.test_col1"""
         assert extension.process_order_by(query, config) == "\n" + dedent(expected)
 
@@ -838,9 +838,9 @@ class TestSqlToStringDbExtensionProcessing:
             )
         ]
         expected = """\
-                order by
+                ORDER BY
                     test_db.test_schema.test_table.test_col1,
-                    test_db.test_schema.test_table.test_col2 desc"""
+                    test_db.test_schema.test_table.test_col2 DESC"""
         assert extension.process_order_by(query, config) == "\n" + dedent(expected)
 
     def test_process_simple_query_specification(self) -> None:
@@ -858,12 +858,12 @@ class TestSqlToStringDbExtensionProcessing:
             offset=IntegerLiteral(202)
         )
         assert extension.process_query_specification(query, config) == \
-               'select distinct "root".* from test_db.test_schema.test_table as "root" ' \
-               'where (101 < 202) limit 202, 101'
+               'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
+               'WHERE (101 < 202) LIMIT 202, 101'
 
         assert extension.process_query_specification(query, config, True) == \
-               '( select distinct "root".* from test_db.test_schema.test_table as "root" ' \
-               'where (101 < 202) limit 202, 101 )'
+               '( SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
+               'WHERE (101 < 202) LIMIT 202, 101 )'
 
     def test_process_simple_query_specification_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -880,24 +880,24 @@ class TestSqlToStringDbExtensionProcessing:
             offset=IntegerLiteral(202)
         )
         expected = """\
-            select distinct
+            SELECT DISTINCT
                 "root".*
-            from
-                test_db.test_schema.test_table as "root"
-            where
+            FROM
+                test_db.test_schema.test_table AS "root"
+            WHERE
                 (101 < 202)
-            limit 202, 101"""
+            LIMIT 202, 101"""
         assert extension.process_query_specification(query, config) == dedent(expected)
 
         expected = """\
             (
-                select distinct
+                SELECT DISTINCT
                     "root".*
-                from
-                    test_db.test_schema.test_table as "root"
-                where
+                FROM
+                    test_db.test_schema.test_table AS "root"
+                WHERE
                     (101 < 202)
-                limit 202, 101
+                LIMIT 202, 101
             )"""
         assert extension.process_query_specification(query, config, True) == dedent(expected)
 
@@ -918,7 +918,7 @@ class TestSqlToStringDbExtensionProcessing:
             offset=None
         )
         assert extension.process_query_specification(query, config) == \
-               'select (101 + 202) as a'
+               'SELECT (101 + 202) AS a'
 
     def test_process_query(self) -> None:
         extension = SqlToStringDbExtension()
@@ -936,8 +936,8 @@ class TestSqlToStringDbExtensionProcessing:
         )
         query = Query(query_spec, None, [], None)
         assert extension.process_query(query, config) == \
-               'select distinct "root".* from test_db.test_schema.test_table as "root" ' \
-               'where (101 < 202) limit 202, 101'
+               'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
+               'WHERE (101 < 202) LIMIT 202, 101'
 
     def test_process_query_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -955,11 +955,11 @@ class TestSqlToStringDbExtensionProcessing:
         )
         query = Query(query_spec, None, [], None)
         expected = """\
-            select distinct
+            SELECT DISTINCT
                 "root".*
-            from
-                test_db.test_schema.test_table as "root"
-            where
+            FROM
+                test_db.test_schema.test_table AS "root"
+            WHERE
                 (101 < 202)
-            limit 202, 101"""
+            LIMIT 202, 101"""
         assert extension.process_query(query, config) == dedent(expected)
