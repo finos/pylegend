@@ -14,6 +14,7 @@
 
 import importlib
 import json
+from textwrap import dedent
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -33,15 +34,18 @@ class TestLegendServiceFrame:
         frame = TestLegendServiceFrame._build_legend_service_frame(legend_test_server["engine_port"])
         sql = frame.to_sql_query(FrameToSqlConfig())
 
-        expected = (
-            'SELECT\n'
-            '    "root".*\n'
-            'FROM\n'
-            "    legend_service('/simplePersonService', groupId => 'org.finos.legend.pylegend', "
-            "artifactId => 'pylegend-test-models', version => '0.0.1-SNAPSHOT') AS \"root\""
-        )
+        expected = '''\
+        SELECT
+            "root".*
+        FROM
+            legend_service(
+                '/simplePersonService',
+                groupId => 'org.finos.legend.pylegend',
+                artifactId => 'pylegend-test-models',
+                version => '0.0.1-SNAPSHOT'
+            ) AS "root"'''
 
-        assert sql == expected
+        assert sql == dedent(expected)
 
     def test_legend_service_frame_execution(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame = TestLegendServiceFrame._build_legend_service_frame(legend_test_server["engine_port"])

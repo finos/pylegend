@@ -520,15 +520,87 @@ class TestSqlToStringDbExtensionProcessing:
         func_call = FunctionCall(
             name=QualifiedName(["test", "func"]),
             distinct=False,
+            arguments=[],
             filter_=None,
-            arguments=[
-                ref,
-                NamedArgumentExpression("param1", ref)
-            ],
             window=None
         )
+        assert extension.process_expression(func_call, config) == "test.func()"
+
+        func_call.arguments = [
+            ref
+        ]
+        assert extension.process_expression(func_call, config) == "test.func( test_db.test_schema.test_table.test_col )"
+
+        func_call.arguments = [
+            ref,
+            NamedArgumentExpression("param1", ref)
+        ]
         assert extension.process_expression(func_call, config) == \
-               "test.func(test_db.test_schema.test_table.test_col, param1 => test_db.test_schema.test_table.test_col)"
+               "test.func( test_db.test_schema.test_table.test_col, param1 => test_db.test_schema.test_table.test_col )"
+
+        func_call = FunctionCall(
+            name=QualifiedName(["rowNumber"]),
+            distinct=False,
+            filter_=None,
+            arguments=[],
+            window=Window(
+                windowRef=None,
+                partitions=[
+                    QualifiedNameReference(QualifiedName(["partition_col1"])),
+                    QualifiedNameReference(QualifiedName(["partition_col2"]))
+                ],
+                orderBy=[
+                    SortItem(
+                        QualifiedNameReference(QualifiedName(["sort_col1"])),
+                        SortItemOrdering.DESCENDING,
+                        SortItemNullOrdering.UNDEFINED
+                    ),
+                    SortItem(
+                        QualifiedNameReference(QualifiedName(["sort_col2"])),
+                        SortItemOrdering.ASCENDING,
+                        SortItemNullOrdering.UNDEFINED
+                    )
+                ],
+                windowFrame=None
+            )
+        )
+
+        assert extension.process_expression(func_call, config) == \
+               "rowNumber() OVER PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2"
+
+    def test_process_function_call_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        func_call = FunctionCall(
+            name=QualifiedName(["test", "func"]),
+            distinct=False,
+            arguments=[],
+            filter_=None,
+            window=None
+        )
+        assert extension.process_expression(func_call, config) == "test.func()"
+
+        func_call.arguments = [
+            ref
+        ]
+        expected = """\
+            test.func(
+                test_db.test_schema.test_table.test_col
+            )"""
+        assert extension.process_expression(func_call, config) == dedent(expected)
+
+        func_call.arguments = [
+            ref,
+            NamedArgumentExpression("param1", ref)
+        ]
+        expected = """\
+            test.func(
+                test_db.test_schema.test_table.test_col,
+                param1 => test_db.test_schema.test_table.test_col
+            )"""
+        assert extension.process_expression(func_call, config) == dedent(expected)
 
         func_call = FunctionCall(
             name=QualifiedName(["rowNumber"]),
@@ -580,7 +652,7 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             window=None
         ))
-        assert extension.process_relation(table_func, config) == "test.func(param1 => test_table.test_col)"
+        assert extension.process_relation(table_func, config) == "test.func( param1 => test_table.test_col )"
 
     def test_process_aliased_relation(self) -> None:
         extension = SqlToStringDbExtension()

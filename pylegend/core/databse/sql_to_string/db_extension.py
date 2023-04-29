@@ -549,10 +549,21 @@ def function_call_processor(
         config: SqlToStringConfig
 ) -> str:
     # TODO: Handle distinct and filter
-    return "{name}({args}){window}".format(
+
+    arguments = ("," + config.format.separator(1)).join(
+        [extension.process_expression(arg, config.push_indent()) for arg in function_call.arguments]
+    )
+
+    window = ""
+    if function_call.window:
+        window = " OVER" + extension.process_window(function_call.window, config)
+
+    return "{name}({firstSep}{args}{sep0}){window}".format(
+        firstSep=config.format.separator(1) if function_call.arguments else "",
+        sep0=config.format.separator(0) if function_call.arguments else "",
         name=extension.process_qualified_name(function_call.name, config),
-        args=", ".join([extension.process_expression(arg, config) for arg in function_call.arguments]),
-        window=" OVER" + extension.process_window(function_call.window, config) if function_call.window else ""
+        args=arguments,
+        window=window
     )
 
 
