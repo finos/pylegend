@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import pytest
-import json
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pylegend.core.request.legend_client import LegendClient
@@ -31,7 +30,14 @@ class TestLegendClient:
 
                 if self.path == "/api/sql/v1/execution/getSchemaFromQueryString" and \
                         data == "select 1+2 as a":
-                    output = json.dumps({"a": "Integer"})
+                    output = """{
+                        "columns":
+                            {
+                                "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
+                                "type": "String",
+                                "name": "First Name"
+                            }
+                    }"""
                     self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.send_header('Content-Length', str(len(output)))
@@ -49,7 +55,8 @@ class TestLegendClient:
 
     def test_legend_client(self) -> None:
         client = LegendClient("localhost", self.dynamic_port, secure_http=False)
-        assert client.get_sql_string_schema("select 1+2 as a") == '{"a": "Integer"}'
+        assert ", ".join([str(x) for x in client.get_sql_string_schema("select 1+2 as a")]) == \
+               'TdsColumn(Name: First Name, Type: String)'
 
     def test_legend_client_retry_error_message(self) -> None:
         with pytest.raises(ValueError, match="Retry count should be a number greater than 1. Got 0"):

@@ -109,7 +109,7 @@ def tds_columns_from_json(s: str) -> PyLegendList[TdsColumn]:
         enums = parsed["enums"] if "enums" in parsed else []
         enums = [enums] if isinstance(enums, dict) else enums
 
-        columns = parsed["columns"] if "columns" in parsed else []
+        columns = parsed["columns"]
         columns = [columns] if isinstance(columns, dict) else columns
 
         result_columns: PyLegendList[TdsColumn] = []
