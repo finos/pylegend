@@ -21,7 +21,7 @@ from pylegend._typing import (
 )
 from pylegend.tests.test_helpers.legend_service_frame import LegendServiceFrame
 from pylegend.core.request.legend_client import LegendClient
-from pylegend.core.tds.tds_column import PyLegendTdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
@@ -131,9 +131,9 @@ class TestLegendServiceFrame:
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT",
             columns=[
-                PyLegendTdsColumn("First Name", "String"),
-                PyLegendTdsColumn("Last Name", "String"),
-                PyLegendTdsColumn("Age", "Integer"),
-                PyLegendTdsColumn("Firm/Legal Name", "String"),
+                PrimitiveTdsColumn.string_column("First Name"),
+                PrimitiveTdsColumn.string_column("Last Name"),
+                PrimitiveTdsColumn.integer_column("Age"),
+                PrimitiveTdsColumn.string_column("Firm/Legal Name"),
             ]
         )

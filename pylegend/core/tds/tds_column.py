@@ -12,53 +12,124 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABCMeta, abstractmethod
+from enum import Enum
+import json
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
 )
 
+__all__: PyLegendSequence[str] = [
+    "TdsColumn",
+    "PrimitiveTdsColumn",
+    "PrimitiveType",
+    "EnumTdsColumn",
+    "tds_columns_from_json",
+]
 
-class PyLegendTdsColumn:
+
+class TdsColumn(metaclass=ABCMeta):
     __name: str
-    __type: str
 
-    __valid_types: PyLegendList[str] = [
-        "Integer",
-        "Float",
-        "String",
-        "Boolean"
-    ]
-
-    def __init__(self, name: str, _type: str) -> None:
+    def __init__(self, name: str) -> None:
         self.__name = name
-        if _type not in self.__valid_types:
-            raise ValueError("Unknown type provided for TDS column: '" + _type + "'. " +
-                             "Known types are: " + ", ".join(self.__valid_types))
-        self.__type = _type
 
     def get_name(self) -> str:
         return self.__name
 
+    @abstractmethod
+    def get_type(self) -> str:
+        pass
+
     def __str__(self) -> str:
-        return "PyLegendTdsColumn(Name: " + self.__name + ", Type: " + self.__type + ")"
+        return "TdsColumn(Name: {name}, Type: {_type})".format(name=self.get_name(), _type=self.get_type())
+
+
+class PrimitiveType(Enum):
+    Boolean = 1
+    StrictDate = 2
+    Number = 3
+    String = 4
+    LatestDate = 5
+    Float = 6
+    DateTime = 7
+    Date = 8
+    Integer = 9
+    Decimal = 10
+
+
+class PrimitiveTdsColumn(TdsColumn):
+    __type: "PrimitiveType"
+
+    def __init__(self, name: str, _type: "PrimitiveType") -> None:
+        super().__init__(name)
+        self.__type = _type
+
+    def get_type(self) -> "str":
+        return self.__type.name
 
     @classmethod
-    def integer_column(cls, name: str) -> "PyLegendTdsColumn":
-        return PyLegendTdsColumn(name, 'Integer')
+    def integer_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Integer)
 
     @classmethod
-    def float_column(cls, name: str) -> "PyLegendTdsColumn":
-        return PyLegendTdsColumn(name, 'Float')
+    def float_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Float)
 
     @classmethod
-    def string_column(cls, name: str) -> "PyLegendTdsColumn":
-        return PyLegendTdsColumn(name, 'String')
+    def string_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.String)
 
     @classmethod
-    def boolean_column(cls, name: str) -> "PyLegendTdsColumn":
-        return PyLegendTdsColumn(name, 'Boolean')
+    def boolean_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Boolean)
 
 
-__all__: PyLegendSequence[str] = [
-    "PyLegendTdsColumn"
-]
+class EnumTdsColumn(TdsColumn):
+    __enum_type: str
+    __enum_values: PyLegendList[str]
+
+    def __init__(self, name: str, enum_type: str, enum_values: PyLegendList[str]) -> None:
+        super().__init__(name)
+        self.__enum_type = enum_type
+        self.__enum_values = enum_values
+
+    def get_type(self) -> str:
+        return self.__enum_type
+
+    def get_enum_values(self) -> PyLegendList[str]:
+        return self.__enum_values
+
+
+def tds_columns_from_json(s: str) -> PyLegendList[TdsColumn]:
+    try:
+        parsed = json.loads(s)
+
+        enums = parsed["enums"] if "enums" in parsed else []
+        enums = [enums] if isinstance(enums, dict) else enums
+
+        columns = parsed["columns"] if "columns" in parsed else []
+        columns = [columns] if isinstance(columns, dict) else columns
+
+        result_columns: PyLegendList[TdsColumn] = []
+        for col in columns:
+            if col["__TYPE"] == "meta::external::query::sql::PrimitiveValueSchemaColumn":
+                result_columns.append(PrimitiveTdsColumn(col["name"], PrimitiveType[col["type"]]))
+            else:
+                result_columns.append(
+                    EnumTdsColumn(col["name"], col["type"], _enum_values_for_type(col["type"], enums))
+                )
+        return result_columns
+
+    except Exception as e:
+        raise RuntimeError("Unable to parse tds columns from schema: \n" + s, e)
+
+
+def _enum_values_for_type(enum_type: str, all_enums: PyLegendList[dict]) -> PyLegendList[str]:  # type: ignore
+    for e in all_enums:
+        if e["type"] == enum_type:
+            values = e["values"]
+            return values if isinstance(values, list) else [values]
+
+    raise RuntimeError("Unknown enum type: " + enum_type)
