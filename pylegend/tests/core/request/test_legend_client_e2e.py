@@ -30,35 +30,10 @@ class TestLegendClientE2E:
             "       version => '0.0.1-SNAPSHOT'"
             "   )"
         )
-        expected = """\
-        {
-           "__TYPE": "meta::external::query::sql::Schema",
-           "columns": [
-              {
-                 "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
-                 "type": "String",
-                 "name": "First Name"
-              },
-              {
-                 "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
-                 "type": "String",
-                 "name": "Last Name"
-              },
-              {
-                 "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
-                 "type": "Integer",
-                 "name": "Age"
-              },
-              {
-                 "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
-                 "type": "String",
-                 "name": "Firm/Legal Name"
-              }
-           ],
-           "enums": []
-        }"""
 
-        assert json.loads(res) == json.loads(expected)
+        assert ", ".join([str(x) for x in res]) == \
+            "TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), " \
+            "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String)"
 
     def test_e2e_execute_string_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         client = LegendClient("localhost", legend_test_server["engine_port"], False)

@@ -53,7 +53,8 @@ class LegendServiceFrame(ExecutableInputTdsFrame):
         self.group_id = group_id
         self.artifact_id = artifact_id
         self.version = version
-        self.columns = columns
+        self.columns = None
+        self.columns = legend_client.get_sql_string_schema(self.to_sql_query())
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
@@ -81,7 +82,7 @@ class LegendServiceFrame(ExecutableInputTdsFrame):
                 AliasedRelation(
                     relation=TableFunction(functionCall=func_call),
                     alias=root_alias,
-                    columnNames=[x.get_name() for x in self.columns]
+                    columnNames=[x.get_name() for x in self.columns] if self.columns else []
                 )
             ],
             where=None,
