@@ -31,11 +31,11 @@ class TestTableSpecInputFrame:
         ]
         frame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
         expected = '''\
-            select
-                "root".col1 as "col1",
-                "root".col2 as "col2"
-            from
-                test_schema.test_table as "root"'''
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2"
+            FROM
+                test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
     def test_table_spec_frame_execution_error(self) -> None:

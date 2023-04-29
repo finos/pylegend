@@ -47,11 +47,11 @@ class TestLegendServiceFrameExecution:
 
         sql = frame.to_sql_query(FrameToSqlConfig())
         expected = (
-            'select\n'
+            'SELECT\n'
             '    "root".*\n'
-            'from\n'
+            'FROM\n'
             "    legend_service('/simplePersonService', groupId => 'org.finos.legend.pylegend', "
-            "artifactId => 'pylegend-test-models', version => '0.0.1-SNAPSHOT') as \"root\""
+            "artifactId => 'pylegend-test-models', version => '0.0.1-SNAPSHOT') AS \"root\""
         )
 
         assert sql == expected
