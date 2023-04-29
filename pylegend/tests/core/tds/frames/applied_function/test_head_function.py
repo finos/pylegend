@@ -14,7 +14,7 @@
 
 import importlib
 from textwrap import dedent
-from pylegend.core.tds.tds_column import PyLegendTdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToSqlConfig
 from pylegend.extensions.tds.frames.table_spec_input_frame import TableSpecInputFrame
 
@@ -26,8 +26,8 @@ class TestHeadAppliedFunction:
 
     def test_head_function_no_top(self) -> None:
         columns = [
-            PyLegendTdsColumn.integer_column("col1"),
-            PyLegendTdsColumn.string_column("col2")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
         ]
         frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(10)
@@ -41,8 +41,8 @@ class TestHeadAppliedFunction:
 
     def test_head_function_existing_top(self) -> None:
         columns = [
-            PyLegendTdsColumn.integer_column("col1"),
-            PyLegendTdsColumn.string_column("col2")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
         ]
         frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(10)

@@ -15,7 +15,7 @@
 import pytest
 import importlib
 from textwrap import dedent
-from pylegend.core.tds.tds_column import PyLegendTdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.frames.table_spec_input_frame import TableSpecInputFrame
 
@@ -26,8 +26,8 @@ importlib.import_module(postgres_ext)
 class TestTableSpecInputFrame:
     def test_table_spec_frame_creation(self) -> None:
         columns = [
-            PyLegendTdsColumn.integer_column("col1"),
-            PyLegendTdsColumn.string_column("col2")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
         ]
         frame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
         expected = '''\
@@ -40,8 +40,8 @@ class TestTableSpecInputFrame:
 
     def test_table_spec_frame_execution_error(self) -> None:
         columns = [
-            PyLegendTdsColumn.integer_column("col1"),
-            PyLegendTdsColumn.string_column("col2")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
         ]
         frame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
 

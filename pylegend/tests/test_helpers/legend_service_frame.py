@@ -14,12 +14,11 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendList,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.frames.input_tds_frame import ExecutableInputTdsFrame
-from pylegend.core.tds.tds_column import PyLegendTdsColumn
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.sql.metamodel import (
@@ -47,7 +46,7 @@ class LegendServiceFrame(ExecutableInputTdsFrame):
             group_id: str,
             artifact_id: str,
             version: str,
-            columns: PyLegendList[PyLegendTdsColumn]
+            columns: PyLegendSequence[TdsColumn]
     ) -> None:
         super().__init__(legend_client)
         self.pattern = pattern

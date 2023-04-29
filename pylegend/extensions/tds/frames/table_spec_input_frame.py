@@ -27,7 +27,7 @@ from pylegend.core.sql.metamodel import (
     AliasedRelation
 )
 from pylegend.core.tds.frames.input_tds_frame import NonExecutableInputTdsFrame
-from pylegend.core.tds.tds_column import PyLegendTdsColumn
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
@@ -38,9 +38,9 @@ __all__: PyLegendSequence[str] = [
 
 class TableSpecInputFrame(NonExecutableInputTdsFrame):
     table: QualifiedName
-    columns: PyLegendList[PyLegendTdsColumn]
+    columns: PyLegendSequence[TdsColumn]
 
-    def __init__(self, table_name_parts: PyLegendList[str], columns: PyLegendList[PyLegendTdsColumn]) -> None:
+    def __init__(self, table_name_parts: PyLegendList[str], columns: PyLegendSequence[TdsColumn]) -> None:
         self.table = QualifiedName(table_name_parts)
         self.columns = columns
 
