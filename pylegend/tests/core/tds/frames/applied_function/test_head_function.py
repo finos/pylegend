@@ -32,11 +32,12 @@ class TestHeadAppliedFunction:
         frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(10)
         expected = '''\
-            SELECT TOP 10
+            SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2"
             FROM
-                test_schema.test_table AS "root"'''
+                test_schema.test_table AS "root"
+            LIMIT 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
     def test_head_function_existing_top(self) -> None:
@@ -48,15 +49,17 @@ class TestHeadAppliedFunction:
         frame = frame.head(10)
         frame = frame.head(20)
         expected = '''\
-            SELECT TOP 20
+            SELECT
                 "root"."col1" AS "col1",
                 "root"."col2" AS "col2"
             FROM
                 (
-                    SELECT TOP 10
+                    SELECT
                         "root".col1 AS "col1",
                         "root".col2 AS "col2"
                     FROM
                         test_schema.test_table AS "root"
-                ) AS "root"'''
+                    LIMIT 10
+                ) AS "root"
+            LIMIT 20'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
