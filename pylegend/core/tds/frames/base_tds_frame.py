@@ -97,3 +97,9 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         legend_client = all_legend_clients[0]
         result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
         return result_handler(result)
+
+    def execute_frame_to_string(
+            self,
+            chunk_size: int = 1024
+    ) -> str:
+        return self.execute_frame(lambda res: b"".join(res).decode("utf-8"), chunk_size)

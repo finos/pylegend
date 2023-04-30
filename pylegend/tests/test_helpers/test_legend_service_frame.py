@@ -34,7 +34,10 @@ class TestLegendServiceFrame:
 
         expected = '''\
         SELECT
-            "root".*
+            "root"."First Name" AS "First Name",
+            "root"."Last Name" AS "Last Name",
+            "root"."Age" AS "Age",
+            "root"."Firm/Legal Name" AS "Firm/Legal Name"
         FROM
             legend_service(
                 '/simplePersonService',

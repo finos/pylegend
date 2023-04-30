@@ -13,10 +13,16 @@
 # limitations under the License.
 
 import importlib
+import json
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToSqlConfig
 from pylegend.extensions.tds.frames.table_spec_input_frame import TableSpecInputFrame
+from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
+from pylegend._typing import (
+    PyLegendDict,
+    PyLegendUnion,
+)
 
 postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
 importlib.import_module(postgres_ext)
@@ -24,7 +30,7 @@ importlib.import_module(postgres_ext)
 
 class TestHeadAppliedFunction:
 
-    def test_head_function_no_top(self) -> None:
+    def test_sql_gen_head_function_no_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -40,7 +46,7 @@ class TestHeadAppliedFunction:
             LIMIT 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
-    def test_head_function_existing_top(self) -> None:
+    def test_sql_gen_head_function_existing_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -63,3 +69,87 @@ class TestHeadAppliedFunction:
                 ) AS "root"
             LIMIT 20'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_e2e_head_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PyLegendTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = frame.head(3)
+        expected = """\
+        {
+           "columns": [
+              "First Name",
+              "Last Name",
+              "Age",
+              "Firm/Legal Name"
+           ],
+           "rows": [
+              {
+                 "values": [
+                    "Peter",
+                    "Smith",
+                    23,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "John",
+                    "Johnson",
+                    22,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "John",
+                    "Hill",
+                    12,
+                    "Firm X"
+                 ]
+              }
+           ]
+        }"""
+        print(frame.to_sql_query(FrameToSqlConfig()))
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == json.loads(dedent(expected))
+
+    def test_e2e_head_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PyLegendTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = frame.head(3)
+        frame = frame.head(10)
+        expected = """\
+        {
+           "columns": [
+              "First Name",
+              "Last Name",
+              "Age",
+              "Firm/Legal Name"
+           ],
+           "rows": [
+              {
+                 "values": [
+                    "Peter",
+                    "Smith",
+                    23,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "John",
+                    "Johnson",
+                    22,
+                    "Firm X"
+                 ]
+              },
+              {
+                 "values": [
+                    "John",
+                    "Hill",
+                    12,
+                    "Firm X"
+                 ]
+              }
+           ]
+        }"""
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == json.loads(dedent(expected))
