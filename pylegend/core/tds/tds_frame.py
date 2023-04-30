@@ -59,3 +59,10 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
             chunk_size: int = 1024
     ) -> R:
         pass
+
+    @abstractmethod
+    def execute_frame_to_string(
+            self,
+            chunk_size: int = 1024
+    ) -> str:
+        pass

@@ -28,7 +28,9 @@ from pylegend.core.sql.metamodel import (
     QualifiedName,
     NamedArgumentExpression,
     StringLiteral,
-    AliasedRelation
+    AliasedRelation,
+    SingleColumn,
+    QualifiedNameReference
 )
 
 __all__: PyLegendSequence[str] = [
@@ -74,7 +76,15 @@ class LegendServiceFrame(ExecutableInputTdsFrame):
 
         return QuerySpecification(
             select=Select(
-                selectItems=[AllColumns(prefix=root_alias)],
+                selectItems=[
+                    SingleColumn(
+                        alias=db_extension.quote_identifier(x.get_name()),
+                        expression=QualifiedNameReference(
+                            name=QualifiedName(parts=[root_alias, db_extension.quote_identifier(x.get_name())])
+                        )
+                    )
+                    for x in self.columns
+                ] if self.columns else [AllColumns(prefix=root_alias)],
                 distinct=False
             ),
             from_=[
