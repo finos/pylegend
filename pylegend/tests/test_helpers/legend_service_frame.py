@@ -18,7 +18,6 @@ from pylegend._typing import (
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.frames.input_tds_frame import ExecutableInputTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.sql.metamodel import (
@@ -33,7 +32,8 @@ from pylegend.core.sql.metamodel import (
 )
 
 __all__: PyLegendSequence[str] = [
-    "LegendServiceFrame"
+    "LegendServiceFrame",
+    "simple_person_service_frame"
 ]
 
 
@@ -45,8 +45,7 @@ class LegendServiceFrame(ExecutableInputTdsFrame):
             pattern: str,
             group_id: str,
             artifact_id: str,
-            version: str,
-            columns: PyLegendSequence[TdsColumn]
+            version: str
     ) -> None:
         super().__init__(legend_client)
         self.pattern = pattern
@@ -92,3 +91,14 @@ class LegendServiceFrame(ExecutableInputTdsFrame):
             limit=None,
             offset=None
         )
+
+
+def simple_person_service_frame(engine_port: int) -> LegendServiceFrame:
+    legend_client = LegendClient("localhost", engine_port, False)
+    return LegendServiceFrame(
+        legend_client=legend_client,
+        pattern="/simplePersonService",
+        group_id="org.finos.legend.pylegend",
+        artifact_id="pylegend-test-models",
+        version="0.0.1-SNAPSHOT"
+    )
