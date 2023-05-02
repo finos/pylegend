@@ -20,7 +20,6 @@ from pylegend._typing import (
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    LongLiteral,
     SingleColumn,
     QualifiedName,
     QualifiedNameReference,
@@ -35,7 +34,8 @@ from pylegend.core.tds.frames.base_tds_frame import BaseTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "AppliedFunctionTdsFrame",
-    "TakeFunction"
+    "AppliedFunction",
+    "create_sub_query"
 ]
 
 
@@ -52,29 +52,6 @@ class AppliedFunction(metaclass=ABCMeta):
     @abstractmethod
     def tds_frame_parameters(self) -> PyLegendList["BaseTdsFrame"]:
         pass
-
-
-class TakeFunction(AppliedFunction):
-    row_count: int
-
-    @classmethod
-    def name(cls) -> str:
-        return "take"
-
-    def __init__(self, row_count: int) -> None:
-        self.row_count = row_count
-
-    def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        if base_query.limit:
-            new_query = create_sub_query(base_query, config, "root")
-            new_query.limit = LongLiteral(value=self.row_count)
-            return new_query
-        else:
-            base_query.limit = LongLiteral(value=self.row_count)
-            return base_query  # TODO: avoid parameter mutation
-
-    def tds_frame_parameters(self) -> PyLegendList["BaseTdsFrame"]:
-        return []
 
 
 def create_sub_query(query: QuerySpecification, config: FrameToSqlConfig, alias: str) -> QuerySpecification:
