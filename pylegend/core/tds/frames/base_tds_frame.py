@@ -41,11 +41,13 @@ R = PyLegendTypeVar('R')
 
 class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     def head(self, row_count: int = 5) -> "PyLegendTdsFrame":
-        from pylegend.core.tds.frames.applied_function_tds_frame import (
-            AppliedFunctionTdsFrame,
-            TakeFunction
+        from pylegend.core.tds.frames.applied_function.applied_function_tds_frame import (
+            AppliedFunctionTdsFrame
         )
-        return AppliedFunctionTdsFrame(self, TakeFunction(row_count))
+        from pylegend.core.tds.frames.applied_function.head_function import (
+            HeadFunction
+        )
+        return AppliedFunctionTdsFrame(self, HeadFunction(row_count))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
