@@ -26,35 +26,32 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.tds.tds_frame import (
-    PyLegendTdsFrame,
-    FrameToSqlConfig
-)
-
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 
 __all__: PyLegendSequence[str] = [
-    "BaseTdsFrame"
+    "LegendApiBaseTdsFrame"
 ]
 
 R = PyLegendTypeVar('R')
 
 
-class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
-    def head(self, row_count: int = 5) -> "PyLegendTdsFrame":
-        from pylegend.core.tds.frames.applied_function.applied_function_tds_frame import (
-            AppliedFunctionTdsFrame
+class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
+    def head(self, row_count: int = 5) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.frames.applied_function.head_function import (
+        from pylegend.core.tds.legend_api.frames.functions.head_function import (
             HeadFunction
         )
-        return AppliedFunctionTdsFrame(self, HeadFunction(row_count))
+        return LegendApiAppliedFunctionTdsFrame(self, HeadFunction(row_count))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass
 
     @abstractmethod
-    def get_all_tds_frames(self) -> PyLegendList["BaseTdsFrame"]:
+    def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         pass
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
@@ -72,19 +69,22 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             result_handler: PyLegendCallable[[PyLegendIterator[bytes]], R],
             chunk_size: int = 1024
     ) -> R:
-        from pylegend.core.tds.frames.input_tds_frame import InputTdsFrame, ExecutableInputTdsFrame
+        from pylegend.core.tds.legend_api.frames.legend_api_input_tds_frame import (
+            LegendApiInputTdsFrame,
+            LegendApiExecutableInputTdsFrame
+        )
 
         tds_frames = self.get_all_tds_frames()
-        input_frames = [x for x in tds_frames if isinstance(x, InputTdsFrame)]
+        input_frames = [x for x in tds_frames if isinstance(x, LegendApiInputTdsFrame)]
 
-        non_exec_frames = [x for x in input_frames if not isinstance(x, ExecutableInputTdsFrame)]
+        non_exec_frames = [x for x in input_frames if not isinstance(x, LegendApiExecutableInputTdsFrame)]
         if non_exec_frames:
             raise ValueError(
                 "Cannot execute frame as its built on top of non-executable input frames: [" +
                 (", ".join([str(f) for f in non_exec_frames]) + "]")
             )
 
-        exec_frames = [x for x in input_frames if isinstance(x, ExecutableInputTdsFrame)]
+        exec_frames = [x for x in input_frames if isinstance(x, LegendApiExecutableInputTdsFrame)]
 
         all_legend_clients = []
         for e in exec_frames:

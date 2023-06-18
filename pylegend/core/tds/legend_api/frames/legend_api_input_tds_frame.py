@@ -17,23 +17,23 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendList
 )
-from pylegend.core.tds.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.request.legend_client import LegendClient
 
 
 __all__: PyLegendSequence[str] = [
-    "ExecutableInputTdsFrame",
-    "NonExecutableInputTdsFrame",
-    "InputTdsFrame"
+    "LegendApiExecutableInputTdsFrame",
+    "LegendApiNonExecutableInputTdsFrame",
+    "LegendApiInputTdsFrame"
 ]
 
 
-class InputTdsFrame(BaseTdsFrame, metaclass=ABCMeta):
-    def get_all_tds_frames(self) -> PyLegendList["BaseTdsFrame"]:
+class LegendApiInputTdsFrame(LegendApiBaseTdsFrame, metaclass=ABCMeta):
+    def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return [self]
 
 
-class ExecutableInputTdsFrame(InputTdsFrame, metaclass=ABCMeta):
+class LegendApiExecutableInputTdsFrame(LegendApiInputTdsFrame, metaclass=ABCMeta):
     __legend_client: LegendClient
 
     def __init__(self, legend_client: LegendClient) -> None:
@@ -43,5 +43,5 @@ class ExecutableInputTdsFrame(InputTdsFrame, metaclass=ABCMeta):
         return self.__legend_client
 
 
-class NonExecutableInputTdsFrame(InputTdsFrame, metaclass=ABCMeta):
+class LegendApiNonExecutableInputTdsFrame(LegendApiInputTdsFrame, metaclass=ABCMeta):
     pass
