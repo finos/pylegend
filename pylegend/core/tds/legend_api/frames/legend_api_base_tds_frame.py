@@ -49,6 +49,9 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
     def take(self, row_count: int = 5) -> "LegendApiTdsFrame":
         return self.head(row_count=row_count)
 
+    def limit(self, row_count: int = 5) -> "LegendApiTdsFrame":
+        return self.head(row_count=row_count)
+
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass
