@@ -45,7 +45,7 @@ class DropFunction(AppliedFunction):
         self.row_count = row_count
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        if base_query.offset:
+        if (base_query.offset is not None) or (base_query.limit is not None):
             new_query = create_sub_query(base_query, config, "root")
             new_query.offset = LongLiteral(value=self.row_count)
             return new_query

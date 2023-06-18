@@ -45,7 +45,7 @@ class HeadFunction(AppliedFunction):
         self.row_count = row_count
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        if base_query.limit:
+        if base_query.limit is not None:
             new_query = create_sub_query(base_query, config, "root")
             new_query.limit = LongLiteral(value=self.row_count)
             return new_query
