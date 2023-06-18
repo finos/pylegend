@@ -41,19 +41,16 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
     metadata_port = generate_dynamic_port()
     relative_path = pylegend.tests.__file__.replace("\\", "/")[0:pylegend.tests.__file__.replace("\\", "/").rindex("/")]
 
+    cmd = 'java -jar ' +\
+          '-Ddw.server.connector.port=' + str(engine_port) + ' ' +\
+          '-Ddw.metadataserver.alloy.port=' + str(metadata_port) + ' ' +\
+          relative_path + '/resources/legend/server/pylegend-sql-server/target/' + \
+          'pylegend-sql-server-1.0-shaded.jar server ' +\
+          relative_path + '/resources/legend/server/pylegend_sql_server_config.json'
+
+    LOGGER.info("Command: " + cmd)
     engine_process = subprocess.Popen(
-        shlex.split(
-            'java -jar '
-            '-Ddw.server.connector.port=' + str(engine_port) + ' ' +
-            '-Ddw.metadataserver.alloy.port=' + str(metadata_port) + ' ' +
-            relative_path + '/resources/legend/server/pylegend-sql-server/target/'
-                            'pylegend-sql-server-1.0-shaded.jar server ' +
-            relative_path + '/resources/legend/server/pylegend_sql_server_config.json'
-        ),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        start_new_session=True,
-        shell=False
+        shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, shell=False
     )
 
     class MetadataServerHandler(BaseHTTPRequestHandler):
