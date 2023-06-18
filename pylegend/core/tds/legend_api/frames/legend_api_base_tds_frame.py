@@ -52,6 +52,15 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
     def limit(self, row_count: int = 5) -> "LegendApiTdsFrame":
         return self.head(row_count=row_count)
 
+    def drop(self, row_count: int = 5) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.drop_function import (
+            DropFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(self, DropFunction(row_count))
+
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass
