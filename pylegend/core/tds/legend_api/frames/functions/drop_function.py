@@ -14,7 +14,7 @@
 
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence,
+    PyLegendSequence
 )
 from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
     AppliedFunction,
@@ -30,28 +30,28 @@ from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import Legend
 
 
 __all__: PyLegendSequence[str] = [
-    "HeadFunction"
+    "DropFunction"
 ]
 
 
-class HeadFunction(AppliedFunction):
+class DropFunction(AppliedFunction):
     row_count: int
 
     @classmethod
     def name(cls) -> str:
-        return "head"
+        return "drop"
 
     def __init__(self, row_count: int) -> None:
         self.row_count = row_count
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        if base_query.limit:
+        if base_query.offset:
             new_query = create_sub_query(base_query, config, "root")
-            new_query.limit = LongLiteral(value=self.row_count)
+            new_query.offset = LongLiteral(value=self.row_count)
             return new_query
         else:
             new_query = copy_query(base_query)
-            new_query.limit = LongLiteral(value=self.row_count)
+            new_query.offset = LongLiteral(value=self.row_count)
             return new_query
 
     def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:

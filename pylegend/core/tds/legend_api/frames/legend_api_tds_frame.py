@@ -38,3 +38,7 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def limit(self, count: int = 5) -> "LegendApiTdsFrame":
         pass
+
+    @abstractmethod
+    def drop(self, count: int = 5) -> "LegendApiTdsFrame":
+        pass
