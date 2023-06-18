@@ -35,7 +35,8 @@ from pylegend.core.tds.frames.base_tds_frame import BaseTdsFrame
 __all__: PyLegendSequence[str] = [
     "AppliedFunctionTdsFrame",
     "AppliedFunction",
-    "create_sub_query"
+    "create_sub_query",
+    "copy_query"
 ]
 
 
@@ -54,7 +55,8 @@ class AppliedFunction(metaclass=ABCMeta):
         pass
 
 
-def create_sub_query(query: QuerySpecification, config: FrameToSqlConfig, alias: str) -> QuerySpecification:
+def create_sub_query(base_query: QuerySpecification, config: FrameToSqlConfig, alias: str) -> QuerySpecification:
+    query = copy_query(base_query)
     generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
     db_extension = generator.get_db_extension()
     table_alias = db_extension.quote_identifier(alias)
@@ -93,6 +95,19 @@ def create_sub_query(query: QuerySpecification, config: FrameToSqlConfig, alias:
         orderBy=[],
         limit=None,
         offset=None
+    )
+
+
+def copy_query(query: QuerySpecification) -> QuerySpecification:
+    return QuerySpecification(
+        select=query.select,
+        from_=query.from_,
+        where=query.where,
+        groupBy=query.groupBy,
+        having=query.having,
+        orderBy=query.orderBy,
+        limit=query.limit,
+        offset=query.offset
     )
 
 

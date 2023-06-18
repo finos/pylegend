@@ -17,7 +17,8 @@ from pylegend._typing import (
 )
 from pylegend.core.tds.frames.applied_function.applied_function_tds_frame import (
     AppliedFunction,
-    create_sub_query
+    create_sub_query,
+    copy_query
 )
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
@@ -43,8 +44,9 @@ class HeadFunction(AppliedFunction):
             new_query.limit = LongLiteral(value=self.row_count)
             return new_query
         else:
-            base_query.limit = LongLiteral(value=self.row_count)
-            return base_query  # TODO: avoid parameter mutation
+            new_query = copy_query(base_query)
+            new_query.limit = LongLiteral(value=self.row_count)
+            return new_query
 
     def tds_frame_parameters(self) -> PyLegendList["BaseTdsFrame"]:
         return []
