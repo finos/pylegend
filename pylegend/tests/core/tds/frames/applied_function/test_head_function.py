@@ -16,8 +16,9 @@ import importlib
 import json
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToSqlConfig
-from pylegend.extensions.tds.frames.table_spec_input_frame import TableSpecInputFrame
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
+from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
 from pylegend._typing import (
     PyLegendDict,
@@ -35,7 +36,7 @@ class TestHeadAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(10)
         expected = '''\
             SELECT
@@ -51,7 +52,7 @@ class TestHeadAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PyLegendTdsFrame = TableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(10)
         frame = frame.head(20)
         expected = '''\
@@ -71,7 +72,7 @@ class TestHeadAppliedFunction:
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
     def test_e2e_head_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: PyLegendTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.head(3)
         expected = """\
         {
@@ -113,7 +114,7 @@ class TestHeadAppliedFunction:
         assert json.loads(res)["result"] == json.loads(dedent(expected))
 
     def test_e2e_head_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: PyLegendTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.head(3)
         frame = frame.head(10)
         expected = """\

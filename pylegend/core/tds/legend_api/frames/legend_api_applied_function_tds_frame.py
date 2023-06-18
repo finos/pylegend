@@ -29,11 +29,11 @@ from pylegend.core.sql.metamodel import (
     Query
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
 
 __all__: PyLegendSequence[str] = [
-    "AppliedFunctionTdsFrame",
+    "LegendApiAppliedFunctionTdsFrame",
     "AppliedFunction",
     "create_sub_query",
     "copy_query"
@@ -51,7 +51,7 @@ class AppliedFunction(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def tds_frame_parameters(self) -> PyLegendList["BaseTdsFrame"]:
+    def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         pass
 
 
@@ -111,11 +111,11 @@ def copy_query(query: QuerySpecification) -> QuerySpecification:
     )
 
 
-class AppliedFunctionTdsFrame(BaseTdsFrame):
-    base_frame: BaseTdsFrame
+class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
+    base_frame: LegendApiBaseTdsFrame
     applied_function: AppliedFunction
 
-    def __init__(self, base_frame: BaseTdsFrame, applied_function: AppliedFunction):
+    def __init__(self, base_frame: LegendApiBaseTdsFrame, applied_function: AppliedFunction):
         self.base_frame = base_frame
         self.applied_function = applied_function
 
@@ -123,7 +123,7 @@ class AppliedFunctionTdsFrame(BaseTdsFrame):
         base_query = self.base_frame.to_sql_query_object(config)
         return self.applied_function.to_sql(base_query, config)
 
-    def get_all_tds_frames(self) -> PyLegendList["BaseTdsFrame"]:
+    def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return [
             y
             for x in [self.base_frame] + self.applied_function.tds_frame_parameters()

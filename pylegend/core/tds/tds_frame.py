@@ -45,10 +45,6 @@ R = PyLegendTypeVar('R')
 class PyLegendTdsFrame(metaclass=ABCMeta):
 
     @abstractmethod
-    def head(self, count: int = 5) -> "PyLegendTdsFrame":
-        pass
-
-    @abstractmethod
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         pass
 
