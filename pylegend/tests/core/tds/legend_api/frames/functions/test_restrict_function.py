@@ -14,6 +14,7 @@
 
 import importlib
 import json
+import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -43,12 +44,26 @@ class TestRestrictAppliedFunction:
                 "root".col1 AS "col1"
             FROM
                 test_schema.test_table AS "root"'''
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_restrict_error_on_unknown_col(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        with pytest.raises(ValueError) as r:
+            frame.restrict(["unknown_col"])
+        assert "Column - 'unknown_col' in restrict columns list doesn't exist. Current frame columns: ['col1', 'col2']"\
+               in r.value.args[0]
 
     def test_e2e_restrict_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.take(5)
         frame = frame.restrict(["First Name", "Firm/Legal Name"])
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Firm/Legal Name, Type: String)]"
         expected = """\
         {
            "columns": [

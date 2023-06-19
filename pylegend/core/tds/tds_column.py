@@ -42,6 +42,10 @@ class TdsColumn(metaclass=ABCMeta):
     def get_type(self) -> str:
         pass
 
+    @abstractmethod
+    def copy(self) -> "TdsColumn":
+        pass
+
     def __str__(self) -> str:
         return "TdsColumn(Name: {name}, Type: {_type})".format(name=self.get_name(), _type=self.get_type())
 
@@ -68,6 +72,9 @@ class PrimitiveTdsColumn(TdsColumn):
 
     def get_type(self) -> "str":
         return self.__type.name
+
+    def copy(self) -> "TdsColumn":
+        return PrimitiveTdsColumn(self.get_name(), self.__type)
 
     @classmethod
     def integer_column(cls, name: str) -> "PrimitiveTdsColumn":
@@ -97,6 +104,9 @@ class EnumTdsColumn(TdsColumn):
 
     def get_type(self) -> str:
         return self.__enum_type
+
+    def copy(self) -> "TdsColumn":
+        return EnumTdsColumn(self.get_name(), self.__enum_type, self.__enum_values)
 
     def get_enum_values(self) -> PyLegendList[str]:
         return self.__enum_values

@@ -27,6 +27,7 @@ from pylegend.core.sql.metamodel import (
     SingleColumn,
     SelectItem
 )
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
@@ -75,3 +76,22 @@ class RestrictFunction(AppliedFunction):
 
     def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return []
+
+    def calculate_columns(self, base_frame: "LegendApiBaseTdsFrame") -> PyLegendSequence["TdsColumn"]:
+        base_columns = base_frame.columns()
+        new_columns = []
+        for c in self.column_name_list:
+            found_col = False
+            for base_col in base_columns:
+                if base_col.get_name() == c:
+                    new_columns.append(base_col.copy())
+                    found_col = True
+                    break
+            if not found_col:
+                raise ValueError(
+                    "Column - '{col}' in restrict columns list doesn't exist. Current frame columns: {cols}".format(
+                        col=c,
+                        cols=[x.get_name() for x in base_columns]
+                    )
+                )
+        return new_columns
