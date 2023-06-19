@@ -135,7 +135,6 @@ class TestDropAppliedFunction:
               }
            ]
         }"""
-        print(frame.to_sql_query(FrameToSqlConfig()))
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == json.loads(dedent(expected))
 
