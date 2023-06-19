@@ -75,6 +75,28 @@ class TestRestrictAppliedFunction:
         assert "Column - 'unknown_col' in restrict columns list doesn't exist. Current frame columns: ['col1', 'col2']"\
                in r.value.args[0]
 
+    def test_sql_gen_restrict_function_after_distinct_creates_subquery(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.distinct()
+        frame = frame.restrict(["col1"])
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
+        expected = '''\
+            SELECT
+                "root"."col1" AS "col1"
+            FROM
+                (
+                    SELECT DISTINCT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_restrict_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.take(5)
@@ -171,4 +193,4 @@ class TestRestrictAppliedFunction:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == json.loads(dedent(expected))
 
-    # TODO: Add tests for subquery generation when distinct/groupBy/orderBy/having operations are present
+    # TODO: Add tests for subquery generation when groupBy/orderBy/having operations are present
