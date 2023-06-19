@@ -18,7 +18,7 @@ from pylegend.core.request.service_client import (
 )
 from pylegend._typing import (
     PyLegendIterator,
-    PyLegendList
+    PyLegendSequence
 )
 from pylegend.core.tds.tds_column import TdsColumn, tds_columns_from_json
 
@@ -36,7 +36,7 @@ class LegendClient(ServiceClient):
     def get_sql_string_schema(
             self,
             sql: str
-    ) -> PyLegendList[TdsColumn]:
+    ) -> PyLegendSequence[TdsColumn]:
         response = super()._execute_service(
             method=RequestMethod.POST,
             path="api/sql/v1/execution/getSchemaFromQueryString",

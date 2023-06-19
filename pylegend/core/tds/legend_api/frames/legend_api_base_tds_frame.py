@@ -26,6 +26,7 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 
@@ -37,6 +38,14 @@ R = PyLegendTypeVar('R')
 
 
 class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
+    __columns: PyLegendSequence[TdsColumn]
+
+    def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
+        self.__columns = [c for c in columns]
+
+    def columns(self) -> PyLegendSequence[TdsColumn]:
+        return [c for c in self.__columns]
+
     def head(self, row_count: int = 5) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
             LegendApiAppliedFunctionTdsFrame

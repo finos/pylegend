@@ -38,11 +38,10 @@ __all__: PyLegendSequence[str] = [
 
 class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
     table: QualifiedName
-    columns: PyLegendSequence[TdsColumn]
 
     def __init__(self, table_name_parts: PyLegendList[str], columns: PyLegendSequence[TdsColumn]) -> None:
+        super().__init__(columns=columns)
         self.table = QualifiedName(table_name_parts)
-        self.columns = columns
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
@@ -55,7 +54,7 @@ class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
                         alias=db_extension.quote_identifier(x.get_name()),
                         expression=QualifiedNameReference(name=QualifiedName(parts=[root_alias, x.get_name()]))
                     )
-                    for x in self.columns
+                    for x in self.columns()
                 ],
                 distinct=False
             ),
@@ -63,7 +62,7 @@ class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
                 AliasedRelation(
                     relation=Table(name=self.table),
                     alias=root_alias,
-                    columnNames=[x.get_name() for x in self.columns]
+                    columnNames=[x.get_name() for x in self.columns()]
                 )
             ],
             where=None,

@@ -19,6 +19,7 @@ from pylegend._typing import (
     PyLegendIterator,
     PyLegendTypeVar,
 )
+from pylegend.core.tds.tds_column import TdsColumn
 
 __all__: PyLegendSequence[str] = [
     "PyLegendTdsFrame",
@@ -43,6 +44,10 @@ R = PyLegendTypeVar('R')
 
 
 class PyLegendTdsFrame(metaclass=ABCMeta):
+
+    @abstractmethod
+    def columns(self) -> PyLegendSequence[TdsColumn]:
+        pass
 
     @abstractmethod
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
