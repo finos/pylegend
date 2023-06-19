@@ -18,6 +18,7 @@ from pylegend._typing import (
 )
 from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
     AppliedFunction,
+    create_sub_query,
     copy_query
 )
 from pylegend.core.sql.metamodel import (
@@ -40,9 +41,14 @@ class DistinctFunction(AppliedFunction):
         return "distinct"
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        new_query = copy_query(base_query)
-        new_query.select.distinct = True
-        return new_query
+        if (base_query.offset is not None) or (base_query.limit is not None):
+            new_query = create_sub_query(base_query, config, "root")
+            new_query.select.distinct = True
+            return new_query
+        else:
+            new_query = copy_query(base_query)
+            new_query.select.distinct = True
+            return new_query
 
     def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return []
