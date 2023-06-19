@@ -55,3 +55,13 @@ class TestTableSpecInputFrame:
             new_frame.execute_frame(lambda r: b"".join(r))
         assert v.value.args[0] == "Cannot execute frame as its built on top of non-executable " \
                                   "input frames: [TableSpecInputFrame(test_schema.test_table)]"
+
+    def test_table_spec_frame_creation_duplicated_columns_error(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col1")
+        ]
+        with pytest.raises(ValueError) as v:
+            LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        assert v.value.args[0] == "TdsFrame cannot have duplicated column names. Passed columns: " \
+                                  "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col1, Type: String)]"
