@@ -45,5 +45,9 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
         pass
 
     @abstractmethod
+    def distinct(self) -> "LegendApiTdsFrame":
+        pass
+
+    @abstractmethod
     def restrict(self, column_name_list: PyLegendList[str]) -> "LegendApiTdsFrame":
         pass
