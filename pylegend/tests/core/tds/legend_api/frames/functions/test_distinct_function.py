@@ -55,6 +55,29 @@ class TestDistinctAppliedFunction:
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_distinct_function_existing_top(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.take(5)
+        frame = frame.distinct()
+        expected = '''\
+            SELECT DISTINCT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2"
+            FROM
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    LIMIT 5
+                ) AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_distinct_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.restrict(["First Name", "Firm/Legal Name"])
@@ -94,6 +117,35 @@ class TestDistinctAppliedFunction:
                  "values": [
                     "Oliver",
                     "Firm B"
+                 ]
+              },
+              {
+                 "values": [
+                    "Peter",
+                    "Firm X"
+                 ]
+              }
+           ]
+        }"""
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == json.loads(dedent(expected))
+
+    def test_e2e_distinct_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = frame.restrict(["First Name", "Firm/Legal Name"])
+        frame = frame.take(3)
+        frame = frame.distinct()
+        expected = """\
+        {
+           "columns": [
+              "First Name",
+              "Firm/Legal Name"
+           ],
+           "rows": [
+              {
+                 "values": [
+                    "John",
+                    "Firm X"
                  ]
               },
               {
