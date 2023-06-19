@@ -21,6 +21,7 @@ from pylegend._typing import (
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
+    SelectItem,
     SingleColumn,
     QualifiedName,
     QualifiedNameReference,
@@ -83,16 +84,23 @@ def create_sub_query(
         columns.append(col.alias)
 
     outer_query_columns = columns_to_retain if columns_to_retain else columns
+    unordered_select_items_with_index = [
+        (
+            outer_query_columns.index(x),
+            SingleColumn(
+                alias=x,
+                expression=QualifiedNameReference(name=QualifiedName(parts=[table_alias, x]))
+            )
+        )
+        for x in columns if x in outer_query_columns
+    ]
+    ordered_select_items: PyLegendList['SelectItem'] = [
+        y[1] for y in sorted(unordered_select_items_with_index, key=lambda x: x[0])
+    ]
 
     return QuerySpecification(
         select=Select(
-            selectItems=[
-                SingleColumn(
-                    alias=x,
-                    expression=QualifiedNameReference(name=QualifiedName(parts=[table_alias, x]))
-                )
-                for x in columns if x in outer_query_columns
-            ],
+            selectItems=ordered_select_items,
             distinct=False
         ),
         from_=[
