@@ -61,6 +61,15 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         )
         return LegendApiAppliedFunctionTdsFrame(self, DropFunction(row_count))
 
+    def restrict(self, column_name_list: PyLegendList[str]) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.restrict_function import (
+            RestrictFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(self, RestrictFunction(column_name_list))
+
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass

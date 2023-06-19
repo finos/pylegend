@@ -17,7 +17,8 @@ from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame
 )
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendList
 )
 
 __all__: PyLegendSequence[str] = [
@@ -41,4 +42,8 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
 
     @abstractmethod
     def drop(self, count: int = 5) -> "LegendApiTdsFrame":
+        pass
+
+    @abstractmethod
+    def restrict(self, column_name_list: PyLegendList[str]) -> "LegendApiTdsFrame":
         pass

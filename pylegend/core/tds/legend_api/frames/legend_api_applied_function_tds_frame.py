@@ -15,7 +15,8 @@
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendList
+    PyLegendList,
+    PyLegendOptional
 )
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.sql.metamodel import (
@@ -55,7 +56,12 @@ class AppliedFunction(metaclass=ABCMeta):
         pass
 
 
-def create_sub_query(base_query: QuerySpecification, config: FrameToSqlConfig, alias: str) -> QuerySpecification:
+def create_sub_query(
+        base_query: QuerySpecification,
+        config: FrameToSqlConfig,
+        alias: str,
+        columns_to_retain: PyLegendOptional[PyLegendList[str]] = None
+) -> QuerySpecification:
     query = copy_query(base_query)
     generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
     db_extension = generator.get_db_extension()
@@ -71,6 +77,8 @@ def create_sub_query(base_query: QuerySpecification, config: FrameToSqlConfig, a
                              "with SingleColumns with missing alias")  # pragma: no cover
         columns.append(col.alias)
 
+    outer_query_columns = columns_to_retain if columns_to_retain else columns
+
     return QuerySpecification(
         select=Select(
             selectItems=[
@@ -78,7 +86,7 @@ def create_sub_query(base_query: QuerySpecification, config: FrameToSqlConfig, a
                     alias=x,
                     expression=QualifiedNameReference(name=QualifiedName(parts=[table_alias, x]))
                 )
-                for x in columns
+                for x in columns if x in outer_query_columns
             ],
             distinct=False
         ),
@@ -100,7 +108,7 @@ def create_sub_query(base_query: QuerySpecification, config: FrameToSqlConfig, a
 
 def copy_query(query: QuerySpecification) -> QuerySpecification:
     return QuerySpecification(
-        select=query.select,
+        select=copy_select(query.select),
         from_=query.from_,
         where=query.where,
         groupBy=query.groupBy,
@@ -108,6 +116,13 @@ def copy_query(query: QuerySpecification) -> QuerySpecification:
         orderBy=query.orderBy,
         limit=query.limit,
         offset=query.offset
+    )
+
+
+def copy_select(select: Select) -> Select:
+    return Select(
+        distinct=select.distinct,
+        selectItems=[s for s in select.selectItems]
     )
 
 

@@ -1,0 +1,77 @@
+# Copyright 2023 Goldman Sachs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from pylegend._typing import (
+    PyLegendList,
+    PyLegendSequence
+)
+from pylegend.core.databse.sql_to_string import SqlToStringGenerator
+from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+    AppliedFunction,
+    create_sub_query,
+    copy_query
+)
+from pylegend.core.sql.metamodel import (
+    QuerySpecification,
+    SingleColumn,
+    SelectItem
+)
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
+
+
+__all__: PyLegendSequence[str] = [
+    "RestrictFunction"
+]
+
+
+class RestrictFunction(AppliedFunction):
+    column_name_list: PyLegendList[str]
+
+    @classmethod
+    def name(cls) -> str:
+        return "restrict"
+
+    def __init__(self, column_name_list: PyLegendList[str]) -> None:
+        self.column_name_list = column_name_list
+
+    def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
+        generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
+        db_extension = generator.get_db_extension()
+        columns_to_retain = [db_extension.quote_identifier(x) for x in self.column_name_list]
+
+        sub_query_required = (len(base_query.groupBy) > 0) or (len(base_query.orderBy) > 0) or \
+                             (base_query.having is not None) or base_query.select.distinct
+
+        if sub_query_required:
+            new_query = create_sub_query(base_query, config, "root", columns_to_retain=columns_to_retain)
+            return new_query
+        else:
+            new_select_items: PyLegendList['SelectItem'] = []
+            for col in base_query.select.selectItems:
+                if not isinstance(col, SingleColumn):
+                    raise ValueError("Restrict operation not supported for queries "
+                                     "with columns other than SingleColumn")  # pragma: no cover
+                if col.alias is None:
+                    raise ValueError("Restrict operation not supported for queries "
+                                     "with SingleColumns with missing alias")  # pragma: no cover
+                if col.alias in columns_to_retain:
+                    new_select_items.append(col)
+
+            new_query = copy_query(base_query)
+            new_query.select.selectItems = new_select_items
+            return new_query
+
+    def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
+        return []
