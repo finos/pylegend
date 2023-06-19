@@ -29,6 +29,7 @@ from pylegend.core.sql.metamodel import (
     TableSubquery,
     Query
 )
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
@@ -53,6 +54,10 @@ class AppliedFunction(metaclass=ABCMeta):
 
     @abstractmethod
     def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
+        pass
+
+    @abstractmethod
+    def calculate_columns(self, base_frame: "LegendApiBaseTdsFrame") -> PyLegendSequence["TdsColumn"]:
         pass
 
 
@@ -131,6 +136,7 @@ class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
     applied_function: AppliedFunction
 
     def __init__(self, base_frame: LegendApiBaseTdsFrame, applied_function: AppliedFunction):
+        super().__init__(columns=applied_function.calculate_columns(base_frame))
         self.base_frame = base_frame
         self.applied_function = applied_function
 

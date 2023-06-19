@@ -49,9 +49,23 @@ class TestTdsColumn:
         c4 = PrimitiveTdsColumn.boolean_column('C4')
         assert "TdsColumn(Name: C4, Type: Boolean)" == str(c4)
 
+    def test_primitive_tds_column_copy(self) -> None:
+        c1 = PrimitiveTdsColumn.integer_column('C1')
+        c1_copy = c1.copy()
+        assert c1 != c1_copy
+        assert "TdsColumn(Name: C1, Type: Integer)" == str(c1)
+        assert "TdsColumn(Name: C1, Type: Integer)" == str(c1_copy)
+
     def test_enum_tds_column_creation(self) -> None:
         c1 = EnumTdsColumn('C1', 'my::EnumType', ['A', 'B'])
         assert "TdsColumn(Name: C1, Type: my::EnumType)" == str(c1)
+
+    def test_enum_tds_column_copy(self) -> None:
+        c1 = EnumTdsColumn('C1', 'my::EnumType', ['A', 'B'])
+        c1_copy = c1.copy()
+        assert c1 != c1_copy
+        assert "TdsColumn(Name: C1, Type: my::EnumType)" == str(c1)
+        assert "TdsColumn(Name: C1, Type: my::EnumType)" == str(c1_copy)
 
     def test_tds_columns_from_json(self) -> None:
 
