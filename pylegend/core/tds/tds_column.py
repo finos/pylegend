@@ -102,7 +102,7 @@ class EnumTdsColumn(TdsColumn):
         return self.__enum_values
 
 
-def tds_columns_from_json(s: str) -> PyLegendList[TdsColumn]:
+def tds_columns_from_json(s: str) -> PyLegendSequence[TdsColumn]:
     try:
         parsed = json.loads(s)
 

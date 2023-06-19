@@ -40,6 +40,7 @@ __all__: PyLegendSequence[str] = [
 
 
 class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
+    __initialized: bool = False
 
     def __init__(
             self,
@@ -49,13 +50,12 @@ class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
             artifact_id: str,
             version: str
     ) -> None:
-        super().__init__(legend_client)
         self.pattern = pattern
         self.group_id = group_id
         self.artifact_id = artifact_id
         self.version = version
-        self.columns = None
-        self.columns = legend_client.get_sql_string_schema(self.to_sql_query())
+        super().__init__(legend_client, legend_client.get_sql_string_schema(self.to_sql_query()))
+        self.__initialized = True
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
@@ -83,15 +83,15 @@ class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
                             name=QualifiedName(parts=[root_alias, db_extension.quote_identifier(x.get_name())])
                         )
                     )
-                    for x in self.columns
-                ] if self.columns else [AllColumns(prefix=root_alias)],
+                    for x in self.columns()
+                ] if self.__initialized else [AllColumns(prefix=root_alias)],
                 distinct=False
             ),
             from_=[
                 AliasedRelation(
                     relation=TableFunction(functionCall=func_call),
                     alias=root_alias,
-                    columnNames=[x.get_name() for x in self.columns] if self.columns else []
+                    columnNames=[x.get_name() for x in self.columns()] if self.__initialized else []
                 )
             ],
             where=None,

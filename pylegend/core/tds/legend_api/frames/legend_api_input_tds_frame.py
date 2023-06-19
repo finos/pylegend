@@ -17,6 +17,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendList
 )
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.request.legend_client import LegendClient
 
@@ -29,6 +30,10 @@ __all__: PyLegendSequence[str] = [
 
 
 class LegendApiInputTdsFrame(LegendApiBaseTdsFrame, metaclass=ABCMeta):
+
+    def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
+        super().__init__(columns=columns)
+
     def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return [self]
 
@@ -36,7 +41,8 @@ class LegendApiInputTdsFrame(LegendApiBaseTdsFrame, metaclass=ABCMeta):
 class LegendApiExecutableInputTdsFrame(LegendApiInputTdsFrame, metaclass=ABCMeta):
     __legend_client: LegendClient
 
-    def __init__(self, legend_client: LegendClient) -> None:
+    def __init__(self, legend_client: LegendClient, columns: PyLegendSequence[TdsColumn]) -> None:
+        super().__init__(columns=columns)
         self.__legend_client = legend_client
 
     def get_legend_client(self) -> LegendClient:
@@ -44,4 +50,6 @@ class LegendApiExecutableInputTdsFrame(LegendApiInputTdsFrame, metaclass=ABCMeta
 
 
 class LegendApiNonExecutableInputTdsFrame(LegendApiInputTdsFrame, metaclass=ABCMeta):
-    pass
+
+    def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
+        super().__init__(columns=columns)
