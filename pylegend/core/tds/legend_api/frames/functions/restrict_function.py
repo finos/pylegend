@@ -14,7 +14,8 @@
 
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendTuple
 )
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
@@ -59,7 +60,7 @@ class RestrictFunction(AppliedFunction):
             new_query = create_sub_query(base_query, config, "root", columns_to_retain=columns_to_retain)
             return new_query
         else:
-            new_select_items: PyLegendList['SelectItem'] = []
+            new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
             for col in base_query.select.selectItems:
                 if not isinstance(col, SingleColumn):
                     raise ValueError("Restrict operation not supported for queries "
@@ -68,8 +69,9 @@ class RestrictFunction(AppliedFunction):
                     raise ValueError("Restrict operation not supported for queries "
                                      "with SingleColumns with missing alias")  # pragma: no cover
                 if col.alias in columns_to_retain:
-                    new_select_items.append(col)
+                    new_cols_with_index.append((columns_to_retain.index(col.alias), col))
 
+            new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
             new_query = copy_query(base_query)
             new_query.select.selectItems = new_select_items
             return new_query

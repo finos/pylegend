@@ -39,12 +39,29 @@ class TestRestrictAppliedFunction:
         ]
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.restrict(["col1"])
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
         expected = '''\
             SELECT
                 "root".col1 AS "col1"
             FROM
                 test_schema.test_table AS "root"'''
-        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_sql_gen_restrict_function_column_order(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.restrict(["col2", "col1"])
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: col1, Type: Integer)]"
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                "root".col1 AS "col1"
+            FROM
+                test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
     def test_restrict_error_on_unknown_col(self) -> None:
@@ -99,6 +116,54 @@ class TestRestrictAppliedFunction:
                  "values": [
                     "Fabrice",
                     "Firm A"
+                 ]
+              }
+           ]
+        }"""
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == json.loads(dedent(expected))
+
+    def test_e2e_restrict_function_column_order(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = frame.take(5)
+        frame = frame.restrict(["Firm/Legal Name", "First Name",])
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Firm/Legal Name, Type: String), TdsColumn(Name: First Name, Type: String)]"
+        expected = """\
+        {
+           "columns": [
+              "Firm/Legal Name",
+              "First Name"
+           ],
+           "rows": [
+              {
+                 "values": [
+                    "Firm X",
+                    "Peter"
+                 ]
+              },
+              {
+                 "values": [
+                    "Firm X",
+                    "John"
+                 ]
+              },
+              {
+                 "values": [
+                    "Firm X",
+                    "John"
+                 ]
+              },
+              {
+                 "values": [
+                    "Firm X",
+                    "Anthony"
+                 ]
+              },
+              {
+                 "values": [
+                    "Firm A",
+                    "Fabrice"
                  ]
               }
            ]
