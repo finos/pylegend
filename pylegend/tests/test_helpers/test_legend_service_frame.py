@@ -51,73 +51,12 @@ class TestLegendServiceFrame:
     def test_legend_service_frame_execution(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame = simple_person_service_frame(legend_test_server["engine_port"])
         res = frame.execute_frame(lambda r: b"".join(r))
-
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Last Name",
-              "Age",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Smith",
-                    23,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Johnson",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Hill",
-                    12,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "Anthony",
-                    "Allen",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "Fabrice",
-                    "Roberts",
-                    34,
-                    "Firm A"
-                 ]
-              },
-              {
-                 "values": [
-                    "Oliver",
-                    "Hill",
-                    32,
-                    "Firm B"
-                 ]
-              },
-              {
-                 "values": [
-                    "David",
-                    "Harris",
-                    35,
-                    "Firm C"
-                 ]
-              }
-           ]
-        }"""
-
-        assert json.loads(res)["result"] == json.loads(expected)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
+                             {'values': ['John', 'Johnson', 22, 'Firm X']},
+                             {'values': ['John', 'Hill', 12, 'Firm X']},
+                             {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
+        assert json.loads(res)["result"] == expected
