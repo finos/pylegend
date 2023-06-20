@@ -53,9 +53,6 @@ class FrameToSqlConfig:
     def sql_to_string_generator(self) -> SqlToStringGenerator:
         return self.__sql_to_string_generator
 
-    def quoted_identifier(self, identifier: str) -> str:
-        return self.__sql_to_string_generator.get_db_extension().quote_identifier(identifier)
-
 
 R = PyLegendTypeVar('R')
 

@@ -47,7 +47,7 @@ class SortFunction(AppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "restrict"
+        return "sort"
 
     def __init__(
             self,
@@ -90,11 +90,13 @@ class SortFunction(AppliedFunction):
                 self.direction_list.append(d.upper())
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
+        db_extension = config.sql_to_string_generator().get_db_extension()
 
         def find_column_expression(col: str, query: QuerySpecification) -> Expression:
             filtered = [
                 s for s in query.select.selectItems
-                if isinstance(s, SingleColumn) and s.alias == config.quoted_identifier(col)
+                if (isinstance(s, SingleColumn) and
+                    s.alias == db_extension.quote_identifier(col))
             ]
             if len(filtered) == 0:
                 raise RuntimeError("Cannot find column: " + col)  # pragma: no cover

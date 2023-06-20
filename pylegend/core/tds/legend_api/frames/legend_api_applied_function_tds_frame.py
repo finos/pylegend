@@ -68,7 +68,7 @@ def create_sub_query(
         columns_to_retain: PyLegendOptional[PyLegendList[str]] = None
 ) -> QuerySpecification:
     query = copy_query(base_query)
-    table_alias = config.quoted_identifier(alias)
+    table_alias = config.sql_to_string_generator().get_db_extension().quote_identifier(alias)
 
     columns = []
     for col in query.select.selectItems:
