@@ -48,7 +48,8 @@ class RestrictFunction(AppliedFunction):
         self.column_name_list = column_name_list
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        columns_to_retain = [config.quoted_identifier(x) for x in self.column_name_list]
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        columns_to_retain = [db_extension.quote_identifier(x) for x in self.column_name_list]
 
         sub_query_required = (len(base_query.groupBy) > 0) or (len(base_query.orderBy) > 0) or \
                              (base_query.having is not None) or base_query.select.distinct
