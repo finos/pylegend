@@ -41,7 +41,16 @@ def limit_processor(
     return "{limit}{offset}".format(limit=limit, offset=offset)
 
 
+class PostgresSqlToStringDbExtension(SqlToStringDbExtension):
+    def process_top(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
+        return ""
+
+    def process_limit(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
+        return limit_processor(query, self, config)
+
+
 class PostgresSqlToStringGenerator(SqlToStringGenerator):
+    __sql_to_string_db_extension: SqlToStringDbExtension = PostgresSqlToStringDbExtension()
 
     @classmethod
     def database_type(cls) -> str:
@@ -52,12 +61,4 @@ class PostgresSqlToStringGenerator(SqlToStringGenerator):
         return PostgresSqlToStringGenerator()
 
     def get_db_extension(self) -> SqlToStringDbExtension:
-        return PostgresSqlToStringDbExtension()
-
-
-class PostgresSqlToStringDbExtension(SqlToStringDbExtension):
-    def process_top(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
-        return ""
-
-    def process_limit(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
-        return limit_processor(query, self, config)
+        return self.__sql_to_string_db_extension
