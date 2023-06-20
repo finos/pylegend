@@ -91,7 +91,8 @@ class RestrictFunction(AppliedFunction):
                     break
             if not found_col:
                 raise ValueError(
-                    "Column - '{col}' in restrict columns list doesn't exist. Current frame columns: {cols}".format(
+                    "Column - '{col}' in restrict columns list doesn't exist in the current frame. "
+                    "Current frame columns: {cols}".format(
                         col=c,
                         cols=[x.get_name() for x in base_columns]
                     )
