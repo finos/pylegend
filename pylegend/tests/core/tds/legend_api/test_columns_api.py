@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -21,9 +20,6 @@ from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTd
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
-
-postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
-importlib.import_module(postgres_ext)
 
 
 class TestColumnsApi:

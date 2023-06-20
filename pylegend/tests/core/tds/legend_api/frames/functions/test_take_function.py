@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
 import json
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -24,9 +23,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-
-postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
-importlib.import_module(postgres_ext)
 
 
 class TestTakeAppliedFunction:

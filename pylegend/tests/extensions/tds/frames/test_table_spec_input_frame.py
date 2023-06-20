@@ -13,14 +13,10 @@
 # limitations under the License.
 
 import pytest
-import importlib
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
-
-postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
-importlib.import_module(postgres_ext)
 
 
 class TestTableSpecInputFrame:

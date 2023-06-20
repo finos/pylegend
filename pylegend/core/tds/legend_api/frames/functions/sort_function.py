@@ -17,7 +17,6 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
 )
-from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
     AppliedFunction,
     create_sub_query,
@@ -91,13 +90,11 @@ class SortFunction(AppliedFunction):
                 self.direction_list.append(d.upper())
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
-        db_extension = generator.get_db_extension()
 
         def find_column_expression(col: str, query: QuerySpecification) -> Expression:
             filtered = [
                 s for s in query.select.selectItems
-                if isinstance(s, SingleColumn) and s.alias == db_extension.quote_identifier(col)
+                if isinstance(s, SingleColumn) and s.alias == config.quoted_identifier(col)
             ]
             if len(filtered) == 0:
                 raise RuntimeError("Cannot find column: " + col)  # pragma: no cover

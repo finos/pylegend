@@ -16,7 +16,6 @@ from pylegend._typing import (
     PyLegendSequence,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.legend_api.frames.legend_api_input_tds_frame import LegendApiExecutableInputTdsFrame
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.request.legend_client import LegendClient
@@ -58,9 +57,7 @@ class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
         self.__initialized = True
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
-        db_extension = generator.get_db_extension()
-        root_alias = db_extension.quote_identifier("root")
+        root_alias = config.quoted_identifier("root")
         func_call = FunctionCall(
             name=QualifiedName(["legend_service"]),
             distinct=False,
@@ -78,9 +75,9 @@ class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
             select=Select(
                 selectItems=[
                     SingleColumn(
-                        alias=db_extension.quote_identifier(x.get_name()),
+                        alias=config.quoted_identifier(x.get_name()),
                         expression=QualifiedNameReference(
-                            name=QualifiedName(parts=[root_alias, db_extension.quote_identifier(x.get_name())])
+                            name=QualifiedName(parts=[root_alias, config.quoted_identifier(x.get_name())])
                         )
                     )
                     for x in self.columns()
