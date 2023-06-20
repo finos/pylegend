@@ -72,8 +72,8 @@ class TestRestrictAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
             frame.restrict(["unknown_col"])
-        assert "Column - 'unknown_col' in restrict columns list doesn't exist. Current frame columns: ['col1', 'col2']"\
-               in r.value.args[0]
+        assert r.value.args[0] == "Column - 'unknown_col' in restrict columns list doesn't exist in the current frame."\
+                                  " Current frame columns: ['col1', 'col2']"
 
     def test_sql_gen_restrict_function_after_distinct_creates_subquery(self) -> None:
         columns = [

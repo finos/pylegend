@@ -18,7 +18,8 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendTypeVar,
     PyLegendIterator,
-    PyLegendList
+    PyLegendList,
+    PyLegendOptional,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.databse.sql_to_string import (
@@ -92,6 +93,19 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             RestrictFunction
         )
         return LegendApiAppliedFunctionTdsFrame(self, RestrictFunction(column_name_list))
+
+    def sort(
+            self,
+            column_name_list: PyLegendList[str],
+            direction_list: PyLegendOptional[PyLegendList[str]] = None
+    ) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.sort_function import (
+            SortFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(self, SortFunction(self, column_name_list, direction_list))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
