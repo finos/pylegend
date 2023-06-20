@@ -103,94 +103,29 @@ class TestRestrictAppliedFunction:
         frame = frame.restrict(["First Name", "Firm/Legal Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Firm/Legal Name, Type: String)]"
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "Anthony",
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "Fabrice",
-                    "Firm A"
-                 ]
-              }
-           ]
-        }"""
+        expected = {'columns': ['First Name', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Peter', 'Firm X']},
+                             {'values': ['John', 'Firm X']},
+                             {'values': ['John', 'Firm X']},
+                             {'values': ['Anthony', 'Firm X']},
+                             {'values': ['Fabrice', 'Firm A']}]}
         res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == json.loads(dedent(expected))
+        assert json.loads(res)["result"] == expected
 
-    def test_e2e_restrict_function_column_order(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_restrict_function_column_order(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
+            -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.take(5)
-        frame = frame.restrict(["Firm/Legal Name", "First Name",])
+        frame = frame.restrict(["Firm/Legal Name", "First Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: Firm/Legal Name, Type: String), TdsColumn(Name: First Name, Type: String)]"
-        expected = """\
-        {
-           "columns": [
-              "Firm/Legal Name",
-              "First Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Firm X",
-                    "Peter"
-                 ]
-              },
-              {
-                 "values": [
-                    "Firm X",
-                    "John"
-                 ]
-              },
-              {
-                 "values": [
-                    "Firm X",
-                    "John"
-                 ]
-              },
-              {
-                 "values": [
-                    "Firm X",
-                    "Anthony"
-                 ]
-              },
-              {
-                 "values": [
-                    "Firm A",
-                    "Fabrice"
-                 ]
-              }
-           ]
-        }"""
+        expected = {'columns': ['Firm/Legal Name', 'First Name'],
+                    'rows': [{'values': ['Firm X', 'Peter']},
+                             {'values': ['Firm X', 'John']},
+                             {'values': ['Firm X', 'John']},
+                             {'values': ['Firm X', 'Anthony']},
+                             {'values': ['Firm A', 'Fabrice']}]}
         res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == json.loads(dedent(expected))
+        assert json.loads(res)["result"] == expected
 
     # TODO: Add tests for subquery generation when groupBy/orderBy/having operations are present
