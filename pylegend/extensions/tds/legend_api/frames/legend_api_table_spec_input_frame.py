@@ -16,7 +16,6 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
 )
-from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.sql.metamodel import (
     QualifiedName,
     QualifiedNameReference,
@@ -44,14 +43,12 @@ class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
         self.table = QualifiedName(table_name_parts)
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
-        db_extension = generator.get_db_extension()
-        root_alias = db_extension.quote_identifier("root")
+        root_alias = config.quoted_identifier("root")
         return QuerySpecification(
             select=Select(
                 selectItems=[
                     SingleColumn(
-                        alias=db_extension.quote_identifier(x.get_name()),
+                        alias=config.quoted_identifier(x.get_name()),
                         expression=QualifiedNameReference(name=QualifiedName(parts=[root_alias, x.get_name()]))
                     )
                     for x in self.columns()

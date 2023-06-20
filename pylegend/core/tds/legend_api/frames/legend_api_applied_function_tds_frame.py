@@ -18,7 +18,6 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendOptional
 )
-from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SelectItem,
@@ -69,9 +68,7 @@ def create_sub_query(
         columns_to_retain: PyLegendOptional[PyLegendList[str]] = None
 ) -> QuerySpecification:
     query = copy_query(base_query)
-    generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
-    db_extension = generator.get_db_extension()
-    table_alias = db_extension.quote_identifier(alias)
+    table_alias = config.quoted_identifier(alias)
 
     columns = []
     for col in query.select.selectItems:

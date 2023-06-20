@@ -23,7 +23,6 @@ from pylegend._typing import (
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.databse.sql_to_string import (
-    SqlToStringGenerator,
     SqlToStringConfig,
     SqlToStringFormat
 )
@@ -117,13 +116,12 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         query = self.to_sql_query_object(config)
-        sql_to_string_generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
         sql_to_string_config = SqlToStringConfig(
             format_=SqlToStringFormat(
                 pretty=config.pretty
             )
         )
-        return sql_to_string_generator.generate_sql_string(query, sql_to_string_config)
+        return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
 
     def execute_frame(
             self,

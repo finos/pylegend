@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
@@ -20,6 +21,10 @@ from pylegend._typing import (
     PyLegendTypeVar,
 )
 from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.databse.sql_to_string import SqlToStringGenerator
+
+postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
+importlib.import_module(postgres_ext)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendTdsFrame",
@@ -31,6 +36,8 @@ class FrameToSqlConfig:
     database_type: str
     pretty: bool
 
+    __sql_to_string_generator: SqlToStringGenerator
+
     def __init__(
             self,
             database_type: str = "Postgres",
@@ -38,6 +45,16 @@ class FrameToSqlConfig:
     ) -> None:
         self.database_type = database_type
         self.pretty = pretty
+
+        self.__sql_to_string_generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(
+            self.database_type
+        )
+
+    def sql_to_string_generator(self) -> SqlToStringGenerator:
+        return self.__sql_to_string_generator
+
+    def quoted_identifier(self, identifier: str) -> str:
+        return self.__sql_to_string_generator.get_db_extension().quote_identifier(identifier)
 
 
 R = PyLegendTypeVar('R')

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
 import json
 from textwrap import dedent
 from pylegend._typing import (
@@ -21,9 +20,6 @@ from pylegend._typing import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
-
-postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
-importlib.import_module(postgres_ext)
 
 
 class TestLegendServiceFrame:

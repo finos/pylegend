@@ -17,7 +17,6 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTuple
 )
-from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
     AppliedFunction,
     create_sub_query,
@@ -49,9 +48,7 @@ class RestrictFunction(AppliedFunction):
         self.column_name_list = column_name_list
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
-        generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(config.database_type)
-        db_extension = generator.get_db_extension()
-        columns_to_retain = [db_extension.quote_identifier(x) for x in self.column_name_list]
+        columns_to_retain = [config.quoted_identifier(x) for x in self.column_name_list]
 
         sub_query_required = (len(base_query.groupBy) > 0) or (len(base_query.orderBy) > 0) or \
                              (base_query.having is not None) or base_query.select.distinct
