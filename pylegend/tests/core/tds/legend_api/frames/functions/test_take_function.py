@@ -74,82 +74,20 @@ class TestTakeAppliedFunction:
     def test_e2e_take_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.take(3)
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Last Name",
-              "Age",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Smith",
-                    23,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Johnson",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Hill",
-                    12,
-                    "Firm X"
-                 ]
-              }
-           ]
-        }"""
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
+                             {'values': ['John', 'Johnson', 22, 'Firm X']},
+                             {'values': ['John', 'Hill', 12, 'Firm X']}]}
         res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == json.loads(dedent(expected))
+        assert json.loads(res)["result"] == expected
 
     def test_e2e_take_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.take(3)
         frame = frame.take(10)
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Last Name",
-              "Age",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Smith",
-                    23,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Johnson",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Hill",
-                    12,
-                    "Firm X"
-                 ]
-              }
-           ]
-        }"""
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
+                             {'values': ['John', 'Johnson', 22, 'Firm X']},
+                             {'values': ['John', 'Hill', 12, 'Firm X']}]}
         res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == json.loads(dedent(expected))
+        assert json.loads(res)["result"] == expected
