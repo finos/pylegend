@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -66,6 +67,16 @@ class TestLimitAppliedFunction:
                 ) AS "root"
             LIMIT 20'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_limit_function_negative_row_count_error(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        with pytest.raises(ValueError) as v:
+            frame.limit(-10)
+        assert v.value.args[0] == "Row count argument of head/take/limit function cannot be negative"
 
     def test_e2e_limit_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])

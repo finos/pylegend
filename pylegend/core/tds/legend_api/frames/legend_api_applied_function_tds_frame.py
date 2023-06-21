@@ -64,6 +64,10 @@ class AppliedFunction(metaclass=ABCMeta):
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         pass
 
+    @abstractmethod
+    def validate(self) -> bool:
+        pass
+
 
 def create_sub_query(
         base_query: QuerySpecification,
@@ -144,6 +148,7 @@ class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
     __applied_function: AppliedFunction
 
     def __init__(self, applied_function: AppliedFunction):
+        applied_function.validate()
         super().__init__(columns=applied_function.calculate_columns())
         self.__applied_function = applied_function
 

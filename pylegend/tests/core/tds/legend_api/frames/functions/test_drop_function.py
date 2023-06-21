@@ -92,6 +92,16 @@ class TestDropAppliedFunction:
             OFFSET 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_drop_function_negative_row_count_error(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        with pytest.raises(ValueError) as v:
+            frame.drop(-10)
+        assert v.value.args[0] == "Row count argument of drop function cannot be negative"
+
     @pytest.mark.skip(reason="Offset not handled by server")  # TODO: Enable this test after server support is added
     def test_e2e_drop_function_no_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
