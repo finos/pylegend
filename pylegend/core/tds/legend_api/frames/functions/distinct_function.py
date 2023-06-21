@@ -35,10 +35,14 @@ __all__: PyLegendSequence[str] = [
 
 
 class DistinctFunction(AppliedFunction):
+    base_frame: LegendApiBaseTdsFrame
 
     @classmethod
     def name(cls) -> str:
         return "distinct"
+
+    def __init__(self, base_frame: LegendApiBaseTdsFrame) -> None:
+        self.base_frame = base_frame
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
         if (base_query.offset is not None) or (base_query.limit is not None):
