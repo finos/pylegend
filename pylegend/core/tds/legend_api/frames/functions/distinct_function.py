@@ -35,16 +35,17 @@ __all__: PyLegendSequence[str] = [
 
 
 class DistinctFunction(AppliedFunction):
-    base_frame: LegendApiBaseTdsFrame
+    __base_frame: LegendApiBaseTdsFrame
 
     @classmethod
     def name(cls) -> str:
         return "distinct"
 
     def __init__(self, base_frame: LegendApiBaseTdsFrame) -> None:
-        self.base_frame = base_frame
+        self.__base_frame = base_frame
 
-    def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
+    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        base_query = self.__base_frame.to_sql_query_object(config)
         if (base_query.offset is not None) or (base_query.limit is not None):
             new_query = create_sub_query(base_query, config, "root")
             new_query.select.distinct = True
@@ -54,8 +55,11 @@ class DistinctFunction(AppliedFunction):
             new_query.select.distinct = True
             return new_query
 
+    def base_frame(self) -> LegendApiBaseTdsFrame:
+        return self.__base_frame
+
     def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return []
 
-    def calculate_columns(self, base_frame: "LegendApiBaseTdsFrame") -> PyLegendSequence["TdsColumn"]:
-        return [c.copy() for c in base_frame.columns()]
+    def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
+        return [c.copy() for c in self.__base_frame.columns()]

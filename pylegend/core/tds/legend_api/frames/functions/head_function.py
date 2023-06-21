@@ -36,29 +36,33 @@ __all__: PyLegendSequence[str] = [
 
 
 class HeadFunction(AppliedFunction):
-    base_frame: LegendApiBaseTdsFrame
-    row_count: int
+    __base_frame: LegendApiBaseTdsFrame
+    __row_count: int
 
     @classmethod
     def name(cls) -> str:
         return "head"
 
     def __init__(self, base_frame: LegendApiBaseTdsFrame, row_count: int) -> None:
-        self.base_frame = base_frame
-        self.row_count = row_count
+        self.__base_frame = base_frame
+        self.__row_count = row_count
 
-    def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
+    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        base_query = self.__base_frame.to_sql_query_object(config)
         if base_query.limit is not None:
             new_query = create_sub_query(base_query, config, "root")
-            new_query.limit = LongLiteral(value=self.row_count)
+            new_query.limit = LongLiteral(value=self.__row_count)
             return new_query
         else:
             new_query = copy_query(base_query)
-            new_query.limit = LongLiteral(value=self.row_count)
+            new_query.limit = LongLiteral(value=self.__row_count)
             return new_query
+
+    def base_frame(self) -> LegendApiBaseTdsFrame:
+        return self.__base_frame
 
     def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return []
 
-    def calculate_columns(self, base_frame: "LegendApiBaseTdsFrame") -> PyLegendSequence["TdsColumn"]:
-        return [c.copy() for c in base_frame.columns()]
+    def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
+        return [c.copy() for c in self.__base_frame.columns()]
