@@ -58,7 +58,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legend_api.frames.functions.head_function import (
             HeadFunction
         )
-        return LegendApiAppliedFunctionTdsFrame(self, HeadFunction(self, row_count))
+        return LegendApiAppliedFunctionTdsFrame(HeadFunction(self, row_count))
 
     def take(self, row_count: int = 5) -> "LegendApiTdsFrame":
         return self.head(row_count=row_count)
@@ -73,7 +73,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legend_api.frames.functions.drop_function import (
             DropFunction
         )
-        return LegendApiAppliedFunctionTdsFrame(self, DropFunction(self, row_count))
+        return LegendApiAppliedFunctionTdsFrame(DropFunction(self, row_count))
 
     def distinct(self) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
@@ -82,7 +82,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legend_api.frames.functions.distinct_function import (
             DistinctFunction
         )
-        return LegendApiAppliedFunctionTdsFrame(self, DistinctFunction(self))
+        return LegendApiAppliedFunctionTdsFrame(DistinctFunction(self))
 
     def restrict(self, column_name_list: PyLegendList[str]) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
@@ -91,7 +91,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legend_api.frames.functions.restrict_function import (
             RestrictFunction
         )
-        return LegendApiAppliedFunctionTdsFrame(self, RestrictFunction(self, column_name_list))
+        return LegendApiAppliedFunctionTdsFrame(RestrictFunction(self, column_name_list))
 
     def sort(
             self,
@@ -104,7 +104,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legend_api.frames.functions.sort_function import (
             SortFunction
         )
-        return LegendApiAppliedFunctionTdsFrame(self, SortFunction(self, column_name_list, direction_list))
+        return LegendApiAppliedFunctionTdsFrame(SortFunction(self, column_name_list, direction_list))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

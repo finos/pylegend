@@ -38,20 +38,21 @@ __all__: PyLegendSequence[str] = [
 
 
 class RestrictFunction(AppliedFunction):
-    base_frame: LegendApiBaseTdsFrame
-    column_name_list: PyLegendList[str]
+    __base_frame: LegendApiBaseTdsFrame
+    __column_name_list: PyLegendList[str]
 
     @classmethod
     def name(cls) -> str:
         return "restrict"
 
     def __init__(self, base_frame: LegendApiBaseTdsFrame, column_name_list: PyLegendList[str]) -> None:
-        self.base_frame = base_frame
-        self.column_name_list = column_name_list
+        self.__base_frame = base_frame
+        self.__column_name_list = column_name_list
 
-    def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
+    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        base_query = self.__base_frame.to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
-        columns_to_retain = [db_extension.quote_identifier(x) for x in self.column_name_list]
+        columns_to_retain = [db_extension.quote_identifier(x) for x in self.__column_name_list]
 
         sub_query_required = (len(base_query.groupBy) > 0) or (len(base_query.orderBy) > 0) or \
                              (base_query.having is not None) or base_query.select.distinct
@@ -76,13 +77,16 @@ class RestrictFunction(AppliedFunction):
             new_query.select.selectItems = new_select_items
             return new_query
 
+    def base_frame(self) -> LegendApiBaseTdsFrame:
+        return self.__base_frame
+
     def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return []
 
-    def calculate_columns(self, base_frame: "LegendApiBaseTdsFrame") -> PyLegendSequence["TdsColumn"]:
-        base_columns = base_frame.columns()
+    def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
+        base_columns = self.__base_frame.columns()
         new_columns = []
-        for c in self.column_name_list:
+        for c in self.__column_name_list:
             found_col = False
             for base_col in base_columns:
                 if base_col.get_name() == c:
