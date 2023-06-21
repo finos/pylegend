@@ -36,13 +36,15 @@ __all__: PyLegendSequence[str] = [
 
 
 class DropFunction(AppliedFunction):
+    base_frame: LegendApiBaseTdsFrame
     row_count: int
 
     @classmethod
     def name(cls) -> str:
         return "drop"
 
-    def __init__(self, row_count: int) -> None:
+    def __init__(self, base_frame: LegendApiBaseTdsFrame, row_count: int) -> None:
+        self.base_frame = base_frame
         self.row_count = row_count
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:

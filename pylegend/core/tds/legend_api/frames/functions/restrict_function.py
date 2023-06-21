@@ -38,13 +38,15 @@ __all__: PyLegendSequence[str] = [
 
 
 class RestrictFunction(AppliedFunction):
+    base_frame: LegendApiBaseTdsFrame
     column_name_list: PyLegendList[str]
 
     @classmethod
     def name(cls) -> str:
         return "restrict"
 
-    def __init__(self, column_name_list: PyLegendList[str]) -> None:
+    def __init__(self, base_frame: LegendApiBaseTdsFrame, column_name_list: PyLegendList[str]) -> None:
+        self.base_frame = base_frame
         self.column_name_list = column_name_list
 
     def to_sql(self, base_query: QuerySpecification, config: FrameToSqlConfig) -> QuerySpecification:
