@@ -66,3 +66,8 @@ class HeadFunction(AppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         return [c.copy() for c in self.__base_frame.columns()]
+
+    def validate(self) -> bool:
+        if self.__row_count < 0:
+            raise ValueError("Row count argument of head/take/limit function cannot be negative")
+        return True

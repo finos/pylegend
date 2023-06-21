@@ -43,7 +43,7 @@ __all__: PyLegendSequence[str] = [
 class SortFunction(AppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
     __column_name_list: PyLegendList[str]
-    __direction_list: PyLegendList[str]
+    __directions: PyLegendOptional[PyLegendList[str]]
 
     @classmethod
     def name(cls) -> str:
@@ -56,38 +56,8 @@ class SortFunction(AppliedFunction):
             directions: PyLegendOptional[PyLegendList[str]]
     ) -> None:
         self.__base_frame = base_frame
-
-        base_cols = [c.get_name() for c in self.__base_frame.columns()]
-        for c in column_name_list:
-            if c not in base_cols:
-                raise ValueError(
-                    "Column - '{col}' in sort columns list doesn't exist in the current frame. "
-                    "Current frame columns: {cols}".format(
-                        col=c,
-                        cols=base_cols
-                    )
-                )
         self.__column_name_list = column_name_list
-
-        if (directions is None) or (len(directions) == 0):
-            self.__direction_list = ["ASC" for _ in self.__column_name_list]
-        else:
-            if len(self.__column_name_list) != len(directions):
-                raise ValueError(
-                    "Sort directions (ASC/DESC) provided need to be in sync with columns or left empty to "
-                    "choose defaults. Passed column list: {cols}, directions: {dirs}".format(
-                        cols=column_name_list,
-                        dirs=directions
-                    )
-                )
-
-            self.__direction_list = []
-            for d in directions:
-                if d.upper() not in (["ASC", "DESC"]):
-                    raise ValueError(
-                        "Sort direction can be ASC/DESC (case insensitive). Passed unknown value: " + d
-                    )
-                self.__direction_list.append(d.upper())
+        self.__directions = directions
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
@@ -108,10 +78,12 @@ class SortFunction(AppliedFunction):
         else:
             new_query = copy_query(base_query)
 
+        direction_list = self._build_directions_list()
+
         new_query.orderBy = [
             SortItem(
                 sortKey=find_column_expression(self.__column_name_list[i], new_query),
-                ordering=(SortItemOrdering.ASCENDING if self.__direction_list[i].upper() == "ASC"
+                ordering=(SortItemOrdering.ASCENDING if direction_list[i].upper() == "ASC"
                           else SortItemOrdering.DESCENDING),
                 nullOrdering=SortItemNullOrdering.UNDEFINED
             )
@@ -127,3 +99,43 @@ class SortFunction(AppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         return [c.copy() for c in self.__base_frame.columns()]
+
+    def validate(self) -> bool:
+        base_cols = [c.get_name() for c in self.__base_frame.columns()]
+        for c in self.__column_name_list:
+            if c not in base_cols:
+                raise ValueError(
+                    "Column - '{col}' in sort columns list doesn't exist in the current frame. "
+                    "Current frame columns: {cols}".format(
+                        col=c,
+                        cols=base_cols
+                    )
+                )
+
+        if (self.__directions is not None) and (len(self.__directions) > 0):
+            if len(self.__column_name_list) != len(self.__directions):
+                raise ValueError(
+                    "Sort directions (ASC/DESC) provided need to be in sync with columns or left empty to "
+                    "choose defaults. Passed column list: {cols}, directions: {dirs}".format(
+                        cols=self.__column_name_list,
+                        dirs=self.__directions
+                    )
+                )
+
+            for d in self.__directions:
+                if d.upper() not in (["ASC", "DESC"]):
+                    raise ValueError(
+                        "Sort direction can be ASC/DESC (case insensitive). Passed unknown value: " + d
+                    )
+
+        return True
+
+    def _build_directions_list(self) -> PyLegendList[str]:
+        if (self.__directions is None) or (len(self.__directions) == 0):
+            return ["ASC" for _ in self.__column_name_list]
+        else:
+            # Already validated that directions are all ASC/DESC and length matches with column list
+            direction_list = []
+            for d in self.__directions:
+                direction_list.append(d.upper())
+            return direction_list

@@ -63,3 +63,6 @@ class DistinctFunction(AppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         return [c.copy() for c in self.__base_frame.columns()]
+
+    def validate(self) -> bool:
+        return True

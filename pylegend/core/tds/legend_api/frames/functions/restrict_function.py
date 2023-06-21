@@ -87,10 +87,18 @@ class RestrictFunction(AppliedFunction):
         base_columns = self.__base_frame.columns()
         new_columns = []
         for c in self.__column_name_list:
-            found_col = False
             for base_col in base_columns:
                 if base_col.get_name() == c:
                     new_columns.append(base_col.copy())
+                    break
+        return new_columns
+
+    def validate(self) -> bool:
+        base_columns = self.__base_frame.columns()
+        for c in self.__column_name_list:
+            found_col = False
+            for base_col in base_columns:
+                if base_col.get_name() == c:
                     found_col = True
                     break
             if not found_col:
@@ -101,4 +109,4 @@ class RestrictFunction(AppliedFunction):
                         cols=[x.get_name() for x in base_columns]
                     )
                 )
-        return new_columns
+        return True
