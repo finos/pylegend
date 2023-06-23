@@ -1107,19 +1107,39 @@ class TestSqlToStringDbExtensionProcessing:
 
         union = Union(rel1, rel2, False)
         expected = """\
-                    SELECT DISTINCT
-                        "root".*
-                    FROM
-                        test_db.test_schema.test_table AS "root"
-                    WHERE
-                        (101 < 202)
-                    LIMIT 202, 101
-                    UNION ALL
-                    SELECT DISTINCT
-                        "root".*
-                    FROM
-                        test_db.test_schema.test_table AS "root"
-                    WHERE
-                        (101 < 202)
-                    LIMIT 303, 101"""
+            SELECT DISTINCT
+                "root".*
+            FROM
+                test_db.test_schema.test_table AS "root"
+            WHERE
+                (101 < 202)
+            LIMIT 202, 101
+            UNION ALL
+            SELECT DISTINCT
+                "root".*
+            FROM
+                test_db.test_schema.test_table AS "root"
+            WHERE
+                (101 < 202)
+            LIMIT 303, 101"""
         assert extension.process_relation(union, config) == dedent(expected)
+
+        expected = """\
+            (
+                SELECT DISTINCT
+                    "root".*
+                FROM
+                    test_db.test_schema.test_table AS "root"
+                WHERE
+                    (101 < 202)
+                LIMIT 202, 101
+                UNION ALL
+                SELECT DISTINCT
+                    "root".*
+                FROM
+                    test_db.test_schema.test_table AS "root"
+                WHERE
+                    (101 < 202)
+                LIMIT 303, 101
+            )"""
+        assert extension.process_relation(union, config, True) == dedent(expected)
