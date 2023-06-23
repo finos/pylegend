@@ -60,3 +60,7 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             direction_list: PyLegendOptional[PyLegendList[str]] = None
     ) -> "LegendApiTdsFrame":
         pass
+
+    @abstractmethod
+    def concatenate(self, other: "LegendApiTdsFrame") -> "LegendApiTdsFrame":
+        pass

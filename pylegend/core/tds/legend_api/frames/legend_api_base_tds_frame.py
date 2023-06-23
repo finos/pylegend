@@ -106,6 +106,15 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         )
         return LegendApiAppliedFunctionTdsFrame(SortFunction(self, column_name_list, direction_list))
 
+    def concatenate(self, other: "LegendApiTdsFrame") -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.concatenate_function import (
+            ConcatenateFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(ConcatenateFunction(self, other))
+
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass
