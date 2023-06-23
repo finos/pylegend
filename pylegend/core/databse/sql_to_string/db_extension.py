@@ -614,7 +614,7 @@ def relation_processor(
     elif isinstance(relation, TableFunction):
         return extension.process_table_function(relation, config)
     elif isinstance(relation, Union):
-        return extension.process_union(relation, config)
+        return extension.process_union(relation, config, nested_subquery)
     raise ValueError("Unknown relation type: " + str(type(relation)))  # pragma: no cover
 
 
@@ -644,7 +644,7 @@ def query_processor(
         config: SqlToStringConfig,
         nested_subquery: bool = False
 ) -> str:
-    if isinstance(query.queryBody, QuerySpecification) and \
+    if isinstance(query.queryBody, (QuerySpecification, Union)) and \
             (query.limit is None) and \
             (query.offset is None) and \
             (query.orderBy is None or len(query.orderBy) == 0):
@@ -755,8 +755,16 @@ def table_function_processor(
 def union_processor(
         union: Union,
         extension: "SqlToStringDbExtension",
-        config: SqlToStringConfig
+        config: SqlToStringConfig,
+        nested_subquery: bool
 ) -> str:
+    if nested_subquery:
+        return "({sep1}{sub_query}{sep0})".format(
+            sep0=config.format.separator(0),
+            sep1=config.format.separator(1),
+            sub_query=extension.process_union(union, config.push_indent(), False)
+        )
+
     return "{left}{sep0}{union}{sep0}{right}".format(
         sep0=config.format.separator(0),
         left=extension.process_relation(union.left, config),
@@ -931,5 +939,5 @@ class SqlToStringDbExtension:
     def process_table_function(self, table_func: TableFunction, config: SqlToStringConfig) -> str:
         return table_function_processor(table_func, self, config)
 
-    def process_union(self, union: Union, config: SqlToStringConfig) -> str:
-        return union_processor(union, self, config)
+    def process_union(self, union: Union, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
+        return union_processor(union, self, config, nested_subquery)
