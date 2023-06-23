@@ -71,6 +71,7 @@ from pylegend.core.sql.metamodel import (
     NamedArgumentExpression,
     Window,
     TableFunction,
+    Union,
 )
 
 
@@ -612,6 +613,8 @@ def relation_processor(
         return extension.process_join(relation, config)
     elif isinstance(relation, TableFunction):
         return extension.process_table_function(relation, config)
+    elif isinstance(relation, Union):
+        return extension.process_union(relation, config)
     raise ValueError("Unknown relation type: " + str(type(relation)))  # pragma: no cover
 
 
@@ -747,6 +750,19 @@ def table_function_processor(
         config: SqlToStringConfig
 ) -> str:
     return extension.process_function_call(table_func.functionCall, config)
+
+
+def union_processor(
+        union: Union,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    return "{left}{sep0}{union}{sep0}{right}".format(
+        sep0=config.format.separator(0),
+        left=extension.process_relation(union.left, config),
+        union="UNION" if union.distinct else "UNION ALL",
+        right=extension.process_relation(union.right, config)
+    )
 
 
 class SqlToStringDbExtension:
@@ -914,3 +930,6 @@ class SqlToStringDbExtension:
 
     def process_table_function(self, table_func: TableFunction, config: SqlToStringConfig) -> str:
         return table_function_processor(table_func, self, config)
+
+    def process_union(self, union: Union, config: SqlToStringConfig) -> str:
+        return union_processor(union, self, config)
