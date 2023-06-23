@@ -102,132 +102,36 @@ class TestDropAppliedFunction:
             frame.drop(-10)
         assert v.value.args[0] == "Row count argument of drop function cannot be negative"
 
-    @pytest.mark.skip(reason="Offset not handled by server")  # TODO: Enable this test after server support is added
     def test_e2e_drop_function_no_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.drop(3)
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Last Name",
-              "Age",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Smith",
-                    23,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Johnson",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Hill",
-                    12,
-                    "Firm X"
-                 ]
-              }
-           ]
-        }"""
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
         res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == json.loads(dedent(expected))
+        assert json.loads(res)["result"] == expected
 
-    @pytest.mark.skip(reason="Offset not handled by server")  # TODO: Enable this test after server support is added
     def test_e2e_drop_function_existing_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> \
             None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.drop(3)
         frame = frame.drop(1)
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Last Name",
-              "Age",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Smith",
-                    23,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Johnson",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Hill",
-                    12,
-                    "Firm X"
-                 ]
-              }
-           ]
-        }"""
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
         res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == json.loads(dedent(expected))
+        assert json.loads(res)["result"] == expected
 
-    @pytest.mark.skip(reason="Offset not handled by server")  # TODO: Enable this test after server support is added
     def test_e2e_drop_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> \
             None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.take(3)
         frame = frame.drop(1)
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Last Name",
-              "Age",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Smith",
-                    23,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Johnson",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Hill",
-                    12,
-                    "Firm X"
-                 ]
-              }
-           ]
-        }"""
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['John', 'Johnson', 22, 'Firm X']},
+                             {'values': ['John', 'Hill', 12, 'Firm X']}]}
         res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == json.loads(dedent(expected))
+        assert json.loads(res)["result"] == expected
