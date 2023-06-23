@@ -68,6 +68,7 @@ from pylegend.core.sql.metamodel import (
     FunctionCall,
     Window,
     TableFunction,
+    Union,
 )
 
 
@@ -1035,3 +1036,90 @@ class TestSqlToStringDbExtensionProcessing:
                 (101 < 202)
             LIMIT 202, 101"""
         assert extension.process_query(query, config) == dedent(expected)
+
+    def test_process_union(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        rel1 = QuerySpecification(
+            select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=IntegerLiteral(101),
+            offset=IntegerLiteral(202)
+        )
+
+        rel2 = QuerySpecification(
+            select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=IntegerLiteral(101),
+            offset=IntegerLiteral(303)
+        )
+
+        union1 = Union(rel1, rel2, True)
+        assert extension.process_relation(union1, config) == \
+               'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
+               'WHERE (101 < 202) LIMIT 202, 101 ' \
+               'UNION ' \
+               'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
+               'WHERE (101 < 202) LIMIT 303, 101'
+
+        union2 = Union(rel1, rel2, False)
+        assert extension.process_relation(union2, config) == \
+               'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
+               'WHERE (101 < 202) LIMIT 202, 101 ' \
+               'UNION ALL ' \
+               'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
+               'WHERE (101 < 202) LIMIT 303, 101'
+
+    def test_process_union_pretty_format(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=True))
+
+        rel1 = QuerySpecification(
+            select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=IntegerLiteral(101),
+            offset=IntegerLiteral(202)
+        )
+
+        rel2 = QuerySpecification(
+            select=Select(selectItems=[AllColumns(prefix='"root"')], distinct=True),
+            from_=[AliasedRelation(Table(QualifiedName(["test_db", "test_schema", "test_table"])), '"root"', [])],
+            where=ComparisonExpression(IntegerLiteral(101), IntegerLiteral(202), ComparisonOperator.LESS_THAN),
+            groupBy=[],
+            having=None,
+            orderBy=[],
+            limit=IntegerLiteral(101),
+            offset=IntegerLiteral(303)
+        )
+
+        union = Union(rel1, rel2, False)
+        expected = """\
+                    SELECT DISTINCT
+                        "root".*
+                    FROM
+                        test_db.test_schema.test_table AS "root"
+                    WHERE
+                        (101 < 202)
+                    LIMIT 202, 101
+                    UNION ALL
+                    SELECT DISTINCT
+                        "root".*
+                    FROM
+                        test_db.test_schema.test_table AS "root"
+                    WHERE
+                        (101 < 202)
+                    LIMIT 303, 101"""
+        assert extension.process_relation(union, config) == dedent(expected)
