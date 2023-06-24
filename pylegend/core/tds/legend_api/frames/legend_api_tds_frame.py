@@ -46,6 +46,10 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
         pass
 
     @abstractmethod
+    def slice(self, start_row: int, end_row_exclusive: int) -> "LegendApiTdsFrame":
+        pass
+
+    @abstractmethod
     def distinct(self) -> "LegendApiTdsFrame":
         pass
 
