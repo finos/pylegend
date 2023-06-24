@@ -56,6 +56,12 @@ class TestTdsColumn:
         assert "TdsColumn(Name: C1, Type: Integer)" == str(c1)
         assert "TdsColumn(Name: C1, Type: Integer)" == str(c1_copy)
 
+    def test_primitive_tds_column_copy_with_name_change(self) -> None:
+        c1 = PrimitiveTdsColumn.integer_column('C1')
+        c1_copy = c1.copy_with_changed_name('C1_Copy')
+        assert "TdsColumn(Name: C1, Type: Integer)" == str(c1)
+        assert "TdsColumn(Name: C1_Copy, Type: Integer)" == str(c1_copy)
+
     def test_enum_tds_column_creation(self) -> None:
         c1 = EnumTdsColumn('C1', 'my::EnumType', ['A', 'B'])
         assert "TdsColumn(Name: C1, Type: my::EnumType)" == str(c1)
@@ -66,6 +72,12 @@ class TestTdsColumn:
         assert c1 != c1_copy
         assert "TdsColumn(Name: C1, Type: my::EnumType)" == str(c1)
         assert "TdsColumn(Name: C1, Type: my::EnumType)" == str(c1_copy)
+
+    def test_enum_tds_column_copy_with_changed_name(self) -> None:
+        c1 = EnumTdsColumn('C1', 'my::EnumType', ['A', 'B'])
+        c1_copy = c1.copy_with_changed_name('C1_Copy')
+        assert "TdsColumn(Name: C1, Type: my::EnumType)" == str(c1)
+        assert "TdsColumn(Name: C1_Copy, Type: my::EnumType)" == str(c1_copy)
 
     def test_tds_columns_from_json(self) -> None:
 

@@ -46,6 +46,10 @@ class TdsColumn(metaclass=ABCMeta):
     def copy(self) -> "TdsColumn":
         pass
 
+    @abstractmethod
+    def copy_with_changed_name(self, new_name: str) -> "TdsColumn":
+        pass
+
     def __str__(self) -> str:
         return "TdsColumn(Name: {name}, Type: {_type})".format(name=self.get_name(), _type=self.get_type())
 
@@ -75,6 +79,9 @@ class PrimitiveTdsColumn(TdsColumn):
 
     def copy(self) -> "TdsColumn":
         return PrimitiveTdsColumn(self.get_name(), self.__type)
+
+    def copy_with_changed_name(self, new_name: str) -> "TdsColumn":
+        return PrimitiveTdsColumn(new_name, self.__type)
 
     @classmethod
     def integer_column(cls, name: str) -> "PrimitiveTdsColumn":
@@ -107,6 +114,9 @@ class EnumTdsColumn(TdsColumn):
 
     def copy(self) -> "TdsColumn":
         return EnumTdsColumn(self.get_name(), self.__enum_type, self.__enum_values)
+
+    def copy_with_changed_name(self, new_name: str) -> "TdsColumn":
+        return EnumTdsColumn(new_name, self.__enum_type, self.__enum_values)
 
     def get_enum_values(self) -> PyLegendList[str]:
         return self.__enum_values
