@@ -75,6 +75,15 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         )
         return LegendApiAppliedFunctionTdsFrame(DropFunction(self, row_count))
 
+    def slice(self, start_row: int, end_row_exclusive: int) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.slice_function import (
+            SliceFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(SliceFunction(self, start_row, end_row_exclusive))
+
     def distinct(self) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
             LegendApiAppliedFunctionTdsFrame
