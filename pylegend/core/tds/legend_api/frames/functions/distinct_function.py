@@ -46,14 +46,13 @@ class DistinctFunction(AppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        if (base_query.offset is not None) or (base_query.limit is not None):
-            new_query = create_sub_query(base_query, config, "root")
-            new_query.select.distinct = True
-            return new_query
-        else:
-            new_query = copy_query(base_query)
-            new_query.select.distinct = True
-            return new_query
+        should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
+        new_query = (
+            create_sub_query(base_query, config, "root") if should_create_sub_query else
+            copy_query(base_query)
+        )
+        new_query.select.distinct = True
+        return new_query
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame
