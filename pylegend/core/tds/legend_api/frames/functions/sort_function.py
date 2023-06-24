@@ -73,10 +73,11 @@ class SortFunction(AppliedFunction):
                 raise RuntimeError("Cannot find column: " + col)  # pragma: no cover
             return filtered[0].expression
 
-        if (base_query.offset is not None) or (base_query.limit is not None):
-            new_query = create_sub_query(base_query, config, "root")
-        else:
-            new_query = copy_query(base_query)
+        should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
+        new_query = (
+            create_sub_query(base_query, config, "root") if should_create_sub_query else
+            copy_query(base_query)
+        )
 
         direction_list = self._build_directions_list()
 
