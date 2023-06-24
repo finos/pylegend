@@ -115,6 +115,19 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         )
         return LegendApiAppliedFunctionTdsFrame(ConcatenateFunction(self, other))
 
+    def rename_columns(
+            self,
+            column_names: PyLegendList[str],
+            renamed_column_names: PyLegendList[str]
+    ) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.rename_columns_function import (
+            RenameColumnsFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(RenameColumnsFunction(self, column_names, renamed_column_names))
+
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass
