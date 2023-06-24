@@ -64,3 +64,11 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def concatenate(self, other: "LegendApiTdsFrame") -> "LegendApiTdsFrame":
         pass
+
+    @abstractmethod
+    def rename_columns(
+            self,
+            column_names: PyLegendList[str],
+            renamed_column_names: PyLegendList[str]
+    ) -> "LegendApiTdsFrame":
+        pass
