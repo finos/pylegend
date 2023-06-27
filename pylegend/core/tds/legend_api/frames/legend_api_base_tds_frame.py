@@ -159,7 +159,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
     def execute_frame(
             self,
             result_handler: ResultHandler[R],
-            chunk_size: int = 1024
+            chunk_size: PyLegendOptional[int] = None
     ) -> R:
         from pylegend.core.tds.legend_api.frames.legend_api_input_tds_frame import (
             LegendApiInputTdsFrame,
@@ -194,6 +194,6 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
 
     def execute_frame_to_string(
             self,
-            chunk_size: int = 1024
+            chunk_size: PyLegendOptional[int] = None
     ) -> str:
         return self.execute_frame(StringResultHandler(), chunk_size)

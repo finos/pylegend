@@ -18,7 +18,8 @@ from pylegend.core.request.service_client import (
 )
 from pylegend._typing import (
     PyLegendIterator,
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendOptional,
 )
 from pylegend.core.tds.tds_column import TdsColumn, tds_columns_from_json
 
@@ -50,7 +51,7 @@ class LegendClient(ServiceClient):
     def execute_sql_string(
             self,
             sql: str,
-            chunk_size: int = 1024
+            chunk_size: PyLegendOptional[int] = None
     ) -> PyLegendIterator[bytes]:
         return super()._execute_service(
             method=RequestMethod.POST,

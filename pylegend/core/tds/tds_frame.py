@@ -17,6 +17,7 @@ from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
+    PyLegendOptional,
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
@@ -70,13 +71,13 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
     def execute_frame(
             self,
             result_handler: ResultHandler[R],
-            chunk_size: int = 1024
+            chunk_size: PyLegendOptional[int] = None
     ) -> R:
         pass
 
     @abstractmethod
     def execute_frame_to_string(
             self,
-            chunk_size: int = 1024
+            chunk_size: PyLegendOptional[int] = None
     ) -> str:
         pass
