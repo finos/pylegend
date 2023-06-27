@@ -46,7 +46,7 @@ class TestLegendServiceFrame:
 
     def test_legend_service_frame_execution(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame = simple_person_service_frame(legend_test_server["engine_port"])
-        res = frame.execute_frame(lambda r: b"".join(r))
+        res = frame.execute_frame_to_string()
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
                              {'values': ['John', 'Johnson', 22, 'Firm X']},

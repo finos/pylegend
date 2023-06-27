@@ -15,9 +15,7 @@
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendCallable,
     PyLegendTypeVar,
-    PyLegendIterator,
     PyLegendList,
     PyLegendOptional,
 )
@@ -29,6 +27,10 @@ from pylegend.core.databse.sql_to_string import (
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
+from pylegend.core.tds.result_handler import (
+    ResultHandler,
+    StringResultHandler,
+)
 
 __all__: PyLegendSequence[str] = [
     "LegendApiBaseTdsFrame"
@@ -156,7 +158,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
 
     def execute_frame(
             self,
-            result_handler: PyLegendCallable[[PyLegendIterator[bytes]], R],
+            result_handler: ResultHandler[R],
             chunk_size: int = 1024
     ) -> R:
         from pylegend.core.tds.legend_api.frames.legend_api_input_tds_frame import (
@@ -188,10 +190,10 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             )
         legend_client = all_legend_clients[0]
         result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
-        return result_handler(result)
+        return result_handler.handle_result(result)
 
     def execute_frame_to_string(
             self,
             chunk_size: int = 1024
     ) -> str:
-        return self.execute_frame(lambda res: b"".join(res).decode("utf-8"), chunk_size)
+        return self.execute_frame(StringResultHandler(), chunk_size)

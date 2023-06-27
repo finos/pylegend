@@ -16,12 +16,11 @@ import importlib
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendCallable,
-    PyLegendIterator,
     PyLegendTypeVar,
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
+from pylegend.core.tds.result_handler import ResultHandler
 
 postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
 importlib.import_module(postgres_ext)
@@ -70,7 +69,7 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
     @abstractmethod
     def execute_frame(
             self,
-            result_handler: PyLegendCallable[[PyLegendIterator[bytes]], R],
+            result_handler: ResultHandler[R],
             chunk_size: int = 1024
     ) -> R:
         pass
