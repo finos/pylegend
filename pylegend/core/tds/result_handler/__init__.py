@@ -16,9 +16,9 @@ from pylegend._typing import (
     PyLegendSequence,
 )
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
-from pylegend.core.tds.result_handler.string_result_handler import StringResultHandler
+from pylegend.core.tds.result_handler.to_string_result_handler import ToStringResultHandler
 
 __all__: PyLegendSequence[str] = [
     "ResultHandler",
-    "StringResultHandler"
+    "ToStringResultHandler"
 ]

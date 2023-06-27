@@ -13,20 +13,20 @@
 # limitations under the License.
 
 import time
-from pylegend.core.tds.result_handler import StringResultHandler
+from pylegend.core.tds.result_handler import ToStringResultHandler
 from pylegend._typing import PyLegendIterator
 
 
-class TestStringResultHandler:
+class TestToStringResultHandler:
 
-    def test_string_result_handler_non_lazy(self) -> None:
-        handler = StringResultHandler()
+    def test_to_string_result_handler_non_lazy(self) -> None:
+        handler = ToStringResultHandler()
         const = "<<RESULT>>"
         bytes_iter = [bytes(const, "utf-8")].__iter__()
         res = handler.handle_result(bytes_iter)
         assert const == res
 
-    def test_string_result_handler_lazy(self) -> None:
+    def test_to_string_result_handler_lazy(self) -> None:
         def gen() -> PyLegendIterator[bytes]:
             i = 0
             while i < 10:
@@ -34,6 +34,6 @@ class TestStringResultHandler:
                 i += 1
                 time.sleep(0.1)
 
-        handler = StringResultHandler()
+        handler = ToStringResultHandler()
         res = handler.handle_result(gen())
         assert "0123456789" == res
