@@ -13,14 +13,25 @@
 # limitations under the License.
 
 from pylegend._typing import (
+    PyLegendIterator,
     PyLegendSequence,
 )
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
-from pylegend.core.tds.result_handler.to_string_result_handler import ToStringResultHandler
-from pylegend.core.tds.result_handler.to_json_file_result_handler import ToJsonFileResultHandler
 
 __all__: PyLegendSequence[str] = [
-    "ResultHandler",
-    "ToStringResultHandler",
-    "ToJsonFileResultHandler",
+    "ToJsonFileResultHandler"
 ]
+
+
+class ToJsonFileResultHandler(ResultHandler[None]):
+    __file: str
+
+    def __init__(self, file: str) -> None:
+        self.__file = file
+
+    def handle_result(self, result: PyLegendIterator[bytes]) -> None:
+        with open(self.__file, "wb") as res_file:
+            for content in result:
+                res_file.write(content)
+            res_file.flush()
+        return
