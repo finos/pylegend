@@ -29,7 +29,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.core.tds.result_handler import (
     ResultHandler,
-    StringResultHandler,
+    ToStringResultHandler,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -196,4 +196,4 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             self,
             chunk_size: PyLegendOptional[int] = None
     ) -> str:
-        return self.execute_frame(StringResultHandler(), chunk_size)
+        return self.execute_frame(ToStringResultHandler(), chunk_size)

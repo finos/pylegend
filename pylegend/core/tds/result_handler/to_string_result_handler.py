@@ -19,10 +19,10 @@ from pylegend._typing import (
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
 
 __all__: PyLegendSequence[str] = [
-    "StringResultHandler"
+    "ToStringResultHandler"
 ]
 
 
-class StringResultHandler(ResultHandler[str]):
+class ToStringResultHandler(ResultHandler[str]):
     def handle_result(self, result: PyLegendIterator[bytes]) -> str:
         return b"".join(result).decode("utf-8")
