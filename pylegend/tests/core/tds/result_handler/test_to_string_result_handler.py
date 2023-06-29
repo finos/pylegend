@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import time
+from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.core.tds.result_handler import ToStringResultHandler
 from pylegend._typing import PyLegendIterator
 
@@ -23,7 +24,7 @@ class TestToStringResultHandler:
         handler = ToStringResultHandler()
         const = "<<RESULT>>"
         bytes_iter = [bytes(const, "utf-8")].__iter__()
-        res = handler.handle_result(bytes_iter)
+        res = handler.handle_result(LegendApiTableSpecInputFrame(["dummy"], []), bytes_iter)
         assert const == res
 
     def test_to_string_result_handler_lazy(self) -> None:
@@ -35,5 +36,5 @@ class TestToStringResultHandler:
                 time.sleep(0.1)
 
         handler = ToStringResultHandler()
-        res = handler.handle_result(gen())
+        res = handler.handle_result(LegendApiTableSpecInputFrame(["dummy"], []), gen())
         assert "0123456789" == res

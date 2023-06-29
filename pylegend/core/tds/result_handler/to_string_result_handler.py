@@ -15,7 +15,10 @@
 from pylegend._typing import (
     PyLegendIterator,
     PyLegendSequence,
+    TYPE_CHECKING
 )
+if TYPE_CHECKING:
+    from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
 
 __all__: PyLegendSequence[str] = [
@@ -24,5 +27,5 @@ __all__: PyLegendSequence[str] = [
 
 
 class ToStringResultHandler(ResultHandler[str]):
-    def handle_result(self, result: PyLegendIterator[bytes]) -> str:
+    def handle_result(self, frame: "PyLegendTdsFrame", result: PyLegendIterator[bytes]) -> str:
         return b"".join(result).decode("utf-8")

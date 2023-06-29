@@ -18,7 +18,10 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendGeneric,
     PyLegendTypeVar,
+    TYPE_CHECKING
 )
+if TYPE_CHECKING:
+    from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "ResultHandler"
@@ -30,5 +33,5 @@ R = PyLegendTypeVar('R')
 class ResultHandler(PyLegendGeneric[R], metaclass=ABCMeta):
 
     @abstractmethod
-    def handle_result(self, result: PyLegendIterator[bytes]) -> R:
+    def handle_result(self, frame: "PyLegendTdsFrame", result: PyLegendIterator[bytes]) -> R:
         pass

@@ -18,9 +18,11 @@ from pylegend._typing import (
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
 from pylegend.core.tds.result_handler.to_string_result_handler import ToStringResultHandler
 from pylegend.core.tds.result_handler.to_json_file_result_handler import ToJsonFileResultHandler
+from pylegend.core.tds.result_handler.to_csv_file_result_handler import ToCsvFileResultHandler
 
 __all__: PyLegendSequence[str] = [
     "ResultHandler",
     "ToStringResultHandler",
     "ToJsonFileResultHandler",
+    "ToCsvFileResultHandler",
 ]
