@@ -190,7 +190,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             )
         legend_client = all_legend_clients[0]
         result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
-        return result_handler.handle_result(result)
+        return result_handler.handle_result(self, result)
 
     def execute_frame_to_string(
             self,
