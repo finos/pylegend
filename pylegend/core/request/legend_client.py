@@ -16,8 +16,8 @@ from pylegend.core.request.service_client import (
     ServiceClient,
     RequestMethod
 )
+from pylegend.core.request.response_reader import ResponseReader
 from pylegend._typing import (
-    PyLegendIterator,
     PyLegendSequence,
     PyLegendOptional,
 )
@@ -52,11 +52,12 @@ class LegendClient(ServiceClient):
             self,
             sql: str,
             chunk_size: PyLegendOptional[int] = None
-    ) -> PyLegendIterator[bytes]:
-        return super()._execute_service(
+    ) -> ResponseReader:
+        iter_content = super()._execute_service(
             method=RequestMethod.POST,
             path="api/sql/v1/execution/executeQueryString",
             data=sql,
             headers={"Content-Type": "text/plain"},
             stream=True
         ).iter_content(chunk_size=chunk_size)
+        return ResponseReader(iter_content)

@@ -15,7 +15,6 @@
 import csv
 import ijson  # type: ignore
 from pylegend._typing import (
-    PyLegendIterator,
     PyLegendSequence,
     PyLegendOptional,
     TYPE_CHECKING
@@ -23,7 +22,7 @@ from pylegend._typing import (
 if TYPE_CHECKING:
     from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
-from pylegend.core.tds.result_handler.utils import ResponseReader
+from pylegend.core.request.response_reader import ResponseReader
 
 __all__: PyLegendSequence[str] = [
     "ToCsvFileResultHandler"
@@ -37,7 +36,7 @@ class ToCsvFileResultHandler(ResultHandler[None]):
         self.__csv_writer = None if isinstance(file_or_writer, str) else file_or_writer
         self.__parse_as_decimal = parse_as_decimal
 
-    def handle_result(self, frame: "PyLegendTdsFrame", result: PyLegendIterator[bytes]) -> None:
+    def handle_result(self, frame: "PyLegendTdsFrame", result: ResponseReader) -> None:
         if self.__file is None:
             self.__write_result(self.__csv_writer, frame, result, self.__parse_as_decimal)
         else:
@@ -53,7 +52,6 @@ class ToCsvFileResultHandler(ResultHandler[None]):
             parse_as_decimal
     ) -> None:
         csv_writer.writerow([col.get_name() for col in frame.columns()])
-        reader = ResponseReader(result)
-        for next_row in ijson.items(reader, "result.rows.item.values", use_float=not parse_as_decimal):
+        for next_row in ijson.items(result, "result.rows.item.values", use_float=not parse_as_decimal):
             csv_writer.writerow(next_row)
         return

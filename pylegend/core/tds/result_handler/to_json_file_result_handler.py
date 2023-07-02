@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from pylegend._typing import (
-    PyLegendIterator,
     PyLegendSequence,
     TYPE_CHECKING
 )
+from pylegend.core.request.response_reader import ResponseReader
 if TYPE_CHECKING:
     from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
@@ -32,7 +32,7 @@ class ToJsonFileResultHandler(ResultHandler[None]):
     def __init__(self, file: str) -> None:
         self.__file = file
 
-    def handle_result(self, frame: "PyLegendTdsFrame", result: PyLegendIterator[bytes]) -> None:
+    def handle_result(self, frame: "PyLegendTdsFrame", result: ResponseReader) -> None:
         with open(self.__file, "wb") as res_file:
             for content in result:
                 res_file.write(content)

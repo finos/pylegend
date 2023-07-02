@@ -32,6 +32,9 @@ class ResponseReader:
         self.__iter_content = iter_content
         self.__byte_array = bytearray()
 
+    def __iter__(self) -> PyLegendIterator[bytes]:
+        return self.__iter_content
+
     def read(self, n: PyLegendOptional[int] = None) -> bytes:
         if n == 0:
             return b""
