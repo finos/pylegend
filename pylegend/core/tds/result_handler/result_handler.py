@@ -14,12 +14,12 @@
 
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
-    PyLegendIterator,
     PyLegendSequence,
     PyLegendGeneric,
     PyLegendTypeVar,
     TYPE_CHECKING
 )
+from pylegend.core.request.response_reader import ResponseReader
 if TYPE_CHECKING:
     from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
@@ -33,5 +33,5 @@ R = PyLegendTypeVar('R')
 class ResultHandler(PyLegendGeneric[R], metaclass=ABCMeta):
 
     @abstractmethod
-    def handle_result(self, frame: "PyLegendTdsFrame", result: PyLegendIterator[bytes]) -> R:
+    def handle_result(self, frame: "PyLegendTdsFrame", result: ResponseReader) -> R:
         pass
