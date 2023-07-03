@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import csv
 import pathlib
 from textwrap import dedent
 from pylegend.core.tds.result_handler import ToCsvFileResultHandler
@@ -45,5 +46,31 @@ class TestToCsvFileResultHandler:
         Fabrice,Roberts,34,Firm A
         Oliver,Hill,32,Firm B
         David,Harris,35,Firm C
+        """
+        assert res == dedent(expected)[1:]
+
+    def test_to_csv_file_result_handler_with_custom_csv_writer(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
+            tmp_path: pathlib.Path
+    ) -> None:
+        file = str(tmp_path / "result.csv")
+        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        with open(file, "w", newline="") as f:
+            writer = csv.writer(f, delimiter="|", quoting=csv.QUOTE_NONNUMERIC)
+            frame.execute_frame(ToCsvFileResultHandler(writer))
+
+        with open(file, "r") as r:
+            res = r.read()
+
+        expected = """
+        "First Name"|"Last Name"|"Age"|"Firm/Legal Name"
+        "Peter"|"Smith"|23|"Firm X"
+        "John"|"Johnson"|22|"Firm X"
+        "John"|"Hill"|12|"Firm X"
+        "Anthony"|"Allen"|22|"Firm X"
+        "Fabrice"|"Roberts"|34|"Firm A"
+        "Oliver"|"Hill"|32|"Firm B"
+        "David"|"Harris"|35|"Firm C"
         """
         assert res == dedent(expected)[1:]
