@@ -31,18 +31,18 @@ __all__: PyLegendSequence[str] = [
 
 class ToCsvFileResultHandler(ResultHandler[None]):
 
-    def __init__(self, file_or_writer, parse_as_decimal: bool = False) -> None:  # type: ignore
+    def __init__(self, file_or_writer, parse_float_as_decimal: bool = False) -> None:  # type: ignore
         self.__file: PyLegendOptional[str] = file_or_writer if isinstance(file_or_writer, str) else None
         self.__csv_writer = None if isinstance(file_or_writer, str) else file_or_writer
-        self.__parse_as_decimal = parse_as_decimal
+        self.__parse_float_as_decimal = parse_float_as_decimal
 
     def handle_result(self, frame: "PyLegendTdsFrame", result: ResponseReader) -> None:
         if self.__file is None:
-            self.__write_result(self.__csv_writer, frame, result, self.__parse_as_decimal)
+            self.__write_result(self.__csv_writer, frame, result, self.__parse_float_as_decimal)
         else:
             with open(self.__file, 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
-                self.__write_result(csv_writer, frame, result, self.__parse_as_decimal)
+                self.__write_result(csv_writer, frame, result, self.__parse_float_as_decimal)
 
     @staticmethod
     def __write_result(  # type: ignore

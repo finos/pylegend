@@ -14,6 +14,7 @@
 
 import importlib
 from abc import ABCMeta, abstractmethod
+import pandas as pd
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -22,6 +23,7 @@ from pylegend._typing import (
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.databse.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.result_handler import ResultHandler
+from pylegend.extensions.tds.result_handler import PandasDfReadConfig
 
 postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
 importlib.import_module(postgres_ext)
@@ -80,4 +82,12 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
             self,
             chunk_size: PyLegendOptional[int] = None
     ) -> str:
+        pass
+
+    @abstractmethod
+    def execute_frame_to_pandas_df(
+            self,
+            chunk_size: PyLegendOptional[int] = None,
+            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
+    ) -> pd.DataFrame:
         pass

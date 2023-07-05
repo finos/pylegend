@@ -42,32 +42,38 @@ COLUMN_TYPE_DTYPE_MAP = {
 
 
 class PandasDfReadConfig:
+    __parse_float_as_decimal: bool
     __rows_per_batch: int
 
-    def __init__(self, rows_per_batch: int = 16_384) -> None:
+    def __init__(self, parse_float_as_decimal: bool = False, rows_per_batch: int = 16_384) -> None:
+        self.__parse_float_as_decimal = parse_float_as_decimal
         self.__rows_per_batch = rows_per_batch
 
     def rows_per_batch(self) -> int:
         return self.__rows_per_batch
 
+    def parse_float_as_decimal(self) -> bool:
+        return self.__parse_float_as_decimal
+
 
 class ToPandasDfResultHandler(ResultHandler[pd.DataFrame]):
-    __parse_as_decimal: bool
     __pandas_df_read_config: PandasDfReadConfig
 
     def __init__(
             self,
-            parse_as_decimal: bool = False,
             pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
     ) -> None:
-        self.__parse_as_decimal = parse_as_decimal
         self.__pandas_df_read_config = pandas_df_read_config
 
     def handle_result(self, frame: "PyLegendTdsFrame", result: ResponseReader) -> pd.DataFrame:
         df: pd.DataFrame = pd.concat(
             self._read_partial_dfs(
                 frame,
-                ijson.items(result, "result.rows.item.values", use_float=not self.__parse_as_decimal),
+                ijson.items(
+                    result,
+                    "result.rows.item.values",
+                    use_float=not self.__pandas_df_read_config.parse_float_as_decimal()
+                ),
             ),
             ignore_index=True
         )

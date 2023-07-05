@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
+import pandas as pd
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -30,6 +31,10 @@ from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTd
 from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
+)
+from pylegend.extensions.tds.result_handler import (
+    ToPandasDfResultHandler,
+    PandasDfReadConfig,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -197,3 +202,13 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             chunk_size: PyLegendOptional[int] = None
     ) -> str:
         return self.execute_frame(ToStringResultHandler(), chunk_size)
+
+    def execute_frame_to_pandas_df(
+            self,
+            chunk_size: PyLegendOptional[int] = None,
+            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
+    ) -> pd.DataFrame:
+        return self.execute_frame(
+            ToPandasDfResultHandler(pandas_df_read_config),
+            chunk_size
+        )

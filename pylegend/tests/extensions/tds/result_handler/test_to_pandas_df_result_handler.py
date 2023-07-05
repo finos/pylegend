@@ -14,7 +14,6 @@
 
 import pathlib
 import pandas as pd
-from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
 from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
 from pylegend._typing import (
     PyLegendDict,
@@ -30,7 +29,7 @@ class TestToPandasDfResultHandler:
             tmp_path: pathlib.Path
     ) -> None:
         frame = simple_person_service_frame(legend_test_server["engine_port"])
-        df = frame.execute_frame(ToPandasDfResultHandler())
+        df = frame.execute_frame_to_pandas_df()
 
         expected = pd.DataFrame(
             columns=[
