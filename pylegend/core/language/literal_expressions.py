@@ -24,11 +24,11 @@ from pylegend.core.sql.metamodel import (
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendLiteralExpressionBooleanReturn",
+    "PyLegendBooleanLiteralExpression",
 ]
 
 
-class PyLegendLiteralExpressionBooleanReturn(PyLegendExpressionBooleanReturn):
+class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     __value: bool
 
     def __init__(self, value: bool) -> None:
