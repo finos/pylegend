@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pylegend.core.language import (
-    PyLegendLiteralExpressionBooleanReturn,
+    PyLegendBooleanLiteralExpression,
 )
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
@@ -28,8 +28,8 @@ class TestLiteralExpressions:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=True))
 
-        true_expr = PyLegendLiteralExpressionBooleanReturn(True)
+        true_expr = PyLegendBooleanLiteralExpression(True)
         assert extension.process_expression(true_expr.to_sql_expression(), config=config) == "true"
 
-        false_expr = PyLegendLiteralExpressionBooleanReturn(False)
+        false_expr = PyLegendBooleanLiteralExpression(False)
         assert extension.process_expression(false_expr.to_sql_expression(), config=config) == "false"

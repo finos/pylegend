@@ -12,27 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+from abc import ABCMeta
 from pylegend._typing import (
-    PyLegendSequence,
-)
-from pylegend.core.language.primitives import (
-    PyLegendPrimitive,
-    PyLegendBoolean,
+    PyLegendSequence
 )
 from pylegend.core.language.expression import (
+    PyLegendExpression,
     PyLegendExpressionBooleanReturn,
 )
-from pylegend.core.language.literal_expressions import (
-    PyLegendBooleanLiteralExpression,
-)
-from pylegend.core.language.column_expressions import (
-    PyLegendBooleanColumnExpression,
+from pylegend.core.sql.metamodel import (
+    Expression,
 )
 
+
 __all__: PyLegendSequence[str] = [
-    "PyLegendPrimitive",
-    "PyLegendBoolean",
-    "PyLegendExpressionBooleanReturn",
-    "PyLegendBooleanLiteralExpression",
-    "PyLegendBooleanColumnExpression",
+    "PyLegendColumnExpression",
+    "PyLegendBooleanColumnExpression"
 ]
+
+
+class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
+    __column: Expression
+
+    def __init__(self, column: Expression) -> None:
+        self.__column = column
+
+    def to_sql_expression(self) -> Expression:
+        return self.__column
+
+
+class PyLegendBooleanColumnExpression(PyLegendColumnExpression, PyLegendExpressionBooleanReturn):
+
+    def __init__(self, column: Expression) -> None:
+        super().__init__(column=column)
