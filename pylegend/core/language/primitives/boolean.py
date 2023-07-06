@@ -14,10 +14,15 @@
 
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendDict,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.expression import PyLegendExpressionBooleanReturn
-from pylegend.core.sql.metamodel import Expression
+from pylegend.core.sql.metamodel import (
+    Expression,
+    QuerySpecification
+)
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -34,5 +39,9 @@ class PyLegendBoolean(PyLegendPrimitive):
     ) -> None:
         self.__value = value
 
-    def to_sql_expression(self) -> Expression:
-        return self.__value.to_sql_expression()
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)

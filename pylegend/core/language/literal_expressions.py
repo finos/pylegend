@@ -14,13 +14,16 @@
 
 
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendDict,
 )
 from pylegend.core.language.expression import PyLegendExpressionBooleanReturn
 from pylegend.core.sql.metamodel import (
     Expression,
     BooleanLiteral,
+    QuerySpecification,
 )
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -34,5 +37,9 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     def __init__(self, value: bool) -> None:
         self.__value = value
 
-    def to_sql_expression(self) -> Expression:
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
         return BooleanLiteral(value=self.__value)

@@ -26,13 +26,17 @@ from pylegend.core.language.literal_expressions import (
     PyLegendBooleanLiteralExpression,
 )
 from pylegend.core.language.column_expressions import (
+    PyLegendColumnExpression,
     PyLegendBooleanColumnExpression,
 )
+from pylegend.core.language.tds_row import TdsRow
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
     "PyLegendBoolean",
     "PyLegendExpressionBooleanReturn",
     "PyLegendBooleanLiteralExpression",
+    "PyLegendColumnExpression",
     "PyLegendBooleanColumnExpression",
+    "TdsRow",
 ]
