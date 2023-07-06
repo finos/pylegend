@@ -20,16 +20,24 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringConfig,
     SqlToStringDbExtension,
 )
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 class TestLiteralExpressions:
+    db_extension = SqlToStringDbExtension()
+    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
+    frame_to_sql_config = FrameToSqlConfig()
 
     def test_boolean_literal_expr_sql_gen(self) -> None:
-        extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(pretty=True))
 
         true_expr = PyLegendBooleanLiteralExpression(True)
-        assert extension.process_expression(true_expr.to_sql_expression(), config=config) == "true"
+        assert self.db_extension.process_expression(
+            true_expr.to_sql_expression({}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == "true"
 
         false_expr = PyLegendBooleanLiteralExpression(False)
-        assert extension.process_expression(false_expr.to_sql_expression(), config=config) == "false"
+        assert self.db_extension.process_expression(
+            false_expr.to_sql_expression({}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == "false"

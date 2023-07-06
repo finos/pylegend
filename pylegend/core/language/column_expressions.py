@@ -15,7 +15,8 @@
 
 from abc import ABCMeta
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendDict,
 )
 from pylegend.core.language.expression import (
     PyLegendExpression,
@@ -23,7 +24,10 @@ from pylegend.core.language.expression import (
 )
 from pylegend.core.sql.metamodel import (
     Expression,
+    QuerySpecification,
+    SingleColumn,
 )
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -33,16 +37,31 @@ __all__: PyLegendSequence[str] = [
 
 
 class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
-    __column: Expression
+    __frame_name: str
+    __column: str
 
-    def __init__(self, column: Expression) -> None:
+    def __init__(self, frame_name: str, column: str) -> None:
+        self.__frame_name = frame_name
         self.__column = column
 
-    def to_sql_expression(self) -> Expression:
-        return self.__column
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        query = frame_name_to_base_query_map[self.__frame_name]
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        filtered = [
+            s for s in query.select.selectItems
+            if (isinstance(s, SingleColumn) and
+                s.alias == db_extension.quote_identifier(self.__column))
+        ]
+        if len(filtered) == 0:
+            raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
+        return filtered[0].expression
 
 
 class PyLegendBooleanColumnExpression(PyLegendColumnExpression, PyLegendExpressionBooleanReturn):
 
-    def __init__(self, column: Expression) -> None:
-        super().__init__(column=column)
+    def __init__(self, frame_name: str, column: str) -> None:
+        super().__init__(frame_name=frame_name, column=column)

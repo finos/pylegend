@@ -15,9 +15,14 @@
 
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendDict,
 )
-from pylegend.core.sql.metamodel import Expression
+from pylegend.core.sql.metamodel import (
+    Expression,
+    QuerySpecification,
+)
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -28,7 +33,11 @@ __all__: PyLegendSequence[str] = [
 
 class PyLegendExpression(metaclass=ABCMeta):
     @abstractmethod
-    def to_sql_expression(self) -> Expression:
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
         pass
 
 
