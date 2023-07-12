@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 from pylegend._typing import PyLegendCallable
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
@@ -45,6 +46,12 @@ class TestPyLegendBoolean:
     def test_boolean_or_operation_with_literal(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") | True) == \
                '("root".col2 OR true)'
+
+    def test_boolean_error_message(self) -> None:
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_boolean("col2") | 1)  # type: ignore
+        assert t.value.args[0] == ("Boolean OR (|) parameter should be a bool or a boolean expression "
+                                   "(PyLegendBoolean). Got value 1 of type: <class 'int'>")
 
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
