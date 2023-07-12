@@ -21,7 +21,7 @@ from pylegend.core.databse.sql_to_string import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language.tds_row import TdsRow
+from pylegend.core.language import TdsRow
 
 
 class TestTdsRow:
@@ -38,7 +38,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
 
         with pytest.raises(ValueError) as v:
-            tds_row.get_boolean_col("UNKNOWN_COL")
+            tds_row.get_boolean("UNKNOWN_COL")
 
         assert v.value.args[0] == \
                "Column - 'UNKNOWN_COL' doesn't exist in the current frame. Current frame columns: ['col1', 'col2']"
@@ -51,7 +51,7 @@ class TestTdsRow:
         frame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = TdsRow.from_tds_frame("t", frame)
-        col_expr = tds_row.get_boolean_col("col2")
+        col_expr = tds_row.get_boolean("col2")
 
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(

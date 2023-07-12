@@ -19,7 +19,8 @@ from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.language import (
     PyLegendColumnExpression,
-    PyLegendBooleanColumnExpression
+    PyLegendBooleanColumnExpression,
+    PyLegendBoolean,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -39,7 +40,7 @@ class TdsRow:
     def from_tds_frame(frame_name: str, frame: PyLegendTdsFrame) -> "TdsRow":
         return TdsRow(frame_name=frame_name, frame=frame)
 
-    def get_boolean_col(self, column: str) -> PyLegendBooleanColumnExpression:
+    def get_boolean(self, column: str) -> PyLegendBoolean:
         col_expr = self.__get_col(column)
         if not isinstance(col_expr, PyLegendBooleanColumnExpression):
             raise RuntimeError(
@@ -49,7 +50,7 @@ class TdsRow:
                     type=type(col_expr)
                 )
             )
-        return col_expr
+        return PyLegendBoolean(col_expr)
 
     def __get_col(self, column: str) -> PyLegendColumnExpression:
         for base_col in self.__columns:
