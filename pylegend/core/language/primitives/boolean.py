@@ -23,6 +23,7 @@ from pylegend.core.language.literal_expressions import PyLegendBooleanLiteralExp
 from pylegend.core.language.operations.boolean_operation_expressions import (
     PyLegendBooleanOrExpression,
     PyLegendBooleanAndExpression,
+    PyLegendBooleanNotExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -71,6 +72,9 @@ class PyLegendBoolean(PyLegendPrimitive):
         PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean AND (&) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
         return PyLegendBoolean(PyLegendBooleanAndExpression(other_op, self.__value))
+
+    def __invert__(self) -> "PyLegendBoolean":
+        return PyLegendBoolean(PyLegendBooleanNotExpression(self.__value))
 
     @staticmethod
     def __validate__param_to_be_bool(param: PyLegendUnion[bool, "PyLegendBoolean"], desc: str) -> None:
