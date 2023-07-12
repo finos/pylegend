@@ -53,6 +53,10 @@ class TestPyLegendBoolean:
         assert t.value.args[0] == ("Boolean OR (|) parameter should be a bool or a boolean expression "
                                    "(PyLegendBoolean). Got value 1 of type: <class 'int'>")
 
+    def test_boolean_reverse_or_operation_with_literal(self) -> None:
+        assert self.__generate_sql_string(lambda x: True | x.get_boolean("col2")) == \
+               '(true OR "root".col2)'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
