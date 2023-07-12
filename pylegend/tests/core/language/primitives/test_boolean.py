@@ -69,6 +69,10 @@ class TestPyLegendBoolean:
         assert self.__generate_sql_string(lambda x: False & x.get_boolean("col2")) == \
                '(false AND "root".col2)'
 
+    def test_boolean_not_operation(self) -> None:
+        assert self.__generate_sql_string(lambda x: ~x.get_boolean("col2")) == \
+               'NOT("root".col2)'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

@@ -20,11 +20,13 @@ from pylegend.core.language.expression import (
     PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
+from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
     LogicalBinaryExpression,
     LogicalBinaryType,
+    NotExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
@@ -32,6 +34,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendBooleanOrExpression",
     "PyLegendBooleanAndExpression",
+    "PyLegendBooleanNotExpression",
 ]
 
 
@@ -74,4 +77,23 @@ class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionB
             operand1,
             operand2,
             PyLegendBooleanAndExpression.__to_sql_func
+        )
+
+
+class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return NotExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionBooleanReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendBooleanNotExpression.__to_sql_func
         )
