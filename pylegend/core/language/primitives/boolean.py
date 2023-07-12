@@ -15,9 +15,14 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendUnion,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.expression import PyLegendExpressionBooleanReturn
+from pylegend.core.language.literal_expressions import PyLegendBooleanLiteralExpression
+from pylegend.core.language.operations.boolean_operation_expressions import (
+    PyLegendBooleanOrExpression,
+)
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -45,3 +50,11 @@ class PyLegendBoolean(PyLegendPrimitive):
             config: FrameToSqlConfig
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
+
+    def __or__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        if not isinstance(other, (bool, PyLegendBoolean)):
+            raise TypeError("Boolean OR (|) expression parameters should be a bool or "
+                            "another boolean expression (PyLegendBoolean). Got: " + str(type(other)))
+
+        other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
+        return PyLegendBoolean(PyLegendBooleanOrExpression(self.__value, other_op))
