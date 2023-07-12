@@ -30,7 +30,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendBooleanOrExpression"
+    "PyLegendBooleanOrExpression",
+    "PyLegendBooleanAndExpression",
 ]
 
 
@@ -52,4 +53,25 @@ class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBo
             operand1,
             operand2,
             PyLegendBooleanOrExpression.__to_sql_func
+        )
+
+
+class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return LogicalBinaryExpression(LogicalBinaryType.AND, expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionBooleanReturn, operand2: PyLegendExpressionBooleanReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendBooleanAndExpression.__to_sql_func
         )
