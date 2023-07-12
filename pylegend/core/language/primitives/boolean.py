@@ -52,9 +52,12 @@ class PyLegendBoolean(PyLegendPrimitive):
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     def __or__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
-        if not isinstance(other, (bool, PyLegendBoolean)):
-            raise TypeError("Boolean OR (|) expression parameters should be a bool or "
-                            "another boolean expression (PyLegendBoolean). Got: " + str(type(other)))
-
+        PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
         return PyLegendBoolean(PyLegendBooleanOrExpression(self.__value, other_op))
+
+    @staticmethod
+    def __validate__param_to_be_bool(param: PyLegendUnion[bool, "PyLegendBoolean"], desc: str) -> None:
+        if not isinstance(param, (bool, PyLegendBoolean)):
+            raise TypeError(desc + " should be a bool or a boolean expression (PyLegendBoolean)."
+                                   " Got value " + str(param) + " of type: " + str(type(param)))
