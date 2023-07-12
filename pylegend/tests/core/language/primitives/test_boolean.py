@@ -39,6 +39,12 @@ class TestPyLegendBoolean:
     def test_boolean_col_access(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2")) == '"root".col2'
 
+    def test_boolean_error_message(self) -> None:
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_boolean("col2") | 1)  # type: ignore
+        assert t.value.args[0] == ("Boolean OR (|) parameter should be a bool or a boolean expression "
+                                   "(PyLegendBoolean). Got value 1 of type: <class 'int'>")
+
     def test_boolean_or_operation(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") | x.get_boolean("col1")) == \
                '("root".col2 OR "root".col1)'
@@ -47,15 +53,21 @@ class TestPyLegendBoolean:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") | True) == \
                '("root".col2 OR true)'
 
-    def test_boolean_error_message(self) -> None:
-        with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_boolean("col2") | 1)  # type: ignore
-        assert t.value.args[0] == ("Boolean OR (|) parameter should be a bool or a boolean expression "
-                                   "(PyLegendBoolean). Got value 1 of type: <class 'int'>")
-
     def test_boolean_reverse_or_operation_with_literal(self) -> None:
         assert self.__generate_sql_string(lambda x: True | x.get_boolean("col2")) == \
                '(true OR "root".col2)'
+
+    def test_boolean_and_operation(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") & x.get_boolean("col1")) == \
+               '("root".col2 AND "root".col1)'
+
+    def test_boolean_and_operation_with_literal(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") & True) == \
+               '("root".col2 AND true)'
+
+    def test_boolean_reverse_and_operation_with_literal(self) -> None:
+        assert self.__generate_sql_string(lambda x: False & x.get_boolean("col2")) == \
+               '(false AND "root".col2)'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
