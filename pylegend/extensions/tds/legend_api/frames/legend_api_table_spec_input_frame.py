@@ -52,7 +52,7 @@ class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
                         alias=db_extension.quote_identifier(x.get_name()),
                         expression=QualifiedNameReference(name=QualifiedName(parts=[root_alias, x.get_name()]))
                     )
-                    for x in self.columns()
+                    for x in self.columns()  # type: ignore[operator]
                 ],
                 distinct=False
             ),
@@ -60,7 +60,7 @@ class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
                 AliasedRelation(
                     relation=Table(name=self.table),
                     alias=root_alias,
-                    columnNames=[x.get_name() for x in self.columns()]
+                    columnNames=[x.get_name() for x in self.columns()]  # type: ignore[operator]
                 )
             ],
             where=None,

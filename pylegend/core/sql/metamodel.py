@@ -677,11 +677,11 @@ class FunctionCall(Expression):
 
     def __init__(
         self,
-        name: "QualifiedName",
-        distinct: "bool",
-        arguments: "PyLegendList[Expression]",
-        filter_: "PyLegendOptional[Expression]",
-        window: "PyLegendOptional[Window]"
+            name: "QualifiedName",
+            distinct: "bool",
+            arguments: "PyLegendList[Expression]",
+            filter_: "PyLegendOptional[Expression]"=None,
+            window: "PyLegendOptional[Window]"=None
     ) -> None:
         super().__init__(_type="functionCall")
         self.name = name

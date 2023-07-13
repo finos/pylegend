@@ -98,3 +98,5 @@ class TestHeadAppliedFunction:
                              {'values': ['John', 'Hill', 12, 'Firm X']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, ABC
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
@@ -29,6 +29,7 @@ from pylegend.core.sql.metamodel import (
     TableSubquery,
     Query
 )
+from pylegend.core.tds.pandas_api.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
@@ -144,7 +145,7 @@ def copy_select(select: Select) -> Select:
     )
 
 
-class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
+class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame, PandasApiBaseTdsFrame, ABC):
     __applied_function: AppliedFunction
 
     def __init__(self, applied_function: AppliedFunction):
@@ -155,7 +156,7 @@ class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
 
-    def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
+    def get_all_tds_frames(self) -> PyLegendList['LegendApiBaseTdsFrame']:
         return [
             y
             for x in [self.__applied_function.base_frame()] + self.__applied_function.tds_frame_parameters()

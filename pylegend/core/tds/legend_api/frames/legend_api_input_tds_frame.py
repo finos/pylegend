@@ -13,10 +13,13 @@
 # limitations under the License.
 
 from abc import ABCMeta
+from typing import Union
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList
 )
+from pylegend.core.tds.pandas_api.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.request.legend_client import LegendClient
@@ -29,12 +32,12 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class LegendApiInputTdsFrame(LegendApiBaseTdsFrame, metaclass=ABCMeta):
+class LegendApiInputTdsFrame(LegendApiBaseTdsFrame, PandasApiBaseTdsFrame, metaclass=ABCMeta):
 
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         super().__init__(columns=columns)
 
-    def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
+    def get_all_tds_frames(self) -> PyLegendList[Union["LegendApiBaseTdsFrame", "PandasApiBaseTdsFrame"]]:
         return [self]
 
 
