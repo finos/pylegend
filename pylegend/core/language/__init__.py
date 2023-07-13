@@ -18,6 +18,7 @@ from pylegend._typing import (
 from pylegend.core.language.primitives import (
     PyLegendPrimitive,
     PyLegendBoolean,
+    PyLegendString,
 )
 from pylegend.core.language.expression import (
     PyLegendExpressionBooleanReturn,
@@ -28,6 +29,7 @@ from pylegend.core.language.literal_expressions import (
 from pylegend.core.language.column_expressions import (
     PyLegendColumnExpression,
     PyLegendBooleanColumnExpression,
+    PyLegendStringColumnExpression,
 )
 from pylegend.core.language.tds_row import TdsRow
 
@@ -38,5 +40,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendBooleanLiteralExpression",
     "PyLegendColumnExpression",
     "PyLegendBooleanColumnExpression",
+    "PyLegendString",
+    "PyLegendStringColumnExpression",
     "TdsRow",
 ]

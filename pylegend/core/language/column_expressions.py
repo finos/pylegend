@@ -21,6 +21,7 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpression,
     PyLegendExpressionBooleanReturn,
+    PyLegendExpressionStringReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -32,7 +33,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "PyLegendColumnExpression",
-    "PyLegendBooleanColumnExpression"
+    "PyLegendBooleanColumnExpression",
+    "PyLegendStringColumnExpression",
 ]
 
 
@@ -62,6 +64,12 @@ class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
 
 
 class PyLegendBooleanColumnExpression(PyLegendColumnExpression, PyLegendExpressionBooleanReturn):
+
+    def __init__(self, frame_name: str, column: str) -> None:
+        super().__init__(frame_name=frame_name, column=column)
+
+
+class PyLegendStringColumnExpression(PyLegendColumnExpression, PyLegendExpressionStringReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)

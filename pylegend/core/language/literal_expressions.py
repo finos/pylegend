@@ -17,10 +17,14 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
 )
-from pylegend.core.language.expression import PyLegendExpressionBooleanReturn
+from pylegend.core.language.expression import (
+    PyLegendExpressionBooleanReturn,
+    PyLegendExpressionStringReturn,
+)
 from pylegend.core.sql.metamodel import (
     Expression,
     BooleanLiteral,
+    StringLiteral,
     QuerySpecification,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -28,6 +32,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "PyLegendBooleanLiteralExpression",
+    "PyLegendStringLiteralExpression",
 ]
 
 
@@ -43,3 +48,17 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
             config: FrameToSqlConfig
     ) -> Expression:
         return BooleanLiteral(value=self.__value)
+
+
+class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
+    __value: str
+
+    def __init__(self, value: str) -> None:
+        self.__value = value
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringLiteral(value=self.__value, quoted=False)
