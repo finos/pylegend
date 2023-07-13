@@ -18,9 +18,11 @@ from pylegend._typing import (
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.primitives.string import PyLegendString
 
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
     "PyLegendBoolean",
+    "PyLegendString",
 ]

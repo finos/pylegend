@@ -20,7 +20,9 @@ from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.language import (
     PyLegendColumnExpression,
     PyLegendBooleanColumnExpression,
+    PyLegendStringColumnExpression,
     PyLegendBoolean,
+    PyLegendString,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -45,12 +47,24 @@ class TdsRow:
         if not isinstance(col_expr, PyLegendBooleanColumnExpression):
             raise RuntimeError(
                 "Column expression for '{name}' is of type '{type}'. "
-                "get_boolean_col method is not valid on this column.".format(
+                "get_boolean method is not valid on this column.".format(
                     name=column,
                     type=type(col_expr)
                 )
             )
         return PyLegendBoolean(col_expr)
+
+    def get_string(self, column: str) -> PyLegendString:
+        col_expr = self.__get_col(column)
+        if not isinstance(col_expr, PyLegendStringColumnExpression):
+            raise RuntimeError(
+                "Column expression for '{name}' is of type '{type}'. "
+                "get_string method is not valid on this column.".format(
+                    name=column,
+                    type=type(col_expr)
+                )
+            )
+        return PyLegendString(col_expr)
 
     def __get_col(self, column: str) -> PyLegendColumnExpression:
         for base_col in self.__columns:
@@ -58,6 +72,8 @@ class TdsRow:
                 if isinstance(base_col, PrimitiveTdsColumn):
                     if base_col.get_type() == "Boolean":
                         return PyLegendBooleanColumnExpression(self.__frame_name, column)
+                    if base_col.get_type() == "String":
+                        return PyLegendStringColumnExpression(self.__frame_name, column)
 
                 raise RuntimeError(
                     "Column '{col}' of type {type} not supported yet".format(

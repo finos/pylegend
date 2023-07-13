@@ -12,39 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendUnion,
 )
+from pylegend.core.language.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.expression import PyLegendExpressionStringReturn
 from pylegend.core.sql.metamodel import (
     Expression,
-    QuerySpecification,
+    QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendExpression",
-    "PyLegendExpressionBooleanReturn",
-    "PyLegendExpressionStringReturn",
+    "PyLegendString"
 ]
 
 
-class PyLegendExpression(metaclass=ABCMeta):
-    @abstractmethod
+class PyLegendString(PyLegendPrimitive):
+    __value: PyLegendExpressionStringReturn
+
+    def __init__(
+            self,
+            value: PyLegendExpressionStringReturn
+    ) -> None:
+        self.__value = value
+
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        pass
+        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
-
-class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
-
-
-class PyLegendExpressionStringReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    @staticmethod
+    def __validate__param_to_be_str(param: PyLegendUnion[str, "PyLegendString"], desc: str) -> None:
+        if not isinstance(param, (bool, PyLegendString)):
+            raise TypeError(desc + " should be a str or a string expression (PyLegendString)."
+                                   " Got value " + str(param) + " of type: " + str(type(param)))
