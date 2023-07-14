@@ -19,10 +19,14 @@ from pylegend._typing import (
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.primitives.string import PyLegendString
+from pylegend.core.language.primitives.number import PyLegendNumber
+from pylegend.core.language.primitives.integer import PyLegendInteger
 
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
     "PyLegendBoolean",
     "PyLegendString",
+    "PyLegendNumber",
+    "PyLegendInteger",
 ]
