@@ -18,7 +18,7 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.expression import PyLegendExpressionStringReturn
+from pylegend.core.language.expression import PyLegendExpressionIntegerReturn
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -27,16 +27,16 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendString"
+    "PyLegendInteger"
 ]
 
 
-class PyLegendString(PyLegendPrimitive):
-    __value: PyLegendExpressionStringReturn
+class PyLegendInteger(PyLegendPrimitive):
+    __value: PyLegendExpressionIntegerReturn
 
     def __init__(
             self,
-            value: PyLegendExpressionStringReturn
+            value: PyLegendExpressionIntegerReturn
     ) -> None:
         self.__value = value
 
@@ -48,7 +48,7 @@ class PyLegendString(PyLegendPrimitive):
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     @staticmethod
-    def __validate__param_to_be_str(param: PyLegendUnion[str, "PyLegendString"], desc: str) -> None:
-        if not isinstance(param, (str, PyLegendString)):
-            raise TypeError(desc + " should be a str or a string expression (PyLegendString)."
+    def __validate__param_to_be_integer(param: PyLegendUnion[int, "PyLegendInteger"], desc: str) -> None:
+        if not isinstance(param, (int, PyLegendInteger)):
+            raise TypeError(desc + " should be a int or an integer expression (PyLegendInteger)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))

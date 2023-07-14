@@ -21,8 +21,12 @@ from pylegend.core.language import (
     PyLegendColumnExpression,
     PyLegendBooleanColumnExpression,
     PyLegendStringColumnExpression,
+    PyLegendNumberColumnExpression,
+    PyLegendIntegerColumnExpression,
     PyLegendBoolean,
     PyLegendString,
+    PyLegendNumber,
+    PyLegendInteger,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -66,6 +70,30 @@ class TdsRow:
             )
         return PyLegendString(col_expr)
 
+    def get_number(self, column: str) -> PyLegendNumber:
+        col_expr = self.__get_col(column)
+        if not isinstance(col_expr, (PyLegendNumberColumnExpression, PyLegendIntegerColumnExpression)):
+            raise RuntimeError(
+                "Column expression for '{name}' is of type '{type}'. "
+                "get_number method is not valid on this column.".format(
+                    name=column,
+                    type=type(col_expr)
+                )
+            )
+        return PyLegendNumber(col_expr)
+
+    def get_integer(self, column: str) -> PyLegendInteger:
+        col_expr = self.__get_col(column)
+        if not isinstance(col_expr, PyLegendIntegerColumnExpression):
+            raise RuntimeError(
+                "Column expression for '{name}' is of type '{type}'. "
+                "get_integer method is not valid on this column.".format(
+                    name=column,
+                    type=type(col_expr)
+                )
+            )
+        return PyLegendInteger(col_expr)
+
     def __get_col(self, column: str) -> PyLegendColumnExpression:
         for base_col in self.__columns:
             if base_col.get_name() == column:
@@ -74,6 +102,10 @@ class TdsRow:
                         return PyLegendBooleanColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "String":
                         return PyLegendStringColumnExpression(self.__frame_name, column)
+                    if base_col.get_type() == "Number":
+                        return PyLegendNumberColumnExpression(self.__frame_name, column)
+                    if base_col.get_type() == "Integer":
+                        return PyLegendIntegerColumnExpression(self.__frame_name, column)
 
                 raise RuntimeError(
                     "Column '{col}' of type {type} not supported yet".format(

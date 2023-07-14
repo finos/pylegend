@@ -19,9 +19,14 @@ from pylegend.core.language.primitives import (
     PyLegendPrimitive,
     PyLegendBoolean,
     PyLegendString,
+    PyLegendNumber,
+    PyLegendInteger,
 )
 from pylegend.core.language.expression import (
     PyLegendExpressionBooleanReturn,
+    PyLegendExpressionStringReturn,
+    PyLegendExpressionNumberReturn,
+    PyLegendExpressionIntegerReturn,
 )
 from pylegend.core.language.literal_expressions import (
     PyLegendBooleanLiteralExpression,
@@ -30,17 +35,30 @@ from pylegend.core.language.column_expressions import (
     PyLegendColumnExpression,
     PyLegendBooleanColumnExpression,
     PyLegendStringColumnExpression,
+    PyLegendNumberColumnExpression,
+    PyLegendIntegerColumnExpression,
 )
 from pylegend.core.language.tds_row import TdsRow
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
     "PyLegendBoolean",
+    "PyLegendString",
+    "PyLegendNumber",
+    "PyLegendInteger",
+
     "PyLegendExpressionBooleanReturn",
-    "PyLegendBooleanLiteralExpression",
+    "PyLegendExpressionStringReturn",
+    "PyLegendExpressionNumberReturn",
+    "PyLegendExpressionIntegerReturn",
+
     "PyLegendColumnExpression",
     "PyLegendBooleanColumnExpression",
-    "PyLegendString",
     "PyLegendStringColumnExpression",
+    "PyLegendNumberColumnExpression",
+    "PyLegendIntegerColumnExpression",
+
+    "PyLegendBooleanLiteralExpression",
+
     "TdsRow",
 ]

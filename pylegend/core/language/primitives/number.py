@@ -18,7 +18,8 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.expression import PyLegendExpressionStringReturn
+from pylegend.core.language.primitives.integer import PyLegendInteger
+from pylegend.core.language.expression import PyLegendExpressionNumberReturn
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -27,16 +28,16 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendString"
+    "PyLegendNumber"
 ]
 
 
-class PyLegendString(PyLegendPrimitive):
-    __value: PyLegendExpressionStringReturn
+class PyLegendNumber(PyLegendPrimitive):
+    __value: PyLegendExpressionNumberReturn
 
     def __init__(
             self,
-            value: PyLegendExpressionStringReturn
+            value: PyLegendExpressionNumberReturn
     ) -> None:
         self.__value = value
 
@@ -48,7 +49,11 @@ class PyLegendString(PyLegendPrimitive):
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     @staticmethod
-    def __validate__param_to_be_str(param: PyLegendUnion[str, "PyLegendString"], desc: str) -> None:
-        if not isinstance(param, (str, PyLegendString)):
-            raise TypeError(desc + " should be a str or a string expression (PyLegendString)."
+    def __validate__param_to_be_number(
+            param: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendNumber"],
+            desc: str
+    ) -> None:
+        if not isinstance(param, (int, float, PyLegendInteger, PyLegendNumber)):
+            raise TypeError(desc + " should be a int/float or a int/float/number expression"
+                                   " (PyLegendInteger/PyLegendFloat/PyLegendNumber)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))
