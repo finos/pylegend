@@ -17,7 +17,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.primitives.number import PyLegendNumber
 from pylegend.core.language.expression import PyLegendExpressionIntegerReturn
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -31,21 +31,20 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class PyLegendInteger(PyLegendPrimitive):
-    __value: PyLegendExpressionIntegerReturn
+class PyLegendInteger(PyLegendNumber):
 
     def __init__(
             self,
             value: PyLegendExpressionIntegerReturn
     ) -> None:
-        self.__value = value
+        super().__init__(value)
 
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
+        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     @staticmethod
     def __validate__param_to_be_integer(param: PyLegendUnion[int, "PyLegendInteger"], desc: str) -> None:

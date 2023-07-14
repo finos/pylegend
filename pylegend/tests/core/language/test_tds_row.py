@@ -131,6 +131,24 @@ class TestTdsRow:
             config=self.sql_to_string_config
         ) == '"root".col1'
 
+    def test_get_number_col_from_float(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        tds_row = TdsRow.from_tds_frame("t", frame)
+        col_expr = tds_row.get_number("col1")
+
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+
     def test_get_integer_col(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -140,6 +158,24 @@ class TestTdsRow:
 
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_integer("col1")
+
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+
+    def test_get_float_col(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        tds_row = TdsRow.from_tds_frame("t", frame)
+        col_expr = tds_row.get_float("col1")
 
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(

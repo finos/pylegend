@@ -16,8 +16,8 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
 )
-from pylegend.core.language.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.expression import PyLegendExpressionNumberReturn
+from pylegend.core.language.primitives.number import PyLegendNumber
+from pylegend.core.language.expression import PyLegendExpressionFloatReturn
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -26,31 +26,25 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendNumber"
+    "PyLegendFloat"
 ]
 
 
-class PyLegendNumber(PyLegendPrimitive):
-    __value: PyLegendExpressionNumberReturn
+class PyLegendFloat(PyLegendNumber):
 
     def __init__(
             self,
-            value: PyLegendExpressionNumberReturn
+            value: PyLegendExpressionFloatReturn
     ) -> None:
-        self.__value = value
+        super().__init__(value)
 
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
+        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     @staticmethod
-    def validate_param_to_be_number(param, desc):  # type: ignore
-        from pylegend.core.language.primitives.integer import PyLegendInteger
-        from pylegend.core.language.primitives.float import PyLegendFloat
-        if not isinstance(param, (int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber)):
-            raise TypeError(desc + " should be a int/float or a int/float/number expression"
-                                   " (PyLegendInteger/PyLegendFloat/PyLegendNumber)."
-                                   " Got value " + str(param) + " of type: " + str(type(param)))
+    def __validate__param_to_be_float(params, desc):  # type: ignore
+        PyLegendNumber.validate_param_to_be_number(params, desc)  # type: ignore

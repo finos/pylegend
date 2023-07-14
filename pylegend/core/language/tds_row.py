@@ -23,10 +23,12 @@ from pylegend.core.language import (
     PyLegendStringColumnExpression,
     PyLegendNumberColumnExpression,
     PyLegendIntegerColumnExpression,
+    PyLegendFloatColumnExpression,
     PyLegendBoolean,
     PyLegendString,
     PyLegendNumber,
     PyLegendInteger,
+    PyLegendFloat,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -72,7 +74,8 @@ class TdsRow:
 
     def get_number(self, column: str) -> PyLegendNumber:
         col_expr = self.__get_col(column)
-        if not isinstance(col_expr, (PyLegendNumberColumnExpression, PyLegendIntegerColumnExpression)):
+        allowed_types = (PyLegendNumberColumnExpression, PyLegendIntegerColumnExpression, PyLegendFloatColumnExpression)
+        if not isinstance(col_expr, allowed_types):
             raise RuntimeError(
                 "Column expression for '{name}' is of type '{type}'. "
                 "get_number method is not valid on this column.".format(
@@ -94,6 +97,18 @@ class TdsRow:
             )
         return PyLegendInteger(col_expr)
 
+    def get_float(self, column: str) -> PyLegendFloat:
+        col_expr = self.__get_col(column)
+        if not isinstance(col_expr, PyLegendFloatColumnExpression):
+            raise RuntimeError(
+                "Column expression for '{name}' is of type '{type}'. "
+                "get_float method is not valid on this column.".format(
+                    name=column,
+                    type=type(col_expr)
+                )
+            )
+        return PyLegendFloat(col_expr)
+
     def __get_col(self, column: str) -> PyLegendColumnExpression:
         for base_col in self.__columns:
             if base_col.get_name() == column:
@@ -106,6 +121,8 @@ class TdsRow:
                         return PyLegendNumberColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "Integer":
                         return PyLegendIntegerColumnExpression(self.__frame_name, column)
+                    if base_col.get_type() == "Float":
+                        return PyLegendFloatColumnExpression(self.__frame_name, column)
 
                 raise RuntimeError(
                     "Column '{col}' of type {type} not supported yet".format(

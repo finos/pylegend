@@ -21,6 +21,7 @@ from pylegend.core.language.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.primitives.string import PyLegendString
 from pylegend.core.language.primitives.number import PyLegendNumber
 from pylegend.core.language.primitives.integer import PyLegendInteger
+from pylegend.core.language.primitives.float import PyLegendFloat
 
 
 __all__: PyLegendSequence[str] = [
@@ -29,4 +30,5 @@ __all__: PyLegendSequence[str] = [
     "PyLegendString",
     "PyLegendNumber",
     "PyLegendInteger",
+    "PyLegendFloat",
 ]
