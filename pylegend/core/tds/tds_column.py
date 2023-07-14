@@ -99,6 +99,10 @@ class PrimitiveTdsColumn(TdsColumn):
     def boolean_column(cls, name: str) -> "PrimitiveTdsColumn":
         return PrimitiveTdsColumn(name, PrimitiveType.Boolean)
 
+    @classmethod
+    def number_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Number)
+
 
 class EnumTdsColumn(TdsColumn):
     __enum_type: str

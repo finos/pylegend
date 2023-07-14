@@ -36,6 +36,9 @@ class TestTdsColumn:
         c4 = PrimitiveTdsColumn('C4', PrimitiveType.Boolean)
         assert "TdsColumn(Name: C4, Type: Boolean)" == str(c4)
 
+        c5 = PrimitiveTdsColumn('C5', PrimitiveType.Number)
+        assert "TdsColumn(Name: C5, Type: Number)" == str(c5)
+
     def test_primitive_tds_column_creation_with_class_methods(self) -> None:
         c1 = PrimitiveTdsColumn.integer_column('C1')
         assert "TdsColumn(Name: C1, Type: Integer)" == str(c1)
@@ -48,6 +51,9 @@ class TestTdsColumn:
 
         c4 = PrimitiveTdsColumn.boolean_column('C4')
         assert "TdsColumn(Name: C4, Type: Boolean)" == str(c4)
+
+        c5 = PrimitiveTdsColumn.number_column('C5')
+        assert "TdsColumn(Name: C5, Type: Number)" == str(c5)
 
     def test_primitive_tds_column_copy(self) -> None:
         c1 = PrimitiveTdsColumn.integer_column('C1')
