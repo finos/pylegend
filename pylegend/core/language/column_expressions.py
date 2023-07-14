@@ -24,6 +24,7 @@ from pylegend.core.language.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
+    PyLegendExpressionFloatReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -39,6 +40,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringColumnExpression",
     "PyLegendNumberColumnExpression",
     "PyLegendIntegerColumnExpression",
+    "PyLegendFloatColumnExpression",
 ]
 
 
@@ -86,6 +88,12 @@ class PyLegendNumberColumnExpression(PyLegendColumnExpression, PyLegendExpressio
 
 
 class PyLegendIntegerColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionIntegerReturn):
+
+    def __init__(self, frame_name: str, column: str) -> None:
+        super().__init__(frame_name=frame_name, column=column)
+
+
+class PyLegendFloatColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionFloatReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)

@@ -31,6 +31,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendExpressionStringReturn",
     "PyLegendExpressionNumberReturn",
     "PyLegendExpressionIntegerReturn",
+    "PyLegendExpressionFloatReturn",
 ]
 
 
@@ -57,4 +58,8 @@ class PyLegendExpressionNumberReturn(PyLegendExpression, metaclass=ABCMeta):
 
 
 class PyLegendExpressionIntegerReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
+    pass
+
+
+class PyLegendExpressionFloatReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
     pass
