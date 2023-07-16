@@ -30,6 +30,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.operations.string_operation_expressions import (
     PyLegendStringLengthExpression,
     PyLegendStringLikeExpression,
+    PyLegendStringUpperExpression,
+    PyLegendStringLowerExpression,
 )
 
 
@@ -73,6 +75,12 @@ class PyLegendString(PyLegendPrimitive):
         return PyLegendBoolean(
             PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression("%" + escaped_other + "%"))
         )
+
+    def upper(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringUpperExpression(self.__value))
+
+    def lower(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringLowerExpression(self.__value))
 
     def to_sql_expression(
             self,

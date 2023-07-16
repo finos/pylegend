@@ -22,6 +22,8 @@ from pylegend.core.sql.metamodel import (
 __all__: PyLegendSequence[str] = [
     "StringLengthExpression",
     "StringLikeExpression",
+    "StringUpperExpression",
+    "StringLowerExpression",
 ]
 
 
@@ -48,3 +50,25 @@ class StringLikeExpression(Expression):
         super().__init__(_type="stringLikeExpression")
         self.value = value
         self.other = other
+
+
+class StringUpperExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression"
+    ) -> None:
+        super().__init__(_type="stringUpperExpression")
+        self.value = value
+
+
+class StringLowerExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression"
+    ) -> None:
+        super().__init__(_type="stringLowerExpression")
+        self.value = value

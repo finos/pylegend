@@ -70,6 +70,12 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").contains("A_b%c")) == \
                "(\"root\".col2 LIKE '%A\\_b\\%c%')"
 
+    def test_string_upper_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").upper()) == 'UPPER("root".col2)'
+
+    def test_string_lower_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").lower()) == 'LOWER("root".col2)'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

@@ -30,6 +30,8 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
     StringLikeExpression,
+    StringUpperExpression,
+    StringLowerExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
@@ -37,6 +39,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendStringLengthExpression",
     "PyLegendStringLikeExpression",
+    "PyLegendStringUpperExpression",
+    "PyLegendStringLowerExpression",
 ]
 
 
@@ -51,7 +55,7 @@ class PyLegendStringLengthExpression(PyLegendUnaryExpression, PyLegendExpression
         return StringLengthExpression(expression)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
-        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendExpressionIntegerReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
@@ -77,4 +81,42 @@ class PyLegendStringLikeExpression(PyLegendBinaryExpression, PyLegendExpressionB
             operand1,
             operand2,
             PyLegendStringLikeExpression.__to_sql_func
+        )
+
+
+class PyLegendStringUpperExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringUpperExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringUpperExpression.__to_sql_func
+        )
+
+
+class PyLegendStringLowerExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringLowerExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringLowerExpression.__to_sql_func
         )
