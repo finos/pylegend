@@ -18,12 +18,16 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.primitives.integer import PyLegendInteger
 from pylegend.core.language.expression import PyLegendExpressionStringReturn
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.language.operations.string_operation_expressions import (
+    PyLegendStringLengthExpression,
+)
 
 
 __all__: PyLegendSequence[str] = [
@@ -39,6 +43,12 @@ class PyLegendString(PyLegendPrimitive):
             value: PyLegendExpressionStringReturn
     ) -> None:
         self.__value = value
+
+    def len(self) -> PyLegendInteger:
+        return PyLegendInteger(PyLegendStringLengthExpression(self.__value))
+
+    def length(self) -> PyLegendInteger:
+        return self.len()
 
     def to_sql_expression(
             self,
