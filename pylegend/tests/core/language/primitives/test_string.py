@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 from pylegend._typing import PyLegendCallable
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
@@ -41,6 +42,15 @@ class TestPyLegendString:
     def test_string_length_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").len()) == 'CHAR_LENGTH("root".col2)'
         assert self.__generate_sql_string(lambda x: x.get_string("col2").length()) == 'CHAR_LENGTH("root".col2)'
+
+    def test_string_startswith_expr(self) -> None:
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_string("col2").startswith(x.get_string("col2")))  # type: ignore
+        assert t.value.args[0].startswith("startswith prefix parameter should be a str")
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").startswith("Abc")) == \
+               "(\"root\".col2 LIKE 'Abc%')"
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").startswith("A_b%c")) == \
+               "(\"root\".col2 LIKE 'A\\_b\\%c%')"
 
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(

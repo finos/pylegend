@@ -71,7 +71,8 @@ from pylegend.core.sql.metamodel import (
     Union,
 )
 from pylegend.core.sql.metamodel_extension import (
-    StringLengthExpression
+    StringLengthExpression,
+    StringLikeExpression,
 )
 
 
@@ -1153,3 +1154,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = StringLengthExpression(StringLiteral("Hello", quoted=False))
         assert extension.process_expression(expr, config) == "CHAR_LENGTH('Hello')"
+
+    def test_process_string_like_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = StringLikeExpression(StringLiteral("Hello", quoted=False), StringLiteral('He%', quoted=False))
+        assert extension.process_expression(expr, config) == "('Hello' LIKE 'He%')"

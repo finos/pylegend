@@ -19,7 +19,9 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionIntegerReturn,
+    PyLegendExpressionBooleanReturn,
 )
+from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -27,12 +29,14 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
+    StringLikeExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
     "PyLegendStringLengthExpression",
+    "PyLegendStringLikeExpression",
 ]
 
 
@@ -52,4 +56,25 @@ class PyLegendStringLengthExpression(PyLegendUnaryExpression, PyLegendExpression
             self,
             operand,
             PyLegendStringLengthExpression.__to_sql_func
+        )
+
+
+class PyLegendStringLikeExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringLikeExpression(expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringLikeExpression.__to_sql_func
         )
