@@ -67,6 +67,13 @@ class PyLegendString(PyLegendPrimitive):
             PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression("%" + escaped_suffix))
         )
 
+    def contains(self, other: str) -> PyLegendBoolean:
+        PyLegendString.__validate_param_to_be_str(other, "contains/in other parameter")
+        escaped_other = PyLegendString.__escape_like_param(other)
+        return PyLegendBoolean(
+            PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression("%" + escaped_other + "%"))
+        )
+
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
