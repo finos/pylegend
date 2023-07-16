@@ -76,6 +76,8 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
     StringLikeExpression,
+    StringUpperExpression,
+    StringLowerExpression,
 )
 
 
@@ -320,6 +322,10 @@ def expression_processor(
         return extension.process_string_length_expression(expression, config)
     elif isinstance(expression, StringLikeExpression):
         return extension.process_string_like_expression(expression, config)
+    elif isinstance(expression, StringUpperExpression):
+        return extension.process_string_upper_expression(expression, config)
+    elif isinstance(expression, StringLowerExpression):
+        return extension.process_string_lower_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -897,6 +903,12 @@ class SqlToStringDbExtension:
             val=self.process_expression(expr.value, config),
             other=self.process_expression(expr.other, config)
         )
+
+    def process_string_upper_expression(self, expr: StringUpperExpression, config: SqlToStringConfig) -> str:
+        return "UPPER({expr})".format(expr=self.process_expression(expr.value, config))
+
+    def process_string_lower_expression(self, expr: StringLowerExpression, config: SqlToStringConfig) -> str:
+        return "LOWER({expr})".format(expr=self.process_expression(expr.value, config))
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

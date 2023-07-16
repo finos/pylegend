@@ -73,6 +73,8 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
     StringLikeExpression,
+    StringUpperExpression,
+    StringLowerExpression,
 )
 
 
@@ -1161,3 +1163,17 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = StringLikeExpression(StringLiteral("Hello", quoted=False), StringLiteral('He%', quoted=False))
         assert extension.process_expression(expr, config) == "('Hello' LIKE 'He%')"
+
+    def test_process_string_upper_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = StringUpperExpression(StringLiteral("Hello", quoted=False))
+        assert extension.process_expression(expr, config) == "UPPER('Hello')"
+
+    def test_process_string_lower_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = StringLowerExpression(StringLiteral("Hello", quoted=False))
+        assert extension.process_expression(expr, config) == "LOWER('Hello')"
