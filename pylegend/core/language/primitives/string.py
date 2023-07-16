@@ -60,6 +60,13 @@ class PyLegendString(PyLegendPrimitive):
             PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression(escaped_prefix + '%'))
         )
 
+    def endswith(self, suffix: str) -> PyLegendBoolean:
+        PyLegendString.__validate_param_to_be_str(suffix, "endswith suffix parameter")
+        escaped_suffix = PyLegendString.__escape_like_param(suffix)
+        return PyLegendBoolean(
+            PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression("%" + escaped_suffix))
+        )
+
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
