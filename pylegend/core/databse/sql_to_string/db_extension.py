@@ -73,6 +73,9 @@ from pylegend.core.sql.metamodel import (
     TableFunction,
     Union,
 )
+from pylegend.core.sql.metamodel_extension import (
+    StringLengthExpression,
+)
 
 
 __all__: PyLegendSequence[str] = [
@@ -312,6 +315,8 @@ def expression_processor(
         return extension.process_function_call(expression, config)
     elif isinstance(expression, NamedArgumentExpression):
         return extension.process_named_argument_expression(expression, config)
+    elif isinstance(expression, StringLengthExpression):
+        return extension.process_string_length_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -880,6 +885,9 @@ class SqlToStringDbExtension:
 
     def process_named_argument_expression(self, named_arg: NamedArgumentExpression, config: SqlToStringConfig) -> str:
         return named_argument_processor(named_arg, self, config)
+
+    def process_string_length_expression(self, named_arg: StringLengthExpression, config: SqlToStringConfig) -> str:
+        return "CHAR_LENGTH({expr})".format(expr=self.process_expression(named_arg.value, config))
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

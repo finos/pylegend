@@ -70,6 +70,9 @@ from pylegend.core.sql.metamodel import (
     TableFunction,
     Union,
 )
+from pylegend.core.sql.metamodel_extension import (
+    StringLengthExpression
+)
 
 
 class TestSqlToStringDbExtension(SqlToStringDbExtension):
@@ -1143,3 +1146,10 @@ class TestSqlToStringDbExtensionProcessing:
                 LIMIT 303, 101
             )"""
         assert extension.process_relation(union, config, True) == dedent(expected)
+
+    def test_process_string_length_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = StringLengthExpression(StringLiteral("Hello", quoted=False))
+        assert extension.process_expression(expr, config) == "CHAR_LENGTH('Hello')"
