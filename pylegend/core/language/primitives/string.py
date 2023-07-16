@@ -19,7 +19,9 @@ from pylegend._typing import (
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.primitives.integer import PyLegendInteger
+from pylegend.core.language.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.expression import PyLegendExpressionStringReturn
+from pylegend.core.language.literal_expressions import PyLegendStringLiteralExpression
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -27,6 +29,7 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.operations.string_operation_expressions import (
     PyLegendStringLengthExpression,
+    PyLegendStringLikeExpression,
 )
 
 
@@ -50,6 +53,13 @@ class PyLegendString(PyLegendPrimitive):
     def length(self) -> PyLegendInteger:
         return self.len()
 
+    def startswith(self, prefix: str) -> PyLegendBoolean:
+        PyLegendString.__validate_param_to_be_str(prefix, "startswith prefix parameter")
+        escaped_prefix = PyLegendString.__escape_like_param(prefix)
+        return PyLegendBoolean(
+            PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression(escaped_prefix + '%'))
+        )
+
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
@@ -58,7 +68,17 @@ class PyLegendString(PyLegendPrimitive):
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     @staticmethod
-    def __validate__param_to_be_str(param: PyLegendUnion[str, "PyLegendString"], desc: str) -> None:
+    def __escape_like_param(param: str) -> str:
+        return param.replace("_", "\\_").replace("%", "\\%")
+
+    @staticmethod
+    def __validate_param_to_be_str_or_str_expr(param: PyLegendUnion[str, "PyLegendString"], desc: str) -> None:
         if not isinstance(param, (str, PyLegendString)):
             raise TypeError(desc + " should be a str or a string expression (PyLegendString)."
+                                   " Got value " + str(param) + " of type: " + str(type(param)))
+
+    @staticmethod
+    def __validate_param_to_be_str(param: str, desc: str) -> None:
+        if not isinstance(param, str):
+            raise TypeError(desc + " should be a str."
                                    " Got value " + str(param) + " of type: " + str(type(param)))

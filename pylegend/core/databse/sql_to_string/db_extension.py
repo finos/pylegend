@@ -75,6 +75,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
+    StringLikeExpression,
 )
 
 
@@ -317,6 +318,8 @@ def expression_processor(
         return extension.process_named_argument_expression(expression, config)
     elif isinstance(expression, StringLengthExpression):
         return extension.process_string_length_expression(expression, config)
+    elif isinstance(expression, StringLikeExpression):
+        return extension.process_string_like_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -886,8 +889,14 @@ class SqlToStringDbExtension:
     def process_named_argument_expression(self, named_arg: NamedArgumentExpression, config: SqlToStringConfig) -> str:
         return named_argument_processor(named_arg, self, config)
 
-    def process_string_length_expression(self, named_arg: StringLengthExpression, config: SqlToStringConfig) -> str:
-        return "CHAR_LENGTH({expr})".format(expr=self.process_expression(named_arg.value, config))
+    def process_string_length_expression(self, expr: StringLengthExpression, config: SqlToStringConfig) -> str:
+        return "CHAR_LENGTH({expr})".format(expr=self.process_expression(expr.value, config))
+
+    def process_string_like_expression(self, expr: StringLikeExpression, config: SqlToStringConfig) -> str:
+        return "({val} LIKE {other})".format(
+            val=self.process_expression(expr.value, config),
+            other=self.process_expression(expr.other, config)
+        )
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

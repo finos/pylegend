@@ -21,6 +21,7 @@ from pylegend.core.sql.metamodel import (
 
 __all__: PyLegendSequence[str] = [
     "StringLengthExpression",
+    "StringLikeExpression",
 ]
 
 
@@ -33,3 +34,17 @@ class StringLengthExpression(Expression):
     ) -> None:
         super().__init__(_type="stringLengthExpression")
         self.value = value
+
+
+class StringLikeExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression"
+    ) -> None:
+        super().__init__(_type="stringLikeExpression")
+        self.value = value
+        self.other = other
