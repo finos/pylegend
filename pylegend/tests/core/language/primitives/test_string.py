@@ -61,6 +61,15 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").endswith("A_b%c")) == \
                "(\"root\".col2 LIKE '%A\\_b\\%c')"
 
+    def test_string_contains_expr(self) -> None:
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_string("col2").contains(x.get_string("col2")))  # type: ignore
+        assert t.value.args[0].startswith("contains/in other parameter should be a str")
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").contains("Abc")) == \
+               "(\"root\".col2 LIKE '%Abc%')"
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").contains("A_b%c")) == \
+               "(\"root\".col2 LIKE '%A\\_b\\%c%')"
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
