@@ -81,6 +81,7 @@ from pylegend.core.sql.metamodel_extension import (
     TrimType,
     StringTrimExpression,
     StringPosExpression,
+    StringConcatExpression,
 )
 
 
@@ -333,6 +334,8 @@ def expression_processor(
         return extension.process_string_trim_expression(expression, config)
     elif isinstance(expression, StringPosExpression):
         return extension.process_string_pos_expression(expression, config)
+    elif isinstance(expression, StringConcatExpression):
+        return extension.process_string_concat_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -926,6 +929,12 @@ class SqlToStringDbExtension:
         return "STRPOS({expr}, {other})".format(
             expr=self.process_expression(expr.value, config),
             other=self.process_expression(expr.other, config)
+        )
+
+    def process_string_concat_expression(self, expr: StringConcatExpression, config: SqlToStringConfig) -> str:
+        return "CONCAT({first}, {second})".format(
+            first=self.process_expression(expr.first, config),
+            second=self.process_expression(expr.second, config)
         )
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:

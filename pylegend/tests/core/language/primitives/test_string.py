@@ -103,6 +103,14 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_float()) == \
                'CAST("root".col2 AS DOUBLE PRECISION)'
 
+    def test_string_add_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") + x.get_string("col1")) == \
+               'CONCAT("root".col2, "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") + "Abc") == \
+               'CONCAT("root".col2, \'Abc\')'
+        assert self.__generate_sql_string(lambda x: "Abc" + x.get_string("col2")) == \
+               'CONCAT(\'Abc\', "root".col2)'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

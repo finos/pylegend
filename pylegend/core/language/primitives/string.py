@@ -39,6 +39,7 @@ from pylegend.core.language.operations.string_operation_expressions import (
     PyLegendStringPosExpression,
     PyLegendStringParseIntExpression,
     PyLegendStringParseFloatExpression,
+    PyLegendStringConcatExpression,
 )
 
 
@@ -114,6 +115,16 @@ class PyLegendString(PyLegendPrimitive):
 
     def parse_float(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendStringParseFloatExpression(self.__value))
+
+    def __add__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String plus (+) parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendString(PyLegendStringConcatExpression(self.__value, other_op))
+
+    def __radd__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String plus (+) parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendString(PyLegendStringConcatExpression(other_op, self.__value))
 
     def to_sql_expression(
             self,
