@@ -32,6 +32,9 @@ from pylegend.core.language.operations.string_operation_expressions import (
     PyLegendStringLikeExpression,
     PyLegendStringUpperExpression,
     PyLegendStringLowerExpression,
+    PyLegendStringLTrimExpression,
+    PyLegendStringRTrimExpression,
+    PyLegendStringBTrimExpression,
 )
 
 
@@ -81,6 +84,15 @@ class PyLegendString(PyLegendPrimitive):
 
     def lower(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringLowerExpression(self.__value))
+
+    def lstrip(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringLTrimExpression(self.__value))
+
+    def rstrip(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringRTrimExpression(self.__value))
+
+    def strip(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringBTrimExpression(self.__value))
 
     def to_sql_expression(
             self,

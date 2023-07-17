@@ -32,6 +32,8 @@ from pylegend.core.sql.metamodel_extension import (
     StringLikeExpression,
     StringUpperExpression,
     StringLowerExpression,
+    TrimType,
+    StringTrimExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
@@ -41,6 +43,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLikeExpression",
     "PyLegendStringUpperExpression",
     "PyLegendStringLowerExpression",
+    "PyLegendStringLTrimExpression",
+    "PyLegendStringRTrimExpression",
+    "PyLegendStringBTrimExpression",
 ]
 
 
@@ -119,4 +124,61 @@ class PyLegendStringLowerExpression(PyLegendUnaryExpression, PyLegendExpressionS
             self,
             operand,
             PyLegendStringLowerExpression.__to_sql_func
+        )
+
+
+class PyLegendStringLTrimExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringTrimExpression(expression, trim_type=TrimType.Left)
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringLTrimExpression.__to_sql_func
+        )
+
+
+class PyLegendStringRTrimExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringTrimExpression(expression, trim_type=TrimType.Right)
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringRTrimExpression.__to_sql_func
+        )
+
+
+class PyLegendStringBTrimExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringTrimExpression(expression, trim_type=TrimType.Both)
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringBTrimExpression.__to_sql_func
         )
