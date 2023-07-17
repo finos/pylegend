@@ -78,6 +78,7 @@ from pylegend.core.sql.metamodel_extension import (
     TrimType,
     StringTrimExpression,
     StringPosExpression,
+    StringConcatExpression,
 )
 
 
@@ -1200,3 +1201,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = StringPosExpression(StringLiteral("Hello", quoted=False), StringLiteral("He", quoted=False))
         assert extension.process_expression(expr, config) == "STRPOS('Hello', 'He')"
+
+    def test_process_string_concat_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = StringConcatExpression(StringLiteral("Hello", quoted=False), StringLiteral("World", quoted=False))
+        assert extension.process_expression(expr, config) == "CONCAT('Hello', 'World')"

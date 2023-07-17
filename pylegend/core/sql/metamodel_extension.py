@@ -28,6 +28,7 @@ __all__: PyLegendSequence[str] = [
     "TrimType",
     "StringTrimExpression",
     "StringPosExpression",
+    "StringConcatExpression",
 ]
 
 
@@ -110,3 +111,17 @@ class StringPosExpression(Expression):
         super().__init__(_type="stringPosExpression")
         self.value = value
         self.other = other
+
+
+class StringConcatExpression(Expression):
+    first: "Expression"
+    second: "Expression"
+
+    def __init__(
+        self,
+        first: "Expression",
+        second: "Expression"
+    ) -> None:
+        super().__init__(_type="stringConcatExpression")
+        self.first = first
+        self.second = second
