@@ -19,6 +19,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.primitives.integer import PyLegendInteger
+from pylegend.core.language.primitives.float import PyLegendFloat
 from pylegend.core.language.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.expression import PyLegendExpressionStringReturn
 from pylegend.core.language.literal_expressions import PyLegendStringLiteralExpression
@@ -36,6 +37,8 @@ from pylegend.core.language.operations.string_operation_expressions import (
     PyLegendStringRTrimExpression,
     PyLegendStringBTrimExpression,
     PyLegendStringPosExpression,
+    PyLegendStringParseIntExpression,
+    PyLegendStringParseFloatExpression,
 )
 
 
@@ -102,6 +105,15 @@ class PyLegendString(PyLegendPrimitive):
 
     def index(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
         return self.index_of(other)
+
+    def parse_int(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendStringParseIntExpression(self.__value))
+
+    def parse_integer(self) -> "PyLegendInteger":
+        return self.parse_int()
+
+    def parse_float(self) -> "PyLegendFloat":
+        return PyLegendFloat(PyLegendStringParseFloatExpression(self.__value))
 
     def to_sql_expression(
             self,
