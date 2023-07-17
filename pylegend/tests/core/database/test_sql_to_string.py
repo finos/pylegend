@@ -75,6 +75,8 @@ from pylegend.core.sql.metamodel_extension import (
     StringLikeExpression,
     StringUpperExpression,
     StringLowerExpression,
+    TrimType,
+    StringTrimExpression,
 )
 
 
@@ -1177,3 +1179,16 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = StringLowerExpression(StringLiteral("Hello", quoted=False))
         assert extension.process_expression(expr, config) == "LOWER('Hello')"
+
+    def test_process_string_trim_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = StringTrimExpression(StringLiteral("Hello", quoted=False), trim_type=TrimType.Left)
+        assert extension.process_expression(expr, config) == "LTRIM('Hello')"
+
+        expr = StringTrimExpression(StringLiteral("Hello", quoted=False), trim_type=TrimType.Right)
+        assert extension.process_expression(expr, config) == "RTRIM('Hello')"
+
+        expr = StringTrimExpression(StringLiteral("Hello", quoted=False), trim_type=TrimType.Both)
+        assert extension.process_expression(expr, config) == "BTRIM('Hello')"

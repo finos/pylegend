@@ -78,6 +78,8 @@ from pylegend.core.sql.metamodel_extension import (
     StringLikeExpression,
     StringUpperExpression,
     StringLowerExpression,
+    TrimType,
+    StringTrimExpression,
 )
 
 
@@ -326,6 +328,8 @@ def expression_processor(
         return extension.process_string_upper_expression(expression, config)
     elif isinstance(expression, StringLowerExpression):
         return extension.process_string_lower_expression(expression, config)
+    elif isinstance(expression, StringTrimExpression):
+        return extension.process_string_trim_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -909,6 +913,11 @@ class SqlToStringDbExtension:
 
     def process_string_lower_expression(self, expr: StringLowerExpression, config: SqlToStringConfig) -> str:
         return "LOWER({expr})".format(expr=self.process_expression(expr.value, config))
+
+    def process_string_trim_expression(self, expr: StringTrimExpression, config: SqlToStringConfig) -> str:
+        op = "({expr})".format(expr=self.process_expression(expr.value, config))
+        return ("LTRIM" if (expr.trim_type == TrimType.Left) else
+                ("RTRIM" if (expr.trim_type == TrimType.Right) else "BTRIM")) + op
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

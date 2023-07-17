@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from enum import Enum
 from pylegend._typing import (
     PyLegendSequence,
 )
@@ -24,6 +25,8 @@ __all__: PyLegendSequence[str] = [
     "StringLikeExpression",
     "StringUpperExpression",
     "StringLowerExpression",
+    "TrimType",
+    "StringTrimExpression",
 ]
 
 
@@ -72,3 +75,23 @@ class StringLowerExpression(Expression):
     ) -> None:
         super().__init__(_type="stringLowerExpression")
         self.value = value
+
+
+class TrimType(Enum):
+    Left = 1,
+    Right = 2,
+    Both = 3
+
+
+class StringTrimExpression(Expression):
+    value: "Expression"
+    trim_type: TrimType
+
+    def __init__(
+        self,
+        value: "Expression",
+        trim_type: TrimType
+    ) -> None:
+        super().__init__(_type="stringTrimExpression")
+        self.value = value
+        self.trim_type = trim_type
