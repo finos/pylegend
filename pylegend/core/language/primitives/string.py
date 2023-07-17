@@ -40,6 +40,10 @@ from pylegend.core.language.operations.string_operation_expressions import (
     PyLegendStringParseIntExpression,
     PyLegendStringParseFloatExpression,
     PyLegendStringConcatExpression,
+    PyLegendStringLessThanExpression,
+    PyLegendStringLessThanEqualExpression,
+    PyLegendStringGreaterThanExpression,
+    PyLegendStringGreaterThanEqualExpression,
 )
 
 
@@ -125,6 +129,26 @@ class PyLegendString(PyLegendPrimitive):
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String plus (+) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendString(PyLegendStringConcatExpression(other_op, self.__value))
+
+    def __lt__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String less than (<) parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendBoolean(PyLegendStringLessThanExpression(self.__value, other_op))
+
+    def __le__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String less than equal (<=) parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendBoolean(PyLegendStringLessThanEqualExpression(self.__value, other_op))
+
+    def __gt__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String greater than (>) parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendBoolean(PyLegendStringGreaterThanExpression(self.__value, other_op))
+
+    def __ge__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String greater than equal (>=) parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendBoolean(PyLegendStringGreaterThanEqualExpression(self.__value, other_op))
 
     def to_sql_expression(
             self,
