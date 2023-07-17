@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import pytest
-from pylegend._typing import PyLegendCallable
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
     SqlToStringConfig,
@@ -22,7 +21,7 @@ from pylegend.core.databse.sql_to_string import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import TdsRow, PyLegendPrimitive
+from pylegend.core.language import TdsRow
 
 
 class TestPyLegendString:
@@ -45,7 +44,7 @@ class TestPyLegendString:
 
     def test_string_startswith_expr(self) -> None:
         with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_string("col2").startswith(x.get_string("col2")))  # type: ignore
+            self.__generate_sql_string(lambda x: x.get_string("col2").startswith(x.get_string("col2")))
         assert t.value.args[0].startswith("startswith prefix parameter should be a str")
         assert self.__generate_sql_string(lambda x: x.get_string("col2").startswith("Abc")) == \
                "(\"root\".col2 LIKE 'Abc%')"
@@ -54,7 +53,7 @@ class TestPyLegendString:
 
     def test_string_endswith_expr(self) -> None:
         with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_string("col2").endswith(x.get_string("col2")))  # type: ignore
+            self.__generate_sql_string(lambda x: x.get_string("col2").endswith(x.get_string("col2")))
         assert t.value.args[0].startswith("endswith suffix parameter should be a str")
         assert self.__generate_sql_string(lambda x: x.get_string("col2").endswith("Abc")) == \
                "(\"root\".col2 LIKE '%Abc')"
@@ -63,7 +62,7 @@ class TestPyLegendString:
 
     def test_string_contains_expr(self) -> None:
         with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_string("col2").contains(x.get_string("col2")))  # type: ignore
+            self.__generate_sql_string(lambda x: x.get_string("col2").contains(x.get_string("col2")))
         assert t.value.args[0].startswith("contains/in other parameter should be a str")
         assert self.__generate_sql_string(lambda x: x.get_string("col2").contains("Abc")) == \
                "(\"root\".col2 LIKE '%Abc%')"
@@ -111,7 +110,39 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: "Abc" + x.get_string("col2")) == \
                'CONCAT(\'Abc\', "root".col2)'
 
-    def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
+    def test_string_lt_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") < x.get_string("col1")) == \
+               '("root".col2 < "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") < "Abc") == \
+               '("root".col2 < \'Abc\')'
+        assert self.__generate_sql_string(lambda x: "Abc" < x.get_string("col2")) == \
+               '("root".col2 > \'Abc\')'
+
+    def test_string_le_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") <= x.get_string("col1")) == \
+               '("root".col2 <= "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") <= "Abc") == \
+               '("root".col2 <= \'Abc\')'
+        assert self.__generate_sql_string(lambda x: "Abc" <= x.get_string("col2")) == \
+               '("root".col2 >= \'Abc\')'
+
+    def test_string_gt_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") > x.get_string("col1")) == \
+               '("root".col2 > "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") > "Abc") == \
+               '("root".col2 > \'Abc\')'
+        assert self.__generate_sql_string(lambda x: "Abc" > x.get_string("col2")) == \
+               '("root".col2 < \'Abc\')'
+
+    def test_string_ge_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") >= x.get_string("col1")) == \
+               '("root".col2 >= "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2") >= "Abc") == \
+               '("root".col2 >= \'Abc\')'
+        assert self.__generate_sql_string(lambda x: "Abc" >= x.get_string("col2")) == \
+               '("root".col2 <= \'Abc\')'
+
+    def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
             config=self.sql_to_string_config

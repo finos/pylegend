@@ -29,6 +29,8 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     ColumnType,
     Cast,
+    ComparisonOperator,
+    ComparisonExpression,
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -55,6 +57,10 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringParseIntExpression",
     "PyLegendStringParseFloatExpression",
     "PyLegendStringConcatExpression",
+    "PyLegendStringLessThanExpression",
+    "PyLegendStringLessThanEqualExpression",
+    "PyLegendStringGreaterThanExpression",
+    "PyLegendStringGreaterThanEqualExpression",
 ]
 
 
@@ -270,4 +276,88 @@ class PyLegendStringConcatExpression(PyLegendBinaryExpression, PyLegendExpressio
             operand1,
             operand2,
             PyLegendStringConcatExpression.__to_sql_func
+        )
+
+
+class PyLegendStringLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN)
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringLessThanExpression.__to_sql_func
+        )
+
+
+class PyLegendStringLessThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN_OR_EQUAL)
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringLessThanEqualExpression.__to_sql_func
+        )
+
+
+class PyLegendStringGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN)
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringGreaterThanExpression.__to_sql_func
+        )
+
+
+class PyLegendStringGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN_OR_EQUAL)
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringGreaterThanEqualExpression.__to_sql_func
         )
