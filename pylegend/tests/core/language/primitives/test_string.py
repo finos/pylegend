@@ -93,6 +93,16 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").index_of("Abc")) == \
                'STRPOS("root".col2, \'Abc\')'
 
+    def test_string_parse_int_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_int()) == \
+               'CAST("root".col2 AS INTEGER)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_integer()) == \
+               'CAST("root".col2 AS INTEGER)'
+
+    def test_string_parse_float_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_float()) == \
+               'CAST("root".col2 AS DOUBLE PRECISION)'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

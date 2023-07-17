@@ -19,6 +19,7 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionIntegerReturn,
+    PyLegendExpressionFloatReturn,
     PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
@@ -26,6 +27,8 @@ from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpr
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
+    ColumnType,
+    Cast,
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -48,6 +51,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringRTrimExpression",
     "PyLegendStringBTrimExpression",
     "PyLegendStringPosExpression",
+    "PyLegendStringParseIntExpression",
+    "PyLegendStringParseFloatExpression",
 ]
 
 
@@ -204,4 +209,42 @@ class PyLegendStringPosExpression(PyLegendBinaryExpression, PyLegendExpressionIn
             operand1,
             operand2,
             PyLegendStringPosExpression.__to_sql_func
+        )
+
+
+class PyLegendStringParseIntExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return Cast(expression, ColumnType(name="INTEGER", parameters=[]))
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringParseIntExpression.__to_sql_func
+        )
+
+
+class PyLegendStringParseFloatExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return Cast(expression, ColumnType(name="DOUBLE PRECISION", parameters=[]))
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringParseFloatExpression.__to_sql_func
         )
