@@ -77,6 +77,7 @@ from pylegend.core.sql.metamodel_extension import (
     StringLowerExpression,
     TrimType,
     StringTrimExpression,
+    StringPosExpression,
 )
 
 
@@ -1192,3 +1193,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = StringTrimExpression(StringLiteral("Hello", quoted=False), trim_type=TrimType.Both)
         assert extension.process_expression(expr, config) == "BTRIM('Hello')"
+
+    def test_process_string_pos_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = StringPosExpression(StringLiteral("Hello", quoted=False), StringLiteral("He", quoted=False))
+        assert extension.process_expression(expr, config) == "STRPOS('Hello', 'He')"

@@ -27,6 +27,7 @@ __all__: PyLegendSequence[str] = [
     "StringLowerExpression",
     "TrimType",
     "StringTrimExpression",
+    "StringPosExpression",
 ]
 
 
@@ -95,3 +96,17 @@ class StringTrimExpression(Expression):
         super().__init__(_type="stringTrimExpression")
         self.value = value
         self.trim_type = trim_type
+
+
+class StringPosExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression"
+    ) -> None:
+        super().__init__(_type="stringPosExpression")
+        self.value = value
+        self.other = other

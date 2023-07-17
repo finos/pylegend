@@ -34,6 +34,7 @@ from pylegend.core.sql.metamodel_extension import (
     StringLowerExpression,
     TrimType,
     StringTrimExpression,
+    StringPosExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
@@ -46,6 +47,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLTrimExpression",
     "PyLegendStringRTrimExpression",
     "PyLegendStringBTrimExpression",
+    "PyLegendStringPosExpression",
 ]
 
 
@@ -181,4 +183,25 @@ class PyLegendStringBTrimExpression(PyLegendUnaryExpression, PyLegendExpressionS
             self,
             operand,
             PyLegendStringBTrimExpression.__to_sql_func
+        )
+
+
+class PyLegendStringPosExpression(PyLegendBinaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return StringPosExpression(expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringPosExpression.__to_sql_func
         )

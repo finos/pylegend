@@ -35,6 +35,7 @@ from pylegend.core.language.operations.string_operation_expressions import (
     PyLegendStringLTrimExpression,
     PyLegendStringRTrimExpression,
     PyLegendStringBTrimExpression,
+    PyLegendStringPosExpression,
 )
 
 
@@ -93,6 +94,14 @@ class PyLegendString(PyLegendPrimitive):
 
     def strip(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringBTrimExpression(self.__value))
+
+    def index_of(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "Index_of parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendInteger(PyLegendStringPosExpression(self.__value, other_op))
+
+    def index(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
+        return self.index_of(other)
 
     def to_sql_expression(
             self,
