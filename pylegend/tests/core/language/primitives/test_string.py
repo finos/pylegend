@@ -85,6 +85,14 @@ class TestPyLegendString:
     def test_string_strip_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").strip()) == 'BTRIM("root".col2)'
 
+    def test_string_index_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").index(x.get_string("col1"))) == \
+               'STRPOS("root".col2, "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").index("Abc")) == \
+               'STRPOS("root".col2, \'Abc\')'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").index_of("Abc")) == \
+               'STRPOS("root".col2, \'Abc\')'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
