@@ -19,6 +19,7 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.expression import (
     PyLegendExpressionNumberReturn,
 )
@@ -30,6 +31,10 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberAddExpression,
     PyLegendNumberMultiplyExpression,
     PyLegendNumberDivideExpression,
+    PyLegendNumberLessThanExpression,
+    PyLegendNumberLessThanEqualExpression,
+    PyLegendNumberGreaterThanExpression,
+    PyLegendNumberGreaterThanEqualExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -101,6 +106,38 @@ class PyLegendNumber(PyLegendPrimitive):
         PyLegendNumber.validate_param_to_be_number(other, "Number divide (/) parameter")
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberDivideExpression(self.__value, other_op))
+
+    def __lt__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendBoolean":
+        PyLegendNumber.validate_param_to_be_number(other, "Number less than (<) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendBoolean(PyLegendNumberLessThanExpression(self.__value, other_op))
+
+    def __le__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendBoolean":
+        PyLegendNumber.validate_param_to_be_number(other, "Number less than equal (<=) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendBoolean(PyLegendNumberLessThanEqualExpression(self.__value, other_op))
+
+    def __gt__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendBoolean":
+        PyLegendNumber.validate_param_to_be_number(other, "Number greater than (>) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendBoolean(PyLegendNumberGreaterThanExpression(self.__value, other_op))
+
+    def __ge__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendBoolean":
+        PyLegendNumber.validate_param_to_be_number(other, "Number greater than equal (>=) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendBoolean(PyLegendNumberGreaterThanEqualExpression(self.__value, other_op))
 
     def __rtruediv__(
             self,
