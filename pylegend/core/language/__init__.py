@@ -33,6 +33,8 @@ from pylegend.core.language.expression import (
 from pylegend.core.language.literal_expressions import (
     PyLegendBooleanLiteralExpression,
     PyLegendStringLiteralExpression,
+    PyLegendIntegerLiteralExpression,
+    PyLegendFloatLiteralExpression,
 )
 from pylegend.core.language.column_expressions import (
     PyLegendColumnExpression,
@@ -67,6 +69,8 @@ __all__: PyLegendSequence[str] = [
 
     "PyLegendBooleanLiteralExpression",
     "PyLegendStringLiteralExpression",
+    "PyLegendIntegerLiteralExpression",
+    "PyLegendFloatLiteralExpression",
 
     "TdsRow",
 ]

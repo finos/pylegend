@@ -20,11 +20,15 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpressionBooleanReturn,
     PyLegendExpressionStringReturn,
+    PyLegendExpressionIntegerReturn,
+    PyLegendExpressionFloatReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
     BooleanLiteral,
     StringLiteral,
+    IntegerLiteral,
+    DoubleLiteral,
     QuerySpecification,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -33,6 +37,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendBooleanLiteralExpression",
     "PyLegendStringLiteralExpression",
+    "PyLegendIntegerLiteralExpression",
+    "PyLegendFloatLiteralExpression",
 ]
 
 
@@ -62,3 +68,31 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
             config: FrameToSqlConfig
     ) -> Expression:
         return StringLiteral(value=self.__value, quoted=False)
+
+
+class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
+    __value: int
+
+    def __init__(self, value: int) -> None:
+        self.__value = value
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return IntegerLiteral(value=self.__value)
+
+
+class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
+    __value: float
+
+    def __init__(self, value: float) -> None:
+        self.__value = value
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DoubleLiteral(value=self.__value)

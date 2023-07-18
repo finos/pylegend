@@ -15,14 +15,28 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendUnion,
+    TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.expression import PyLegendExpressionNumberReturn
+from pylegend.core.language.expression import (
+    PyLegendExpressionNumberReturn,
+)
+from pylegend.core.language.literal_expressions import (
+    PyLegendIntegerLiteralExpression,
+    PyLegendFloatLiteralExpression,
+)
+from pylegend.core.language.operations.number_operation_expressions import (
+    PyLegendNumberAddExpression,
+)
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+if TYPE_CHECKING:
+    from pylegend.core.language.primitives.integer import PyLegendInteger
+    from pylegend.core.language.primitives.float import PyLegendFloat
 
 
 __all__: PyLegendSequence[str] = [
@@ -46,8 +60,39 @@ class PyLegendNumber(PyLegendPrimitive):
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
+    def __add__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number plus (+) parameter")
+        other_op: PyLegendExpressionNumberReturn
+        if isinstance(other, int):
+            other_op = PyLegendIntegerLiteralExpression(other)
+        elif isinstance(other, float):
+            other_op = PyLegendFloatLiteralExpression(other)
+        else:
+            other_op = other.__value
+        return PyLegendNumber(PyLegendNumberAddExpression(self.__value, other_op))
+
+    def __radd__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number plus (+) parameter")
+        other_op: PyLegendExpressionNumberReturn
+        if isinstance(other, int):
+            other_op = PyLegendIntegerLiteralExpression(other)
+        elif isinstance(other, float):
+            other_op = PyLegendFloatLiteralExpression(other)
+        else:
+            other_op = other.__value
+        return PyLegendNumber(PyLegendNumberAddExpression(other_op, self.__value))
+
     @staticmethod
-    def validate_param_to_be_number(param, desc):  # type: ignore
+    def validate_param_to_be_number(
+            param: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"],
+            desc: str
+    ) -> None:
         from pylegend.core.language.primitives.integer import PyLegendInteger
         from pylegend.core.language.primitives.float import PyLegendFloat
         if not isinstance(param, (int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber)):
