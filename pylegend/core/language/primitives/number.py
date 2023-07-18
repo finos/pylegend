@@ -35,6 +35,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberLessThanEqualExpression,
     PyLegendNumberGreaterThanExpression,
     PyLegendNumberGreaterThanEqualExpression,
+    PyLegendNumberNegativeExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -107,6 +108,14 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberDivideExpression(self.__value, other_op))
 
+    def __rtruediv__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number divide (/) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberDivideExpression(other_op, self.__value))
+
     def __lt__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -139,13 +148,11 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendBoolean(PyLegendNumberGreaterThanEqualExpression(self.__value, other_op))
 
-    def __rtruediv__(
-            self,
-            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
-    ) -> "PyLegendNumber":
-        PyLegendNumber.validate_param_to_be_number(other, "Number divide (/) parameter")
-        other_op = PyLegendNumber.__convert_to_number_expr(other)
-        return PyLegendNumber(PyLegendNumberDivideExpression(other_op, self.__value))
+    def __pos__(self) -> "PyLegendNumber":
+        return self
+
+    def __neg__(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberNegativeExpression(self.__value))
 
     @staticmethod
     def __convert_to_number_expr(

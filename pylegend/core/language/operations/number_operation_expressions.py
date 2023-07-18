@@ -21,6 +21,8 @@ from pylegend.core.language.expression import (
     PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
+from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -28,8 +30,8 @@ from pylegend.core.sql.metamodel import (
     ArithmeticExpression,
     ComparisonOperator,
     ComparisonExpression,
+    NegativeExpression,
 )
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -40,6 +42,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberLessThanEqualExpression",
     "PyLegendNumberGreaterThanExpression",
     "PyLegendNumberGreaterThanEqualExpression",
+    "PyLegendNumberNegativeExpression",
 ]
 
 
@@ -187,4 +190,23 @@ class PyLegendNumberGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegen
             operand1,
             operand2,
             PyLegendNumberGreaterThanEqualExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberNegativeExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return NegativeExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberNegativeExpression.__to_sql_func
         )
