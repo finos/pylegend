@@ -16,35 +16,40 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
 )
-from pylegend.core.language.primitives.number import PyLegendNumber
-from pylegend.core.language.expression import PyLegendExpressionFloatReturn
+from pylegend.core.language.expression import (
+    PyLegendExpressionNumberReturn,
+)
+from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.sql.metamodel import (
     Expression,
-    QuerySpecification
+    QuerySpecification,
+    ArithmeticType,
+    ArithmeticExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendFloat"
+    "PyLegendNumberAddExpression",
 ]
 
 
-class PyLegendFloat(PyLegendNumber):
+class PyLegendNumberAddExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
 
-    def __init__(
-            self,
-            value: PyLegendExpressionFloatReturn
-    ) -> None:
-        super().__init__(value)
-
-    def to_sql_expression(
-            self,
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
+        return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
 
-    @staticmethod
-    def __validate__param_to_be_float(params, desc):  # type: ignore
-        PyLegendNumber.validate_param_to_be_number(params, desc)
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberAddExpression.__to_sql_func
+        )
