@@ -28,6 +28,8 @@ from pylegend.core.language.literal_expressions import (
 )
 from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberAddExpression,
+    PyLegendNumberMultiplyExpression,
+    PyLegendNumberDivideExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -65,13 +67,7 @@ class PyLegendNumber(PyLegendPrimitive):
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
     ) -> "PyLegendNumber":
         PyLegendNumber.validate_param_to_be_number(other, "Number plus (+) parameter")
-        other_op: PyLegendExpressionNumberReturn
-        if isinstance(other, int):
-            other_op = PyLegendIntegerLiteralExpression(other)
-        elif isinstance(other, float):
-            other_op = PyLegendFloatLiteralExpression(other)
-        else:
-            other_op = other.__value
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberAddExpression(self.__value, other_op))
 
     def __radd__(
@@ -79,14 +75,50 @@ class PyLegendNumber(PyLegendPrimitive):
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
     ) -> "PyLegendNumber":
         PyLegendNumber.validate_param_to_be_number(other, "Number plus (+) parameter")
-        other_op: PyLegendExpressionNumberReturn
-        if isinstance(other, int):
-            other_op = PyLegendIntegerLiteralExpression(other)
-        elif isinstance(other, float):
-            other_op = PyLegendFloatLiteralExpression(other)
-        else:
-            other_op = other.__value
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberAddExpression(other_op, self.__value))
+
+    def __mul__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number multiply (*) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberMultiplyExpression(self.__value, other_op))
+
+    def __rmul__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number multiply (*) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberMultiplyExpression(other_op, self.__value))
+
+    def __truediv__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number divide (/) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberDivideExpression(self.__value, other_op))
+
+    def __rtruediv__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number divide (/) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberDivideExpression(other_op, self.__value))
+
+    @staticmethod
+    def __convert_to_number_expr(
+            val: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> PyLegendExpressionNumberReturn:
+        if isinstance(val, int):
+            return PyLegendIntegerLiteralExpression(val)
+        if isinstance(val, float):
+            return PyLegendFloatLiteralExpression(val)
+        return val.__value
 
     @staticmethod
     def validate_param_to_be_number(
