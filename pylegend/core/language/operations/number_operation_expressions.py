@@ -31,6 +31,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "PyLegendNumberAddExpression",
+    "PyLegendNumberMultiplyExpression",
+    "PyLegendNumberDivideExpression",
 ]
 
 
@@ -52,4 +54,46 @@ class PyLegendNumberAddExpression(PyLegendBinaryExpression, PyLegendExpressionNu
             operand1,
             operand2,
             PyLegendNumberAddExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ArithmeticExpression(ArithmeticType.MULTIPLY, expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberMultiplyExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ArithmeticExpression(ArithmeticType.DIVIDE, expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberDivideExpression.__to_sql_func
         )
