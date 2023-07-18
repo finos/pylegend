@@ -18,6 +18,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.expression import (
     PyLegendExpressionNumberReturn,
+    PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.sql.metamodel import (
@@ -25,6 +26,8 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     ArithmeticType,
     ArithmeticExpression,
+    ComparisonOperator,
+    ComparisonExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
@@ -33,6 +36,10 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberAddExpression",
     "PyLegendNumberMultiplyExpression",
     "PyLegendNumberDivideExpression",
+    "PyLegendNumberLessThanExpression",
+    "PyLegendNumberLessThanEqualExpression",
+    "PyLegendNumberGreaterThanExpression",
+    "PyLegendNumberGreaterThanEqualExpression",
 ]
 
 
@@ -96,4 +103,88 @@ class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressio
             operand1,
             operand2,
             PyLegendNumberDivideExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberLessThanExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberLessThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN_OR_EQUAL)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberLessThanEqualExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberGreaterThanExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN_OR_EQUAL)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberGreaterThanEqualExpression.__to_sql_func
         )
