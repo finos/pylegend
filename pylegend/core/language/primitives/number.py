@@ -31,6 +31,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberAddExpression,
     PyLegendNumberMultiplyExpression,
     PyLegendNumberDivideExpression,
+    PyLegendNumberSubtractExpression,
     PyLegendNumberLessThanExpression,
     PyLegendNumberLessThanEqualExpression,
     PyLegendNumberGreaterThanExpression,
@@ -115,6 +116,22 @@ class PyLegendNumber(PyLegendPrimitive):
         PyLegendNumber.validate_param_to_be_number(other, "Number divide (/) parameter")
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberDivideExpression(other_op, self.__value))
+
+    def __sub__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number subtract (-) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberSubtractExpression(self.__value, other_op))
+
+    def __rsub__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number subtract (-) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberSubtractExpression(other_op, self.__value))
 
     def __lt__(
             self,
