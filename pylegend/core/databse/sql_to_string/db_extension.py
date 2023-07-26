@@ -88,6 +88,8 @@ from pylegend.core.sql.metamodel_extension import (
     FloorExpression,
     SqrtExpression,
     CbrtExpression,
+    ExpExpression,
+    LogExpression,
 )
 
 
@@ -354,6 +356,10 @@ def expression_processor(
         return extension.process_sqrt_expression(expression, config)
     elif isinstance(expression, CbrtExpression):
         return extension.process_cbrt_expression(expression, config)
+    elif isinstance(expression, ExpExpression):
+        return extension.process_exp_expression(expression, config)
+    elif isinstance(expression, LogExpression):
+        return extension.process_log_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -983,6 +989,16 @@ class SqlToStringDbExtension:
 
     def process_cbrt_expression(self, expr: CbrtExpression, config: SqlToStringConfig) -> str:
         return "CBRT({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_exp_expression(self, expr: ExpExpression, config: SqlToStringConfig) -> str:
+        return "EXP({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_log_expression(self, expr: LogExpression, config: SqlToStringConfig) -> str:
+        return "LN({value})".format(
             value=self.process_expression(expr.value, config)
         )
 
