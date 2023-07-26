@@ -81,6 +81,9 @@ from pylegend.core.sql.metamodel_extension import (
     StringConcatExpression,
     AbsoluteExpression,
     PowerExpression,
+    CeilExpression,
+    FloorExpression,
+    SqrtExpression,
 )
 
 
@@ -1224,3 +1227,24 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = PowerExpression(IntegerLiteral(9), IntegerLiteral(3))
         assert extension.process_expression(expr, config) == "POWER(9, 3)"
+
+    def test_process_ceil_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = CeilExpression(DoubleLiteral(2.3))
+        assert extension.process_expression(expr, config) == "CEIL(2.3)"
+
+    def test_process_floor_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = FloorExpression(DoubleLiteral(2.3))
+        assert extension.process_expression(expr, config) == "FLOOR(2.3)"
+
+    def test_process_sqrt_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = SqrtExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "SQRT(10)"

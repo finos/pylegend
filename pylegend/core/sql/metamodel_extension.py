@@ -31,6 +31,9 @@ __all__: PyLegendSequence[str] = [
     "StringConcatExpression",
     "AbsoluteExpression",
     "PowerExpression",
+    "CeilExpression",
+    "FloorExpression",
+    "SqrtExpression",
 ]
 
 
@@ -152,3 +155,36 @@ class PowerExpression(Expression):
         super().__init__(_type="powerExpression")
         self.first = first
         self.second = second
+
+
+class CeilExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="ceilExpression")
+        self.value = value
+
+
+class FloorExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="floorExpression")
+        self.value = value
+
+
+class SqrtExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="sqrtExpression")
+        self.value = value
