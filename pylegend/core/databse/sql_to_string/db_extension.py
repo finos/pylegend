@@ -84,6 +84,9 @@ from pylegend.core.sql.metamodel_extension import (
     StringConcatExpression,
     AbsoluteExpression,
     PowerExpression,
+    CeilExpression,
+    FloorExpression,
+    SqrtExpression,
 )
 
 
@@ -342,6 +345,12 @@ def expression_processor(
         return extension.process_absolute_expression(expression, config)
     elif isinstance(expression, PowerExpression):
         return extension.process_power_expression(expression, config)
+    elif isinstance(expression, CeilExpression):
+        return extension.process_ceil_expression(expression, config)
+    elif isinstance(expression, FloorExpression):
+        return extension.process_floor_expression(expression, config)
+    elif isinstance(expression, SqrtExpression):
+        return extension.process_sqrt_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -952,6 +961,21 @@ class SqlToStringDbExtension:
         return "POWER({first}, {second})".format(
             first=self.process_expression(expr.first, config),
             second=self.process_expression(expr.second, config)
+        )
+
+    def process_ceil_expression(self, expr: CeilExpression, config: SqlToStringConfig) -> str:
+        return "CEIL({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_floor_expression(self, expr: FloorExpression, config: SqlToStringConfig) -> str:
+        return "FLOOR({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_sqrt_expression(self, expr: SqrtExpression, config: SqlToStringConfig) -> str:
+        return "SQRT({value})".format(
+            value=self.process_expression(expr.value, config)
         )
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:

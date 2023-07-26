@@ -18,6 +18,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.expression import (
     PyLegendExpressionNumberReturn,
+    PyLegendExpressionIntegerReturn,
     PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
@@ -35,6 +36,9 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
     PowerExpression,
+    CeilExpression,
+    FloorExpression,
+    SqrtExpression,
 )
 
 
@@ -50,6 +54,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberNegativeExpression",
     "PyLegendNumberAbsoluteExpression",
     "PyLegendNumberPowerExpression",
+    "PyLegendNumberCeilExpression",
+    "PyLegendNumberFloorExpression",
+    "PyLegendNumberSqrtExpression",
 ]
 
 
@@ -277,4 +284,61 @@ class PyLegendNumberPowerExpression(PyLegendBinaryExpression, PyLegendExpression
             operand1,
             operand2,
             PyLegendNumberPowerExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberCeilExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CeilExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberCeilExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberFloorExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FloorExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberFloorExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberSqrtExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return SqrtExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberSqrtExpression.__to_sql_func
         )

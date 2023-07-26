@@ -127,6 +127,24 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: 1.2 ** x.get_number("col2")) == \
                'POWER(1.2, "root".col2)'
 
+    def test_number_ceil_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").ceil()) == \
+               'CEIL("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).ceil()) == \
+               'CEIL(("root".col2 + "root".col1))'
+
+    def test_number_floor_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").floor()) == \
+               'FLOOR("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).floor()) == \
+               'FLOOR(("root".col2 + "root".col1))'
+
+    def test_number_sqrt_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").sqrt()) == \
+               'SQRT("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sqrt()) == \
+               'SQRT(("root".col2 + "root".col1))'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

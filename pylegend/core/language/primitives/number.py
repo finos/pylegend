@@ -39,6 +39,9 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberNegativeExpression,
     PyLegendNumberAbsoluteExpression,
     PyLegendNumberPowerExpression,
+    PyLegendNumberCeilExpression,
+    PyLegendNumberFloorExpression,
+    PyLegendNumberSqrtExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -191,6 +194,17 @@ class PyLegendNumber(PyLegendPrimitive):
         PyLegendNumber.validate_param_to_be_number(other, "Number power (**) parameter")
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberPowerExpression(other_op, self.__value))
+
+    def ceil(self) -> "PyLegendInteger":
+        from pylegend.core.language.primitives.integer import PyLegendInteger
+        return PyLegendInteger(PyLegendNumberCeilExpression(self.__value))
+
+    def floor(self) -> "PyLegendInteger":
+        from pylegend.core.language.primitives.integer import PyLegendInteger
+        return PyLegendInteger(PyLegendNumberFloorExpression(self.__value))
+
+    def sqrt(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberSqrtExpression(self.__value))
 
     @staticmethod
     def __convert_to_number_expr(
