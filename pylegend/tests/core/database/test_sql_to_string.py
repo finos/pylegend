@@ -79,6 +79,7 @@ from pylegend.core.sql.metamodel_extension import (
     StringTrimExpression,
     StringPosExpression,
     StringConcatExpression,
+    AbsoluteExpression,
 )
 
 
@@ -1208,3 +1209,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = StringConcatExpression(StringLiteral("Hello", quoted=False), StringLiteral("World", quoted=False))
         assert extension.process_expression(expr, config) == "CONCAT('Hello', 'World')"
+
+    def test_process_absolute_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = AbsoluteExpression(IntegerLiteral(-1))
+        assert extension.process_expression(expr, config) == "ABS(-1)"

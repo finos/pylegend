@@ -32,6 +32,9 @@ from pylegend.core.sql.metamodel import (
     ComparisonExpression,
     NegativeExpression,
 )
+from pylegend.core.sql.metamodel_extension import (
+    AbsoluteExpression,
+)
 
 
 __all__: PyLegendSequence[str] = [
@@ -44,6 +47,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberGreaterThanExpression",
     "PyLegendNumberGreaterThanEqualExpression",
     "PyLegendNumberNegativeExpression",
+    "PyLegendNumberAbsoluteExpression",
 ]
 
 
@@ -231,4 +235,23 @@ class PyLegendNumberNegativeExpression(PyLegendUnaryExpression, PyLegendExpressi
             self,
             operand,
             PyLegendNumberNegativeExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return AbsoluteExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberAbsoluteExpression.__to_sql_func
         )

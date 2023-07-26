@@ -29,6 +29,7 @@ __all__: PyLegendSequence[str] = [
     "StringTrimExpression",
     "StringPosExpression",
     "StringConcatExpression",
+    "AbsoluteExpression",
 ]
 
 
@@ -125,3 +126,14 @@ class StringConcatExpression(Expression):
         super().__init__(_type="stringConcatExpression")
         self.first = first
         self.second = second
+
+
+class AbsoluteExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="absoluteExpression")
+        self.value = value
