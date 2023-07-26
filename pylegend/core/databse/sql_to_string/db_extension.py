@@ -82,6 +82,7 @@ from pylegend.core.sql.metamodel_extension import (
     StringTrimExpression,
     StringPosExpression,
     StringConcatExpression,
+    AbsoluteExpression,
 )
 
 
@@ -336,6 +337,8 @@ def expression_processor(
         return extension.process_string_pos_expression(expression, config)
     elif isinstance(expression, StringConcatExpression):
         return extension.process_string_concat_expression(expression, config)
+    elif isinstance(expression, AbsoluteExpression):
+        return extension.process_absolute_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -935,6 +938,11 @@ class SqlToStringDbExtension:
         return "CONCAT({first}, {second})".format(
             first=self.process_expression(expr.first, config),
             second=self.process_expression(expr.second, config)
+        )
+
+    def process_absolute_expression(self, expr: AbsoluteExpression, config: SqlToStringConfig) -> str:
+        return "ABS({value})".format(
+            value=self.process_expression(expr.value, config)
         )
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:

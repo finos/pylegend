@@ -37,6 +37,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberGreaterThanExpression,
     PyLegendNumberGreaterThanEqualExpression,
     PyLegendNumberNegativeExpression,
+    PyLegendNumberAbsoluteExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -170,6 +171,9 @@ class PyLegendNumber(PyLegendPrimitive):
 
     def __neg__(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberNegativeExpression(self.__value))
+
+    def __abs__(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberAbsoluteExpression(self.__value))
 
     @staticmethod
     def __convert_to_number_expr(
