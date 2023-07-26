@@ -80,6 +80,7 @@ from pylegend.core.sql.metamodel_extension import (
     StringPosExpression,
     StringConcatExpression,
     AbsoluteExpression,
+    PowerExpression,
 )
 
 
@@ -1216,3 +1217,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = AbsoluteExpression(IntegerLiteral(-1))
         assert extension.process_expression(expr, config) == "ABS(-1)"
+
+    def test_process_power_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = PowerExpression(IntegerLiteral(9), IntegerLiteral(3))
+        assert extension.process_expression(expr, config) == "POWER(9, 3)"

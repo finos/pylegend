@@ -38,6 +38,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberGreaterThanEqualExpression,
     PyLegendNumberNegativeExpression,
     PyLegendNumberAbsoluteExpression,
+    PyLegendNumberPowerExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -174,6 +175,22 @@ class PyLegendNumber(PyLegendPrimitive):
 
     def __abs__(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberAbsoluteExpression(self.__value))
+
+    def __pow__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number power (**) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberPowerExpression(self.__value, other_op))
+
+    def __rpow__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number power (**) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberPowerExpression(other_op, self.__value))
 
     @staticmethod
     def __convert_to_number_expr(

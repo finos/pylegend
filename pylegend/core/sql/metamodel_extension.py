@@ -30,6 +30,7 @@ __all__: PyLegendSequence[str] = [
     "StringPosExpression",
     "StringConcatExpression",
     "AbsoluteExpression",
+    "PowerExpression",
 ]
 
 
@@ -137,3 +138,17 @@ class AbsoluteExpression(Expression):
     ) -> None:
         super().__init__(_type="absoluteExpression")
         self.value = value
+
+
+class PowerExpression(Expression):
+    first: "Expression"
+    second: "Expression"
+
+    def __init__(
+        self,
+        first: "Expression",
+        second: "Expression"
+    ) -> None:
+        super().__init__(_type="powerExpression")
+        self.first = first
+        self.second = second
