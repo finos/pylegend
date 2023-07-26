@@ -43,6 +43,8 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberFloorExpression,
     PyLegendNumberSqrtExpression,
     PyLegendNumberCbrtExpression,
+    PyLegendNumberExpExpression,
+    PyLegendNumberLogExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -209,6 +211,12 @@ class PyLegendNumber(PyLegendPrimitive):
 
     def cbrt(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberCbrtExpression(self.__value))
+
+    def exp(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberExpExpression(self.__value))
+
+    def log(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberLogExpression(self.__value))
 
     @staticmethod
     def __convert_to_number_expr(

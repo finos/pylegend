@@ -40,6 +40,8 @@ from pylegend.core.sql.metamodel_extension import (
     FloorExpression,
     SqrtExpression,
     CbrtExpression,
+    ExpExpression,
+    LogExpression,
 )
 
 
@@ -59,6 +61,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberFloorExpression",
     "PyLegendNumberSqrtExpression",
     "PyLegendNumberCbrtExpression",
+    "PyLegendNumberExpExpression",
+    "PyLegendNumberLogExpression",
 ]
 
 
@@ -362,4 +366,42 @@ class PyLegendNumberCbrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
             self,
             operand,
             PyLegendNumberCbrtExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberExpExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ExpExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberExpExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberLogExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return LogExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberLogExpression.__to_sql_func
         )
