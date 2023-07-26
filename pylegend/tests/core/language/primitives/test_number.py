@@ -61,6 +61,14 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: 1.2 / x.get_number("col2")) == \
                '((1.0 * 1.2) / "root".col2)'
 
+    def test_number_subtract_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2") - x.get_number("col1")) == \
+               '("root".col2 - "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_number("col2") - 10) == \
+               '("root".col2 - 10)'
+        assert self.__generate_sql_string(lambda x: 1.2 - x.get_number("col2")) == \
+               '(1.2 - "root".col2)'
+
     def test_number_lt_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2") < x.get_number("col1")) == \
                '("root".col2 < "root".col1)'

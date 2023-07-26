@@ -38,6 +38,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberAddExpression",
     "PyLegendNumberMultiplyExpression",
     "PyLegendNumberDivideExpression",
+    "PyLegendNumberSubtractExpression",
     "PyLegendNumberLessThanExpression",
     "PyLegendNumberLessThanEqualExpression",
     "PyLegendNumberGreaterThanExpression",
@@ -106,6 +107,27 @@ class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressio
             operand1,
             operand2,
             PyLegendNumberDivideExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberSubtractExpression.__to_sql_func
         )
 
 
