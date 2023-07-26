@@ -84,6 +84,7 @@ from pylegend.core.sql.metamodel_extension import (
     CeilExpression,
     FloorExpression,
     SqrtExpression,
+    CbrtExpression,
 )
 
 
@@ -1248,3 +1249,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = SqrtExpression(IntegerLiteral(10))
         assert extension.process_expression(expr, config) == "SQRT(10)"
+
+    def test_process_cbrt_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = CbrtExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "CBRT(10)"

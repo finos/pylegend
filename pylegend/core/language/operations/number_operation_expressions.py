@@ -39,6 +39,7 @@ from pylegend.core.sql.metamodel_extension import (
     CeilExpression,
     FloorExpression,
     SqrtExpression,
+    CbrtExpression,
 )
 
 
@@ -57,6 +58,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberCeilExpression",
     "PyLegendNumberFloorExpression",
     "PyLegendNumberSqrtExpression",
+    "PyLegendNumberCbrtExpression",
 ]
 
 
@@ -341,4 +343,23 @@ class PyLegendNumberSqrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
             self,
             operand,
             PyLegendNumberSqrtExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberCbrtExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CbrtExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberCbrtExpression.__to_sql_func
         )
