@@ -233,6 +233,12 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).atan()) == \
                'ATAN(("root".col2 + "root".col1))'
 
+    def test_number_arc_tan2_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").atan2(0.5)) == \
+               'ATAN2("root".col2, 0.5)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2")).atan2(x.get_number("col1"))) == \
+               'ATAN2("root".col2, "root".col1)'
+
     def test_number_cot_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").cot()) == \
                'COT("root".col2)'

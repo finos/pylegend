@@ -98,6 +98,7 @@ from pylegend.core.sql.metamodel_extension import (
     ArcCosineExpression,
     TanExpression,
     ArcTanExpression,
+    ArcTan2Expression,
     CotExpression,
 )
 
@@ -385,6 +386,8 @@ def expression_processor(
         return extension.process_tan_expression(expression, config)
     elif isinstance(expression, ArcTanExpression):
         return extension.process_arc_tan_expression(expression, config)
+    elif isinstance(expression, ArcTan2Expression):
+        return extension.process_arc_tan2_expression(expression, config)
     elif isinstance(expression, CotExpression):
         return extension.process_cot_expression(expression, config)
     else:
@@ -1081,6 +1084,12 @@ class SqlToStringDbExtension:
     def process_arc_tan_expression(self, expr: ArcTanExpression, config: SqlToStringConfig) -> str:
         return "ATAN({value})".format(
             value=self.process_expression(expr.value, config)
+        )
+
+    def process_arc_tan2_expression(self, expr: ArcTan2Expression, config: SqlToStringConfig) -> str:
+        return "ATAN2({first}, {second})".format(
+            first=self.process_expression(expr.first, config),
+            second=self.process_expression(expr.second, config)
         )
 
     def process_cot_expression(self, expr: CotExpression, config: SqlToStringConfig) -> str:
