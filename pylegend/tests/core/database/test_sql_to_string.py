@@ -95,6 +95,7 @@ from pylegend.core.sql.metamodel_extension import (
     ArcCosineExpression,
     TanExpression,
     ArcTanExpression,
+    CotExpression,
 )
 
 
@@ -1351,3 +1352,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = ArcTanExpression(DoubleLiteral(0.5))
         assert extension.process_expression(expr, config) == "ATAN(0.5)"
+
+    def test_process_cot_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = CotExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "COT(10)"

@@ -54,6 +54,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberArcCosineExpression,
     PyLegendNumberTanExpression,
     PyLegendNumberArcTanExpression,
+    PyLegendNumberCotExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -258,6 +259,9 @@ class PyLegendNumber(PyLegendPrimitive):
 
     def atan(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberArcTanExpression(self.__value))
+
+    def cot(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberCotExpression(self.__value))
 
     def round(
             self,

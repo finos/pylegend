@@ -46,6 +46,7 @@ __all__: PyLegendSequence[str] = [
     "ArcCosineExpression",
     "TanExpression",
     "ArcTanExpression",
+    "CotExpression",
 ]
 
 
@@ -326,4 +327,15 @@ class ArcTanExpression(Expression):
         value: "Expression",
     ) -> None:
         super().__init__(_type="arcTanExpression")
+        self.value = value
+
+
+class CotExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="cotExpression")
         self.value = value
