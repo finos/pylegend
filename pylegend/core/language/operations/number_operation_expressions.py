@@ -44,6 +44,8 @@ from pylegend.core.sql.metamodel_extension import (
     LogExpression,
     RemainderExpression,
     RoundExpression,
+    SineExpression,
+    ArcSineExpression,
 )
 
 
@@ -67,6 +69,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberLogExpression",
     "PyLegendNumberRemainderExpression",
     "PyLegendNumberRoundExpression",
+    "PyLegendNumberSineExpression",
+    "PyLegendNumberArcSineExpression",
 ]
 
 
@@ -450,4 +454,42 @@ class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpression
             operand1,
             operand2,
             PyLegendNumberRoundExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberSineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return SineExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberSineExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberArcSineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ArcSineExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberArcSineExpression.__to_sql_func
         )

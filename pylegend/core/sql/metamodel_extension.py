@@ -40,6 +40,8 @@ __all__: PyLegendSequence[str] = [
     "LogExpression",
     "RemainderExpression",
     "RoundExpression",
+    "SineExpression",
+    "ArcSineExpression",
 ]
 
 
@@ -255,3 +257,25 @@ class RoundExpression(Expression):
         super().__init__(_type="roundExpression")
         self.first = first
         self.second = second
+
+
+class SineExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="sineExpression")
+        self.value = value
+
+
+class ArcSineExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="arcSineExpression")
+        self.value = value

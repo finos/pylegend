@@ -48,6 +48,8 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberLogExpression,
     PyLegendNumberRemainderExpression,
     PyLegendNumberRoundExpression,
+    PyLegendNumberSineExpression,
+    PyLegendNumberArcSineExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -234,6 +236,12 @@ class PyLegendNumber(PyLegendPrimitive):
         PyLegendNumber.validate_param_to_be_number(other, "Number remainder (rem) parameter")
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberRemainderExpression(self.__value, other_op))
+
+    def sin(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberSineExpression(self.__value))
+
+    def asin(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberArcSineExpression(self.__value))
 
     def round(
             self,
