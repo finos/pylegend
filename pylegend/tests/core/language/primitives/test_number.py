@@ -172,6 +172,12 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).log()) == \
                'LN(("root".col2 + "root".col1))'
 
+    def test_number_remainder_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").rem(x.get_number("col1"))) == \
+               'MOD("root".col2, "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").rem(10)) == \
+               'MOD("root".col2, 10)'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
