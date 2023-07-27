@@ -50,6 +50,7 @@ from pylegend.core.sql.metamodel_extension import (
     ArcCosineExpression,
     TanExpression,
     ArcTanExpression,
+    CotExpression,
 )
 
 
@@ -79,6 +80,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberArcCosineExpression",
     "PyLegendNumberTanExpression",
     "PyLegendNumberArcTanExpression",
+    "PyLegendNumberCotExpression",
 ]
 
 
@@ -576,4 +578,23 @@ class PyLegendNumberArcTanExpression(PyLegendUnaryExpression, PyLegendExpression
             self,
             operand,
             PyLegendNumberArcTanExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberCotExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CotExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberCotExpression.__to_sql_func
         )
