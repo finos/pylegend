@@ -54,6 +54,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberArcCosineExpression,
     PyLegendNumberTanExpression,
     PyLegendNumberArcTanExpression,
+    PyLegendNumberArcTan2Expression,
     PyLegendNumberCotExpression,
 )
 from pylegend.core.sql.metamodel import (
@@ -259,6 +260,14 @@ class PyLegendNumber(PyLegendPrimitive):
 
     def atan(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberArcTanExpression(self.__value))
+
+    def atan2(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number atan2 parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberArcTan2Expression(self.__value, other_op))
 
     def cot(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberCotExpression(self.__value))
