@@ -197,6 +197,18 @@ class TestPyLegendNumber:
             self.__generate_sql_string(lambda x: round(x.get_number("col2"), 2.1))  # type: ignore
         assert t.value.args[0] == "Round parameter should be an int. Passed - <class 'float'>"
 
+    def test_number_sine_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").sin()) == \
+               'SIN("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sin()) == \
+               'SIN(("root".col2 + "root".col1))'
+
+    def test_number_arc_sine_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").asin()) == \
+               'ASIN("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).asin()) == \
+               'ASIN(("root".col2 + "root".col1))'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

@@ -92,6 +92,8 @@ from pylegend.core.sql.metamodel_extension import (
     LogExpression,
     RemainderExpression,
     RoundExpression,
+    SineExpression,
+    ArcSineExpression,
 )
 
 
@@ -366,6 +368,10 @@ def expression_processor(
         return extension.process_remainder_expression(expression, config)
     elif isinstance(expression, RoundExpression):
         return extension.process_round_expression(expression, config)
+    elif isinstance(expression, SineExpression):
+        return extension.process_sine_expression(expression, config)
+    elif isinstance(expression, ArcSineExpression):
+        return extension.process_arc_sine_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1031,6 +1037,16 @@ class SqlToStringDbExtension:
                 first=self.process_expression(expr.first, config),
                 second=self.process_expression(expr.second, config)
             )
+
+    def process_sine_expression(self, expr: SineExpression, config: SqlToStringConfig) -> str:
+        return "SIN({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_arc_sine_expression(self, expr: ArcSineExpression, config: SqlToStringConfig) -> str:
+        return "ASIN({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

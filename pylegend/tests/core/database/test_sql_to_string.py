@@ -89,6 +89,8 @@ from pylegend.core.sql.metamodel_extension import (
     LogExpression,
     RemainderExpression,
     RoundExpression,
+    SineExpression,
+    ArcSineExpression,
 )
 
 
@@ -1303,3 +1305,17 @@ class TestSqlToStringDbExtensionProcessing:
                 RoundExpression(DoubleLiteral(9.12345), StringLiteral("1", quoted=False)), config
             )
         assert t.value.args[0] == "Unexpected round argument type - <class 'pylegend.core.sql.metamodel.StringLiteral'>"
+
+    def test_process_sine_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = SineExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "SIN(10)"
+
+    def test_process_arc_sine_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = ArcSineExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "ASIN(10)"
