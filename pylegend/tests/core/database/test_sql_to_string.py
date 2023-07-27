@@ -93,6 +93,8 @@ from pylegend.core.sql.metamodel_extension import (
     ArcSineExpression,
     CosineExpression,
     ArcCosineExpression,
+    TanExpression,
+    ArcTanExpression,
 )
 
 
@@ -1319,8 +1321,8 @@ class TestSqlToStringDbExtensionProcessing:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
 
-        expr = ArcSineExpression(IntegerLiteral(10))
-        assert extension.process_expression(expr, config) == "ASIN(10)"
+        expr = ArcSineExpression(DoubleLiteral(0.5))
+        assert extension.process_expression(expr, config) == "ASIN(0.5)"
 
     def test_process_cosine_expression(self) -> None:
         extension = SqlToStringDbExtension()
@@ -1333,5 +1335,19 @@ class TestSqlToStringDbExtensionProcessing:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
 
-        expr = ArcCosineExpression(IntegerLiteral(10))
-        assert extension.process_expression(expr, config) == "ACOS(10)"
+        expr = ArcCosineExpression(DoubleLiteral(0.5))
+        assert extension.process_expression(expr, config) == "ACOS(0.5)"
+
+    def test_process_tan_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = TanExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "TAN(10)"
+
+    def test_process_arc_tan_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = ArcTanExpression(DoubleLiteral(0.5))
+        assert extension.process_expression(expr, config) == "ATAN(0.5)"

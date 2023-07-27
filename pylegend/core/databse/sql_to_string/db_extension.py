@@ -96,6 +96,8 @@ from pylegend.core.sql.metamodel_extension import (
     ArcSineExpression,
     CosineExpression,
     ArcCosineExpression,
+    TanExpression,
+    ArcTanExpression,
 )
 
 
@@ -378,6 +380,10 @@ def expression_processor(
         return extension.process_cosine_expression(expression, config)
     elif isinstance(expression, ArcCosineExpression):
         return extension.process_arc_cosine_expression(expression, config)
+    elif isinstance(expression, TanExpression):
+        return extension.process_tan_expression(expression, config)
+    elif isinstance(expression, ArcTanExpression):
+        return extension.process_arc_tan_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1061,6 +1067,16 @@ class SqlToStringDbExtension:
 
     def process_arc_cosine_expression(self, expr: ArcCosineExpression, config: SqlToStringConfig) -> str:
         return "ACOS({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_tan_expression(self, expr: TanExpression, config: SqlToStringConfig) -> str:
+        return "TAN({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_arc_tan_expression(self, expr: ArcTanExpression, config: SqlToStringConfig) -> str:
+        return "ATAN({value})".format(
             value=self.process_expression(expr.value, config)
         )
 
