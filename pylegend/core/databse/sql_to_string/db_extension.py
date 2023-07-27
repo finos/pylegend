@@ -90,6 +90,7 @@ from pylegend.core.sql.metamodel_extension import (
     CbrtExpression,
     ExpExpression,
     LogExpression,
+    RemainderExpression,
 )
 
 
@@ -360,6 +361,8 @@ def expression_processor(
         return extension.process_exp_expression(expression, config)
     elif isinstance(expression, LogExpression):
         return extension.process_log_expression(expression, config)
+    elif isinstance(expression, RemainderExpression):
+        return extension.process_remainder_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1000,6 +1003,12 @@ class SqlToStringDbExtension:
     def process_log_expression(self, expr: LogExpression, config: SqlToStringConfig) -> str:
         return "LN({value})".format(
             value=self.process_expression(expr.value, config)
+        )
+
+    def process_remainder_expression(self, expr: RemainderExpression, config: SqlToStringConfig) -> str:
+        return "MOD({first}, {second})".format(
+            first=self.process_expression(expr.first, config),
+            second=self.process_expression(expr.second, config)
         )
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:

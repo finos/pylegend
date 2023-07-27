@@ -37,6 +37,7 @@ __all__: PyLegendSequence[str] = [
     "CbrtExpression",
     "ExpExpression",
     "LogExpression",
+    "RemainderExpression",
 ]
 
 
@@ -224,3 +225,17 @@ class LogExpression(Expression):
     ) -> None:
         super().__init__(_type="logExpression")
         self.value = value
+
+
+class RemainderExpression(Expression):
+    first: "Expression"
+    second: "Expression"
+
+    def __init__(
+        self,
+        first: "Expression",
+        second: "Expression"
+    ) -> None:
+        super().__init__(_type="remainderExpression")
+        self.first = first
+        self.second = second

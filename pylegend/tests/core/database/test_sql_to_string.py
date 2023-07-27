@@ -87,6 +87,7 @@ from pylegend.core.sql.metamodel_extension import (
     CbrtExpression,
     ExpExpression,
     LogExpression,
+    RemainderExpression,
 )
 
 
@@ -1272,3 +1273,10 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = LogExpression(IntegerLiteral(10))
         assert extension.process_expression(expr, config) == "LN(10)"
+
+    def test_process_remainder_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = RemainderExpression(IntegerLiteral(9), IntegerLiteral(3))
+        assert extension.process_expression(expr, config) == "MOD(9, 3)"

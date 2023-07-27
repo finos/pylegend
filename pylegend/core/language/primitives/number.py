@@ -45,6 +45,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberCbrtExpression,
     PyLegendNumberExpExpression,
     PyLegendNumberLogExpression,
+    PyLegendNumberRemainderExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -223,6 +224,14 @@ class PyLegendNumber(PyLegendPrimitive):
 
     def log(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberLogExpression(self.__value))
+
+    def rem(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendNumber":
+        PyLegendNumber.validate_param_to_be_number(other, "Number remainder (rem) parameter")
+        other_op = PyLegendNumber.__convert_to_number_expr(other)
+        return PyLegendNumber(PyLegendNumberRemainderExpression(self.__value, other_op))
 
     @staticmethod
     def __convert_to_number_expr(
