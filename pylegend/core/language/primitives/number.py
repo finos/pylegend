@@ -50,6 +50,8 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberRoundExpression,
     PyLegendNumberSineExpression,
     PyLegendNumberArcSineExpression,
+    PyLegendNumberCosineExpression,
+    PyLegendNumberArcCosineExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -242,6 +244,12 @@ class PyLegendNumber(PyLegendPrimitive):
 
     def asin(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberArcSineExpression(self.__value))
+
+    def cos(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberCosineExpression(self.__value))
+
+    def acos(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberArcCosineExpression(self.__value))
 
     def round(
             self,

@@ -91,6 +91,8 @@ from pylegend.core.sql.metamodel_extension import (
     RoundExpression,
     SineExpression,
     ArcSineExpression,
+    CosineExpression,
+    ArcCosineExpression,
 )
 
 
@@ -1319,3 +1321,17 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = ArcSineExpression(IntegerLiteral(10))
         assert extension.process_expression(expr, config) == "ASIN(10)"
+
+    def test_process_cosine_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = CosineExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "COS(10)"
+
+    def test_process_arc_cosine_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = ArcCosineExpression(IntegerLiteral(10))
+        assert extension.process_expression(expr, config) == "ACOS(10)"

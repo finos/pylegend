@@ -46,6 +46,8 @@ from pylegend.core.sql.metamodel_extension import (
     RoundExpression,
     SineExpression,
     ArcSineExpression,
+    CosineExpression,
+    ArcCosineExpression,
 )
 
 
@@ -71,6 +73,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberRoundExpression",
     "PyLegendNumberSineExpression",
     "PyLegendNumberArcSineExpression",
+    "PyLegendNumberCosineExpression",
+    "PyLegendNumberArcCosineExpression",
 ]
 
 
@@ -492,4 +496,42 @@ class PyLegendNumberArcSineExpression(PyLegendUnaryExpression, PyLegendExpressio
             self,
             operand,
             PyLegendNumberArcSineExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberCosineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CosineExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberCosineExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberArcCosineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ArcCosineExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberArcCosineExpression.__to_sql_func
         )
