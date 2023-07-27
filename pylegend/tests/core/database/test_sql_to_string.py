@@ -88,6 +88,7 @@ from pylegend.core.sql.metamodel_extension import (
     ExpExpression,
     LogExpression,
     RemainderExpression,
+    RoundExpression,
 )
 
 
@@ -1280,3 +1281,25 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = RemainderExpression(IntegerLiteral(9), IntegerLiteral(3))
         assert extension.process_expression(expr, config) == "MOD(9, 3)"
+
+    def test_process_round_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = RoundExpression(DoubleLiteral(9.12345), IntegerLiteral(3))
+        assert extension.process_expression(expr, config) == "ROUND(9.12345, 3)"
+
+        expr = RoundExpression(DoubleLiteral(9.12345), LongLiteral(3))
+        assert extension.process_expression(expr, config) == "ROUND(9.12345, 3)"
+
+        expr = RoundExpression(DoubleLiteral(9.12345), LongLiteral(0))
+        assert extension.process_expression(expr, config) == "ROUND(9.12345)"
+
+        expr = RoundExpression(DoubleLiteral(9.12345), None)
+        assert extension.process_expression(expr, config) == "ROUND(9.12345)"
+
+        with pytest.raises(TypeError) as t:
+            extension.process_expression(
+                RoundExpression(DoubleLiteral(9.12345), StringLiteral("1", quoted=False)), config
+            )
+        assert t.value.args[0] == "Unexpected round argument type - <class 'pylegend.core.sql.metamodel.StringLiteral'>"

@@ -16,6 +16,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    PyLegendOptional,
     TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
@@ -46,6 +47,7 @@ from pylegend.core.language.operations.number_operation_expressions import (
     PyLegendNumberExpExpression,
     PyLegendNumberLogExpression,
     PyLegendNumberRemainderExpression,
+    PyLegendNumberRoundExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -232,6 +234,20 @@ class PyLegendNumber(PyLegendPrimitive):
         PyLegendNumber.validate_param_to_be_number(other, "Number remainder (rem) parameter")
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberRemainderExpression(self.__value, other_op))
+
+    def round(
+            self,
+            n: PyLegendOptional[int] = None
+    ) -> "PyLegendNumber":
+        if n is None:
+            return PyLegendNumber(PyLegendNumberRoundExpression(self.__value, PyLegendIntegerLiteralExpression(0)))
+        else:
+            if not isinstance(n, int):
+                raise TypeError("Round parameter should be an int. Passed - " + str(type(n)))
+            return PyLegendNumber(PyLegendNumberRoundExpression(self.__value, PyLegendIntegerLiteralExpression(n)))
+
+    def __round__(self, n: PyLegendOptional[int] = None) -> "PyLegendNumber":
+        return self.round(n)
 
     @staticmethod
     def __convert_to_number_expr(
