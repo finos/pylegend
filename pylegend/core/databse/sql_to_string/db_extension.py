@@ -91,6 +91,7 @@ from pylegend.core.sql.metamodel_extension import (
     ExpExpression,
     LogExpression,
     RemainderExpression,
+    RoundExpression,
 )
 
 
@@ -363,6 +364,8 @@ def expression_processor(
         return extension.process_log_expression(expression, config)
     elif isinstance(expression, RemainderExpression):
         return extension.process_remainder_expression(expression, config)
+    elif isinstance(expression, RoundExpression):
+        return extension.process_round_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1010,6 +1013,24 @@ class SqlToStringDbExtension:
             first=self.process_expression(expr.first, config),
             second=self.process_expression(expr.second, config)
         )
+
+    def process_round_expression(self, expr: RoundExpression, config: SqlToStringConfig) -> str:
+        if expr.second is None:
+            return "ROUND({first})".format(
+                first=self.process_expression(expr.first, config)
+            )
+        if not isinstance(expr.second, (IntegerLiteral, LongLiteral)):
+            raise TypeError("Unexpected round argument type - " + str(type(expr.second)))
+
+        if expr.second.value == 0:
+            return "ROUND({first})".format(
+                first=self.process_expression(expr.first, config)
+            )
+        else:
+            return "ROUND({first}, {second})".format(
+                first=self.process_expression(expr.first, config),
+                second=self.process_expression(expr.second, config)
+            )
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

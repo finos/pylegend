@@ -43,6 +43,7 @@ from pylegend.core.sql.metamodel_extension import (
     ExpExpression,
     LogExpression,
     RemainderExpression,
+    RoundExpression,
 )
 
 
@@ -65,6 +66,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberExpExpression",
     "PyLegendNumberLogExpression",
     "PyLegendNumberRemainderExpression",
+    "PyLegendNumberRoundExpression",
 ]
 
 
@@ -427,4 +429,25 @@ class PyLegendNumberRemainderExpression(PyLegendBinaryExpression, PyLegendExpres
             operand1,
             operand2,
             PyLegendNumberRemainderExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return RoundExpression(expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendNumberRoundExpression.__to_sql_func
         )

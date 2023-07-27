@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import math
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
@@ -177,6 +178,24 @@ class TestPyLegendNumber:
                'MOD("root".col2, "root".col1)'
         assert self.__generate_sql_string(lambda x: x.get_number("col2").rem(10)) == \
                'MOD("root".col2, 10)'
+
+    def test_number_round_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").round()) == \
+               'ROUND("root".col2)'
+        assert self.__generate_sql_string(lambda x: round(x.get_number("col2"))) == \
+               'ROUND("root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").round(0)) == \
+               'ROUND("root".col2)'
+        assert self.__generate_sql_string(lambda x: round(x.get_number("col2"), 0)) == \
+               'ROUND("root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").round(2)) == \
+               'ROUND("root".col2, 2)'
+        assert self.__generate_sql_string(lambda x: round(x.get_number("col2"), 2)) == \
+               'ROUND("root".col2, 2)'
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: round(x.get_number("col2"), 2.1))  # type: ignore
+        assert t.value.args[0] == "Round parameter should be an int. Passed - <class 'float'>"
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

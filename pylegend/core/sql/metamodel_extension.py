@@ -15,6 +15,7 @@
 from enum import Enum
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendOptional,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -38,6 +39,7 @@ __all__: PyLegendSequence[str] = [
     "ExpExpression",
     "LogExpression",
     "RemainderExpression",
+    "RoundExpression",
 ]
 
 
@@ -237,5 +239,19 @@ class RemainderExpression(Expression):
         second: "Expression"
     ) -> None:
         super().__init__(_type="remainderExpression")
+        self.first = first
+        self.second = second
+
+
+class RoundExpression(Expression):
+    first: "Expression"
+    second: "PyLegendOptional[Expression]"
+
+    def __init__(
+        self,
+        first: "Expression",
+        second: "PyLegendOptional[Expression]"
+    ) -> None:
+        super().__init__(_type="roundExpression")
         self.first = first
         self.second = second
