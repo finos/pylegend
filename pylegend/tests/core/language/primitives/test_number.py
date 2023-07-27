@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
     SqlToStringConfig,
@@ -132,11 +133,19 @@ class TestPyLegendNumber:
                'CEIL("root".col2)'
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).ceil()) == \
                'CEIL(("root".col2 + "root".col1))'
+        assert self.__generate_sql_string(lambda x: math.ceil(x.get_number("col2"))) == \
+               'CEIL("root".col2)'
+        assert self.__generate_sql_string(lambda x: math.ceil(x.get_number("col2") + x.get_number("col1"))) == \
+               'CEIL(("root".col2 + "root".col1))'
 
     def test_number_floor_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").floor()) == \
                'FLOOR("root".col2)'
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).floor()) == \
+               'FLOOR(("root".col2 + "root".col1))'
+        assert self.__generate_sql_string(lambda x: math.floor(x.get_number("col2"))) == \
+               'FLOOR("root".col2)'
+        assert self.__generate_sql_string(lambda x: math.floor(x.get_number("col2") + x.get_number("col1"))) == \
                'FLOOR(("root".col2 + "root".col1))'
 
     def test_number_sqrt_expr(self) -> None:

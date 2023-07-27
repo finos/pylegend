@@ -202,9 +202,15 @@ class PyLegendNumber(PyLegendPrimitive):
         from pylegend.core.language.primitives.integer import PyLegendInteger
         return PyLegendInteger(PyLegendNumberCeilExpression(self.__value))
 
+    def __ceil__(self) -> "PyLegendInteger":
+        return self.ceil()
+
     def floor(self) -> "PyLegendInteger":
         from pylegend.core.language.primitives.integer import PyLegendInteger
         return PyLegendInteger(PyLegendNumberFloorExpression(self.__value))
+
+    def __floor__(self) -> "PyLegendInteger":
+        return self.floor()
 
     def sqrt(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberSqrtExpression(self.__value))
