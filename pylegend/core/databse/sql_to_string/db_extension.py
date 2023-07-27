@@ -94,6 +94,8 @@ from pylegend.core.sql.metamodel_extension import (
     RoundExpression,
     SineExpression,
     ArcSineExpression,
+    CosineExpression,
+    ArcCosineExpression,
 )
 
 
@@ -372,6 +374,10 @@ def expression_processor(
         return extension.process_sine_expression(expression, config)
     elif isinstance(expression, ArcSineExpression):
         return extension.process_arc_sine_expression(expression, config)
+    elif isinstance(expression, CosineExpression):
+        return extension.process_cosine_expression(expression, config)
+    elif isinstance(expression, ArcCosineExpression):
+        return extension.process_arc_cosine_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1045,6 +1051,16 @@ class SqlToStringDbExtension:
 
     def process_arc_sine_expression(self, expr: ArcSineExpression, config: SqlToStringConfig) -> str:
         return "ASIN({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_cosine_expression(self, expr: CosineExpression, config: SqlToStringConfig) -> str:
+        return "COS({value})".format(
+            value=self.process_expression(expr.value, config)
+        )
+
+    def process_arc_cosine_expression(self, expr: ArcCosineExpression, config: SqlToStringConfig) -> str:
+        return "ACOS({value})".format(
             value=self.process_expression(expr.value, config)
         )
 
