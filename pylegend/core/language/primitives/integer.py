@@ -30,6 +30,7 @@ from pylegend.core.language.operations.integer_operation_expressions import (
     PyLegendIntegerAddExpression,
     PyLegendIntegerAbsoluteExpression,
     PyLegendIntegerNegativeExpression,
+    PyLegendIntegerSubtractExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.primitives import PyLegendFloat
@@ -77,6 +78,28 @@ class PyLegendInteger(PyLegendNumber):
             return PyLegendInteger(PyLegendIntegerAddExpression(other_op, self.__value_copy))
         else:
             return super().__radd__(other)
+
+    def __sub__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendInteger]":
+        PyLegendNumber.validate_param_to_be_number(other, "Integer minus (-) parameter")
+        if isinstance(other, (int, PyLegendInteger)):
+            other_op = PyLegendInteger.__convert_to_integer_expr(other)
+            return PyLegendInteger(PyLegendIntegerSubtractExpression(self.__value_copy, other_op))
+        else:
+            return super().__sub__(other)
+
+    def __rsub__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendInteger]":
+        PyLegendNumber.validate_param_to_be_number(other, "Integer minus (-) parameter")
+        if isinstance(other, (int, PyLegendInteger)):
+            other_op = PyLegendInteger.__convert_to_integer_expr(other)
+            return PyLegendInteger(PyLegendIntegerSubtractExpression(other_op, self.__value_copy))
+        else:
+            return super().__rsub__(other)
 
     def __abs__(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendIntegerAbsoluteExpression(self.__value_copy))

@@ -52,6 +52,20 @@ class TestPyLegendInteger:
         assert self.__generate_sql_string_no_integer_assert(lambda x: 1.2 + x.get_integer("col2")) == \
                '(1.2 + "root".col2)'
 
+    def test_integer_subtract_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_integer("col2") - x.get_integer("col1")) == \
+               '("root".col2 - "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_integer("col2") - 10) == \
+               '("root".col2 - 10)'
+        assert self.__generate_sql_string(lambda x: 10 - x.get_integer("col2")) == \
+               '(10 - "root".col2)'
+
+    def test_integer_float_subtract_expr(self) -> None:
+        assert self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2") - 1.2) == \
+               '("root".col2 - 1.2)'
+        assert self.__generate_sql_string_no_integer_assert(lambda x: 1.2 - x.get_integer("col2")) == \
+               '(1.2 - "root".col2)'
+
     def test_integer_abs_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: abs(x.get_integer("col2"))) == \
                'ABS("root".col2)'
