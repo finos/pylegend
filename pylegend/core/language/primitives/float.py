@@ -15,9 +15,12 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendUnion,
+    TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.number import PyLegendNumber
 from pylegend.core.language.expression import PyLegendExpressionFloatReturn
+from pylegend.core.language.literal_expressions import PyLegendFloatLiteralExpression
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -25,7 +28,10 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.operations.float_operation_expressions import (
     PyLegendFloatAbsoluteExpression,
+    PyLegendFloatAddExpression,
 )
+if TYPE_CHECKING:
+    from pylegend.core.language.primitives import PyLegendInteger
 
 __all__: PyLegendSequence[str] = [
     "PyLegendFloat"
@@ -42,8 +48,38 @@ class PyLegendFloat(PyLegendNumber):
         self.__value_copy = value
         super().__init__(value)
 
+    def __add__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendFloat]":
+        PyLegendNumber.validate_param_to_be_number(other, "Float plus (+) parameter")
+        if isinstance(other, (float, PyLegendFloat)):
+            other_op = PyLegendFloat.__convert_to_float_expr(other)
+            return PyLegendFloat(PyLegendFloatAddExpression(self.__value_copy, other_op))
+        else:
+            return super().__add__(other)
+
+    def __radd__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendFloat]":
+        PyLegendNumber.validate_param_to_be_number(other, "Float plus (+) parameter")
+        if isinstance(other, (float, PyLegendFloat)):
+            other_op = PyLegendFloat.__convert_to_float_expr(other)
+            return PyLegendFloat(PyLegendFloatAddExpression(other_op, self.__value_copy))
+        else:
+            return super().__radd__(other)
+
     def __abs__(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendFloatAbsoluteExpression(self.__value_copy))
+
+    @staticmethod
+    def __convert_to_float_expr(
+            val: PyLegendUnion[float, "PyLegendFloat"]
+    ) -> PyLegendExpressionFloatReturn:
+        if isinstance(val, float):
+            return PyLegendFloatLiteralExpression(val)
+        return val.__value_copy
 
     def to_sql_expression(
             self,
