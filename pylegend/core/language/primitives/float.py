@@ -23,7 +23,9 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-
+from pylegend.core.language.operations.float_operation_expressions import (
+    PyLegendFloatAbsoluteExpression,
+)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendFloat"
@@ -31,12 +33,17 @@ __all__: PyLegendSequence[str] = [
 
 
 class PyLegendFloat(PyLegendNumber):
+    __value_copy: PyLegendExpressionFloatReturn
 
     def __init__(
             self,
             value: PyLegendExpressionFloatReturn
     ) -> None:
+        self.__value_copy = value
         super().__init__(value)
+
+    def __abs__(self) -> "PyLegendFloat":
+        return PyLegendFloat(PyLegendFloatAbsoluteExpression(self.__value_copy))
 
     def to_sql_expression(
             self,
