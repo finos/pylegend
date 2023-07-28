@@ -38,6 +38,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendFloatAddExpression",
     "PyLegendFloatAbsoluteExpression",
     "PyLegendFloatNegativeExpression",
+    "PyLegendFloatSubtractExpression",
 ]
 
 
@@ -59,6 +60,27 @@ class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFlo
             operand1,
             operand2,
             PyLegendFloatAddExpression.__to_sql_func
+        )
+
+
+class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendFloatSubtractExpression.__to_sql_func
         )
 
 
