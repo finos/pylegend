@@ -31,6 +31,7 @@ from pylegend.core.language.operations.float_operation_expressions import (
     PyLegendFloatAddExpression,
     PyLegendFloatNegativeExpression,
     PyLegendFloatSubtractExpression,
+    PyLegendFloatMultiplyExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.primitives import PyLegendInteger
@@ -93,6 +94,28 @@ class PyLegendFloat(PyLegendNumber):
             return PyLegendFloat(PyLegendFloatSubtractExpression(other_op, self.__value_copy))
         else:
             return super().__rsub__(other)
+
+    def __mul__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendFloat]":
+        PyLegendNumber.validate_param_to_be_number(other, "Float multiply (*) parameter")
+        if isinstance(other, (float, PyLegendFloat)):
+            other_op = PyLegendFloat.__convert_to_float_expr(other)
+            return PyLegendFloat(PyLegendFloatMultiplyExpression(self.__value_copy, other_op))
+        else:
+            return super().__mul__(other)
+
+    def __rmul__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendFloat]":
+        PyLegendNumber.validate_param_to_be_number(other, "Float multiply (*) parameter")
+        if isinstance(other, (float, PyLegendFloat)):
+            other_op = PyLegendFloat.__convert_to_float_expr(other)
+            return PyLegendFloat(PyLegendFloatMultiplyExpression(other_op, self.__value_copy))
+        else:
+            return super().__rmul__(other)
 
     def __abs__(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendFloatAbsoluteExpression(self.__value_copy))
