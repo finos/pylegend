@@ -66,6 +66,20 @@ class TestPyLegendFloat:
         assert self.__generate_sql_string_no_float_assert(lambda x: 10 - x.get_float("col2")) == \
                '(10 - "root".col2)'
 
+    def test_float_multiply_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_float("col2") * x.get_float("col1")) == \
+               '("root".col2 * "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_float("col2") * 1.2) == \
+               '("root".col2 * 1.2)'
+        assert self.__generate_sql_string(lambda x: 1.2 * x.get_float("col2")) == \
+               '(1.2 * "root".col2)'
+
+    def test_float_integer_multiply_expr(self) -> None:
+        assert self.__generate_sql_string_no_float_assert(lambda x: x.get_float("col2") * 10) == \
+               '("root".col2 * 10)'
+        assert self.__generate_sql_string_no_float_assert(lambda x: 10 * x.get_float("col2")) == \
+               '(10 * "root".col2)'
+
     def test_float_abs_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: abs(x.get_float("col2"))) == \
                'ABS("root".col2)'
