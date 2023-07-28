@@ -77,6 +77,9 @@ class PyLegendFloat(PyLegendNumber):
     def __neg__(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendFloatNegativeExpression(self.__value_copy))
 
+    def __pos__(self) -> "PyLegendFloat":
+        return self
+
     @staticmethod
     def __convert_to_float_expr(
             val: PyLegendUnion[float, "PyLegendFloat"]

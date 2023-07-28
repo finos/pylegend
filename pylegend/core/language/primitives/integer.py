@@ -84,6 +84,9 @@ class PyLegendInteger(PyLegendNumber):
     def __neg__(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendIntegerNegativeExpression(self.__value_copy))
 
+    def __pos__(self) -> "PyLegendInteger":
+        return self
+
     @staticmethod
     def __convert_to_integer_expr(
             val: PyLegendUnion[int, "PyLegendInteger"]
