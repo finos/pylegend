@@ -38,13 +38,36 @@ class TestPyLegendFloat:
     def test_float_col_access(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_float("col2")) == '"root".col2'
 
+    def test_float_add_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_float("col2") + x.get_float("col1")) == \
+               '("root".col2 + "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_float("col2") + 1.2) == \
+               '("root".col2 + 1.2)'
+        assert self.__generate_sql_string(lambda x: 1.2 + x.get_float("col2")) == \
+               '(1.2 + "root".col2)'
+
+    def test_float_integer_expr(self) -> None:
+        assert self.__generate_sql_string_no_float_assert(lambda x: x.get_float("col2") + 10) == \
+               '("root".col2 + 10)'
+        assert self.__generate_sql_string_no_float_assert(lambda x: 10 + x.get_float("col2")) == \
+               '(10 + "root".col2)'
+
     def test_float_abs_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: abs(x.get_float("col2"))) == \
                'ABS("root".col2)'
+        assert self.__generate_sql_string(lambda x: abs(x.get_float("col2") + x.get_float("col1"))) == \
+               'ABS(("root".col2 + "root".col1))'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)
         assert isinstance(ret, PyLegendFloat)
+        return self.db_extension.process_expression(
+            ret.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+
+    def __generate_sql_string_no_float_assert(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
+        ret = f(self.tds_row)
         return self.db_extension.process_expression(
             ret.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
             config=self.sql_to_string_config

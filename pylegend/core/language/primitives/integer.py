@@ -16,17 +16,22 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.number import PyLegendNumber
 from pylegend.core.language.expression import PyLegendExpressionIntegerReturn
+from pylegend.core.language.literal_expressions import PyLegendIntegerLiteralExpression
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.operations.integer_operation_expressions import (
+    PyLegendIntegerAddExpression,
     PyLegendIntegerAbsoluteExpression,
 )
+if TYPE_CHECKING:
+    from pylegend.core.language.primitives import PyLegendFloat
 
 __all__: PyLegendSequence[str] = [
     "PyLegendInteger"
@@ -50,8 +55,38 @@ class PyLegendInteger(PyLegendNumber):
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
+    def __add__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendInteger]":
+        PyLegendNumber.validate_param_to_be_number(other, "Integer plus (+) parameter")
+        if isinstance(other, (int, PyLegendInteger)):
+            other_op = PyLegendInteger.__convert_to_integer_expr(other)
+            return PyLegendInteger(PyLegendIntegerAddExpression(self.__value_copy, other_op))
+        else:
+            return super().__add__(other)
+
+    def __radd__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendInteger]":
+        PyLegendNumber.validate_param_to_be_number(other, "Integer plus (+) parameter")
+        if isinstance(other, (int, PyLegendInteger)):
+            other_op = PyLegendInteger.__convert_to_integer_expr(other)
+            return PyLegendInteger(PyLegendIntegerAddExpression(other_op, self.__value_copy))
+        else:
+            return super().__radd__(other)
+
     def __abs__(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendIntegerAbsoluteExpression(self.__value_copy))
+
+    @staticmethod
+    def __convert_to_integer_expr(
+            val: PyLegendUnion[int, "PyLegendInteger"]
+    ) -> PyLegendExpressionIntegerReturn:
+        if isinstance(val, int):
+            return PyLegendIntegerLiteralExpression(val)
+        return val.__value_copy
 
     @staticmethod
     def __validate__param_to_be_integer(param: PyLegendUnion[int, "PyLegendInteger"], desc: str) -> None:

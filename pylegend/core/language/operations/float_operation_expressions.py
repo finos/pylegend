@@ -19,10 +19,13 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpressionFloatReturn,
 )
+from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
+    ArithmeticType,
+    ArithmeticExpression,
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
@@ -31,8 +34,30 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
+    "PyLegendFloatAddExpression",
     "PyLegendFloatAbsoluteExpression",
 ]
+
+
+class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
+
+    def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendFloatAddExpression.__to_sql_func
+        )
 
 
 class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
