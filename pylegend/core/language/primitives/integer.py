@@ -32,6 +32,7 @@ from pylegend.core.language.operations.integer_operation_expressions import (
     PyLegendIntegerNegativeExpression,
     PyLegendIntegerSubtractExpression,
     PyLegendIntegerMultiplyExpression,
+    PyLegendIntegerModuloExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.primitives import PyLegendFloat
@@ -123,6 +124,22 @@ class PyLegendInteger(PyLegendNumber):
             return PyLegendInteger(PyLegendIntegerMultiplyExpression(other_op, self.__value_copy))
         else:
             return super().__rmul__(other)
+
+    def __mod__(
+            self,
+            other: PyLegendUnion[int, "PyLegendInteger"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendInteger]":
+        PyLegendInteger.__validate__param_to_be_integer(other, "Integer modulo (%) parameter")
+        other_op = PyLegendInteger.__convert_to_integer_expr(other)
+        return PyLegendInteger(PyLegendIntegerModuloExpression(self.__value_copy, other_op))
+
+    def __rmod__(
+            self,
+            other: PyLegendUnion[int, "PyLegendInteger"]
+    ) -> "PyLegendUnion[PyLegendNumber, PyLegendInteger]":
+        PyLegendNumber.validate_param_to_be_number(other, "Integer modulo (%) parameter")
+        other_op = PyLegendInteger.__convert_to_integer_expr(other)
+        return PyLegendInteger(PyLegendIntegerModuloExpression(other_op, self.__value_copy))
 
     def __abs__(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendIntegerAbsoluteExpression(self.__value_copy))

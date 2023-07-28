@@ -292,7 +292,7 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_expression(div_expression, config) == "((1.0 * 202) / 101)"
 
         mod_expression = ArithmeticExpression(ArithmeticType.MODULUS, IntegerLiteral(202), IntegerLiteral(101))
-        assert extension.process_expression(mod_expression, config) == "mod(202, 101)"
+        assert extension.process_expression(mod_expression, config) == "MOD(202, 101)"
 
     def test_process_negative_expression(self) -> None:
         extension = SqlToStringDbExtension()
