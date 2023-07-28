@@ -24,7 +24,9 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-
+from pylegend.core.language.operations.integer_operation_expressions import (
+    PyLegendIntegerAbsoluteExpression,
+)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendInteger"
@@ -32,11 +34,13 @@ __all__: PyLegendSequence[str] = [
 
 
 class PyLegendInteger(PyLegendNumber):
+    __value_copy: PyLegendExpressionIntegerReturn
 
     def __init__(
             self,
             value: PyLegendExpressionIntegerReturn
     ) -> None:
+        self.__value_copy = value
         super().__init__(value)
 
     def to_sql_expression(
@@ -45,6 +49,9 @@ class PyLegendInteger(PyLegendNumber):
             config: FrameToSqlConfig
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
+
+    def __abs__(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendIntegerAbsoluteExpression(self.__value_copy))
 
     @staticmethod
     def __validate__param_to_be_integer(param: PyLegendUnion[int, "PyLegendInteger"], desc: str) -> None:
