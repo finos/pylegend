@@ -29,6 +29,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.operations.float_operation_expressions import (
     PyLegendFloatAbsoluteExpression,
     PyLegendFloatAddExpression,
+    PyLegendFloatNegativeExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.primitives import PyLegendInteger
@@ -72,6 +73,9 @@ class PyLegendFloat(PyLegendNumber):
 
     def __abs__(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendFloatAbsoluteExpression(self.__value_copy))
+
+    def __neg__(self) -> "PyLegendFloat":
+        return PyLegendFloat(PyLegendFloatNegativeExpression(self.__value_copy))
 
     @staticmethod
     def __convert_to_float_expr(
