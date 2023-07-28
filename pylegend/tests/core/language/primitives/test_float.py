@@ -58,6 +58,12 @@ class TestPyLegendFloat:
         assert self.__generate_sql_string(lambda x: abs(x.get_float("col2") + x.get_float("col1"))) == \
                'ABS(("root".col2 + "root".col1))'
 
+    def test_float_neg_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: -x.get_float("col2")) == \
+               '(0 - "root".col2)'
+        assert self.__generate_sql_string(lambda x: -(x.get_float("col2") + x.get_float("col1"))) == \
+               '(0 - ("root".col2 + "root".col1))'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)
         assert isinstance(ret, PyLegendFloat)

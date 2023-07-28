@@ -26,6 +26,7 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     ArithmeticType,
     ArithmeticExpression,
+    NegativeExpression,
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
@@ -36,6 +37,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendFloatAddExpression",
     "PyLegendFloatAbsoluteExpression",
+    "PyLegendFloatNegativeExpression",
 ]
 
 
@@ -76,4 +78,23 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
             self,
             operand,
             PyLegendFloatAbsoluteExpression.__to_sql_func
+        )
+
+
+class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return NegativeExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendFloatNegativeExpression.__to_sql_func
         )
