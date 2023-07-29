@@ -326,8 +326,6 @@ def expression_processor(
         return extension.process_in_list_expression(expression, config)
     elif isinstance(expression, InPredicate):
         return extension.process_in_predicate(expression, config)
-    elif isinstance(expression, SingleColumn):
-        return extension.process_single_column(expression, config)
     elif isinstance(expression, QualifiedNameReference):
         return extension.process_qualified_name_reference(expression, config)
     elif isinstance(expression, IsNullPredicate):
@@ -630,14 +628,10 @@ def function_call_processor(
         config: SqlToStringConfig
 ) -> str:
     # TODO: Handle distinct and filter
-    if type(function_call.arguments) == list:
-        arguments = ("," + config.format.separator(1)).join(
-            [extension.process_expression(arg, config.push_indent()) for arg in function_call.arguments]
-        )
-    else:
-        arguments = ("," + config.format.separator(1)).join(
-            [extension.process_expression(function_call.arguments, config.push_indent())]  # type: ignore[arg-type]
-        )
+
+    arguments = ("," + config.format.separator(1)).join(
+        [extension.process_expression(arg, config.push_indent()) for arg in function_call.arguments]
+    )
 
     window = ""
     if function_call.window:
@@ -666,14 +660,10 @@ def named_argument_processor(
 def qualified_name_processor(
         qualified_name: QualifiedName,
         extension: "SqlToStringDbExtension",
-        config: SqlToStringConfig) -> str:
-    if isinstance(qualified_name, list):
-        res = ".".join([extension.process_identifier(p, config) for p in qualified_name])
+        config: SqlToStringConfig
+) -> str:
+    return ".".join([extension.process_identifier(p, config) for p in qualified_name.parts])
 
-    if isinstance(qualified_name.parts, list):
-        res = ".".join([extension.process_identifier(p, config) for p in qualified_name.parts])
-
-    return res
 
 def qualified_name_reference_processor(
         reference: QualifiedNameReference,

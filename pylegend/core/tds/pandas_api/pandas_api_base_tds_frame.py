@@ -13,8 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
-from datetime import datetime, date
-from typing import Callable, cast, Union, Optional
+from typing import Callable
 
 from pylegend._typing import (
     PyLegendSequence,
@@ -22,18 +21,15 @@ from pylegend._typing import (
     PyLegendTypeVar,
     PyLegendIterator,
     PyLegendList,
-    PyLegendOptional,
 )
-from pylegend.core.sql.metamodel import QuerySpecification, QualifiedNameReference, FunctionCall, Expression, \
-    StringLiteral, SingleColumn
+from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.databse.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
 from pylegend.core.tds.pandas_api.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.core.tds.tds_api import TdsFrameRow, PyLegendAbstract
 
 __all__: PyLegendSequence[str] = [
@@ -50,7 +46,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
             LegendApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.frames.applied_function.filter_function import (
+        from pylegend.core.tds.pandas_api.frames.functions.filter_function import (
             FilterFunction
         )
 
@@ -62,7 +58,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
             LegendApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.frames.applied_function.assign_function import (
+        from pylegend.core.tds.pandas_api.frames.functions.assign_function import (
             AssignFunction
         )
 
