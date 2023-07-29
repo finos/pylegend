@@ -11,54 +11,80 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import select
 
+from datetime import date, datetime
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
+    PyLegendDict,
+    PyLegendCallable,
+    PyLegendUnion,
 )
-from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
-    AppliedFunction,
-    create_sub_query,
-    copy_query
-)
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
+from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    LogicalBinaryExpression, SingleColumn, Expression, AllColumns, SubqueryExpression
+    SingleColumn,
 )
-from pylegend.core.tds.pandas_api.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
+from pylegend.core.language import (
+    TdsRow,
+    PyLegendPrimitive,
+    PyLegendInteger,
+    PyLegendFloat,
+    PyLegendNumber,
+    PyLegendBoolean,
+    PyLegendString,
+)
 
-from typing import Callable, Union, Optional
-from datetime import datetime, date
 
-
-class AssignFunction(AppliedFunction):
+class AssignFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    func: Expression
-    column: Optional[str]
+    __col_definitions: PyLegendDict[
+        str,
+        PyLegendCallable[[TdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+    ]
 
     @classmethod
     def name(cls) -> str:
-        return "filter"
+        return "assign"
 
-    def __init__(self, base_frame: PandasApiBaseTdsFrame, func: Expression, column: Optional[str]) -> None:
+    def __init__(
+            self,
+            base_frame: PandasApiBaseTdsFrame,
+            col_definitions: PyLegendDict[
+                str,
+                PyLegendCallable[[TdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+            ]
+    ) -> None:
         self.__base_frame = base_frame
-        self.func = func
-        self.column = column
+        self.__col_definitions = col_definitions
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.__base_frame.to_sql_query_object(config)
-        new_column = SingleColumn(self.column, self.func)
-        if base_query.select:
-            new_query = create_sub_query(base_query, config, "root")
-            new_query.select.distinct = new_query.select.selectItems.append(new_column)  # type: ignore
-            return new_query
-        else:
-            base_query.select = base_query.select.selectItems.append(new_column)  # type: ignore
-            return base_query  # TODO: avoid parameter mutation
+        should_create_sub_query = (len(base_query.groupBy) > 0) or base_query.select.distinct
+
+        new_query = (
+            create_sub_query(base_query, config, "root") if should_create_sub_query else
+            copy_query(base_query)
+        )
+
+        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        for col, func in self.__col_definitions.items():
+            res = func(tds_row)
+            if not isinstance(res, PyLegendPrimitive):
+                raise RuntimeError("Constants not supported")
+            new_col_expr = res.to_sql_expression(
+                {"frame": base_query},
+                config
+            )
+            new_query.select.selectItems.append(
+                SingleColumn(alias=db_extension.quote_identifier(col), expression=new_col_expr)
+            )
+        return new_query
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
@@ -67,7 +93,26 @@ class AssignFunction(AppliedFunction):
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        return [c.copy() for c in self.__base_frame.columns()]
+        new_cols = [c.copy() for c in self.__base_frame.columns()]
+        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        for col, func in self.__col_definitions.items():
+            res = func(tds_row)
+            if isinstance(res, (int, PyLegendInteger)):
+                new_cols.append(PrimitiveTdsColumn.integer_column(col))
+            elif isinstance(res, (float, PyLegendFloat)):
+                new_cols.append(PrimitiveTdsColumn.float_column(col))
+            elif isinstance(res, PyLegendNumber):
+                new_cols.append(PrimitiveTdsColumn.number_column(col))
+            elif isinstance(res, (bool, PyLegendBoolean)):
+                new_cols.append(PrimitiveTdsColumn.boolean_column(col))
+            elif isinstance(res, (str, PyLegendString)):
+                new_cols.append(PrimitiveTdsColumn.string_column(col))
+            else:
+                raise RuntimeError("Type not supported")
+        return new_cols
 
-    def validate(self) -> bool:  # type: ignore
-        pass
+    def validate(self) -> bool:
+        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        for col, f in self.__col_definitions.items():
+            f(tds_row)
+        return True

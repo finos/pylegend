@@ -13,14 +13,12 @@
 # limitations under the License.
 
 import json
-import pytest
 from textwrap import dedent
-
-from pylegend.core.tds.pandas_api.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
-from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
+from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
+from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame_pandas_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -32,33 +30,24 @@ class TestAssignFunction:
     def test_assign(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
+            PrimitiveTdsColumn.integer_column("col2")
         ]
-        frame: PandasApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.assign(column_expression=lambda x: x["col2"] + x["col2"], column_value="DoubleCol2")  # type: ignore[operator]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.assign(sumColumn=lambda x: x.get_integer("col1") + x.get_integer("col2"))
 
         expected = '''\
             SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2",
-                concat(
-                    col2,
-                    col2
-                ) AS DoubleCol2
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                ("root".col1 + "root".col2) AS "sumColumn"
             FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
+                test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
     def test_e2e_assign_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
-        frame = frame.assign(column_expression=lambda x: x["First Name"] + x["Last Name"], column_value="Test Full Name")
-        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name', 'Test Full Name'],
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.assign(fullName=lambda x: x.get_string("First Name") + " " + x.get_string("Last Name"))
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name', 'fullName'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X', 'Peter Smith']},
                              {'values': ['John', 'Johnson', 22, 'Firm X', 'John Johnson']},
                              {'values': ['John', 'Hill', 12, 'Firm X', 'John Hill']},

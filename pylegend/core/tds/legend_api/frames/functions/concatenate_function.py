@@ -16,9 +16,7 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
 )
-from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
-    AppliedFunction,
-)
+from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import LegendApiAppliedFunction
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     Union,
@@ -41,7 +39,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class ConcatenateFunction(AppliedFunction):
+class ConcatenateFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
     __other_frame: LegendApiBaseTdsFrame
 

@@ -16,11 +16,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
 )
-from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
-    AppliedFunction,
-    create_sub_query,
-    copy_query
-)
+from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import LegendApiAppliedFunction
+from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
 )
@@ -34,7 +31,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class DistinctFunction(AppliedFunction):
+class DistinctFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
 
     @classmethod

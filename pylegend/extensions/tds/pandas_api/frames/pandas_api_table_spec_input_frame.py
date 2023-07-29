@@ -25,17 +25,17 @@ from pylegend.core.sql.metamodel import (
     Table,
     AliasedRelation
 )
-from pylegend.core.tds.legend_api.frames.legend_api_input_tds_frame import LegendApiNonExecutableInputTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiNonExecutableInputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "LegendApiTableSpecInputFrame"
+    "PandasApiTableSpecInputFrame"
 ]
 
 
-class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
+class PandasApiTableSpecInputFrame(PandasApiNonExecutableInputTdsFrame):
     table: QualifiedName
 
     def __init__(self, table_name_parts: PyLegendList[str], columns: PyLegendSequence[TdsColumn]) -> None:
@@ -72,4 +72,4 @@ class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
         )
 
     def __str__(self) -> str:
-        return "LegendApiTableSpecInputFrame({qualified})".format(qualified=".".join(self.table.parts))
+        return "PandasApiTableSpecInputFrame({qualified})".format(qualified=".".join(self.table.parts))

@@ -16,11 +16,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
 )
-from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
-    AppliedFunction,
-    create_sub_query,
-    copy_query
-)
+from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import LegendApiAppliedFunction
+from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     LongLiteral,
@@ -35,7 +32,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class DropFunction(AppliedFunction):
+class DropFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
     __row_count: int
 

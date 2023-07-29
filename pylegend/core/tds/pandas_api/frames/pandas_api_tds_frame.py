@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABCMeta, abstractmethod
-
-from pylegend.core.tds.tds_api import PyLegendAbstract, TdsFrameRow
-from pylegend.core.tds.tds_frame import (
-    PyLegendTdsFrame
-)
-
-from typing import Callable
+from abc import abstractmethod
+from datetime import date, datetime
 from pylegend._typing import (
+    PyLegendCallable,
     PyLegendSequence,
+    PyLegendUnion,
+)
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
+from pylegend.core.language import (
+    TdsRow,
+    PyLegendPrimitive,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -30,10 +31,13 @@ __all__: PyLegendSequence[str] = [
 
 
 class PandasApiTdsFrame(PyLegendTdsFrame):
-    @abstractmethod
-    def filter(self, filter_function: Callable[['TdsFrameRow'], PyLegendAbstract]) -> "PandasApiTdsFrame":
-        pass
 
     @abstractmethod
-    def assign(self, column_expression: Callable[['TdsFrameRow'], PyLegendAbstract], column_value: str) -> "PandasApiTdsFrame":
+    def assign(
+            self,
+            **kwargs: PyLegendCallable[
+                [TdsRow],
+                PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
+            ],
+    ) -> "PandasApiTdsFrame":
         pass
