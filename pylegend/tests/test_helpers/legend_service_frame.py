@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.legend_api.frames.legend_api_input_tds_frame import LegendApiExecutableInputTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiExecutableInputTdsFrame
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.sql.metamodel import (
@@ -34,11 +37,13 @@ from pylegend.core.sql.metamodel import (
 
 __all__: PyLegendSequence[str] = [
     "LegendApiLegendServiceFrame",
-    "simple_person_service_frame"
+    "simple_person_service_frame",
+    "PandasApiLegendServiceFrame",
+    "simple_person_service_frame_pandas_api",
 ]
 
 
-class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
+class LegendServiceFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
     __initialized: bool = False
 
     def __init__(
@@ -53,7 +58,7 @@ class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
         self.group_id = group_id
         self.artifact_id = artifact_id
         self.version = version
-        super().__init__(legend_client, legend_client.get_sql_string_schema(self.to_sql_query()))
+        super().__init__(legend_client, legend_client.get_sql_string_schema(self.to_sql_query()))  # type: ignore
         self.__initialized = True
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
@@ -101,9 +106,28 @@ class LegendApiLegendServiceFrame(LegendApiExecutableInputTdsFrame):
         )
 
 
+class LegendApiLegendServiceFrame(LegendServiceFrameAbstract, LegendApiExecutableInputTdsFrame):
+    pass
+
+
 def simple_person_service_frame(engine_port: int) -> LegendApiLegendServiceFrame:
     legend_client = LegendClient("localhost", engine_port, False)
     return LegendApiLegendServiceFrame(
+        legend_client=legend_client,
+        pattern="/simplePersonService",
+        group_id="org.finos.legend.pylegend",
+        artifact_id="pylegend-test-models",
+        version="0.0.1-SNAPSHOT"
+    )
+
+
+class PandasApiLegendServiceFrame(LegendServiceFrameAbstract, PandasApiExecutableInputTdsFrame):
+    pass
+
+
+def simple_person_service_frame_pandas_api(engine_port: int) -> PandasApiLegendServiceFrame:
+    legend_client = LegendClient("localhost", engine_port, False)
+    return PandasApiLegendServiceFrame(
         legend_client=legend_client,
         pattern="/simplePersonService",
         group_id="org.finos.legend.pylegend",

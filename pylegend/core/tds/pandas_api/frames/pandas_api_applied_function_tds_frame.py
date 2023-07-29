@@ -20,16 +20,16 @@ from pylegend._typing import (
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 
 
 __all__: PyLegendSequence[str] = [
-    "LegendApiAppliedFunctionTdsFrame",
-    "LegendApiAppliedFunction",
+    "PandasApiAppliedFunctionTdsFrame",
+    "PandasApiAppliedFunction",
 ]
 
 
-class LegendApiAppliedFunction(metaclass=ABCMeta):
+class PandasApiAppliedFunction(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def name(cls) -> str:
@@ -40,11 +40,11 @@ class LegendApiAppliedFunction(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def base_frame(self) -> LegendApiBaseTdsFrame:
+    def base_frame(self) -> PandasApiBaseTdsFrame:
         pass
 
     @abstractmethod
-    def tds_frame_parameters(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
+    def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         pass
 
     @abstractmethod
@@ -56,10 +56,10 @@ class LegendApiAppliedFunction(metaclass=ABCMeta):
         pass
 
 
-class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
-    __applied_function: LegendApiAppliedFunction
+class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
+    __applied_function: PandasApiAppliedFunction
 
-    def __init__(self, applied_function: LegendApiAppliedFunction):
+    def __init__(self, applied_function: PandasApiAppliedFunction):
         applied_function.validate()
         super().__init__(columns=applied_function.calculate_columns())
         self.__applied_function = applied_function
@@ -67,7 +67,7 @@ class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
 
-    def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
+    def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return [
             y
             for x in [self.__applied_function.base_frame()] + self.__applied_function.tds_frame_parameters()

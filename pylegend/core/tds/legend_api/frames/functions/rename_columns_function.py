@@ -16,10 +16,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
 )
-from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
-    AppliedFunction,
-    copy_query
-)
+from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import LegendApiAppliedFunction
+from pylegend.core.tds.sql_query_helpers import copy_query
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
@@ -35,7 +33,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class RenameColumnsFunction(AppliedFunction):
+class RenameColumnsFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
     __column_names: PyLegendList[str]
     __renamed_column_names: PyLegendList[str]

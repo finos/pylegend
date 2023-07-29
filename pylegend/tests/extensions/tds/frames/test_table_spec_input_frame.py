@@ -44,13 +44,13 @@ class TestTableSpecInputFrame:
         with pytest.raises(ValueError) as v:
             frame.execute_frame_to_string()
         assert v.value.args[0] == "Cannot execute frame as its built on top of non-executable " \
-                                  "input frames: [TableSpecInputFrame(test_schema.test_table)]"
+                                  "input frames: [LegendApiTableSpecInputFrame(test_schema.test_table)]"
 
         with pytest.raises(ValueError) as v:
             new_frame = frame.head(10)
             new_frame.execute_frame_to_string()
         assert v.value.args[0] == "Cannot execute frame as its built on top of non-executable " \
-                                  "input frames: [TableSpecInputFrame(test_schema.test_table)]"
+                                  "input frames: [LegendApiTableSpecInputFrame(test_schema.test_table)]"
 
     def test_table_spec_frame_creation_duplicated_columns_error(self) -> None:
         columns = [
