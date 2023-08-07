@@ -84,6 +84,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_boolean("col2")
 
+        assert isinstance(col_expr, PyLegendBoolean)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -121,6 +122,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_string("col2")
 
+        assert isinstance(col_expr, PyLegendString)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -158,6 +160,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_number("col1")
 
+        assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -195,6 +198,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_number("col1")
 
+        assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -213,6 +217,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_number("col1")
 
+        assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -231,6 +236,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_integer("col1")
 
+        assert isinstance(col_expr, PyLegendInteger)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -268,6 +274,7 @@ class TestTdsRow:
         tds_row = TdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_float("col1")
 
+        assert isinstance(col_expr, PyLegendFloat)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
