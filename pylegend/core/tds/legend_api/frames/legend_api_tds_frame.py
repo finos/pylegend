@@ -20,6 +20,12 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
     PyLegendOptional,
+    PyLegendCallable,
+    PyLegendUnion,
+)
+from pylegend.core.language import (
+    TdsRow,
+    PyLegendBoolean,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -74,5 +80,12 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             self,
             column_names: PyLegendList[str],
             renamed_column_names: PyLegendList[str]
+    ) -> "LegendApiTdsFrame":
+        pass
+
+    @abstractmethod
+    def filter(
+            self,
+            filter_function: PyLegendCallable[[TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
     ) -> "LegendApiTdsFrame":
         pass

@@ -19,6 +19,8 @@ from pylegend._typing import (
     PyLegendTypeVar,
     PyLegendList,
     PyLegendOptional,
+    PyLegendCallable,
+    PyLegendUnion,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.databse.sql_to_string import (
@@ -35,6 +37,10 @@ from pylegend.core.tds.result_handler import (
 from pylegend.extensions.tds.result_handler import (
     ToPandasDfResultHandler,
     PandasDfReadConfig,
+)
+from pylegend.core.language import (
+    TdsRow,
+    PyLegendBoolean,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -143,6 +149,18 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             RenameColumnsFunction
         )
         return LegendApiAppliedFunctionTdsFrame(RenameColumnsFunction(self, column_names, renamed_column_names))
+
+    def filter(
+            self,
+            filter_function: PyLegendCallable[[TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+    ) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.filter_function import (
+            FilterFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(FilterFunction(self, filter_function))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
