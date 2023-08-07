@@ -24,6 +24,7 @@ from pylegend.core.language import (
     PyLegendNumberColumnExpression,
     PyLegendIntegerColumnExpression,
     PyLegendFloatColumnExpression,
+    PyLegendPrimitive,
     PyLegendBoolean,
     PyLegendString,
     PyLegendNumber,
@@ -108,6 +109,30 @@ class TdsRow:
                 )
             )
         return PyLegendFloat(col_expr)
+
+    def __getitem__(self, item: str) -> PyLegendPrimitive:
+        if not isinstance(item, str):
+            raise TypeError("Column indexing on a TDSRow should be with column name (string). Got - " + str(type(item)))
+
+        col_expr = self.__get_col(item)
+
+        if isinstance(col_expr, PyLegendBooleanColumnExpression):
+            return PyLegendBoolean(col_expr)
+        if isinstance(col_expr, PyLegendStringColumnExpression):
+            return PyLegendString(col_expr)
+        if isinstance(col_expr, PyLegendIntegerColumnExpression):
+            return PyLegendInteger(col_expr)
+        if isinstance(col_expr, PyLegendFloatColumnExpression):
+            return PyLegendFloat(col_expr)
+        if isinstance(col_expr, PyLegendNumberColumnExpression):
+            return PyLegendNumber(col_expr)
+
+        raise RuntimeError(
+            "Column expression for '{col}' of type {type} not supported yet".format(
+                col=item,
+                type=type(col_expr)
+            )
+        )
 
     def __get_col(self, column: str) -> PyLegendColumnExpression:
         for base_col in self.__columns:
