@@ -19,7 +19,7 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.number import PyLegendNumber
-from pylegend.core.language.expression import PyLegendExpressionIntegerReturn
+from pylegend.core.language.expression import PyLegendExpressionIntegerReturn, PyLegendExpression
 from pylegend.core.language.literal_expressions import PyLegendIntegerLiteralExpression
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -58,6 +58,9 @@ class PyLegendInteger(PyLegendNumber):
             config: FrameToSqlConfig
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
+
+    def value(self) -> PyLegendExpression:
+        return self.__value_copy
 
     def __add__(
             self,

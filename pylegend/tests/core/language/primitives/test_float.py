@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 from pylegend._typing import PyLegendCallable
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
@@ -97,6 +98,17 @@ class TestPyLegendFloat:
                '"root".col2'
         assert self.__generate_sql_string(lambda x: +(x.get_float("col2") + x.get_float("col1"))) == \
                '("root".col2 + "root".col1)'
+
+    @typing.no_type_check
+    def test_float_equals_expr(self) -> None:
+        assert self.__generate_sql_string_no_float_assert(lambda x: x["col2"] == x["col1"]) == \
+               '("root".col2 = "root".col1)'
+        assert self.__generate_sql_string_no_float_assert(lambda x: x["col2"] == 1) == \
+               '("root".col2 = 1)'
+        assert self.__generate_sql_string_no_float_assert(lambda x: 1 == x["col2"]) == \
+               '("root".col2 = 1)'
+        assert self.__generate_sql_string_no_float_assert(lambda x: 1 == (x["col2"] + x["col1"])) == \
+               '(("root".col2 + "root".col1) = 1)'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

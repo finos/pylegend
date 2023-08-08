@@ -18,7 +18,7 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.expression import PyLegendExpressionBooleanReturn
+from pylegend.core.language.expression import PyLegendExpressionBooleanReturn, PyLegendExpression
 from pylegend.core.language.literal_expressions import PyLegendBooleanLiteralExpression
 from pylegend.core.language.operations.boolean_operation_expressions import (
     PyLegendBooleanOrExpression,
@@ -52,6 +52,9 @@ class PyLegendBoolean(PyLegendPrimitive):
             config: FrameToSqlConfig
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
+
+    def value(self) -> PyLegendExpression:
+        return self.__value
 
     def __or__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")

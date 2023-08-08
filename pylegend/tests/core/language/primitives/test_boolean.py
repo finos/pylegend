@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typing
 import pytest
 from pylegend._typing import PyLegendCallable
 from pylegend.core.databse.sql_to_string import (
@@ -72,6 +73,15 @@ class TestPyLegendBoolean:
     def test_boolean_not_operation(self) -> None:
         assert self.__generate_sql_string(lambda x: ~x.get_boolean("col2")) == \
                'NOT("root".col2)'
+
+    @typing.no_type_check
+    def test_boolean_equals_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x["col2"] == x["col1"]) == \
+               '("root".col2 = "root".col1)'
+        assert self.__generate_sql_string(lambda x: x["col2"] == True) == '("root".col2 = true)'  # noqa: E712
+        assert self.__generate_sql_string(lambda x: True == x["col2"]) == '("root".col2 = true)'  # noqa: E712
+        assert self.__generate_sql_string(lambda x: True == (x["col2"] & x["col1"])) == \
+               '(("root".col2 AND "root".col1) = true)'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(

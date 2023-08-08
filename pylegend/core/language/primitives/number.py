@@ -22,6 +22,7 @@ from pylegend._typing import (
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.expression import (
+    PyLegendExpression,
     PyLegendExpressionNumberReturn,
 )
 from pylegend.core.language.literal_expressions import (
@@ -87,6 +88,9 @@ class PyLegendNumber(PyLegendPrimitive):
             config: FrameToSqlConfig
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
+
+    def value(self) -> PyLegendExpression:
+        return self.__value
 
     def __add__(
             self,

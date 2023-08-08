@@ -17,13 +17,21 @@ from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendUnion,
+    TYPE_CHECKING,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
+from pylegend.core.language.expression import PyLegendExpression
+from pylegend.core.language.literal_expressions import convert_literal_to_literal_expression
+from pylegend.core.language.operations.primitive_operation_expressions import (
+    PyLegendPrimitiveEqualsExpression,
+)
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-
+if TYPE_CHECKING:
+    from pylegend.core.language.primitives.boolean import PyLegendBoolean
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive"
@@ -38,4 +46,31 @@ class PyLegendPrimitive(metaclass=ABCMeta):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
+        pass
+
+    def __eq__(  # type: ignore
+            self,
+            other: "PyLegendUnion[int, float, bool, str, PyLegendPrimitive]"
+    ) -> "PyLegendBoolean":
+        PyLegendPrimitive.__validate_param_to_be_primitive(other, "Equals (==) parameter")
+
+        if isinstance(other, (int, float, bool, str)):
+            other_op = convert_literal_to_literal_expression(other)
+        else:
+            other_op = other.value()
+
+        from pylegend.core.language.primitives.boolean import PyLegendBoolean
+        return PyLegendBoolean(PyLegendPrimitiveEqualsExpression(self.value(), other_op))
+
+    @staticmethod
+    def __validate_param_to_be_primitive(
+            param: "PyLegendUnion[int, float, bool, str, PyLegendPrimitive]",
+            desc: str
+    ) -> None:
+        if not isinstance(param, (int, float, bool, str, PyLegendPrimitive)):
+            raise TypeError(desc + " should be a int/float/bool/str or a primitive expression."
+                                   " Got value " + str(param) + " of type: " + str(type(param)))
+
+    @abstractmethod
+    def value(self) -> PyLegendExpression:
         pass
