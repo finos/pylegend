@@ -19,7 +19,7 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.number import PyLegendNumber
-from pylegend.core.language.expression import PyLegendExpressionFloatReturn
+from pylegend.core.language.expression import PyLegendExpressionFloatReturn, PyLegendExpression
 from pylegend.core.language.literal_expressions import PyLegendFloatLiteralExpression
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -140,6 +140,9 @@ class PyLegendFloat(PyLegendNumber):
             config: FrameToSqlConfig
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
+
+    def value(self) -> PyLegendExpression:
+        return self.__value_copy
 
     @staticmethod
     def __validate__param_to_be_float(params, desc):  # type: ignore

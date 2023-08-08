@@ -21,7 +21,7 @@ from pylegend.core.language.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.primitives.integer import PyLegendInteger
 from pylegend.core.language.primitives.float import PyLegendFloat
 from pylegend.core.language.primitives.boolean import PyLegendBoolean
-from pylegend.core.language.expression import PyLegendExpressionStringReturn
+from pylegend.core.language.expression import PyLegendExpressionStringReturn, PyLegendExpression
 from pylegend.core.language.literal_expressions import PyLegendStringLiteralExpression
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -156,6 +156,9 @@ class PyLegendString(PyLegendPrimitive):
             config: FrameToSqlConfig
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
+
+    def value(self) -> PyLegendExpression:
+        return self.__value
 
     @staticmethod
     def __escape_like_param(param: str) -> str:

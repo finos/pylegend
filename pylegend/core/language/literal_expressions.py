@@ -16,8 +16,10 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendUnion,
 )
 from pylegend.core.language.expression import (
+    PyLegendExpression,
     PyLegendExpressionBooleanReturn,
     PyLegendExpressionStringReturn,
     PyLegendExpressionIntegerReturn,
@@ -39,6 +41,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLiteralExpression",
     "PyLegendIntegerLiteralExpression",
     "PyLegendFloatLiteralExpression",
+    "convert_literal_to_literal_expression",
 ]
 
 
@@ -96,3 +99,16 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
             config: FrameToSqlConfig
     ) -> Expression:
         return DoubleLiteral(value=self.__value)
+
+
+def convert_literal_to_literal_expression(literal: PyLegendUnion[int, float, bool, str]) -> PyLegendExpression:
+    if isinstance(literal, bool):
+        return PyLegendBooleanLiteralExpression(literal)
+    if isinstance(literal, int):
+        return PyLegendIntegerLiteralExpression(literal)
+    if isinstance(literal, float):
+        return PyLegendFloatLiteralExpression(literal)
+    if isinstance(literal, str):
+        return PyLegendStringLiteralExpression(literal)
+
+    raise TypeError("Cannot convert value - {v} of type {t} to literal expression".format(v=literal, t=type(literal)))

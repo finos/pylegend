@@ -142,6 +142,16 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: "Abc" >= x.get_string("col2")) == \
                '("root".col2 <= \'Abc\')'
 
+    def test_string_equals_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x["col2"] == x["col1"]) == \
+               '("root".col2 = "root".col1)'
+        assert self.__generate_sql_string(lambda x: x["col2"] == 'Hello') == \
+               '("root".col2 = \'Hello\')'
+        assert self.__generate_sql_string(lambda x: 'Hello' == x["col2"]) == \
+               '("root".col2 = \'Hello\')'
+        assert self.__generate_sql_string(lambda x: 'Hello' == (x["col2"] + x["col1"])) == \
+               '(CONCAT("root".col2, "root".col1) = \'Hello\')'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
