@@ -766,8 +766,11 @@ def join_using_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    # TODO: code this
-    raise RuntimeError("Not supported yet!")
+    join_column = extension.process_identifier(join_using.columns[0], config)
+    if join_column[0] == "(" and join_column[-1] == ")":
+        return join_column[1:-1]
+    else:
+        return join_column
 
 
 def join_processor(

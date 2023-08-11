@@ -20,7 +20,7 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendOptional,
 )
-from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.sql.metamodel import QuerySpecification, JoinUsing, JoinType
 from pylegend.core.databse.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
@@ -143,6 +143,42 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             RenameColumnsFunction
         )
         return LegendApiAppliedFunctionTdsFrame(RenameColumnsFunction(self, column_names, renamed_column_names))
+
+    def merge(self, right: "LegendApiTdsFrame", how='inner', on=None, left_on=None, right_on=None) -> "LegendApiTdsFrame":
+
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.merge_function import (
+            MergeFunction
+        )
+
+        global right_col
+        if right.key:
+            right_col = right.key
+
+        if on:
+            join_criteria = JoinUsing([on, right_col])
+        elif left_on and right_on:
+            join_criteria = JoinUsing([left_on, right_on])
+        else:
+            raise ValueError('Join Column Error')
+
+        def type(how):
+            join_type = JoinType.LEFT
+            if how == "inner":
+                join_type = JoinType.INNER
+            elif how == "right":
+                join_type = JoinType.RIGHT
+            elif how == "cross":
+                join_type = JoinType.CROSS
+            elif how == "outer":
+                join_type = JoinType.FULL
+            return join_type
+
+        join_type = type(how)
+
+        return LegendApiAppliedFunctionTdsFrame(MergeFunction(join_type, self, right, join_criteria))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

@@ -13,6 +13,9 @@
 # limitations under the License.
 
 from abc import abstractmethod
+from typing import Callable, Union
+
+from pylegend.core.sql.metamodel import JoinType
 from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame
 )
@@ -28,6 +31,8 @@ __all__: PyLegendSequence[str] = [
 
 
 class LegendApiTdsFrame(PyLegendTdsFrame):
+    def __init__(self):
+        self.key = None
 
     @abstractmethod
     def head(self, count: int = 5) -> "LegendApiTdsFrame":
@@ -76,3 +81,16 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             renamed_column_names: PyLegendList[str]
     ) -> "LegendApiTdsFrame":
         pass
+
+    def join(self, other: "LegendApiTdsFrame", on: Union[str, list], how: str = JoinType.LEFT) -> "LegendApiTdsFrame":
+        if isinstance(on, str):
+            return self.merge(right=other, how=how, on=on)
+        else:
+            return self.merge(right=other, how=how, left_on=on[0], right_on=on[1])
+
+    def merge(self, right: "LegendApiTdsFrame", how='inner', on=None, left_on=None, right_on=None) -> "LegendApiTdsFrame":
+        pass
+
+    def set_index(self, key: str):
+        self.key = key
+        return self
