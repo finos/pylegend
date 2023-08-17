@@ -40,6 +40,28 @@ class TestFilterAppliedFunction:
                                    "Column - 'col3' doesn't exist in the current frame. Current frame columns: "
                                    "['col1', 'col2']")
 
+    def test_filter_function_error_non_lambda_arg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(TypeError) as r:
+            frame.filter(1)  # type: ignore
+        assert r.value.args[0] == "Filter function should be a lambda which takes one argument (TDSRow)"
+
+    def test_filter_function_error_multi_param_lambda_arg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(TypeError) as r:
+            frame.filter(lambda x, y: 1)  # type: ignore
+        assert r.value.args[0] == "Filter function should be a lambda which takes one argument (TDSRow)"
+
     def test_filter_function_error_on_non_boolean_func(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),

@@ -50,6 +50,17 @@ class TestExtendAppliedFunction:
         assert r.value.args[0] == ("Error at extend function at index 0 (0-indexed). Each extend function "
                                    "should be a lambda which takes one argument (TDSRow)")
 
+    def test_extend_function_error_on_incompatible_lambda_func(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        with pytest.raises(TypeError) as r:
+            frame.extend([lambda x, y: 1], ["col4"])  # type: ignore
+        assert r.value.args[0] == ("Error at extend function at index 0 (0-indexed). Each extend function "
+                                   "should be a lambda which takes one argument (TDSRow)")
+
     def test_extend_function_error_on_non_string_name(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
