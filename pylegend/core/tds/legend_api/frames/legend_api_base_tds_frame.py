@@ -41,6 +41,7 @@ from pylegend.extensions.tds.result_handler import (
 from pylegend.core.language import (
     TdsRow,
     PyLegendBoolean,
+    PyLegendPrimitiveOrPythonPrimitive,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -161,6 +162,19 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             FilterFunction
         )
         return LegendApiAppliedFunctionTdsFrame(FilterFunction(self, filter_function))
+
+    def extend(
+            self,
+            functions_list: PyLegendList[PyLegendCallable[[TdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+            column_names_list: PyLegendList[str]
+    ) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.extend_function import (
+            ExtendFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(ExtendFunction(self, functions_list, column_names_list))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
