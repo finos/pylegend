@@ -16,7 +16,7 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
-from pylegend.core.language.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.primitives.string import PyLegendString
 from pylegend.core.language.primitives.number import PyLegendNumber
@@ -26,6 +26,7 @@ from pylegend.core.language.primitives.float import PyLegendFloat
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
+    "PyLegendPrimitiveOrPythonPrimitive",
     "PyLegendBoolean",
     "PyLegendString",
     "PyLegendNumber",

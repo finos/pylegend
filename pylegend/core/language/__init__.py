@@ -17,6 +17,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.primitives import (
     PyLegendPrimitive,
+    PyLegendPrimitiveOrPythonPrimitive,
     PyLegendBoolean,
     PyLegendString,
     PyLegendNumber,
@@ -48,6 +49,7 @@ from pylegend.core.language.tds_row import TdsRow
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
+    "PyLegendPrimitiveOrPythonPrimitive",
     "PyLegendBoolean",
     "PyLegendString",
     "PyLegendNumber",

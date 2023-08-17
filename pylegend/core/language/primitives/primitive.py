@@ -34,7 +34,8 @@ if TYPE_CHECKING:
     from pylegend.core.language.primitives.boolean import PyLegendBoolean
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendPrimitive"
+    "PyLegendPrimitive",
+    "PyLegendPrimitiveOrPythonPrimitive",
 ]
 
 
@@ -74,3 +75,6 @@ class PyLegendPrimitive(metaclass=ABCMeta):
     @abstractmethod
     def value(self) -> PyLegendExpression:
         pass
+
+
+PyLegendPrimitiveOrPythonPrimitive = PyLegendUnion[int, float, str, bool, PyLegendPrimitive]
