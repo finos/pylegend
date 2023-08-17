@@ -92,6 +92,10 @@ class FilterFunction(LegendApiAppliedFunction):
     def validate(self) -> bool:
         tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
 
+        copy = self.__filter_function  # For MyPy
+        if not isinstance(copy, type(lambda x: 0)) or (copy.__code__.co_argcount != 1):
+            raise TypeError("Filter function should be a lambda which takes one argument (TDSRow)")
+
         try:
             result = self.__filter_function(tds_row)
         except Exception as e:
