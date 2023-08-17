@@ -140,6 +140,30 @@ class TestExtendAppliedFunction:
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_extend_function_literals(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.extend([
+            lambda x: 1,
+            lambda x: 2.0,
+            lambda x: "Hello",
+            lambda x: True
+        ], ["col3", "col4", "col5", "col6"])
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                1 AS "col3",
+                2.0 AS "col4",
+                'Hello' AS "col5",
+                true AS "col6"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.extend([lambda r: r.get_string("First Name").upper()], ["Upper"])
@@ -181,5 +205,29 @@ class TestExtendAppliedFunction:
                              {'values': ['Fabrice', 'Roberts', 34, 'Firm A', 'FABRICE', False]},
                              {'values': ['Oliver', 'Hill', 32, 'Firm B', 'OLIVER', False]},
                              {'values': ['David', 'Harris', 35, 'Firm C', 'DAVID', False]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_extend_function_literals(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = frame.restrict(["Last Name"])
+        frame = frame.extend([
+            lambda x: 1,
+            lambda x: 2.0,
+            lambda x: "Hello",
+            lambda x: True
+        ], ["col3", "col4", "col5", "col6"])
+        assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]") == \
+               ('[TdsColumn(Name: Last Name, Type: String), TdsColumn(Name: col3, Type: Integer), '
+                'TdsColumn(Name: col4, Type: Float), TdsColumn(Name: col5, Type: String), '
+                'TdsColumn(Name: col6, Type: Boolean)]')
+        expected = {'columns': ['Last Name', 'col3', 'col4', 'col5', 'col6'],
+                    'rows': [{'values': ['Smith', 1, 2.0, 'Hello', True]},
+                             {'values': ['Johnson', 1, 2.0, 'Hello', True]},
+                             {'values': ['Hill', 1, 2.0, 'Hello', True]},
+                             {'values': ['Allen', 1, 2.0, 'Hello', True]},
+                             {'values': ['Roberts', 1, 2.0, 'Hello', True]},
+                             {'values': ['Hill', 1, 2.0, 'Hello', True]},
+                             {'values': ['Harris', 1, 2.0, 'Hello', True]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
