@@ -132,6 +132,7 @@ class TestConcatenateAppliedFunction:
                 ) AS "root"'''
         assert concatenate_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    @pytest.mark.skip(reason="Legend engine doesn't process this SQL")  # TODO: Should get this fixed in SQL processor
     def test_e2e_concatenate_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.concatenate(frame).restrict(["First Name", "Firm/Legal Name"])
