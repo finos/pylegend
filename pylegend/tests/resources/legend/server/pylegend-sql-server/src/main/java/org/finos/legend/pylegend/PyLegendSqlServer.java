@@ -40,6 +40,7 @@ import org.finos.legend.engine.plan.execution.stores.relational.plugin.Relationa
 import org.finos.legend.engine.plan.generation.extension.PlanGeneratorExtension;
 import org.finos.legend.engine.protocol.pure.v1.PureProtocolObjectMapperFactory;
 import org.finos.legend.engine.protocol.pure.v1.model.context.PureModelContextData;
+import org.finos.legend.engine.pure.code.core.PureCoreExtensionLoader;
 import org.finos.legend.engine.query.sql.api.execute.SqlExecute;
 import org.finos.legend.engine.query.sql.api.grammar.SqlGrammar;
 import org.finos.legend.engine.server.Server;
@@ -102,7 +103,11 @@ public class PyLegendSqlServer<T extends ServerConfiguration> extends Server<T>
         environment.jersey().register(new ConcurrentExecutionNodeExecutorPoolInfo(Collections.emptyList()));
 
         MutableList<PlanGeneratorExtension> generatorExtensions = Lists.mutable.withAll(ServiceLoader.load(PlanGeneratorExtension.class));
-        Function<PureModel, RichIterable<? extends Root_meta_pure_extension_Extension>> routerExtensions = (PureModel pureModel) -> generatorExtensions.flatCollect(e -> e.getExtraExtensions(pureModel));
+        Function<PureModel, RichIterable<? extends Root_meta_pure_extension_Extension>> routerExtensions = (pureModel) -> {
+            return PureCoreExtensionLoader.extensions().flatCollect((e) -> {
+                return e.extraPureCoreExtensions(pureModel.getExecutionSupport());
+            });
+        };
         environment.jersey().register(new SqlExecute(modelManager, planExecutor, routerExtensions, FastList.newListWith(new LegendServiceSQLSourceProvider()), generatorExtensions.flatCollect(PlanGeneratorExtension::getExtraPlanTransformers)));
         environment.jersey().register(new SqlGrammar());
         environment.jersey().register(new CatchAllExceptionMapper());
