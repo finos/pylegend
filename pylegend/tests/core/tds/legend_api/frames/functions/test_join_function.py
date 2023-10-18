@@ -368,3 +368,43 @@ class TestJoinAppliedFunction:
                              {'values': [None, None, 35, 'Harris']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+    def test_e2e_join_true_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame1: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1 = frame1.take(2)
+        frame1 = frame1.restrict(['Last Name', 'First Name'])
+        frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
+        frame2: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2 = frame2.take(2)
+        frame2 = frame2.restrict(['Age', 'Last Name'])
+        frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
+        frame = frame1.join(frame2, lambda x, y: True)
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
+                "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Last Name 2, Type: String)]")
+        expected = {'columns': ['Last Name 1', 'First Name', 'Age', 'Last Name 2'],
+                    'rows': [{'values': ['Smith', 'Peter', 23, 'Smith']},
+                             {'values': ['Smith', 'Peter', 22, 'Johnson']},
+                             {'values': ['Johnson', 'John', 23, 'Smith']},
+                             {'values': ['Johnson', 'John', 22, 'Johnson']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_join_false_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame1: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1 = frame1.take(2)
+        frame1 = frame1.restrict(['Last Name', 'First Name'])
+        frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
+        frame2: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2 = frame2.take(2)
+        frame2 = frame2.restrict(['Age', 'Last Name'])
+        frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
+        frame = frame1.join(frame2, lambda x, y: 1 == 2)  # type: ignore
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
+                "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Last Name 2, Type: String)]")
+        expected = {'columns': ['Last Name 1', 'First Name', 'Age', 'Last Name 2'],
+                    'rows': [{'values': ['Smith', 'Peter', None, None]},
+                             {'values': ['Johnson', 'John', None, None]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
