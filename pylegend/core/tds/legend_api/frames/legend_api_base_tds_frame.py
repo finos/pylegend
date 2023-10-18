@@ -57,9 +57,8 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         col_names = [c.get_name() for c in columns]
         if len(col_names) != len(set(col_names)):
-            raise ValueError("TdsFrame cannot have duplicated column names. Passed columns: {cols}".format(
-                cols="[" + ", ".join([str(c) for c in columns]) + "]"
-            ))
+            cols = "[" + ", ".join([str(c) for c in columns]) + "]"
+            raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
         self.__columns = [c.copy() for c in columns]
 
     def columns(self) -> PyLegendSequence[TdsColumn]:

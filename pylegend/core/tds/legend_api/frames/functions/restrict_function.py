@@ -100,10 +100,7 @@ class RestrictFunction(LegendApiAppliedFunction):
                     break
             if not found_col:
                 raise ValueError(
-                    "Column - '{col}' in restrict columns list doesn't exist in the current frame. "
-                    "Current frame columns: {cols}".format(
-                        col=c,
-                        cols=[x.get_name() for x in base_columns]
-                    )
+                    f"Column - '{c}' in restrict columns list doesn't exist in the current frame. "
+                    f"Current frame columns: {[x.get_name() for x in base_columns]}"
                 )
         return True

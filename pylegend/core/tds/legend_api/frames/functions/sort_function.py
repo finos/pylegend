@@ -103,21 +103,17 @@ class SortFunction(LegendApiAppliedFunction):
         for c in self.__column_name_list:
             if c not in base_cols:
                 raise ValueError(
-                    "Column - '{col}' in sort columns list doesn't exist in the current frame. "
-                    "Current frame columns: {cols}".format(
-                        col=c,
-                        cols=base_cols
-                    )
+                    f"Column - '{c}' in sort columns list doesn't exist in the current frame. "
+                    f"Current frame columns: {base_cols}"
                 )
 
         if (self.__directions is not None) and (len(self.__directions) > 0):
             if len(self.__column_name_list) != len(self.__directions):
+                cols = self.__column_name_list
+                dirs = self.__directions
                 raise ValueError(
                     "Sort directions (ASC/DESC) provided need to be in sync with columns or left empty to "
-                    "choose defaults. Passed column list: {cols}, directions: {dirs}".format(
-                        cols=self.__column_name_list,
-                        dirs=self.__directions
-                    )
+                    f"choose defaults. Passed column list: {cols}, directions: {dirs}"
                 )
 
             for d in self.__directions:

@@ -51,7 +51,7 @@ class TdsColumn(metaclass=ABCMeta):
         pass
 
     def __str__(self) -> str:
-        return "TdsColumn(Name: {name}, Type: {_type})".format(name=self.get_name(), _type=self.get_type())
+        return f"TdsColumn(Name: {self.get_name()}, Type: {self.get_type()})"
 
 
 class PrimitiveType(Enum):

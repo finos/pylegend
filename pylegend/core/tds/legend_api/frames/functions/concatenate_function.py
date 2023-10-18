@@ -106,15 +106,12 @@ class ConcatenateFunction(LegendApiAppliedFunction):
         other_frame_cols = self.__other_frame.columns()
 
         if len(base_frame_cols) != len(other_frame_cols):
+            cols1 = "[" + ", ".join([str(c) for c in base_frame_cols]) + "]"
+            cols2 = "[" + ", ".join([str(c) for c in other_frame_cols]) + "]"
             raise ValueError(
                 "Cannot concatenate two Tds Frames with different column counts. \n"
-                "Frame 1 cols - (Count: {c1}) - {cols1} \n"
-                "Frame 2 cols - (Count: {c2}) - {cols2} \n".format(
-                    c1=len(base_frame_cols),
-                    cols1="[" + ", ".join([str(c) for c in base_frame_cols]) + "]",
-                    c2=len(other_frame_cols),
-                    cols2="[" + ", ".join([str(c) for c in other_frame_cols]) + "]"
-                )
+                f"Frame 1 cols - (Count: {len(base_frame_cols)}) - {cols1} \n"
+                f"Frame 2 cols - (Count: {len(other_frame_cols)}) - {cols2} \n"
             )
 
         for i in range(0, len(base_frame_cols)):
@@ -123,12 +120,8 @@ class ConcatenateFunction(LegendApiAppliedFunction):
 
             if (base_col.get_name() != other_col.get_name()) or (base_col.get_type() != other_col.get_type()):
                 raise ValueError(
-                    "Column name/type mismatch when concatenating Tds Frames at index {i}. "
-                    "Frame 1 column - {c1}, Frame 2 column - {c2}".format(
-                        i=i,
-                        c1=base_col,
-                        c2=other_col
-                    )
+                    f"Column name/type mismatch when concatenating Tds Frames at index {i}. "
+                    f"Frame 1 column - {base_col}, Frame 2 column - {other_col}"
                 )
 
         return True

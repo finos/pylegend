@@ -180,17 +180,12 @@ class JoinFunction(LegendApiAppliedFunction):
             raise ValueError(
                 "Found duplicate columns in joined frames. Either use join_by_columns function if joining on shared "
                 "columns or use rename_columns function to ensure there are no duplicate columns in joined frames. "
-                "Columns - Left Frame: {l}, Right Frame: {r}".format(
-                    l=left_cols,
-                    r=right_cols
-                )
+                f"Columns - Left Frame: {left_cols}, Right Frame: {right_cols}"
             )
 
         if self.__join_type.lower() not in ('inner', 'left_outer', 'right_outer', 'leftouter', 'rightouter'):
             raise ValueError(
-                "Unknown join type - {j}. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER".format(
-                    j=self.__join_type
-                )
+                f"Unknown join type - {self.__join_type}. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER"
             )
 
         return True
