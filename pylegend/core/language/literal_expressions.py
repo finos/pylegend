@@ -111,4 +111,4 @@ def convert_literal_to_literal_expression(literal: PyLegendUnion[int, float, boo
     if isinstance(literal, str):
         return PyLegendStringLiteralExpression(literal)
 
-    raise TypeError("Cannot convert value - {v} of type {t} to literal expression".format(v=literal, t=type(literal)))
+    raise TypeError(f"Cannot convert value - {literal} of type {type(literal)} to literal expression")

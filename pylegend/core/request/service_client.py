@@ -64,12 +64,7 @@ class ServiceClient(metaclass=ABCMeta):
     ) -> requests.Response:
 
         scheme = "https" if self.__secure_http else "http"
-        url = "{scheme}://{host}:{port}/{path}".format(
-            scheme=scheme,
-            host=self.__host,
-            port=self.__port,
-            path=path
-        )
+        url = f"{scheme}://{self.__host}:{self.__port}/{path}"
 
         request = requests.Request(
             method=method.name,

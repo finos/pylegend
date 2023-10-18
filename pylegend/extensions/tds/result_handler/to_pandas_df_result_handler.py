@@ -119,9 +119,7 @@ class ToPandasDfResultHandler(ResultHandler[pd.DataFrame]):
                 dtype = COLUMN_TYPE_DTYPE_MAP[column.get_type()]
             else:
                 raise RuntimeError(
-                    "Cannot infer pandas column dtype for column '{c}' with type '{t}'".format(
-                        c=column.get_name(), t=column.get_type()
-                    )
+                    f"Cannot infer pandas column dtype for column '{column.get_name()}' with type '{column.get_type()}'"
                 )
         else:
             dtype = "object"
