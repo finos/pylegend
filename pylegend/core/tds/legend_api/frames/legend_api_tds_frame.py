@@ -117,3 +117,11 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             join_type: str = 'LEFT_OUTER'
     ) -> "LegendApiTdsFrame":
         pass
+
+    def join_by_function(
+            self,
+            other: "LegendApiTdsFrame",
+            join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
+            join_type: str = 'LEFT_OUTER'
+    ) -> "LegendApiTdsFrame":
+        return self.join(other, join_condition, join_type)
