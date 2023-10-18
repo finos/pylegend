@@ -176,6 +176,22 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         )
         return LegendApiAppliedFunctionTdsFrame(ExtendFunction(self, functions_list, column_names_list))
 
+    def join(
+            self,
+            other: "LegendApiTdsFrame",
+            join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
+            join_type: str = 'LEFT_OUTER'
+    ) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.join_function import (
+            JoinFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(
+            JoinFunction(self, other, join_condition, join_type)
+        )
+
     def join_by_columns(
             self,
             other: "LegendApiTdsFrame",

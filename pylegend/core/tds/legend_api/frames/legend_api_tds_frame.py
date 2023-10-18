@@ -100,6 +100,15 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
         pass
 
     @abstractmethod
+    def join(
+            self,
+            other: "LegendApiTdsFrame",
+            join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
+            join_type: str = 'LEFT_OUTER'
+    ) -> "LegendApiTdsFrame":
+        pass
+
+    @abstractmethod
     def join_by_columns(
             self,
             other: "LegendApiTdsFrame",
