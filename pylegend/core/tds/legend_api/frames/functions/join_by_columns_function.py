@@ -85,7 +85,7 @@ class JoinByColumnsFunction(LegendApiAppliedFunction):
 
         join_type = (
             JoinType.INNER if self.__join_type.lower() == 'inner' else (
-                JoinType.LEFT if self.__join_type.lower() == 'left_outer' else
+                JoinType.LEFT if self.__join_type.lower() in ('left_outer', 'leftouter') else
                 JoinType.RIGHT
             )
         )
@@ -242,7 +242,7 @@ class JoinByColumnsFunction(LegendApiAppliedFunction):
                 )
             )
 
-        if self.__join_type.lower() not in ('inner', 'left_outer', 'right_outer'):
+        if self.__join_type.lower() not in ('inner', 'left_outer', 'right_outer', 'leftouter', 'rightouter'):
             raise ValueError(
                 "Unknown join type - {j}. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER".format(
                     j=self.__join_type
