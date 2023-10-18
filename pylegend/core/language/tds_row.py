@@ -53,11 +53,8 @@ class TdsRow:
         col_expr = self.__get_col(column)
         if not isinstance(col_expr, PyLegendBooleanColumnExpression):
             raise RuntimeError(
-                "Column expression for '{name}' is of type '{type}'. "
-                "get_boolean method is not valid on this column.".format(
-                    name=column,
-                    type=type(col_expr)
-                )
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_boolean method is not valid on this column."
             )
         return PyLegendBoolean(col_expr)
 
@@ -65,11 +62,8 @@ class TdsRow:
         col_expr = self.__get_col(column)
         if not isinstance(col_expr, PyLegendStringColumnExpression):
             raise RuntimeError(
-                "Column expression for '{name}' is of type '{type}'. "
-                "get_string method is not valid on this column.".format(
-                    name=column,
-                    type=type(col_expr)
-                )
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_string method is not valid on this column."
             )
         return PyLegendString(col_expr)
 
@@ -78,11 +72,8 @@ class TdsRow:
         allowed_types = (PyLegendNumberColumnExpression, PyLegendIntegerColumnExpression, PyLegendFloatColumnExpression)
         if not isinstance(col_expr, allowed_types):
             raise RuntimeError(
-                "Column expression for '{name}' is of type '{type}'. "
-                "get_number method is not valid on this column.".format(
-                    name=column,
-                    type=type(col_expr)
-                )
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_number method is not valid on this column."
             )
         return PyLegendNumber(col_expr)
 
@@ -90,11 +81,8 @@ class TdsRow:
         col_expr = self.__get_col(column)
         if not isinstance(col_expr, PyLegendIntegerColumnExpression):
             raise RuntimeError(
-                "Column expression for '{name}' is of type '{type}'. "
-                "get_integer method is not valid on this column.".format(
-                    name=column,
-                    type=type(col_expr)
-                )
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_integer method is not valid on this column."
             )
         return PyLegendInteger(col_expr)
 
@@ -102,11 +90,8 @@ class TdsRow:
         col_expr = self.__get_col(column)
         if not isinstance(col_expr, PyLegendFloatColumnExpression):
             raise RuntimeError(
-                "Column expression for '{name}' is of type '{type}'. "
-                "get_float method is not valid on this column.".format(
-                    name=column,
-                    type=type(col_expr)
-                )
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_float method is not valid on this column."
             )
         return PyLegendFloat(col_expr)
 
@@ -127,12 +112,7 @@ class TdsRow:
         if isinstance(col_expr, PyLegendNumberColumnExpression):
             return PyLegendNumber(col_expr)
 
-        raise RuntimeError(
-            "Column expression for '{col}' of type {type} not supported yet".format(
-                col=item,
-                type=type(col_expr)
-            )
-        )
+        raise RuntimeError(f"Column expression for '{item}' of type {type(col_expr)} not supported yet")
 
     def __get_col(self, column: str) -> PyLegendColumnExpression:
         for base_col in self.__columns:
@@ -149,17 +129,9 @@ class TdsRow:
                     if base_col.get_type() == "Float":
                         return PyLegendFloatColumnExpression(self.__frame_name, column)
 
-                raise RuntimeError(
-                    "Column '{col}' of type {type} not supported yet".format(
-                        col=column,
-                        type=base_col.get_type()
-                    )
-                )
+                raise RuntimeError(f"Column '{column}' of type {base_col.get_type()} not supported yet")
 
         raise ValueError(
-            "Column - '{col}' doesn't exist in the current frame. "
-            "Current frame columns: {cols}".format(
-                col=column,
-                cols=[x.get_name() for x in self.__columns]
-            )
+            f"Column - '{column}' doesn't exist in the current frame. "
+            f"Current frame columns: {[x.get_name() for x in self.__columns]}"
         )
