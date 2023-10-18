@@ -118,11 +118,7 @@ def query_specification_processor(
     sep1 = config.format.separator(1)
 
     if nested_subquery:
-        return "({sep1}{sub_query}{sep0})".format(
-            sep0=sep0,
-            sep1=sep1,
-            sub_query=extension.process_query_specification(query, config.push_indent(), False)
-        )
+        return f"({sep1}{extension.process_query_specification(query, config.push_indent(), False)}{sep0})"
 
     top = extension.process_top(query, config)
     group_by = extension.process_group_by(query, config)
@@ -130,36 +126,18 @@ def query_specification_processor(
     limit = extension.process_limit(query, config)
     columns = extension.process_select(query.select, config)
 
-    _from = "{sep0}FROM{sep1}{relations}".format(
-        sep0=sep0,
-        sep1=sep1,
-        relations=("," + sep1).join([
-            extension.process_relation(f, config.push_indent()) for f in query.from_
-        ])
-    ) if query.from_ else ""
+    relations = ("," + sep1).join([
+        extension.process_relation(f, config.push_indent()) for f in query.from_
+    ])
+    _from = f"{sep0}FROM{sep1}{relations}" if query.from_ else ""
 
-    where_clause = "{sep0}WHERE{sep1}{expr}".format(
-        sep0=sep0,
-        sep1=sep1,
-        expr=extension.process_expression(query.where, config.push_indent())
-    ) if query.where else ""
+    where_clause = f"{sep0}WHERE{sep1}{extension.process_expression(query.where, config.push_indent())}" \
+        if query.where else ""
 
-    having_clause = "{sep0}HAVING{sep1}{expr}".format(
-        sep0=sep0,
-        sep1=sep1,
-        expr=extension.process_expression(query.having, config.push_indent())
-    ) if query.having else ""
+    having_clause = f"{sep0}HAVING{sep1}{extension.process_expression(query.having, config.push_indent())}" \
+        if query.having else ""
 
-    return "SELECT{top}{columns}{_from}{where}{group_by}{having}{order_by}{limit}".format(
-        top=top,
-        columns=columns,
-        _from=_from,
-        where=where_clause,
-        group_by=group_by,
-        having=having_clause,
-        order_by=order_by,
-        limit=limit
-    )
+    return f"SELECT{top}{columns}{_from}{where_clause}{group_by}{having_clause}{order_by}{limit}"
 
 
 def top_processor(
@@ -179,11 +157,10 @@ def limit_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.offset is not None and query.limit is not None:
-        return "{sep0}LIMIT {offset}, {limit}".format(
-            sep0=config.format.separator(0),
-            offset=extension.process_expression(query.offset, config),
-            limit=extension.process_expression(query.limit, config)
-        )
+        sep0 = config.format.separator(0)
+        offset = extension.process_expression(query.offset, config)
+        limit = extension.process_expression(query.limit, config)
+        return f"{sep0}LIMIT {offset}, {limit}"
     else:
         return ""
 
@@ -194,13 +171,12 @@ def group_by_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.groupBy:
-        return "{sep0}GROUP BY{sep1}{group_by_args}".format(
-            sep0=config.format.separator(0),
-            sep1=config.format.separator(1),
-            group_by_args=("," + config.format.separator(1)).join(
-                [extension.process_expression(g, config.push_indent()) for g in query.groupBy]
-            )
+        sep0 = config.format.separator(0)
+        sep1 = config.format.separator(1)
+        group_by_args = ("," + config.format.separator(1)).join(
+            [extension.process_expression(g, config.push_indent()) for g in query.groupBy]
         )
+        return f"{sep0}GROUP BY{sep1}{group_by_args}"
     else:
         return ""
 
@@ -220,13 +196,12 @@ def order_by_processor(
     config: SqlToStringConfig
 ) -> str:
     if query.orderBy:
-        return "{sep0}ORDER BY{sep1}{order_by_args}".format(
-            sep0=config.format.separator(0),
-            sep1=config.format.separator(1),
-            order_by_args=("," + config.format.separator(1)).join(
-                [extension.process_sort_item(o, config) for o in query.orderBy]
-            )
+        sep0 = config.format.separator(0)
+        sep1 = config.format.separator(1)
+        order_by_args = ("," + config.format.separator(1)).join(
+            [extension.process_sort_item(o, config) for o in query.orderBy]
         )
+        return f"{sep0}ORDER BY{sep1}{order_by_args}"
     else:
         return ""
 
@@ -238,11 +213,9 @@ def select_processor(
 ) -> str:
     distinct_flag = " DISTINCT" if select.distinct else ""
     items = [extension.process_select_item(item, config.push_indent()) for item in select.selectItems]
-    return "{distinct}{sep1}{select_items}".format(
-        distinct=distinct_flag,
-        sep1=config.format.separator(1),
-        select_items=("," + config.format.separator(1)).join(items)
-    )
+    sep1 = config.format.separator(1)
+    select_items = ("," + config.format.separator(1)).join(items)
+    return f"{distinct_flag}{sep1}{select_items}"
 
 
 def select_item_processor(
@@ -276,10 +249,9 @@ def single_column_processor(
 ) -> str:
     processed_expression = extension.process_expression(single_column.expression, config)
     if single_column.alias:
-        return "{expr} AS {alias}".format(
-            expr=processed_expression,
-            alias=extension.process_identifier(single_column.alias, config, False)
-        )
+        expr = processed_expression
+        alias = extension.process_identifier(single_column.alias, config, False)
+        return f"{expr} AS {alias}"
     else:
         return processed_expression
 
@@ -292,7 +264,7 @@ def identifier_processor(
     quote_character: str
 ) -> str:
     if should_quote or identifier in extension.reserved_keywords():
-        return "{q}{i}{q}".format(q=quote_character, i=identifier)
+        return f"{quote_character}{identifier}{quote_character}"
     else:
         return identifier
 
@@ -422,11 +394,9 @@ def comparison_expression_processor(
     else:
         raise ValueError("Unknown comparison operator type: " + str(comparison.operator))  # pragma: no cover
 
-    return "({left} {op} {right})".format(
-        left=extension.process_expression(comparison.left, config),
-        op=cmp,
-        right=extension.process_expression(comparison.right, config)
-    )
+    left = extension.process_expression(comparison.left, config)
+    right = extension.process_expression(comparison.right, config)
+    return f"({left} {cmp} {right})"
 
 
 def logical_binary_expression_processor(
@@ -442,11 +412,9 @@ def logical_binary_expression_processor(
     else:
         raise ValueError("Unknown logical binary operator type: " + str(op_type))  # pragma: no cover
 
-    return "({left} {op} {right})".format(
-        left=extension.process_expression(logical.left, config),
-        op=op,
-        right=extension.process_expression(logical.right, config)
-    )
+    left = extension.process_expression(logical.left, config)
+    right = extension.process_expression(logical.right, config)
+    return f"({left} {op} {right})"
 
 
 def not_expression_processor(
@@ -456,9 +424,9 @@ def not_expression_processor(
 ) -> str:
     expr = extension.process_expression(not_expression.value, config)
     if isinstance(not_expression.value, (LogicalBinaryExpression, ComparisonExpression)):
-        return "NOT{expr}".format(expr=expr)
+        return f"NOT{expr}"
     else:
-        return "NOT({expr})".format(expr=expr)
+        return f"NOT({expr})"
 
 
 def arithmetic_expression_processor(
@@ -466,24 +434,21 @@ def arithmetic_expression_processor(
     extension: "SqlToStringDbExtension",
     config: SqlToStringConfig
 ) -> str:
+    left = extension.process_expression(arithmetic.left, config)
+    right = extension.process_expression(arithmetic.right, config)
     op_type = arithmetic.type_
     if op_type == ArithmeticType.ADD:
-        to_format = "({left} + {right})"
+        return f"({left} + {right})"
     elif op_type == ArithmeticType.SUBTRACT:
-        to_format = "({left} - {right})"
+        return f"({left} - {right})"
     elif op_type == ArithmeticType.MULTIPLY:
-        to_format = "({left} * {right})"
+        return f"({left} * {right})"
     elif op_type == ArithmeticType.DIVIDE:
-        to_format = "((1.0 * {left}) / {right})"
+        return f"((1.0 * {left}) / {right})"
     elif op_type == ArithmeticType.MODULUS:
-        to_format = "MOD({left}, {right})"
+        return f"MOD({left}, {right})"
     else:
         raise ValueError("Unknown arithmetic operator type: " + str(op_type))  # pragma: no cover
-
-    return to_format.format(
-        left=extension.process_expression(arithmetic.left, config),
-        right=extension.process_expression(arithmetic.right, config)
-    )
 
 
 def negative_expression_processor(
@@ -493,9 +458,9 @@ def negative_expression_processor(
 ) -> str:
     expr = extension.process_expression(negative.value, config)
     if isinstance(negative.value, Literal):
-        return "-{expr}".format(expr=expr)
+        return f"-{expr}"
     else:
-        return "(0 - {expr})".format(expr=expr)
+        return f"(0 - {expr})"
 
 
 def when_clause_processor(
@@ -503,12 +468,11 @@ def when_clause_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "WHEN{sep1}{when}{sep0}THEN{sep1}{then}".format(
-        when=extension.process_expression(when.operand, config.push_indent()),
-        then=extension.process_expression(when.result, config.push_indent()),
-        sep1=config.format.separator(1),
-        sep0=config.format.separator(0)
-    )
+    when_str = extension.process_expression(when.operand, config.push_indent())
+    then_str = extension.process_expression(when.result, config.push_indent())
+    sep1 = config.format.separator(1)
+    sep0 = config.format.separator(0)
+    return f"WHEN{sep1}{when_str}{sep0}THEN{sep1}{then_str}"
 
 
 def searched_case_expression_processor(
@@ -517,21 +481,19 @@ def searched_case_expression_processor(
         config: SqlToStringConfig
 ) -> str:
     if case.defaultValue:
-        else_clause = "{sep1}ELSE{sep2}{e}".format(
-            sep1=config.format.separator(1),
-            e=extension.process_expression(case.defaultValue, config.push_indent().push_indent()),
-            sep2=config.format.separator(2)
-        )
+        sep1 = config.format.separator(1)
+        expr = extension.process_expression(case.defaultValue, config.push_indent().push_indent())
+        sep2 = config.format.separator(2)
+        else_clause = f"{sep1}ELSE{sep2}{expr}"
     else:
         else_clause = ""
-    return "CASE{sep1}{when_clauses}{default}{sep0}END".format(
-        sep1=config.format.separator(1),
-        when_clauses=config.format.separator(1).join(
-            [extension.process_expression(clause, config.push_indent()) for clause in case.whenClauses]
-        ),
-        default=else_clause,
-        sep0=config.format.separator(0)
+
+    sep1 = config.format.separator(1)
+    when_clauses = config.format.separator(1).join(
+        [extension.process_expression(clause, config.push_indent()) for clause in case.whenClauses]
     )
+    sep0 = config.format.separator(0)
+    return f"CASE{sep1}{when_clauses}{else_clause}{sep0}END"
 
 
 def column_type_processor(
@@ -540,10 +502,7 @@ def column_type_processor(
         config: SqlToStringConfig
 ) -> str:
     if column_type.parameters:
-        return "{data_type}({params})".format(
-            data_type=column_type.name,
-            params=", ".join([str(p) for p in column_type.parameters])
-        )
+        return f"{column_type.name}({', '.join([str(p) for p in column_type.parameters])})"
     else:
         return column_type.name
 
@@ -553,10 +512,9 @@ def cast_expression_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "CAST({value} AS {data_type})".format(
-        value=extension.process_expression(cast.expression, config),
-        data_type=extension.process_expression(cast.type_, config)
-    )
+    value = extension.process_expression(cast.expression, config)
+    data_type = extension.process_expression(cast.type_, config)
+    return f"CAST({value} AS {data_type})"
 
 
 def in_list_expression_processor(
@@ -564,9 +522,7 @@ def in_list_expression_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "({values})".format(
-        values=", ".join([extension.process_expression(value, config) for value in in_list.values])
-    )
+    return f"({', '.join([extension.process_expression(value, config) for value in in_list.values])})"
 
 
 def in_predicate_processor(
@@ -574,10 +530,9 @@ def in_predicate_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "{value} IN {value_list}".format(
-        value=extension.process_expression(in_predicate.value, config),
-        value_list=extension.process_expression(in_predicate.valueList, config)
-    )
+    value = extension.process_expression(in_predicate.value, config)
+    value_list = extension.process_expression(in_predicate.valueList, config)
+    return f"{value} IN {value_list}"
 
 
 def is_null_predicate_processor(
@@ -585,7 +540,7 @@ def is_null_predicate_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "({value} IS NULL)".format(value=extension.process_expression(is_null_predicate.value, config))
+    return f"({extension.process_expression(is_null_predicate.value, config)} IS NULL)"
 
 
 def is_not_null_predicate_processor(
@@ -593,7 +548,7 @@ def is_not_null_predicate_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "({value} IS NOT NULL)".format(value=extension.process_expression(is_not_null_predicate.value, config))
+    return f"({extension.process_expression(is_not_null_predicate.value, config)} IS NOT NULL)"
 
 
 def current_time_processor(
@@ -616,10 +571,7 @@ def extract_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "EXTRACT({field} FROM {source})".format(
-        field=extract.field.name,
-        source=extension.process_expression(extract.expression, config)
-    )
+    return f"EXTRACT({extract.field.name} FROM {extension.process_expression(extract.expression, config)})"
 
 
 def function_call_processor(
@@ -637,13 +589,10 @@ def function_call_processor(
     if function_call.window:
         window = " OVER" + extension.process_window(function_call.window, config)
 
-    return "{name}({firstSep}{args}{sep0}){window}".format(
-        firstSep=config.format.separator(1) if function_call.arguments else "",
-        sep0=config.format.separator(0) if function_call.arguments else "",
-        name=extension.process_qualified_name(function_call.name, config),
-        args=arguments,
-        window=window
-    )
+    first_sep = config.format.separator(1) if function_call.arguments else ""
+    sep0 = config.format.separator(0) if function_call.arguments else ""
+    name = extension.process_qualified_name(function_call.name, config)
+    return f"{name}({first_sep}{arguments}{sep0}){window}"
 
 
 def named_argument_processor(
@@ -651,10 +600,9 @@ def named_argument_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return "{name} => {expr}".format(
-        name=named_arg.name,
-        expr=extension.process_expression(named_arg.expression, config)
-    )
+    name = named_arg.name
+    expr = extension.process_expression(named_arg.expression, config)
+    return f"{name} => {expr}"
 
 
 def qualified_name_processor(
@@ -710,10 +658,9 @@ def aliased_relation_processor(
         config: SqlToStringConfig,
         nested_subquery: bool
 ) -> str:
-    return "{relation} AS {alias}".format(
-        relation=extension.process_relation(aliased_relation.relation, config, nested_subquery),
-        alias=extension.process_identifier(aliased_relation.alias, config)
-    )
+    relation = extension.process_relation(aliased_relation.relation, config, nested_subquery)
+    alias = extension.process_identifier(aliased_relation.alias, config)
+    return f"{relation} AS {alias}"
 
 
 def query_processor(
@@ -729,12 +676,11 @@ def query_processor(
         return extension.process_relation(query.queryBody, config, nested_subquery)
     else:
         # TODO: Use limit, orderBy, offset at query level
-        return "({sep1}SELECT{sep2}*{sep1}FROM{sep2}{relation}{sep0})".format(
-            sep0=config.format.separator(0),
-            sep1=config.format.separator(1),
-            sep2=config.format.separator(2),
-            relation=extension.process_relation(query.queryBody, config.push_indent().push_indent(), True)
-        )
+        sep0 = config.format.separator(0)
+        sep1 = config.format.separator(1)
+        sep2 = config.format.separator(2)
+        relation = extension.process_relation(query.queryBody, config.push_indent().push_indent(), True)
+        return f"({sep1}SELECT{sep2}*{sep1}FROM{sep2}{relation}{sep0})"
 
 
 def join_criteria_processor(
@@ -778,7 +724,7 @@ def join_processor(
     left = extension.process_relation(join.left, config)
     right = extension.process_relation(join.right, config.push_indent())
     join_type = join.type_
-    condition = "ON ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
+    condition = f"ON ({extension.process_join_criteria(join.criteria, config)})" if join.criteria else ""
     if join_type == JoinType.CROSS:
         join_type_str = 'CROSS JOIN'
     elif join_type == JoinType.INNER:
@@ -792,14 +738,9 @@ def join_processor(
     else:
         raise ValueError("Unknown join type: " + str(join_type))  # pragma: no cover
 
-    return "{left}{sep0}{join}{sep1}{right}{sep1}{on}".format(
-        sep0=config.format.separator(0),
-        sep1=config.format.separator(1),
-        left=left,
-        join=join_type_str,
-        right=right,
-        on=condition
-    )
+    sep0 = config.format.separator(0)
+    sep1 = config.format.separator(1)
+    return f"{left}{sep0}{join_type_str}{sep1}{right}{sep1}{condition}"
 
 
 def window_processor(
@@ -817,9 +758,7 @@ def window_processor(
         if window.orderBy else ""
 
     # TODO: Handle window frame
-    return "{partitions}{order_by}{window_frame}".format(
-        partitions=partitions, order_by=order_by, window_frame=""
-    )
+    return f"{partitions}{order_by}{''}"
 
 
 def table_function_processor(
@@ -837,18 +776,16 @@ def union_processor(
         nested_subquery: bool
 ) -> str:
     if nested_subquery:
-        return "({sep1}{sub_query}{sep0})".format(
-            sep0=config.format.separator(0),
-            sep1=config.format.separator(1),
-            sub_query=extension.process_union(union, config.push_indent(), False)
-        )
+        sep0 = config.format.separator(0)
+        sep1 = config.format.separator(1)
+        sub_query = extension.process_union(union, config.push_indent(), False)
+        return f"({sep1}{sub_query}{sep0})"
 
-    return "{left}{sep0}{union}{sep0}{right}".format(
-        sep0=config.format.separator(0),
-        left=extension.process_relation(union.left, config),
-        union="UNION" if union.distinct else "UNION ALL",
-        right=extension.process_relation(union.right, config)
-    )
+    sep0 = config.format.separator(0)
+    left = extension.process_relation(union.left, config)
+    union_str = "UNION" if union.distinct else "UNION ALL"
+    right = extension.process_relation(union.right, config)
+    return f"{left}{sep0}{union_str}{sep0}{right}"
 
 
 class SqlToStringDbExtension:
@@ -866,7 +803,7 @@ class SqlToStringDbExtension:
 
     @classmethod
     def quote_identifier(cls, identifier: str) -> str:
-        return "{quote}{identifier}{quote}".format(quote=cls.quote_character(), identifier=identifier)
+        return f"{cls.quote_character()}{identifier}{cls.quote_character()}"
 
     @classmethod
     def literal_processor(cls) -> PyLegendCallable[[Literal, SqlToStringConfig], str]:
@@ -960,142 +897,89 @@ class SqlToStringDbExtension:
         return named_argument_processor(named_arg, self, config)
 
     def process_string_length_expression(self, expr: StringLengthExpression, config: SqlToStringConfig) -> str:
-        return "CHAR_LENGTH({expr})".format(expr=self.process_expression(expr.value, config))
+        return f"CHAR_LENGTH({self.process_expression(expr.value, config)})"
 
     def process_string_like_expression(self, expr: StringLikeExpression, config: SqlToStringConfig) -> str:
-        return "({val} LIKE {other})".format(
-            val=self.process_expression(expr.value, config),
-            other=self.process_expression(expr.other, config)
-        )
+        return f"({self.process_expression(expr.value, config)} LIKE {self.process_expression(expr.other, config)})"
 
     def process_string_upper_expression(self, expr: StringUpperExpression, config: SqlToStringConfig) -> str:
-        return "UPPER({expr})".format(expr=self.process_expression(expr.value, config))
+        return f"UPPER({self.process_expression(expr.value, config)})"
 
     def process_string_lower_expression(self, expr: StringLowerExpression, config: SqlToStringConfig) -> str:
-        return "LOWER({expr})".format(expr=self.process_expression(expr.value, config))
+        return f"LOWER({self.process_expression(expr.value, config)})"
 
     def process_string_trim_expression(self, expr: StringTrimExpression, config: SqlToStringConfig) -> str:
-        op = "({expr})".format(expr=self.process_expression(expr.value, config))
+        op = f"({self.process_expression(expr.value, config)})"
         return ("LTRIM" if (expr.trim_type == TrimType.Left) else
                 ("RTRIM" if (expr.trim_type == TrimType.Right) else "BTRIM")) + op
 
     def process_string_pos_expression(self, expr: StringPosExpression, config: SqlToStringConfig) -> str:
-        return "STRPOS({expr}, {other})".format(
-            expr=self.process_expression(expr.value, config),
-            other=self.process_expression(expr.other, config)
-        )
+        return f"STRPOS({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
 
     def process_string_concat_expression(self, expr: StringConcatExpression, config: SqlToStringConfig) -> str:
-        return "CONCAT({first}, {second})".format(
-            first=self.process_expression(expr.first, config),
-            second=self.process_expression(expr.second, config)
-        )
+        return f"CONCAT({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
 
     def process_absolute_expression(self, expr: AbsoluteExpression, config: SqlToStringConfig) -> str:
-        return "ABS({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"ABS({self.process_expression(expr.value, config)})"
 
     def process_power_expression(self, expr: PowerExpression, config: SqlToStringConfig) -> str:
-        return "POWER({first}, {second})".format(
-            first=self.process_expression(expr.first, config),
-            second=self.process_expression(expr.second, config)
-        )
+        return f"POWER({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
 
     def process_ceil_expression(self, expr: CeilExpression, config: SqlToStringConfig) -> str:
-        return "CEIL({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"CEIL({self.process_expression(expr.value, config)})"
 
     def process_floor_expression(self, expr: FloorExpression, config: SqlToStringConfig) -> str:
-        return "FLOOR({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"FLOOR({self.process_expression(expr.value, config)})"
 
     def process_sqrt_expression(self, expr: SqrtExpression, config: SqlToStringConfig) -> str:
-        return "SQRT({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"SQRT({self.process_expression(expr.value, config)})"
 
     def process_cbrt_expression(self, expr: CbrtExpression, config: SqlToStringConfig) -> str:
-        return "CBRT({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"CBRT({self.process_expression(expr.value, config)})"
 
     def process_exp_expression(self, expr: ExpExpression, config: SqlToStringConfig) -> str:
-        return "EXP({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"EXP({self.process_expression(expr.value, config)})"
 
     def process_log_expression(self, expr: LogExpression, config: SqlToStringConfig) -> str:
-        return "LN({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"LN({self.process_expression(expr.value, config)})"
 
     def process_remainder_expression(self, expr: RemainderExpression, config: SqlToStringConfig) -> str:
-        return "MOD({first}, {second})".format(
-            first=self.process_expression(expr.first, config),
-            second=self.process_expression(expr.second, config)
-        )
+        return f"MOD({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
 
     def process_round_expression(self, expr: RoundExpression, config: SqlToStringConfig) -> str:
         if expr.second is None:
-            return "ROUND({first})".format(
-                first=self.process_expression(expr.first, config)
-            )
+            return f"ROUND({self.process_expression(expr.first, config)})"
         if not isinstance(expr.second, (IntegerLiteral, LongLiteral)):
             raise TypeError("Unexpected round argument type - " + str(type(expr.second)))
 
         if expr.second.value == 0:
-            return "ROUND({first})".format(
-                first=self.process_expression(expr.first, config)
-            )
+            return f"ROUND({self.process_expression(expr.first, config)})"
         else:
-            return "ROUND({first}, {second})".format(
-                first=self.process_expression(expr.first, config),
-                second=self.process_expression(expr.second, config)
-            )
+            return f"ROUND({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
 
     def process_sine_expression(self, expr: SineExpression, config: SqlToStringConfig) -> str:
-        return "SIN({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"SIN({self.process_expression(expr.value, config)})"
 
     def process_arc_sine_expression(self, expr: ArcSineExpression, config: SqlToStringConfig) -> str:
-        return "ASIN({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"ASIN({self.process_expression(expr.value, config)})"
 
     def process_cosine_expression(self, expr: CosineExpression, config: SqlToStringConfig) -> str:
-        return "COS({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"COS({self.process_expression(expr.value, config)})"
 
     def process_arc_cosine_expression(self, expr: ArcCosineExpression, config: SqlToStringConfig) -> str:
-        return "ACOS({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"ACOS({self.process_expression(expr.value, config)})"
 
     def process_tan_expression(self, expr: TanExpression, config: SqlToStringConfig) -> str:
-        return "TAN({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"TAN({self.process_expression(expr.value, config)})"
 
     def process_arc_tan_expression(self, expr: ArcTanExpression, config: SqlToStringConfig) -> str:
-        return "ATAN({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"ATAN({self.process_expression(expr.value, config)})"
 
     def process_arc_tan2_expression(self, expr: ArcTan2Expression, config: SqlToStringConfig) -> str:
-        return "ATAN2({first}, {second})".format(
-            first=self.process_expression(expr.first, config),
-            second=self.process_expression(expr.second, config)
-        )
+        return f"ATAN2({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
 
     def process_cot_expression(self, expr: CotExpression, config: SqlToStringConfig) -> str:
-        return "COT({value})".format(
-            value=self.process_expression(expr.value, config)
-        )
+        return f"COT({self.process_expression(expr.value, config)})"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
