@@ -72,4 +72,4 @@ class LegendApiTableSpecInputFrame(LegendApiNonExecutableInputTdsFrame):
         )
 
     def __str__(self) -> str:
-        return "LegendApiTableSpecInputFrame({qualified})".format(qualified=".".join(self.table.parts))
+        return f"LegendApiTableSpecInputFrame({'.'.join(self.table.parts)})"

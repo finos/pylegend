@@ -72,4 +72,4 @@ class PandasApiTableSpecInputFrame(PandasApiNonExecutableInputTdsFrame):
         )
 
     def __str__(self) -> str:
-        return "PandasApiTableSpecInputFrame({qualified})".format(qualified=".".join(self.table.parts))
+        return f"PandasApiTableSpecInputFrame({'.'.join(self.table.parts)})"

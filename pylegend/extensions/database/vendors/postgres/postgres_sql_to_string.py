@@ -34,11 +34,11 @@ def limit_processor(
     config: SqlToStringConfig
 ) -> str:
     sep0 = config.format.separator(0)
-    limit = "{sep0}LIMIT {limit}".format(sep0=sep0, limit=extension.process_expression(query.limit, config)) \
+    limit = f"{sep0}LIMIT {extension.process_expression(query.limit, config)}" \
         if query.limit else ""
-    offset = "{sep0}OFFSET {offset}".format(sep0=sep0, offset=extension.process_expression(query.offset, config)) \
+    offset = f"{sep0}OFFSET {extension.process_expression(query.offset, config)}" \
         if query.offset else ""
-    return "{limit}{offset}".format(limit=limit, offset=offset)
+    return f"{limit}{offset}"
 
 
 class PostgresSqlToStringDbExtension(SqlToStringDbExtension):

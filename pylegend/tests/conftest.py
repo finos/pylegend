@@ -88,7 +88,7 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
                 continue
         break
 
-    LOGGER.info("Legend Test Server started in {s} seconds....".format(s=(datetime.datetime.now() - start).seconds))
+    LOGGER.info(f"Legend Test Server started in {(datetime.datetime.now() - start).seconds} seconds....")
 
     yield {"engine_port": engine_port}
 
