@@ -61,3 +61,10 @@ class LegendClient(ServiceClient):
             stream=True
         ).iter_content(chunk_size=chunk_size)
         return ResponseReader(iter_content)
+
+    def __eq__(self, other: 'object') -> bool:
+        if self is other:
+            return True
+        if isinstance(other, LegendClient):
+            return self.get_host() == other.get_host() and self.get_port() == other.get_port()
+        return False

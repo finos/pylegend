@@ -98,3 +98,13 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             column_names_list: PyLegendList[str]
     ) -> "LegendApiTdsFrame":
         pass
+
+    @abstractmethod
+    def join_by_columns(
+            self,
+            other: "LegendApiTdsFrame",
+            self_columns: PyLegendList[str],
+            other_columns: PyLegendList[str],
+            join_type: str = 'LEFT_OUTER'
+    ) -> "LegendApiTdsFrame":
+        pass

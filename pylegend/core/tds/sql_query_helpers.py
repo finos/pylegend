@@ -33,6 +33,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 __all__: PyLegendSequence[str] = [
     "create_sub_query",
     "copy_query",
+    "extract_columns_for_subquery",
 ]
 
 
@@ -45,16 +46,7 @@ def create_sub_query(
     query = copy_query(base_query)
     table_alias = config.sql_to_string_generator().get_db_extension().quote_identifier(alias)
 
-    columns = []
-    for col in query.select.selectItems:
-        if not isinstance(col, SingleColumn):
-            raise ValueError("Subquery creation not supported for queries "
-                             "with columns other than SingleColumn")  # pragma: no cover
-        if col.alias is None:
-            raise ValueError("Subquery creation not supported for queries "
-                             "with SingleColumns with missing alias")  # pragma: no cover
-        columns.append(col.alias)
-
+    columns = extract_columns_for_subquery(query)
     outer_query_columns = columns_to_retain if columns_to_retain else columns
     unordered_select_items_with_index = [
         (
@@ -102,6 +94,19 @@ def copy_query(query: QuerySpecification) -> QuerySpecification:
         limit=query.limit,
         offset=query.offset
     )
+
+
+def extract_columns_for_subquery(query: QuerySpecification) -> PyLegendList[str]:
+    columns = []
+    for col in query.select.selectItems:
+        if not isinstance(col, SingleColumn):
+            raise ValueError("Subquery creation not supported for queries "
+                             "with columns other than SingleColumn")  # pragma: no cover
+        if col.alias is None:
+            raise ValueError("Subquery creation not supported for queries "
+                             "with SingleColumns with missing alias")  # pragma: no cover
+        columns.append(col.alias)
+    return columns
 
 
 def copy_select(select: Select) -> Select:

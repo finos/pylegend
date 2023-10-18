@@ -151,7 +151,7 @@ class TestFilterAppliedFunction:
                 (("root"."col2" LIKE \'A%\') AND ("root"."col1" > 10))'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
-    @pytest.mark.skip
+    @pytest.mark.skip(reason="Literal not supported ")
     def test_e2e_filter_function_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
         frame = frame.filter(lambda r: 1 == 2)  # type: ignore

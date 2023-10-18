@@ -176,6 +176,23 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         )
         return LegendApiAppliedFunctionTdsFrame(ExtendFunction(self, functions_list, column_names_list))
 
+    def join_by_columns(
+            self,
+            other: "LegendApiTdsFrame",
+            self_columns: PyLegendList[str],
+            other_columns: PyLegendList[str],
+            join_type: str = 'LEFT_OUTER'
+    ) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.join_by_columns_function import (
+            JoinByColumnsFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(
+            JoinByColumnsFunction(self, other, self_columns, other_columns, join_type)
+        )
+
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass

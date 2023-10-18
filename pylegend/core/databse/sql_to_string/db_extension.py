@@ -776,7 +776,7 @@ def join_processor(
         config: SqlToStringConfig
 ) -> str:
     left = extension.process_relation(join.left, config)
-    right = extension.process_relation(join.right, config)
+    right = extension.process_relation(join.right, config.push_indent())
     join_type = join.type_
     condition = "ON ({op})".format(op=extension.process_join_criteria(join.criteria, config)) if join.criteria else ""
     if join_type == JoinType.CROSS:
