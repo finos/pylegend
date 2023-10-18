@@ -97,31 +97,20 @@ class RenameColumnsFunction(LegendApiAppliedFunction):
         if len(self.__column_names) != len(self.__renamed_column_names):
             raise ValueError(
                 "column_names list and renamed_column_names list should have same size when renaming columns.\n"
-                "column_names list - (Count: {c1}) - {cols1}\n"
-                "renamed_column_names_list - (Count: {c2}) - {cols2}\n".format(
-                    c1=len(self.__column_names),
-                    cols1=self.__column_names,
-                    c2=len(self.__renamed_column_names),
-                    cols2=self.__renamed_column_names
-                )
+                f"column_names list - (Count: {len(self.__column_names)}) - {self.__column_names}\n"
+                f"renamed_column_names_list - (Count: {len(self.__renamed_column_names)}) - {self.__renamed_column_names}\n"
             )
 
         if len(self.__column_names) != len(set(self.__column_names)):
             raise ValueError(
                 "column_names list shouldn't have duplicates when renaming columns.\n"
-                "column_names list - (Count: {c1}) - {cols1}\n".format(
-                    c1=len(self.__column_names),
-                    cols1=self.__column_names
-                )
+                f"column_names list - (Count: {len(self.__column_names)}) - {self.__column_names}\n"
             )
 
         if len(self.__renamed_column_names) != len(set(self.__renamed_column_names)):
             raise ValueError(
                 "renamed_column_names_list list shouldn't have duplicates when renaming columns.\n"
-                "renamed_column_names_list - (Count: {c2}) - {cols2}\n".format(
-                    c2=len(self.__renamed_column_names),
-                    cols2=self.__renamed_column_names
-                )
+                f"renamed_column_names_list - (Count: {len(self.__renamed_column_names)}) - {self.__renamed_column_names}\n"
             )
 
         return True

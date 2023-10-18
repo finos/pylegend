@@ -73,5 +73,5 @@ class SliceFunction(LegendApiAppliedFunction):
             )
         if self.__end_row <= self.__start_row:
             raise ValueError("End row argument of slice function cannot be less than or equal to start row argument. "
-                             "Start row: {s}, End row: {e}".format(s=self.__start_row, e=self.__end_row))
+                             f"Start row: {self.__start_row}, End row: {self.__end_row}")
         return True

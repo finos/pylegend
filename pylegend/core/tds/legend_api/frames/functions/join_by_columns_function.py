@@ -180,31 +180,22 @@ class JoinByColumnsFunction(LegendApiAppliedFunction):
         for c in self.__column_names_self:
             if c not in left_cols:
                 raise ValueError(
-                    "Column - '{col}' in join columns list doesn't exist in the left frame being joined. "
-                    "Current left frame columns: {cols}".format(
-                        col=c,
-                        cols=left_cols
-                    )
+                    f"Column - '{c}' in join columns list doesn't exist in the left frame being joined. "
+                    f"Current left frame columns: {left_cols}"
                 )
 
         right_cols = [c.get_name() for c in self.__other_frame.columns()]
         for c in self.__column_names_other:
             if c not in right_cols:
                 raise ValueError(
-                    "Column - '{col}' in join columns list doesn't exist in the right frame being joined. "
-                    "Current right frame columns: {cols}".format(
-                        col=c,
-                        cols=right_cols
-                    )
+                    f"Column - '{c}' in join columns list doesn't exist in the right frame being joined. "
+                    f"Current right frame columns: {right_cols}"
                 )
 
         if len(self.__column_names_self) != len(self.__column_names_other):
             raise ValueError(
                 "For join_by_columns function, column lists should be of same size. "
-                "Passed column list sizes -  Left: {l}, Right: {r}".format(
-                    l=len(self.__column_names_self),
-                    r=len(self.__column_names_other)
-                )
+                f"Passed column list sizes -  Left: {len(self.__column_names_self)}, Right: {len(self.__column_names_other)}"
             )
 
         if len(self.__column_names_self) == 0:
@@ -217,10 +208,7 @@ class JoinByColumnsFunction(LegendApiAppliedFunction):
 
             if left_col.get_type() != right_col.get_type():
                 raise ValueError(
-                    "Trying to join on columns with different types -  Left Col: {l}, Right Col: {r}".format(
-                        l=left_col,
-                        r=right_col
-                    )
+                    f"Trying to join on columns with different types -  Left Col: {left_col}, Right Col: {right_col}"
                 )
 
             if x == y:
@@ -235,18 +223,12 @@ class JoinByColumnsFunction(LegendApiAppliedFunction):
         if len(final_cols) != len(set(final_cols)):
             raise ValueError(
                 "Found duplicate columns in joined frames (which are not join keys). "
-                "Columns -  Left Frame: {l}, Right Frame: {r}, Common Join Keys: {j}".format(
-                    l=left_cols,
-                    r=right_cols,
-                    j=common_join_cols
-                )
+                f"Columns -  Left Frame: {left_cols}, Right Frame: {right_cols}, Common Join Keys: {common_join_cols}"
             )
 
         if self.__join_type.lower() not in ('inner', 'left_outer', 'right_outer', 'leftouter', 'rightouter'):
             raise ValueError(
-                "Unknown join type - {j}. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER".format(
-                    j=self.__join_type
-                )
+                f"Unknown join type - {self.__join_type}. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER"
             )
 
         return True

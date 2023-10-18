@@ -124,10 +124,8 @@ class ExtendFunction(LegendApiAppliedFunction):
         if len(self.__functions_list) != len(self.__column_names_list):
             raise ValueError(
                 "For extend function, function list and column names list arguments should be of same size. "
-                "Passed param sizes -  Functions: {f}, Column names: {c}".format(
-                    f=len(self.__functions_list),
-                    c=len(self.__column_names_list)
-                )
+                f"Passed param sizes -  Functions: {len(self.__functions_list)}, "
+                f"Column names: {len(self.__column_names_list)}"
             )
 
         tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
@@ -136,37 +134,37 @@ class ExtendFunction(LegendApiAppliedFunction):
             copy = func  # For MyPy
             if not isinstance(copy, type(lambda x: 0)) or (copy.__code__.co_argcount != 1):
                 raise TypeError(
-                    "Error at extend function at index {i} (0-indexed). "
-                    "Each extend function should be a lambda which takes one argument (TDSRow)".format(i=index)
+                    f"Error at extend function at index {index} (0-indexed). "
+                    "Each extend function should be a lambda which takes one argument (TDSRow)"
                 )
             if not isinstance(name, str):
                 raise TypeError(
-                    "Error at extend column name at index {i} (0-indexed). "
-                    "Column name should be a string".format(i=index)
+                    f"Error at extend column name at index {index} (0-indexed). "
+                    "Column name should be a string"
                 )
 
             try:
                 result = func(tds_row)
             except Exception as e:
                 raise RuntimeError(
-                    "Extend function at index {i} (0-indexed) incompatible. "
-                    "Error occurred while evaluating. Message: {e}".format(i=index, e=str(e))
+                    f"Extend function at index {index} (0-indexed) incompatible. "
+                    f"Error occurred while evaluating. Message: {str(e)}"
                 ) from e
 
             if not isinstance(result, (int, float, bool, str, PyLegendPrimitive)):
                 raise ValueError(
-                    "Extend function at index {i} (0-indexed) incompatible. "
-                    "Returns non-primitive - {r}".format(i=index, r=str(type(result)))
+                    f"Extend function at index {index} (0-indexed) incompatible. "
+                    f"Returns non-primitive - {str(type(result))}"
                 )
 
             index += 1
 
         if len(self.__column_names_list) != len(set(self.__column_names_list)):
-            raise ValueError("Extend column names list has duplicates: {c}".format(c=self.__column_names_list))
+            raise ValueError(f"Extend column names list has duplicates: {self.__column_names_list}")
 
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
         for c in self.__column_names_list:
             if c in base_cols:
-                raise ValueError("Extend column name - '{c}' already exists in base frame".format(c=c))
+                raise ValueError(f"Extend column name - '{c}' already exists in base frame")
 
         return True
