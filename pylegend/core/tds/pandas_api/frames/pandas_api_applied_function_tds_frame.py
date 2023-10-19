@@ -33,27 +33,27 @@ class PandasApiAppliedFunction(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def name(cls) -> str:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def base_frame(self) -> PandasApiBaseTdsFrame:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def validate(self) -> bool:
-        pass
+        pass  # pragma: no cover
 
 
 class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):

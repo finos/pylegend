@@ -21,7 +21,7 @@ from pylegend._typing import (
 )
 from pylegend.core.request.response_reader import ResponseReader
 if TYPE_CHECKING:
-    from pylegend.core.tds.tds_frame import PyLegendTdsFrame
+    from pylegend.core.tds.tds_frame import PyLegendTdsFrame  # pragma: no cover
 
 __all__: PyLegendSequence[str] = [
     "ResultHandler"
@@ -34,4 +34,4 @@ class ResultHandler(PyLegendGeneric[R], metaclass=ABCMeta):
 
     @abstractmethod
     def handle_result(self, frame: "PyLegendTdsFrame", result: ResponseReader) -> R:
-        pass
+        pass  # pragma: no cover

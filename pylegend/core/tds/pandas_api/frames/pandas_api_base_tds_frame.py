@@ -76,11 +76,11 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
-        pass
+        pass  # pragma: no cover
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         query = self.to_sql_query_object(config)

@@ -18,7 +18,7 @@ from pylegend._typing import (
 )
 from pylegend.core.request.response_reader import ResponseReader
 if TYPE_CHECKING:
-    from pylegend.core.tds.tds_frame import PyLegendTdsFrame
+    from pylegend.core.tds.tds_frame import PyLegendTdsFrame  # pragma: no cover
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
 
 __all__: PyLegendSequence[str] = [

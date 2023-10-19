@@ -20,7 +20,7 @@ from pylegend._typing import (
     TYPE_CHECKING
 )
 if TYPE_CHECKING:
-    from pylegend.core.tds.tds_frame import PyLegendTdsFrame
+    from pylegend.core.tds.tds_frame import PyLegendTdsFrame  # pragma: no cover
 from pylegend.core.tds.result_handler.result_handler import ResultHandler
 from pylegend.core.request.response_reader import ResponseReader
 
