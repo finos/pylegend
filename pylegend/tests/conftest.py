@@ -42,6 +42,7 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
     relative_path = pylegend.tests.__file__.replace("\\", "/")[0:pylegend.tests.__file__.replace("\\", "/").rindex("/")]
 
     cmd = 'java -jar ' +\
+          '-Duser.timezone=UTC ' +\
           '-Ddw.server.connector.port=' + str(engine_port) + ' ' +\
           '-Ddw.metadataserver.alloy.port=' + str(metadata_port) + ' ' +\
           relative_path + '/resources/legend/server/pylegend-sql-server/target/' + \
@@ -59,7 +60,7 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
                              "pureModelContextData?clientVersion=v1_32_0"):
                 file = "org.finos.legend.pylegend_pylegend-test-models_0.0.1-SNAPSHOT.json"
             else:
-                raise RuntimeError("Unhandled metadata path: " + self.path)
+                raise RuntimeError("Unhandled metadata path: " + self.path)  # pragma: no cover
 
             with open(relative_path + "/resources/legend/metadata/" + file, "r") as f:
                 content = f.read()
@@ -82,13 +83,13 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
             requests.get("http://localhost:" + str(engine_port) + "/api/server/v1/info").raise_for_status()
         except Exception:
             if try_count == 15:
-                raise RuntimeError("Unable to start legend server for testing")
+                raise RuntimeError("Unable to start legend server for testing")  # pragma: no cover
             else:
                 time.sleep(4)
                 continue
         break
 
-    LOGGER.info(f"Legend Test Server started in {(datetime.datetime.now() - start).seconds} seconds....")
+    LOGGER.info(f"Legend Test Server started in {(datetime.datetime.now() - start).seconds} seconds ...")
 
     yield {"engine_port": engine_port}
 

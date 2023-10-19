@@ -14,7 +14,8 @@
 
 import pathlib
 import pandas as pd
-from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
+from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame, simple_trade_service_frame
+from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import PandasDfReadConfig
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -47,4 +48,81 @@ class TestToPandasDfResultHandler:
         ).astype({
             "Age": "Int64"
         })
+        pd.testing.assert_frame_equal(expected, df)
+
+    def test_to_pandas_df_result_handler_rows_per_batch_config(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
+            tmp_path: pathlib.Path
+    ) -> None:
+        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        df = frame.execute_frame_to_pandas_df(pandas_df_read_config=PandasDfReadConfig(rows_per_batch=1))
+
+        expected = pd.DataFrame(
+            columns=[
+                "First Name", "Last Name", "Age", "Firm/Legal Name"
+            ],
+            data=[
+                ["Peter", "Smith", 23, "Firm X"],
+                ["John", "Johnson", 22, "Firm X"],
+                ["John", "Hill", 12, "Firm X"],
+                ["Anthony", "Allen", 22, "Firm X"],
+                ["Fabrice", "Roberts", 34, "Firm A"],
+                ["Oliver", "Hill", 32, "Firm B"],
+                ["David", "Harris", 35, "Firm C"]
+            ]
+        ).astype({
+            "Age": "Int64"
+        })
+        pd.testing.assert_frame_equal(expected, df)
+
+    def test_to_pandas_df_result_handler_trade_service(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
+            tmp_path: pathlib.Path
+    ) -> None:
+        frame = simple_trade_service_frame(legend_test_server["engine_port"])
+        df = frame.take(4).execute_frame_to_pandas_df()
+
+        expected = pd.DataFrame(
+            columns=[
+                'Id',
+                'Date',
+                'Quantity',
+                'Settlement Date Time',
+                'Product/Name',
+                'Account/Name'
+            ],
+            data=[
+                [1,
+                 '2014-12-01',
+                 25.0,
+                 '2014-12-02T21:00:00.000000000+0000',
+                 'Firm X',
+                 'Account 1'],
+                [2,
+                 '2014-12-01',
+                 320.0,
+                 '2014-12-02T21:00:00.000000000+0000',
+                 'Firm X',
+                 'Account 2'],
+                [3,
+                 '2014-12-01',
+                 11.0,
+                 '2014-12-02T21:00:00.000000000+0000',
+                 'Firm A',
+                 'Account 1'],
+                [4,
+                 '2014-12-02',
+                 23.0,
+                 '2014-12-03T21:00:00.000000000+0000',
+                 'Firm A',
+                 'Account 2'],
+            ]
+        ).astype({
+            "Id": "Int64",
+            "Quantity": "Float64"
+        })
+        expected['Date'] = pd.to_datetime(expected['Date'])
+        expected['Settlement Date Time'] = pd.to_datetime(expected['Settlement Date Time'])
         pd.testing.assert_frame_equal(expected, df)

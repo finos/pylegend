@@ -38,6 +38,8 @@ from pylegend.core.sql.metamodel import (
 __all__: PyLegendSequence[str] = [
     "LegendApiLegendServiceFrame",
     "simple_person_service_frame",
+    "simple_trade_service_frame",
+    "simple_product_service_frame",
     "PandasApiLegendServiceFrame",
     "simple_person_service_frame_pandas_api",
 ]
@@ -115,6 +117,28 @@ def simple_person_service_frame(engine_port: int) -> LegendApiLegendServiceFrame
     return LegendApiLegendServiceFrame(
         legend_client=legend_client,
         pattern="/simplePersonService",
+        group_id="org.finos.legend.pylegend",
+        artifact_id="pylegend-test-models",
+        version="0.0.1-SNAPSHOT"
+    )
+
+
+def simple_trade_service_frame(engine_port: int) -> LegendApiLegendServiceFrame:
+    legend_client = LegendClient("localhost", engine_port, False)
+    return LegendApiLegendServiceFrame(
+        legend_client=legend_client,
+        pattern="/simpleTradeService",
+        group_id="org.finos.legend.pylegend",
+        artifact_id="pylegend-test-models",
+        version="0.0.1-SNAPSHOT"
+    )
+
+
+def simple_product_service_frame(engine_port: int) -> LegendApiLegendServiceFrame:
+    legend_client = LegendClient("localhost", engine_port, False)
+    return LegendApiLegendServiceFrame(
+        legend_client=legend_client,
+        pattern="/simpleProductService",
         group_id="org.finos.legend.pylegend",
         artifact_id="pylegend-test-models",
         version="0.0.1-SNAPSHOT"
