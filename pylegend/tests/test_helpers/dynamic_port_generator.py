@@ -26,7 +26,7 @@ def generate_dynamic_port() -> int:
         if _is_port_not_in_use(next_port):
             return next_port
 
-    raise RuntimeError("Unable to obtain a free port")
+    raise RuntimeError("Unable to obtain a free port")  # pragma: no cover
 
 
 def _is_port_not_in_use(port: int) -> bool:
@@ -34,5 +34,5 @@ def _is_port_not_in_use(port: int) -> bool:
         try:
             s.bind(("localhost", port))
             return True
-        except socket.error:
-            return False
+        except socket.error:  # pragma: no cover
+            return False  # pragma: no cover
