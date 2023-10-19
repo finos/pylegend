@@ -40,4 +40,4 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
                 PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
-        pass
+        pass  # pragma: no cover

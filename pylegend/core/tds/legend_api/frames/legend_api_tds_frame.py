@@ -38,31 +38,31 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
 
     @abstractmethod
     def head(self, count: int = 5) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def take(self, count: int = 5) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def limit(self, count: int = 5) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def drop(self, count: int = 5) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def slice(self, start_row: int, end_row_exclusive: int) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def distinct(self) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def restrict(self, column_name_list: PyLegendList[str]) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def sort(
@@ -70,11 +70,11 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             column_name_list: PyLegendList[str],
             direction_list: PyLegendOptional[PyLegendList[str]] = None
     ) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def concatenate(self, other: "LegendApiTdsFrame") -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def rename_columns(
@@ -82,14 +82,14 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             column_names: PyLegendList[str],
             renamed_column_names: PyLegendList[str]
     ) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def filter(
             self,
             filter_function: PyLegendCallable[[TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
     ) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def extend(
@@ -97,7 +97,7 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             functions_list: PyLegendList[PyLegendCallable[[TdsRow], PyLegendPrimitiveOrPythonPrimitive]],
             column_names_list: PyLegendList[str]
     ) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def join(
@@ -106,7 +106,7 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
             join_type: str = 'LEFT_OUTER'
     ) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def join_by_columns(
@@ -116,7 +116,7 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             other_columns: PyLegendList[str],
             join_type: str = 'LEFT_OUTER'
     ) -> "LegendApiTdsFrame":
-        pass
+        pass  # pragma: no cover
 
     def join_by_function(
             self,

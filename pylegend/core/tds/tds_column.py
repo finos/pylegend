@@ -40,15 +40,15 @@ class TdsColumn(metaclass=ABCMeta):
 
     @abstractmethod
     def get_type(self) -> str:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def copy(self) -> "TdsColumn":
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def copy_with_changed_name(self, new_name: str) -> "TdsColumn":
-        pass
+        pass  # pragma: no cover
 
     def __str__(self) -> str:
         return f"TdsColumn(Name: {self.get_name()}, Type: {self.get_type()})"

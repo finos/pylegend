@@ -14,7 +14,11 @@
 
 import pathlib
 import pandas as pd
-from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame, simple_trade_service_frame
+from pylegend.tests.test_helpers.legend_service_frame import (
+    simple_person_service_frame,
+    simple_trade_service_frame,
+    simple_product_service_frame,
+)
 from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import PandasDfReadConfig
 from pylegend._typing import (
     PyLegendDict,
@@ -125,4 +129,25 @@ class TestToPandasDfResultHandler:
         })
         expected['Date'] = pd.to_datetime(expected['Date'])
         expected['Settlement Date Time'] = pd.to_datetime(expected['Settlement Date Time'])
+        pd.testing.assert_frame_equal(expected, df)
+
+    def test_to_pandas_df_result_handler_product_service(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
+            tmp_path: pathlib.Path
+    ) -> None:
+        frame = simple_product_service_frame(legend_test_server["engine_port"])
+        df = frame.execute_frame_to_pandas_df(pandas_df_read_config=PandasDfReadConfig(rows_per_batch=1))
+
+        expected = pd.DataFrame(
+            columns=['Name', 'Synonyms/Name', 'Synonyms/Type'],
+            data=[
+                ['Firm X', 'CUSIP1', 'CUSIP'],
+                ['Firm X', 'ISIN1', 'ISIN'],
+                ['Firm A', 'CUSIP2', 'CUSIP'],
+                ['Firm A', 'ISIN2', 'ISIN'],
+                ['Firm C', 'CUSIP3', 'CUSIP'],
+                ['Firm C', 'ISIN3', 'ISIN'],
+                ['Firm D', None, None]]
+        )
         pd.testing.assert_frame_equal(expected, df)

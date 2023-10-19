@@ -63,11 +63,11 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
 
     @abstractmethod
     def columns(self) -> PyLegendSequence[TdsColumn]:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def execute_frame(
@@ -75,14 +75,14 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
             result_handler: ResultHandler[R],
             chunk_size: PyLegendOptional[int] = None
     ) -> R:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def execute_frame_to_string(
             self,
             chunk_size: PyLegendOptional[int] = None
     ) -> str:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def execute_frame_to_pandas_df(
@@ -90,4 +90,4 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
             chunk_size: PyLegendOptional[int] = None,
             pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
     ) -> pd.DataFrame:
-        pass
+        pass  # pragma: no cover

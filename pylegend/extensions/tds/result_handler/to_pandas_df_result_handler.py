@@ -98,7 +98,7 @@ class ToPandasDfResultHandler(ResultHandler[pd.DataFrame]):
         if cnt == 0 and len(all_values_list) == 0:
             return
         else:
-            raise RuntimeError("Unexpected state")
+            raise RuntimeError("Unexpected state")  # pragma: no cover
 
     @staticmethod
     def _create_df_from_list(all_values_list, frame):  # type: ignore
@@ -118,7 +118,7 @@ class ToPandasDfResultHandler(ResultHandler[pd.DataFrame]):
             elif column.get_type() in COLUMN_TYPE_DTYPE_MAP:
                 dtype = COLUMN_TYPE_DTYPE_MAP[column.get_type()]
             else:
-                raise RuntimeError(
+                raise RuntimeError(  # pragma: no cover
                     f"Cannot infer pandas column dtype for column '{column.get_name()}' with type '{column.get_type()}'"
                 )
         else:
