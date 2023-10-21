@@ -56,6 +56,8 @@ __all__: PyLegendSequence[str] = [
     "SumExpression",
     "StdDevSampleExpression",
     "StdDevPopulationExpression",
+    "VarianceSampleExpression",
+    "VariancePopulationExpression",
 ]
 
 
@@ -449,4 +451,26 @@ class StdDevPopulationExpression(Expression):
         value: "Expression",
     ) -> None:
         super().__init__(_type="stdDevPopulationExpression")
+        self.value = value
+
+
+class VarianceSampleExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="varianceSampleExpression")
+        self.value = value
+
+
+class VariancePopulationExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="variancePopulationExpression")
         self.value = value
