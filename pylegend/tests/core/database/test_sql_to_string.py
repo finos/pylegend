@@ -799,7 +799,7 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_top(query, config) == ""
 
         query.limit = IntegerLiteral(101)
-        assert extension.process_top(query, config) == " TOP 101"
+        assert extension.process_top(query, config) == ""
 
         query.offset = IntegerLiteral(202)
         assert extension.process_top(query, config) == ""
@@ -815,10 +815,10 @@ class TestSqlToStringDbExtensionProcessing:
         assert extension.process_limit(query, config) == ""
 
         query.limit = IntegerLiteral(101)
-        assert extension.process_limit(query, config) == ""
+        assert extension.process_limit(query, config) == " LIMIT 101"
 
         query.offset = IntegerLiteral(202)
-        assert extension.process_limit(query, config) == " LIMIT 202, 101"
+        assert extension.process_limit(query, config) == " LIMIT 101 OFFSET 202"
 
     def test_process_group_by(self) -> None:
         extension = SqlToStringDbExtension()
@@ -960,11 +960,11 @@ class TestSqlToStringDbExtensionProcessing:
         )
         assert extension.process_query_specification(query, config) == \
                'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
-               'WHERE (101 < 202) LIMIT 202, 101'
+               'WHERE (101 < 202) LIMIT 101 OFFSET 202'
 
         assert extension.process_query_specification(query, config, True) == \
                '( SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
-               'WHERE (101 < 202) LIMIT 202, 101 )'
+               'WHERE (101 < 202) LIMIT 101 OFFSET 202 )'
 
     def test_process_simple_query_specification_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -987,7 +987,8 @@ class TestSqlToStringDbExtensionProcessing:
                 test_db.test_schema.test_table AS "root"
             WHERE
                 (101 < 202)
-            LIMIT 202, 101"""
+            LIMIT 101
+            OFFSET 202"""
         assert extension.process_query_specification(query, config) == dedent(expected)
 
         expected = """\
@@ -998,7 +999,8 @@ class TestSqlToStringDbExtensionProcessing:
                     test_db.test_schema.test_table AS "root"
                 WHERE
                     (101 < 202)
-                LIMIT 202, 101
+                LIMIT 101
+                OFFSET 202
             )"""
         assert extension.process_query_specification(query, config, True) == dedent(expected)
 
@@ -1038,7 +1040,7 @@ class TestSqlToStringDbExtensionProcessing:
         query = Query(query_spec, None, [], None)
         assert extension.process_query(query, config) == \
                'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
-               'WHERE (101 < 202) LIMIT 202, 101'
+               'WHERE (101 < 202) LIMIT 101 OFFSET 202'
 
     def test_process_query_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -1062,7 +1064,8 @@ class TestSqlToStringDbExtensionProcessing:
                 test_db.test_schema.test_table AS "root"
             WHERE
                 (101 < 202)
-            LIMIT 202, 101"""
+            LIMIT 101
+            OFFSET 202"""
         assert extension.process_query(query, config) == dedent(expected)
 
     def test_process_union(self) -> None:
@@ -1094,18 +1097,18 @@ class TestSqlToStringDbExtensionProcessing:
         union1 = Union(rel1, rel2, True)
         assert extension.process_relation(union1, config) == \
                'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
-               'WHERE (101 < 202) LIMIT 202, 101 ' \
+               'WHERE (101 < 202) LIMIT 101 OFFSET 202 ' \
                'UNION ' \
                'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
-               'WHERE (101 < 202) LIMIT 303, 101'
+               'WHERE (101 < 202) LIMIT 101 OFFSET 303'
 
         union2 = Union(rel1, rel2, False)
         assert extension.process_relation(union2, config) == \
                'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
-               'WHERE (101 < 202) LIMIT 202, 101 ' \
+               'WHERE (101 < 202) LIMIT 101 OFFSET 202 ' \
                'UNION ALL ' \
                'SELECT DISTINCT "root".* FROM test_db.test_schema.test_table AS "root" ' \
-               'WHERE (101 < 202) LIMIT 303, 101'
+               'WHERE (101 < 202) LIMIT 101 OFFSET 303'
 
     def test_process_union_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -1141,7 +1144,8 @@ class TestSqlToStringDbExtensionProcessing:
                 test_db.test_schema.test_table AS "root"
             WHERE
                 (101 < 202)
-            LIMIT 202, 101
+            LIMIT 101
+            OFFSET 202
             UNION ALL
             SELECT DISTINCT
                 "root".*
@@ -1149,7 +1153,8 @@ class TestSqlToStringDbExtensionProcessing:
                 test_db.test_schema.test_table AS "root"
             WHERE
                 (101 < 202)
-            LIMIT 303, 101"""
+            LIMIT 101
+            OFFSET 303"""
         assert extension.process_relation(union, config) == dedent(expected)
 
         expected = """\
@@ -1160,7 +1165,8 @@ class TestSqlToStringDbExtensionProcessing:
                     test_db.test_schema.test_table AS "root"
                 WHERE
                     (101 < 202)
-                LIMIT 202, 101
+                LIMIT 101
+                OFFSET 202
                 UNION ALL
                 SELECT DISTINCT
                     "root".*
@@ -1168,7 +1174,8 @@ class TestSqlToStringDbExtensionProcessing:
                     test_db.test_schema.test_table AS "root"
                 WHERE
                     (101 < 202)
-                LIMIT 303, 101
+                LIMIT 101
+                OFFSET 303
             )"""
         assert extension.process_relation(union, config, True) == dedent(expected)
 
