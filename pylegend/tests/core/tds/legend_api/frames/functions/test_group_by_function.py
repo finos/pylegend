@@ -624,6 +624,35 @@ class TestGroupByAppliedFunction:
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_std_dev_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [
+                AggregateSpecification(
+                    lambda x: x["col1"],
+                    lambda y: y.std_dev(),  # type: ignore
+                    "Std Dev"
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Std Dev, Type: Number)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                STDDEV_SAMP("root".col1) AS "Std Dev"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_sql_gen_group_by_std_dev_population_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -1063,6 +1092,29 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Std Dev Sample, Type: Number)]"
         expected = {'columns': ['Product/Name', 'Std Dev Sample'],
+                    'rows': [{'values': [None, None]},
+                             {'values': ['Firm A', 10.535653752852738]},
+                             {'values': ['Firm C', 10.2810505299799]},
+                             {'values': ['Firm X', 208.59650045003153]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_std_dev_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
+            -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Quantity'],
+                    lambda y: y.std_dev(),  # type: ignore
+                    'Std Dev'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Std Dev, Type: Number)]"
+        expected = {'columns': ['Product/Name', 'Std Dev'],
                     'rows': [{'values': [None, None]},
                              {'values': ['Firm A', 10.535653752852738]},
                              {'values': ['Firm C', 10.2810505299799]},
