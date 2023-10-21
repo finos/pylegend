@@ -19,6 +19,8 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpression,
     PyLegendExpressionIntegerReturn,
+    PyLegendExpressionFloatReturn,
+    PyLegendExpressionNumberReturn,
 )
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -32,6 +34,7 @@ from pylegend.core.sql.metamodel import (
 
 __all__: PyLegendSequence[str] = [
     "PyLegendCountExpression",
+    "PyLegendAverageExpression",
 ]
 
 
@@ -57,4 +60,29 @@ class PyLegendCountExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
             self,
             operand,
             PyLegendCountExpression.__to_sql_func
+        )
+
+
+class PyLegendAverageExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["AVG"]),
+            arguments=[expression],
+            distinct=False,
+            filter_=None,
+            window=None
+        )
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendAverageExpression.__to_sql_func
         )

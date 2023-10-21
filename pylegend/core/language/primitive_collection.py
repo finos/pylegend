@@ -15,6 +15,7 @@
 from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendUnion,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language import (
@@ -25,7 +26,10 @@ from pylegend.core.language import (
     PyLegendBoolean,
     convert_literal_to_literal_expression,
 )
-from pylegend.core.language.operations.collection_operation_expressions import PyLegendCountExpression
+from pylegend.core.language.operations.collection_operation_expressions import (
+    PyLegendCountExpression,
+    PyLegendAverageExpression
+)
 
 
 __all__: PyLegendSequence[str] = [
@@ -53,29 +57,51 @@ class PyLegendPrimitiveCollection(metaclass=ABCMeta):
         return PyLegendInteger(PyLegendCountExpression(nested_expr))
 
 
-class PyLegendIntegerCollection(PyLegendPrimitiveCollection):
-    def __init__(self, nested: PyLegendPrimitiveOrPythonPrimitive) -> None:
-        super().__init__(nested)
-
-
-class PyLegendFloatCollection(PyLegendPrimitiveCollection):
-    def __init__(self, nested: PyLegendPrimitiveOrPythonPrimitive) -> None:
-        super().__init__(nested)
-
-
 class PyLegendNumberCollection(PyLegendPrimitiveCollection):
-    def __init__(self, nested: PyLegendPrimitiveOrPythonPrimitive) -> None:
+    __nested: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber]
+
+    def __init__(self, nested: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber]) -> None:
         super().__init__(nested)
+        self.__nested = nested
+
+    def average(self) -> "PyLegendFloat":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            else self.__nested.value()
+        )
+        return PyLegendFloat(PyLegendAverageExpression(nested_expr))  # type: ignore
+
+
+class PyLegendIntegerCollection(PyLegendNumberCollection):
+    __nested: PyLegendUnion[int, PyLegendInteger]
+
+    def __init__(self, nested: PyLegendUnion[int, PyLegendInteger]) -> None:
+        super().__init__(nested)
+        self.__nested = nested
+
+
+class PyLegendFloatCollection(PyLegendNumberCollection):
+    __nested: PyLegendUnion[float, PyLegendFloat]
+
+    def __init__(self, nested: PyLegendUnion[float, PyLegendFloat]) -> None:
+        super().__init__(nested)
+        self.__nested = nested
 
 
 class PyLegendStringCollection(PyLegendPrimitiveCollection):
-    def __init__(self, nested: PyLegendPrimitiveOrPythonPrimitive) -> None:
+    __nested: PyLegendUnion[str, PyLegendString]
+
+    def __init__(self, nested: PyLegendUnion[str, PyLegendString]) -> None:
         super().__init__(nested)
+        self.__nested = nested
 
 
 class PyLegendBooleanCollection(PyLegendPrimitiveCollection):
-    def __init__(self, nested: PyLegendPrimitiveOrPythonPrimitive) -> None:
+    __nested: PyLegendUnion[bool, PyLegendBoolean]
+
+    def __init__(self, nested: PyLegendUnion[bool, PyLegendBoolean]) -> None:
         super().__init__(nested)
+        self.__nested = nested
 
 
 def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> PyLegendPrimitiveCollection:
