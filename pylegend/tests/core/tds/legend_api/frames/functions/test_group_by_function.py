@@ -740,6 +740,35 @@ class TestGroupByAppliedFunction:
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_variance_population_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [
+                AggregateSpecification(
+                    lambda x: x["col1"],
+                    lambda y: y.variance_population(),  # type: ignore
+                    "Variance Population"
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Variance Population, Type: Number)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                VAR_POP("root".col1) AS "Variance Population"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
         frame = frame.group_by(
@@ -1246,5 +1275,28 @@ class TestGroupByAppliedFunction:
                              {'values': ['Firm A', 111.0]},
                              {'values': ['Firm C', 105.7]},
                              {'values': ['Firm X', 43512.5]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_variance_population_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
+            -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Quantity'],
+                    lambda y: y.variance_population(),  # type: ignore
+                    'Variance Population'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Variance Population, Type: Number)]"
+        expected = {'columns': ['Product/Name', 'Variance Population'],
+                    'rows': [{'values': [None, 0.0]},
+                             {'values': ['Firm A', 74.0]},
+                             {'values': ['Firm C', 84.56]},
+                             {'values': ['Firm X', 21756.25]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
