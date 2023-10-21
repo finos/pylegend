@@ -42,6 +42,7 @@ from pylegend.core.language.operations.collection_operation_expressions import (
     PyLegendStdDevSampleExpression,
     PyLegendStdDevPopulationExpression,
     PyLegendVarianceSampleExpression,
+    PyLegendVariancePopulationExpression,
 )
 
 
@@ -138,6 +139,13 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
 
     def variance(self) -> "PyLegendNumber":
         return self.variance_sample()
+
+    def variance_population(self) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            else self.__nested.value()
+        )
+        return PyLegendNumber(PyLegendVariancePopulationExpression(nested_expr))  # type: ignore
 
 
 class PyLegendIntegerCollection(PyLegendNumberCollection):
