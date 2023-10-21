@@ -42,6 +42,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberMaxExpression",
     "PyLegendNumberMinExpression",
     "PyLegendStdDevSampleExpression",
+    "PyLegendStdDevPopulationExpression",
 ]
 
 
@@ -267,4 +268,29 @@ class PyLegendStdDevSampleExpression(PyLegendUnaryExpression, PyLegendExpression
             self,
             operand,
             PyLegendStdDevSampleExpression.__to_sql_func
+        )
+
+
+class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["STDDEV_POP"]),
+            arguments=[expression],
+            distinct=False,
+            filter_=None,
+            window=None
+        )
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStdDevPopulationExpression.__to_sql_func
         )
