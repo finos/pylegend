@@ -15,10 +15,6 @@
 from pylegend.core.databse.sql_to_string import (
     SqlToStringGenerator,
     SqlToStringDbExtension,
-    SqlToStringConfig
-)
-from pylegend.core.sql.metamodel import (
-    QuerySpecification
 )
 from pylegend._typing import PyLegendSequence
 
@@ -28,25 +24,8 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-def limit_processor(
-    query: QuerySpecification,
-    extension: "SqlToStringDbExtension",
-    config: SqlToStringConfig
-) -> str:
-    sep0 = config.format.separator(0)
-    limit = f"{sep0}LIMIT {extension.process_expression(query.limit, config)}" \
-        if query.limit else ""
-    offset = f"{sep0}OFFSET {extension.process_expression(query.offset, config)}" \
-        if query.offset else ""
-    return f"{limit}{offset}"
-
-
 class PostgresSqlToStringDbExtension(SqlToStringDbExtension):
-    def process_top(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
-        return ""
-
-    def process_limit(self, query: QuerySpecification, config: SqlToStringConfig) -> str:
-        return limit_processor(query, self, config)
+    pass
 
 
 class PostgresSqlToStringGenerator(SqlToStringGenerator):

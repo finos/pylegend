@@ -145,10 +145,7 @@ def top_processor(
     extension: "SqlToStringDbExtension",
     config: SqlToStringConfig
 ) -> str:
-    if query.offset is None and query.limit is not None:
-        return " TOP " + extension.process_expression(query.limit, config)
-    else:
-        return ""
+    return ""
 
 
 def limit_processor(
@@ -156,13 +153,12 @@ def limit_processor(
     extension: "SqlToStringDbExtension",
     config: SqlToStringConfig
 ) -> str:
-    if query.offset is not None and query.limit is not None:
-        sep0 = config.format.separator(0)
-        offset = extension.process_expression(query.offset, config)
-        limit = extension.process_expression(query.limit, config)
-        return f"{sep0}LIMIT {offset}, {limit}"
-    else:
-        return ""
+    sep0 = config.format.separator(0)
+    limit = f"{sep0}LIMIT {extension.process_expression(query.limit, config)}" \
+        if query.limit else ""
+    offset = f"{sep0}OFFSET {extension.process_expression(query.offset, config)}" \
+        if query.offset else ""
+    return f"{limit}{offset}"
 
 
 def group_by_processor(
