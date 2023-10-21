@@ -58,6 +58,7 @@ __all__: PyLegendSequence[str] = [
     "StdDevPopulationExpression",
     "VarianceSampleExpression",
     "VariancePopulationExpression",
+    "JoinStringsExpression",
 ]
 
 
@@ -474,3 +475,17 @@ class VariancePopulationExpression(Expression):
     ) -> None:
         super().__init__(_type="variancePopulationExpression")
         self.value = value
+
+
+class JoinStringsExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression",
+    ) -> None:
+        super().__init__(_type="joinStringsExpression")
+        self.value = value
+        self.other = other

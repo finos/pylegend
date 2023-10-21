@@ -110,6 +110,7 @@ from pylegend.core.sql.metamodel_extension import (
     StdDevPopulationExpression,
     VarianceSampleExpression,
     VariancePopulationExpression,
+    JoinStringsExpression,
 )
 
 
@@ -388,6 +389,8 @@ def expression_processor(
         return extension.process_variance_sample_expression(expression, config)
     elif isinstance(expression, VariancePopulationExpression):
         return extension.process_variance_population_expression(expression, config)
+    elif isinstance(expression, JoinStringsExpression):
+        return extension.process_join_strings_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1036,6 +1039,9 @@ class SqlToStringDbExtension:
 
     def process_variance_population_expression(self, expr: VariancePopulationExpression, config: SqlToStringConfig) -> str:
         return f"VAR_POP({self.process_expression(expr.value, config)})"
+
+    def process_join_strings_expression(self, expr: JoinStringsExpression, config: SqlToStringConfig) -> str:
+        return f"STRING_AGG({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
