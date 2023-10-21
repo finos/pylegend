@@ -44,6 +44,7 @@ from pylegend.core.language.operations.collection_operation_expressions import (
     PyLegendVarianceSampleExpression,
     PyLegendVariancePopulationExpression,
     PyLegendStringMaxExpression,
+    PyLegendStringMinExpression,
 )
 
 
@@ -220,6 +221,13 @@ class PyLegendStringCollection(PyLegendPrimitiveCollection):
             else self.__nested.value()
         )
         return PyLegendString(PyLegendStringMaxExpression(nested_expr))  # type: ignore
+
+    def min(self) -> "PyLegendString":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, str)
+            else self.__nested.value()
+        )
+        return PyLegendString(PyLegendStringMinExpression(nested_expr))  # type: ignore
 
 
 class PyLegendBooleanCollection(PyLegendPrimitiveCollection):
