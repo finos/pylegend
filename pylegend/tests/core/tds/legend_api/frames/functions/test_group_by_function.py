@@ -769,6 +769,29 @@ class TestGroupByAppliedFunction:
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_string_max_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.number_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col1"],
+            [AggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: String)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                MAX("root".col2) AS "Maximum"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
         frame = frame.group_by(
@@ -1298,5 +1321,27 @@ class TestGroupByAppliedFunction:
                              {'values': ['Firm A', 74.0]},
                              {'values': ['Firm C', 84.56]},
                              {'values': ['Firm X', 21756.25]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_string_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Firm/Legal Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['First Name'],
+                    lambda y: y.max(),  # type: ignore
+                    'Max Str'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Firm/Legal Name, Type: String), TdsColumn(Name: Max Str, Type: String)]"
+        expected = {'columns': ['Firm/Legal Name', 'Max Str'],
+                    'rows': [{'values': ['Firm A', 'Fabrice']},
+                             {'values': ['Firm B', 'Oliver']},
+                             {'values': ['Firm C', 'David']},
+                             {'values': ['Firm X', 'Peter']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
