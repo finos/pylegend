@@ -97,6 +97,14 @@ from pylegend.core.sql.metamodel_extension import (
     ArcTanExpression,
     ArcTan2Expression,
     CotExpression,
+    CountExpression,
+    DistinctCountExpression,
+    AverageExpression,
+    MaxExpression,
+    MinExpression,
+    SumExpression,
+    StdDevSampleExpression,
+    StdDevPopulationExpression,
 )
 
 
@@ -1374,3 +1382,67 @@ class TestSqlToStringDbExtensionProcessing:
 
         expr = CotExpression(IntegerLiteral(10))
         assert extension.process_expression(expr, config) == "COT(10)"
+
+    def test_process_count_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = CountExpression(ref)
+        assert extension.process_expression(expr, config) == "COUNT(test_db.test_schema.test_table.test_col)"
+
+    def test_process_distinct_count_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = DistinctCountExpression(ref)
+        assert extension.process_expression(expr, config) == "COUNT(DISTINCT test_db.test_schema.test_table.test_col)"
+
+    def test_process_average_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = AverageExpression(ref)
+        assert extension.process_expression(expr, config) == "AVG(test_db.test_schema.test_table.test_col)"
+
+    def test_process_max_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = MaxExpression(ref)
+        assert extension.process_expression(expr, config) == "MAX(test_db.test_schema.test_table.test_col)"
+
+    def test_process_min_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = MinExpression(ref)
+        assert extension.process_expression(expr, config) == "MIN(test_db.test_schema.test_table.test_col)"
+
+    def test_process_sum_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = SumExpression(ref)
+        assert extension.process_expression(expr, config) == "SUM(test_db.test_schema.test_table.test_col)"
+
+    def test_process_std_dev_sample_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = StdDevSampleExpression(ref)
+        assert extension.process_expression(expr, config) == "STDDEV_SAMP(test_db.test_schema.test_table.test_col)"
+
+    def test_process_std_dev_population_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = StdDevPopulationExpression(ref)
+        assert extension.process_expression(expr, config) == "STDDEV_POP(test_db.test_schema.test_table.test_col)"
