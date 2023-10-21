@@ -100,6 +100,13 @@ from pylegend.core.sql.metamodel_extension import (
     ArcTanExpression,
     ArcTan2Expression,
     CotExpression,
+    CountExpression,
+    AverageExpression,
+    MaxExpression,
+    MinExpression,
+    SumExpression,
+    StdDevSampleExpression,
+    StdDevPopulationExpression,
 )
 
 
@@ -358,6 +365,20 @@ def expression_processor(
         return extension.process_arc_tan2_expression(expression, config)
     elif isinstance(expression, CotExpression):
         return extension.process_cot_expression(expression, config)
+    elif isinstance(expression, CountExpression):
+        return extension.process_count_expression(expression, config)
+    elif isinstance(expression, AverageExpression):
+        return extension.process_average_expression(expression, config)
+    elif isinstance(expression, MaxExpression):
+        return extension.process_max_expression(expression, config)
+    elif isinstance(expression, MinExpression):
+        return extension.process_min_expression(expression, config)
+    elif isinstance(expression, SumExpression):
+        return extension.process_sum_expression(expression, config)
+    elif isinstance(expression, StdDevSampleExpression):
+        return extension.process_std_dev_sample_expression(expression, config)
+    elif isinstance(expression, StdDevPopulationExpression):
+        return extension.process_std_dev_population_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -976,6 +997,27 @@ class SqlToStringDbExtension:
 
     def process_cot_expression(self, expr: CotExpression, config: SqlToStringConfig) -> str:
         return f"COT({self.process_expression(expr.value, config)})"
+
+    def process_count_expression(self, expr: CountExpression, config: SqlToStringConfig) -> str:
+        return f"COUNT({self.process_expression(expr.value, config)})"
+
+    def process_average_expression(self, expr: AverageExpression, config: SqlToStringConfig) -> str:
+        return f"AVG({self.process_expression(expr.value, config)})"
+
+    def process_max_expression(self, expr: MaxExpression, config: SqlToStringConfig) -> str:
+        return f"MAX({self.process_expression(expr.value, config)})"
+
+    def process_min_expression(self, expr: MinExpression, config: SqlToStringConfig) -> str:
+        return f"MIN({self.process_expression(expr.value, config)})"
+
+    def process_sum_expression(self, expr: SumExpression, config: SqlToStringConfig) -> str:
+        return f"SUM({self.process_expression(expr.value, config)})"
+
+    def process_std_dev_sample_expression(self, expr: StdDevSampleExpression, config: SqlToStringConfig) -> str:
+        return f"STDDEV_SAMP({self.process_expression(expr.value, config)})"
+
+    def process_std_dev_population_expression(self, expr: StdDevPopulationExpression, config: SqlToStringConfig) -> str:
+        return f"STDDEV_POP({self.process_expression(expr.value, config)})"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

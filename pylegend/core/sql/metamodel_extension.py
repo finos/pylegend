@@ -48,6 +48,13 @@ __all__: PyLegendSequence[str] = [
     "ArcTanExpression",
     "ArcTan2Expression",
     "CotExpression",
+    "CountExpression",
+    "AverageExpression",
+    "MaxExpression",
+    "MinExpression",
+    "SumExpression",
+    "StdDevSampleExpression",
+    "StdDevPopulationExpression",
 ]
 
 
@@ -353,4 +360,81 @@ class CotExpression(Expression):
         value: "Expression",
     ) -> None:
         super().__init__(_type="cotExpression")
+        self.value = value
+
+
+class CountExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="countExpression")
+        self.value = value
+
+
+class AverageExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="averageExpression")
+        self.value = value
+
+
+class MaxExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="maxExpression")
+        self.value = value
+
+
+class MinExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="minExpression")
+        self.value = value
+
+
+class SumExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="sumExpression")
+        self.value = value
+
+
+class StdDevSampleExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="stdDevSampleExpression")
+        self.value = value
+
+
+class StdDevPopulationExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="stdDevPopulationExpression")
         self.value = value

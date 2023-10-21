@@ -27,8 +27,15 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
-    FunctionCall,
-    QualifiedName,
+)
+from pylegend.core.sql.metamodel_extension import (
+    CountExpression,
+    AverageExpression,
+    MaxExpression,
+    MinExpression,
+    SumExpression,
+    StdDevSampleExpression,
+    StdDevPopulationExpression,
 )
 
 
@@ -57,13 +64,7 @@ class PyLegendCountExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["COUNT"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return CountExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpression) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -82,13 +83,7 @@ class PyLegendAverageExpression(PyLegendUnaryExpression, PyLegendExpressionFloat
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["AVG"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return AverageExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -107,13 +102,7 @@ class PyLegendIntegerMaxExpression(PyLegendUnaryExpression, PyLegendExpressionIn
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["MAX"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return MaxExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -132,13 +121,7 @@ class PyLegendIntegerMinExpression(PyLegendUnaryExpression, PyLegendExpressionIn
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["MIN"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return MinExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -157,13 +140,7 @@ class PyLegendIntegerSumExpression(PyLegendUnaryExpression, PyLegendExpressionIn
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["SUM"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return SumExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -182,13 +159,7 @@ class PyLegendFloatMaxExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["MAX"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return MaxExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -207,13 +178,7 @@ class PyLegendFloatMinExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["MIN"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return MinExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -232,13 +197,7 @@ class PyLegendFloatSumExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["SUM"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return SumExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -257,13 +216,7 @@ class PyLegendNumberMaxExpression(PyLegendUnaryExpression, PyLegendExpressionNum
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["MAX"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return MaxExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -282,13 +235,7 @@ class PyLegendNumberMinExpression(PyLegendUnaryExpression, PyLegendExpressionNum
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["MIN"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return MinExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -307,13 +254,7 @@ class PyLegendNumberSumExpression(PyLegendUnaryExpression, PyLegendExpressionNum
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["SUM"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return SumExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -332,13 +273,7 @@ class PyLegendStdDevSampleExpression(PyLegendUnaryExpression, PyLegendExpression
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["STDDEV_SAMP"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return StdDevSampleExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -357,13 +292,7 @@ class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpres
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["STDDEV_POP"]),
-            arguments=[expression],
-            distinct=False,
-            filter_=None,
-            window=None
-        )
+        return StdDevPopulationExpression(value=expression)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)

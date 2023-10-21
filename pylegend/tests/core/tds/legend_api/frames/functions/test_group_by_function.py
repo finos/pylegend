@@ -157,9 +157,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
-                COUNT(
-                    "root".col2
-                ) AS "Count"
+                COUNT("root".col2) AS "Count"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -183,9 +181,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
-                COUNT(
-                    "root"."col2"
-                ) AS "Count"
+                COUNT("root"."col2") AS "Count"
             FROM
                 (
                     SELECT DISTINCT
@@ -215,9 +211,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
-                COUNT(
-                    "root"."col2"
-                ) AS "Count"
+                COUNT("root"."col2") AS "Count"
             FROM
                 (
                     SELECT
@@ -252,16 +246,12 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
-                COUNT(
-                    "root"."Count1"
-                ) AS "Count2"
+                COUNT("root"."Count1") AS "Count2"
             FROM
                 (
                     SELECT
                         "root"."col1" AS "col1",
-                        COUNT(
-                            "root"."col2"
-                        ) AS "Count1"
+                        COUNT("root"."col2") AS "Count1"
                     FROM
                         (
                             SELECT
@@ -298,12 +288,8 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
-                COUNT(
-                    "root".col2
-                ) AS "Count1",
-                COUNT(
-                    "root".col2
-                ) AS "Count2"
+                COUNT("root".col2) AS "Count1",
+                COUNT("root".col2) AS "Count2"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -326,9 +312,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                AVG(
-                    "root".col1
-                ) AS "Average"
+                AVG("root".col1) AS "Average"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -351,9 +335,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                AVG(
-                    ("root".col1 + 20)
-                ) AS "Average"
+                AVG(("root".col1 + 20)) AS "Average"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -376,9 +358,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                (AVG(
-                    "root".col1
-                ) + 2) AS "Average"
+                (AVG("root".col1) + 2) AS "Average"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -401,9 +381,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                MAX(
-                    "root".col1
-                ) AS "Maximum"
+                MAX("root".col1) AS "Maximum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -426,9 +404,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                MIN(
-                    "root".col1
-                ) AS "Minimum"
+                MIN("root".col1) AS "Minimum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -451,9 +427,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                SUM(
-                    "root".col1
-                ) AS "Sum"
+                SUM("root".col1) AS "Sum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -476,9 +450,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                MAX(
-                    "root".col1
-                ) AS "Maximum"
+                MAX("root".col1) AS "Maximum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -501,9 +473,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                MIN(
-                    "root".col1
-                ) AS "Minimum"
+                MIN("root".col1) AS "Minimum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -526,9 +496,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                SUM(
-                    "root".col1
-                ) AS "Sum"
+                SUM("root".col1) AS "Sum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -551,9 +519,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                MAX(
-                    "root".col1
-                ) AS "Maximum"
+                MAX("root".col1) AS "Maximum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -576,9 +542,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                MIN(
-                    "root".col1
-                ) AS "Minimum"
+                MIN("root".col1) AS "Minimum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -601,9 +565,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                SUM(
-                    "root".col1
-                ) AS "Sum"
+                SUM("root".col1) AS "Sum"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -632,9 +594,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                STDDEV_SAMP(
-                    "root".col1
-                ) AS "Std Dev Sample"
+                STDDEV_SAMP("root".col1) AS "Std Dev Sample"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -663,9 +623,7 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root".col2 AS "col2",
-                STDDEV_POP(
-                    "root".col1
-                ) AS "Std Dev Population"
+                STDDEV_POP("root".col1) AS "Std Dev Population"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
