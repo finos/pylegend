@@ -37,6 +37,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendAverageExpression",
     "PyLegendIntegerMaxExpression",
     "PyLegendFloatMaxExpression",
+    "PyLegendNumberMaxExpression",
 ]
 
 
@@ -137,4 +138,29 @@ class PyLegendFloatMaxExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
             self,
             operand,
             PyLegendFloatMaxExpression.__to_sql_func
+        )
+
+
+class PyLegendNumberMaxExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["MAX"]),
+            arguments=[expression],
+            distinct=False,
+            filter_=None,
+            window=None
+        )
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberMaxExpression.__to_sql_func
         )
