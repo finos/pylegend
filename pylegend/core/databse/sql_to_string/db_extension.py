@@ -101,6 +101,7 @@ from pylegend.core.sql.metamodel_extension import (
     ArcTan2Expression,
     CotExpression,
     CountExpression,
+    DistinctCountExpression,
     AverageExpression,
     MaxExpression,
     MinExpression,
@@ -367,6 +368,8 @@ def expression_processor(
         return extension.process_cot_expression(expression, config)
     elif isinstance(expression, CountExpression):
         return extension.process_count_expression(expression, config)
+    elif isinstance(expression, DistinctCountExpression):
+        return extension.process_distinct_count_expression(expression, config)
     elif isinstance(expression, AverageExpression):
         return extension.process_average_expression(expression, config)
     elif isinstance(expression, MaxExpression):
@@ -1000,6 +1003,9 @@ class SqlToStringDbExtension:
 
     def process_count_expression(self, expr: CountExpression, config: SqlToStringConfig) -> str:
         return f"COUNT({self.process_expression(expr.value, config)})"
+
+    def process_distinct_count_expression(self, expr: DistinctCountExpression, config: SqlToStringConfig) -> str:
+        return f"COUNT(DISTINCT {self.process_expression(expr.value, config)})"
 
     def process_average_expression(self, expr: AverageExpression, config: SqlToStringConfig) -> str:
         return f"AVG({self.process_expression(expr.value, config)})"
