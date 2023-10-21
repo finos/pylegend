@@ -61,6 +61,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendVarianceSampleExpression",
     "PyLegendVariancePopulationExpression",
     "PyLegendStringMaxExpression",
+    "PyLegendStringMinExpression",
 ]
 
 
@@ -384,4 +385,23 @@ class PyLegendStringMaxExpression(PyLegendUnaryExpression, PyLegendExpressionStr
             self,
             operand,
             PyLegendStringMaxExpression.__to_sql_func
+        )
+
+
+class PyLegendStringMinExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MinExpression(value=expression)
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringMinExpression.__to_sql_func
         )
