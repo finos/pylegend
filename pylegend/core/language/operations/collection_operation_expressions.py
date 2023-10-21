@@ -21,6 +21,7 @@ from pylegend.core.language.expression import (
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
     PyLegendExpressionNumberReturn,
+    PyLegendExpressionStringReturn,
 )
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -59,6 +60,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStdDevPopulationExpression",
     "PyLegendVarianceSampleExpression",
     "PyLegendVariancePopulationExpression",
+    "PyLegendStringMaxExpression",
 ]
 
 
@@ -363,4 +365,23 @@ class PyLegendVariancePopulationExpression(PyLegendUnaryExpression, PyLegendExpr
             self,
             operand,
             PyLegendVariancePopulationExpression.__to_sql_func
+        )
+
+
+class PyLegendStringMaxExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MaxExpression(value=expression)
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringMaxExpression.__to_sql_func
         )
