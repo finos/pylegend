@@ -24,6 +24,7 @@ from pylegend.core.language.expression import (
     PyLegendExpressionStringReturn,
 )
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
+from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -40,6 +41,7 @@ from pylegend.core.sql.metamodel_extension import (
     StdDevPopulationExpression,
     VarianceSampleExpression,
     VariancePopulationExpression,
+    JoinStringsExpression,
 )
 
 
@@ -62,6 +64,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendVariancePopulationExpression",
     "PyLegendStringMaxExpression",
     "PyLegendStringMinExpression",
+    "PyLegendJoinStringsExpression",
 ]
 
 
@@ -404,4 +407,25 @@ class PyLegendStringMinExpression(PyLegendUnaryExpression, PyLegendExpressionStr
             self,
             operand,
             PyLegendStringMinExpression.__to_sql_func
+        )
+
+
+class PyLegendJoinStringsExpression(PyLegendBinaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return JoinStringsExpression(value=expression1, other=expression2)
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendJoinStringsExpression.__to_sql_func
         )
