@@ -40,6 +40,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendIntegerSumExpression",
     "PyLegendFloatMaxExpression",
     "PyLegendFloatMinExpression",
+    "PyLegendFloatSumExpression",
     "PyLegendNumberMaxExpression",
     "PyLegendNumberMinExpression",
     "PyLegendStdDevSampleExpression",
@@ -219,6 +220,31 @@ class PyLegendFloatMinExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
             self,
             operand,
             PyLegendFloatMinExpression.__to_sql_func
+        )
+
+
+class PyLegendFloatSumExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["SUM"]),
+            arguments=[expression],
+            distinct=False,
+            filter_=None,
+            window=None
+        )
+
+    def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendFloatSumExpression.__to_sql_func
         )
 
 
