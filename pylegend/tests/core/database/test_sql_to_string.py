@@ -105,6 +105,8 @@ from pylegend.core.sql.metamodel_extension import (
     SumExpression,
     StdDevSampleExpression,
     StdDevPopulationExpression,
+    VarianceSampleExpression,
+    VariancePopulationExpression,
 )
 
 
@@ -1446,3 +1448,19 @@ class TestSqlToStringDbExtensionProcessing:
         ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
         expr = StdDevPopulationExpression(ref)
         assert extension.process_expression(expr, config) == "STDDEV_POP(test_db.test_schema.test_table.test_col)"
+
+    def test_process_variance_sample_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = VarianceSampleExpression(ref)
+        assert extension.process_expression(expr, config) == "VAR_SAMP(test_db.test_schema.test_table.test_col)"
+
+    def test_process_variance_population_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = VariancePopulationExpression(ref)
+        assert extension.process_expression(expr, config) == "VAR_POP(test_db.test_schema.test_table.test_col)"
