@@ -30,6 +30,7 @@ from pylegend.core.language.operations.collection_operation_expressions import (
     PyLegendCountExpression,
     PyLegendAverageExpression,
     PyLegendIntegerMaxExpression,
+    PyLegendIntegerMinExpression,
     PyLegendFloatMaxExpression,
     PyLegendNumberMaxExpression,
 )
@@ -95,6 +96,13 @@ class PyLegendIntegerCollection(PyLegendNumberCollection):
             else self.__nested.value()
         )
         return PyLegendInteger(PyLegendIntegerMaxExpression(nested_expr))  # type: ignore
+
+    def min(self) -> "PyLegendInteger":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, int)
+            else self.__nested.value()
+        )
+        return PyLegendInteger(PyLegendIntegerMinExpression(nested_expr))  # type: ignore
 
 
 class PyLegendFloatCollection(PyLegendNumberCollection):
