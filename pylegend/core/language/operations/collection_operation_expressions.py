@@ -37,6 +37,7 @@ from pylegend.core.sql.metamodel_extension import (
     SumExpression,
     StdDevSampleExpression,
     StdDevPopulationExpression,
+    VarianceSampleExpression,
 )
 
 
@@ -55,6 +56,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberSumExpression",
     "PyLegendStdDevSampleExpression",
     "PyLegendStdDevPopulationExpression",
+    "PyLegendVarianceSampleExpression",
 ]
 
 
@@ -321,4 +323,23 @@ class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpres
             self,
             operand,
             PyLegendStdDevPopulationExpression.__to_sql_func
+        )
+
+
+class PyLegendVarianceSampleExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return VarianceSampleExpression(value=expression)
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendVarianceSampleExpression.__to_sql_func
         )
