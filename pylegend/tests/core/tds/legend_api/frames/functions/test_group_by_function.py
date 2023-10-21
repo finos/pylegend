@@ -19,7 +19,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
-from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame
+from pylegend.tests.test_helpers.legend_service_frame import simple_person_service_frame, simple_trade_service_frame
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -310,6 +310,81 @@ class TestGroupByAppliedFunction:
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_average_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [AggregateSpecification(lambda x: x["col1"], lambda y: y.average(), "Average")]  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Float)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                AVG(
+                    "root".col1
+                ) AS "Average"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_sql_gen_group_by_average_agg_pre_op(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [AggregateSpecification(lambda x: x["col1"] + 20, lambda y: y.average(), "Average")]  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Float)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                AVG(
+                    ("root".col1 + 20)
+                ) AS "Average"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
+    def test_sql_gen_group_by_average_agg_post_op(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [AggregateSpecification(lambda x: x["col1"], lambda y: y.average() + 2, "Average")]  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Number)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                (AVG(
+                    "root".col1
+                ) + 2) AS "Average"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
         frame = frame.group_by(
@@ -419,5 +494,71 @@ class TestGroupByAppliedFunction:
                              {'values': ['Firm B', 1, 1]},
                              {'values': ['Firm C', 1, 1]},
                              {'values': ['Firm X', 4, 4]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_average_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Quantity'],
+                    lambda y: y.average(),  # type: ignore
+                    'Average Qty'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Average Qty, Type: Float)]"
+        expected = {'columns': ['Product/Name', 'Average Qty'],
+                    'rows': [{'values': [None, 5]},
+                             {'values': ['Firm A', 22]},
+                             {'values': ['Firm C', 35.2]},
+                             {'values': ['Firm X', 172.5]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_average_agg_pre_op(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Quantity'] + 20,  # type: ignore
+                    lambda y: y.average(),  # type: ignore
+                    'Average Qty'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Average Qty, Type: Float)]"
+        expected = {'columns': ['Product/Name', 'Average Qty'],
+                    'rows': [{'values': [None, 25]},
+                             {'values': ['Firm A', 42]},
+                             {'values': ['Firm C', 55.2]},
+                             {'values': ['Firm X', 192.5]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_average_agg_post_op(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Quantity'],
+                    lambda y: y.average() + 2,  # type: ignore
+                    'Average Qty'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Average Qty, Type: Number)]"
+        expected = {'columns': ['Product/Name', 'Average Qty'],
+                    'rows': [{'values': [None, 7]},
+                             {'values': ['Firm A', 24]},
+                             {'values': ['Firm C', 37.2]},
+                             {'values': ['Firm X', 174.5]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
