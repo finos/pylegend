@@ -107,6 +107,7 @@ from pylegend.core.sql.metamodel_extension import (
     StdDevPopulationExpression,
     VarianceSampleExpression,
     VariancePopulationExpression,
+    JoinStringsExpression,
 )
 
 
@@ -1464,3 +1465,11 @@ class TestSqlToStringDbExtensionProcessing:
         ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
         expr = VariancePopulationExpression(ref)
         assert extension.process_expression(expr, config) == "VAR_POP(test_db.test_schema.test_table.test_col)"
+
+    def test_process_join_strings_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
+        expr = JoinStringsExpression(ref, StringLiteral(" ", quoted=False))
+        assert extension.process_expression(expr, config) == "STRING_AGG(test_db.test_schema.test_table.test_col, ' ')"
