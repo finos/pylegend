@@ -42,6 +42,7 @@ from pylegend.core.language import (
     TdsRow,
     PyLegendBoolean,
     PyLegendPrimitiveOrPythonPrimitive,
+    AggregateSpecification,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -206,6 +207,21 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
         )
         return LegendApiAppliedFunctionTdsFrame(
             JoinByColumnsFunction(self, other, self_columns, other_columns, join_type)
+        )
+
+    def group_by(
+            self,
+            grouping_columns: PyLegendList[str],
+            aggregations: PyLegendList[AggregateSpecification],
+    ) -> "LegendApiTdsFrame":
+        from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
+            LegendApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legend_api.frames.functions.group_by_function import (
+            GroupByFunction
+        )
+        return LegendApiAppliedFunctionTdsFrame(
+            GroupByFunction(self, grouping_columns, aggregations)
         )
 
     @abstractmethod

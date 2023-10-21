@@ -36,6 +36,7 @@ from pylegend.core.language.literal_expressions import (
     PyLegendStringLiteralExpression,
     PyLegendIntegerLiteralExpression,
     PyLegendFloatLiteralExpression,
+    convert_literal_to_literal_expression,
 )
 from pylegend.core.language.column_expressions import (
     PyLegendColumnExpression,
@@ -46,6 +47,16 @@ from pylegend.core.language.column_expressions import (
     PyLegendFloatColumnExpression,
 )
 from pylegend.core.language.tds_row import TdsRow
+from pylegend.core.language.aggregate_specification import AggregateSpecification
+from pylegend.core.language.primitive_collection import (
+    PyLegendPrimitiveCollection,
+    PyLegendIntegerCollection,
+    PyLegendFloatCollection,
+    PyLegendNumberCollection,
+    PyLegendStringCollection,
+    PyLegendBooleanCollection,
+    create_primitive_collection,
+)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
@@ -73,6 +84,16 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLiteralExpression",
     "PyLegendIntegerLiteralExpression",
     "PyLegendFloatLiteralExpression",
+    "convert_literal_to_literal_expression",
 
     "TdsRow",
+    "AggregateSpecification",
+
+    "PyLegendPrimitiveCollection",
+    "PyLegendIntegerCollection",
+    "PyLegendFloatCollection",
+    "PyLegendNumberCollection",
+    "PyLegendStringCollection",
+    "PyLegendBooleanCollection",
+    "create_primitive_collection",
 ]
