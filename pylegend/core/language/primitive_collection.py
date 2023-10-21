@@ -118,6 +118,9 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
         )
         return PyLegendNumber(PyLegendStdDevSampleExpression(nested_expr))  # type: ignore
 
+    def std_dev(self) -> "PyLegendNumber":
+        return self.std_dev_sample()
+
     def std_dev_population(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
