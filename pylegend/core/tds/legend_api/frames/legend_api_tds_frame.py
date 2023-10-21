@@ -27,6 +27,7 @@ from pylegend.core.language import (
     TdsRow,
     PyLegendBoolean,
     PyLegendPrimitiveOrPythonPrimitive,
+    AggregateSpecification,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -125,3 +126,11 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
             join_type: str = 'LEFT_OUTER'
     ) -> "LegendApiTdsFrame":
         return self.join(other, join_condition, join_type)
+
+    @abstractmethod
+    def group_by(
+            self,
+            grouping_columns: PyLegendList[str],
+            aggregations: PyLegendList[AggregateSpecification],
+    ) -> "LegendApiTdsFrame":
+        pass  # pragma: no cover

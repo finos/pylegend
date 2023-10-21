@@ -23,23 +23,16 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
 )
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.language import (
     TdsRow,
     PyLegendPrimitive,
     PyLegendPrimitiveOrPythonPrimitive,
-    PyLegendBoolean,
-    PyLegendString,
-    PyLegendNumber,
-    PyLegendInteger,
-    PyLegendFloat,
-    PyLegendBooleanLiteralExpression,
-    PyLegendIntegerLiteralExpression,
-    PyLegendFloatLiteralExpression,
-    PyLegendStringLiteralExpression,
+    convert_literal_to_literal_expression,
 )
+from pylegend.core.tds.legend_api.frames.functions.function_helpers import tds_column_for_primitive
 
 __all__: PyLegendSequence[str] = [
     "ExtendFunction"
@@ -78,15 +71,15 @@ class ExtendFunction(LegendApiAppliedFunction):
         tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
         for (func, name) in zip(self.__functions_list, self.__column_names_list):
             col_expr = func(tds_row)
-            if isinstance(col_expr, bool):
-                col_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(col_expr))
-            elif isinstance(col_expr, int):
-                col_expr = PyLegendInteger(PyLegendIntegerLiteralExpression(col_expr))
-            elif isinstance(col_expr, float):
-                col_expr = PyLegendFloat(PyLegendFloatLiteralExpression(col_expr))
-            elif isinstance(col_expr, str):
-                col_expr = PyLegendString(PyLegendStringLiteralExpression(col_expr))
-            col_sql_expr = col_expr.to_sql_expression({"frame": new_query}, config)
+
+            if isinstance(col_expr, (bool, int, float, str)):
+                col_sql_expr = convert_literal_to_literal_expression(col_expr).to_sql_expression(
+                    {"frame": new_query},
+                    config
+                )
+            else:
+                col_sql_expr = col_expr.to_sql_expression({"frame": new_query}, config)
+
             new_query.select.selectItems.append(
                 SingleColumn(alias=db_extension.quote_identifier(name), expression=col_sql_expr)
             )
@@ -105,18 +98,7 @@ class ExtendFunction(LegendApiAppliedFunction):
         tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
         for (func, name) in zip(self.__functions_list, self.__column_names_list):
             result = func(tds_row)
-            if isinstance(result, (bool, PyLegendBoolean)):
-                new_columns.append(PrimitiveTdsColumn.boolean_column(name))
-            elif isinstance(result, (str, PyLegendString)):
-                new_columns.append(PrimitiveTdsColumn.string_column(name))
-            elif isinstance(result, (int, PyLegendInteger)):
-                new_columns.append(PrimitiveTdsColumn.integer_column(name))
-            elif isinstance(result, (float, PyLegendFloat)):
-                new_columns.append(PrimitiveTdsColumn.float_column(name))
-            elif isinstance(result, PyLegendNumber):
-                new_columns.append(PrimitiveTdsColumn.number_column(name))
-            else:
-                raise RuntimeError("Unhandled type: " + str(type(result)))
+            new_columns.append(tds_column_for_primitive(name, result))
 
         return new_columns
 
