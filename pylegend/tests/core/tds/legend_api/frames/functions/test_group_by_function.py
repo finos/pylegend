@@ -510,6 +510,31 @@ class TestGroupByAppliedFunction:
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_number_min_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.number_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [AggregateSpecification(lambda x: x["col1"], lambda y: y.min(), "Minimum")]  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Minimum, Type: Number)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                MIN(
+                    "root".col1
+                ) AS "Minimum"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
         frame = frame.group_by(
@@ -796,5 +821,27 @@ class TestGroupByAppliedFunction:
                              {'values': ['Firm A', 34.0]},
                              {'values': ['Firm C', 47.0]},
                              {'values': ['Firm X', 322.0]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_number_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Quantity'] + 2,  # type: ignore
+                    lambda y: y.min(),  # type: ignore
+                    'Min Qty'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Min Qty, Type: Number)]"
+        expected = {'columns': ['Product/Name', 'Min Qty'],
+                    'rows': [{'values': [None, 7.0]},
+                             {'values': ['Firm A', 13.0]},
+                             {'values': ['Firm C', 24.0]},
+                             {'values': ['Firm X', 27.0]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
