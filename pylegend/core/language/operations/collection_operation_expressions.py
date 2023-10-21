@@ -30,6 +30,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.sql.metamodel_extension import (
     CountExpression,
+    DistinctCountExpression,
     AverageExpression,
     MaxExpression,
     MinExpression,
@@ -41,6 +42,7 @@ from pylegend.core.sql.metamodel_extension import (
 
 __all__: PyLegendSequence[str] = [
     "PyLegendCountExpression",
+    "PyLegendDistinctCountExpression",
     "PyLegendAverageExpression",
     "PyLegendIntegerMaxExpression",
     "PyLegendIntegerMinExpression",
@@ -72,6 +74,25 @@ class PyLegendCountExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
             self,
             operand,
             PyLegendCountExpression.__to_sql_func
+        )
+
+
+class PyLegendDistinctCountExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DistinctCountExpression(value=expression)
+
+    def __init__(self, operand: PyLegendExpression) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDistinctCountExpression.__to_sql_func
         )
 
 

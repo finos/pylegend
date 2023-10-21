@@ -28,6 +28,7 @@ from pylegend.core.language import (
 )
 from pylegend.core.language.operations.collection_operation_expressions import (
     PyLegendCountExpression,
+    PyLegendDistinctCountExpression,
     PyLegendAverageExpression,
     PyLegendIntegerMaxExpression,
     PyLegendIntegerMinExpression,
@@ -66,6 +67,13 @@ class PyLegendPrimitiveCollection(metaclass=ABCMeta):
             else self.__nested.value()
         )
         return PyLegendInteger(PyLegendCountExpression(nested_expr))
+
+    def distinct_count(self) -> "PyLegendInteger":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (bool, int, float, str))
+            else self.__nested.value()
+        )
+        return PyLegendInteger(PyLegendDistinctCountExpression(nested_expr))
 
 
 class PyLegendNumberCollection(PyLegendPrimitiveCollection):

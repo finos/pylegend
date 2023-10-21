@@ -49,6 +49,7 @@ __all__: PyLegendSequence[str] = [
     "ArcTan2Expression",
     "CotExpression",
     "CountExpression",
+    "DistinctCountExpression",
     "AverageExpression",
     "MaxExpression",
     "MinExpression",
@@ -371,6 +372,17 @@ class CountExpression(Expression):
         value: "Expression",
     ) -> None:
         super().__init__(_type="countExpression")
+        self.value = value
+
+
+class DistinctCountExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="distinctCountExpression")
         self.value = value
 
 

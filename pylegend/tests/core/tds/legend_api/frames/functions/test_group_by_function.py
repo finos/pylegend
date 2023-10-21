@@ -296,6 +296,29 @@ class TestGroupByAppliedFunction:
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_distinct_count_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [AggregateSpecification(lambda x: x["col1"], lambda y: y.distinct_count(), "Cnt")]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Cnt, Type: Integer)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                COUNT(DISTINCT "root".col1) AS "Cnt"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_sql_gen_group_by_average_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -739,6 +762,23 @@ class TestGroupByAppliedFunction:
                              {'values': ['Firm B', 1, 1]},
                              {'values': ['Firm C', 1, 1]},
                              {'values': ['Firm X', 4, 4]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_distinct_count_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame = frame.take(5)
+        frame = frame.group_by(
+            ["Firm/Legal Name"],
+            [
+                AggregateSpecification(lambda x: x['First Name'], lambda y: y.distinct_count(), 'Employee Count')
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Firm/Legal Name, Type: String), TdsColumn(Name: Employee Count, Type: Integer)]"
+        expected = {'columns': ['Firm/Legal Name', 'Employee Count'],
+                    'rows': [{'values': ['Firm A', 1]},
+                             {'values': ['Firm X', 3]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
