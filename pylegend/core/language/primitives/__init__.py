@@ -22,6 +22,9 @@ from pylegend.core.language.primitives.string import PyLegendString
 from pylegend.core.language.primitives.number import PyLegendNumber
 from pylegend.core.language.primitives.integer import PyLegendInteger
 from pylegend.core.language.primitives.float import PyLegendFloat
+from pylegend.core.language.primitives.date import PyLegendDate
+from pylegend.core.language.primitives.datetime import PyLegendDateTime
+from pylegend.core.language.primitives.strictdate import PyLegendStrictDate
 
 
 __all__: PyLegendSequence[str] = [
@@ -32,4 +35,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumber",
     "PyLegendInteger",
     "PyLegendFloat",
+    "PyLegendDate",
+    "PyLegendDateTime",
+    "PyLegendStrictDate",
 ]
