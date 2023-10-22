@@ -884,6 +884,29 @@ class TestGroupByAppliedFunction:
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_date_max_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.number_column("col1"),
+            PrimitiveTdsColumn.date_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col1"],
+            [AggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: Date)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                MAX("root".col2) AS "Maximum"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
         frame = frame.group_by(
@@ -1523,5 +1546,27 @@ class TestGroupByAppliedFunction:
                              {'values': ['Firm A', '2014-12-01']},
                              {'values': ['Firm C', '2014-12-03']},
                              {'values': ['Firm X', '2014-12-01']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_date_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Settlement Date Time'],
+                    lambda y: y.max(),  # type: ignore
+                    'Max Date Time'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Max Date Time, Type: Date)]"
+        expected = {'columns': ['Product/Name', 'Max Date Time'],
+                    'rows': [{'values': [None, None]},
+                             {'values': ['Firm A', '2014-12-03T21:00:00.000000000+0000']},
+                             {'values': ['Firm C', '2014-12-05T21:00:00.000000000+0000']},
+                             {'values': ['Firm X', '2014-12-02T21:00:00.000000000+0000']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
