@@ -23,6 +23,9 @@ from pylegend.core.language import (
     PyLegendNumber,
     PyLegendInteger,
     PyLegendFloat,
+    PyLegendDate,
+    PyLegendDateTime,
+    PyLegendStrictDate,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -41,5 +44,11 @@ def tds_column_for_primitive(name: str, result: PyLegendPrimitiveOrPythonPrimiti
         return PrimitiveTdsColumn.float_column(name)
     elif isinstance(result, PyLegendNumber):
         return PrimitiveTdsColumn.number_column(name)
+    elif isinstance(result, PyLegendDateTime):
+        return PrimitiveTdsColumn.datetime_column(name)
+    elif isinstance(result, PyLegendStrictDate):
+        return PrimitiveTdsColumn.strictdate_column(name)
+    elif isinstance(result, PyLegendDate):
+        return PrimitiveTdsColumn.date_column(name)
     else:
         raise RuntimeError("Unhandled type: " + str(type(result)))  # pragma: no cover
