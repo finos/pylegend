@@ -22,6 +22,7 @@ from pylegend.core.language.expression import (
     PyLegendExpressionFloatReturn,
     PyLegendExpressionNumberReturn,
     PyLegendExpressionStringReturn,
+    PyLegendExpressionStrictDateReturn,
 )
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.operations.binary_expression import PyLegendBinaryExpression
@@ -65,6 +66,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringMaxExpression",
     "PyLegendStringMinExpression",
     "PyLegendJoinStringsExpression",
+    "PyLegendStrictDateMaxExpression",
 ]
 
 
@@ -428,4 +430,23 @@ class PyLegendJoinStringsExpression(PyLegendBinaryExpression, PyLegendExpression
             operand1,
             operand2,
             PyLegendJoinStringsExpression.__to_sql_func
+        )
+
+
+class PyLegendStrictDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressionStrictDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MaxExpression(value=expression)
+
+    def __init__(self, operand: PyLegendExpressionStrictDateReturn) -> None:
+        PyLegendExpressionStrictDateReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStrictDateMaxExpression.__to_sql_func
         )

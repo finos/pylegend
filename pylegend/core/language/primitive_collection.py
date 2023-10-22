@@ -25,6 +25,9 @@ from pylegend.core.language import (
     PyLegendNumber,
     PyLegendString,
     PyLegendBoolean,
+    PyLegendDate,
+    PyLegendDateTime,
+    PyLegendStrictDate,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.operations.collection_operation_expressions import (
@@ -47,6 +50,7 @@ from pylegend.core.language.operations.collection_operation_expressions import (
     PyLegendStringMaxExpression,
     PyLegendStringMinExpression,
     PyLegendJoinStringsExpression,
+    PyLegendStrictDateMaxExpression,
 )
 
 
@@ -57,6 +61,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberCollection",
     "PyLegendStringCollection",
     "PyLegendBooleanCollection",
+    "PyLegendDateCollection",
+    "PyLegendDateTimeCollection",
+    "PyLegendStrictDateCollection",
     "create_primitive_collection"
 ]
 
@@ -248,6 +255,37 @@ class PyLegendBooleanCollection(PyLegendPrimitiveCollection):
         self.__nested = nested
 
 
+class PyLegendDateCollection(PyLegendPrimitiveCollection):
+    __nested: PyLegendUnion[date, datetime, PyLegendDate]
+
+    def __init__(self, nested: PyLegendUnion[date, datetime, PyLegendDate]) -> None:
+        super().__init__(nested)
+        self.__nested = nested
+
+
+class PyLegendDateTimeCollection(PyLegendDateCollection):
+    __nested: PyLegendUnion[datetime, PyLegendDateTime]
+
+    def __init__(self, nested: PyLegendUnion[datetime, PyLegendDateTime]) -> None:
+        super().__init__(nested)
+        self.__nested = nested
+
+
+class PyLegendStrictDateCollection(PyLegendDateCollection):
+    __nested: PyLegendUnion[date, PyLegendStrictDate]
+
+    def __init__(self, nested: PyLegendUnion[date, PyLegendStrictDate]) -> None:
+        super().__init__(nested)
+        self.__nested = nested
+
+    def max(self) -> "PyLegendStrictDate":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, date)
+            else self.__nested.value()
+        )
+        return PyLegendStrictDate(PyLegendStrictDateMaxExpression(nested_expr))  # type: ignore
+
+
 def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> PyLegendPrimitiveCollection:
     if isinstance(nested, (int, PyLegendInteger)):
         return PyLegendIntegerCollection(nested)
@@ -263,5 +301,14 @@ def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> P
 
     if isinstance(nested, (bool, PyLegendBoolean)):
         return PyLegendBooleanCollection(nested)
+
+    if isinstance(nested, (datetime, PyLegendDateTime)):
+        return PyLegendDateTimeCollection(nested)
+
+    if isinstance(nested, (date, PyLegendStrictDate)):
+        return PyLegendStrictDateCollection(nested)
+
+    if isinstance(nested, PyLegendDate):
+        return PyLegendDateCollection(nested)
 
     raise RuntimeError(f"Not supported type - {type(nested)}")  # pragma: no cover
