@@ -103,6 +103,18 @@ class PrimitiveTdsColumn(TdsColumn):
     def number_column(cls, name: str) -> "PrimitiveTdsColumn":
         return PrimitiveTdsColumn(name, PrimitiveType.Number)
 
+    @classmethod
+    def date_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Date)
+
+    @classmethod
+    def datetime_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.DateTime)
+
+    @classmethod
+    def strictdate_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.StrictDate)
+
 
 class EnumTdsColumn(TdsColumn):
     __enum_type: str

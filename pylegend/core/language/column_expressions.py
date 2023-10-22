@@ -25,6 +25,9 @@ from pylegend.core.language.expression import (
     PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDateReturn,
+    PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionStrictDateReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -41,6 +44,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberColumnExpression",
     "PyLegendIntegerColumnExpression",
     "PyLegendFloatColumnExpression",
+    "PyLegendDateColumnExpression",
+    "PyLegendDateTimeColumnExpression",
+    "PyLegendStrictDateColumnExpression",
 ]
 
 
@@ -94,6 +100,24 @@ class PyLegendIntegerColumnExpression(PyLegendNumberColumnExpression, PyLegendEx
 
 
 class PyLegendFloatColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionFloatReturn):
+
+    def __init__(self, frame_name: str, column: str) -> None:
+        super().__init__(frame_name=frame_name, column=column)
+
+
+class PyLegendDateColumnExpression(PyLegendColumnExpression, PyLegendExpressionDateReturn):
+
+    def __init__(self, frame_name: str, column: str) -> None:
+        super().__init__(frame_name=frame_name, column=column)
+
+
+class PyLegendDateTimeColumnExpression(PyLegendDateColumnExpression, PyLegendExpressionDateTimeReturn):
+
+    def __init__(self, frame_name: str, column: str) -> None:
+        super().__init__(frame_name=frame_name, column=column)
+
+
+class PyLegendStrictDateColumnExpression(PyLegendDateColumnExpression, PyLegendExpressionStrictDateReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)

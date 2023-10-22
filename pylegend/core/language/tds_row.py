@@ -24,12 +24,18 @@ from pylegend.core.language import (
     PyLegendNumberColumnExpression,
     PyLegendIntegerColumnExpression,
     PyLegendFloatColumnExpression,
+    PyLegendDateColumnExpression,
+    PyLegendDateTimeColumnExpression,
+    PyLegendStrictDateColumnExpression,
     PyLegendPrimitive,
     PyLegendBoolean,
     PyLegendString,
     PyLegendNumber,
     PyLegendInteger,
     PyLegendFloat,
+    PyLegendDate,
+    PyLegendDateTime,
+    PyLegendStrictDate,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -95,6 +101,36 @@ class TdsRow:
             )
         return PyLegendFloat(col_expr)
 
+    def get_date(self, column: str) -> PyLegendDate:
+        col_expr = self.__get_col(column)
+        allowed_types = (
+            PyLegendDateColumnExpression, PyLegendDateTimeColumnExpression, PyLegendStrictDateColumnExpression
+        )
+        if not isinstance(col_expr, allowed_types):
+            raise RuntimeError(
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_date method is not valid on this column."
+            )
+        return PyLegendDate(col_expr)
+
+    def get_datetime(self, column: str) -> PyLegendDateTime:
+        col_expr = self.__get_col(column)
+        if not isinstance(col_expr, PyLegendDateTimeColumnExpression):
+            raise RuntimeError(
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_datetime method is not valid on this column."
+            )
+        return PyLegendDateTime(col_expr)
+
+    def get_strictdate(self, column: str) -> PyLegendStrictDate:
+        col_expr = self.__get_col(column)
+        if not isinstance(col_expr, PyLegendStrictDateColumnExpression):
+            raise RuntimeError(
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_strictdate method is not valid on this column."
+            )
+        return PyLegendStrictDate(col_expr)
+
     def __getitem__(self, item: str) -> PyLegendPrimitive:
         if not isinstance(item, str):
             raise TypeError("Column indexing on a TDSRow should be with column name (string). Got - " + str(type(item)))
@@ -111,6 +147,12 @@ class TdsRow:
             return PyLegendFloat(col_expr)
         if isinstance(col_expr, PyLegendNumberColumnExpression):
             return PyLegendNumber(col_expr)
+        if isinstance(col_expr, PyLegendDateTimeColumnExpression):
+            return PyLegendDateTime(col_expr)
+        if isinstance(col_expr, PyLegendStrictDateColumnExpression):
+            return PyLegendStrictDate(col_expr)
+        if isinstance(col_expr, PyLegendDateColumnExpression):
+            return PyLegendDate(col_expr)
 
         raise RuntimeError(f"Column expression for '{item}' of type {type(col_expr)} not supported yet")
 
@@ -128,6 +170,12 @@ class TdsRow:
                         return PyLegendIntegerColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "Float":
                         return PyLegendFloatColumnExpression(self.__frame_name, column)
+                    if base_col.get_type() == "Date":
+                        return PyLegendDateColumnExpression(self.__frame_name, column)
+                    if base_col.get_type() == "DateTime":
+                        return PyLegendDateTimeColumnExpression(self.__frame_name, column)
+                    if base_col.get_type() == "StrictDate":
+                        return PyLegendStrictDateColumnExpression(self.__frame_name, column)
 
                 raise RuntimeError(f"Column '{column}' of type {base_col.get_type()} not supported yet")
 
