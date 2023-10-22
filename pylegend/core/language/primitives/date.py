@@ -1,0 +1,85 @@
+# Copyright 2023 Goldman Sachs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from datetime import date, datetime
+from pylegend._typing import (
+    PyLegendSequence,
+    PyLegendDict,
+    PyLegendUnion,
+    TYPE_CHECKING,
+)
+from pylegend.core.language.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.expression import (
+    PyLegendExpression,
+    PyLegendExpressionDateReturn,
+)
+from pylegend.core.language.literal_expressions import (
+    PyLegendDateTimeLiteralExpression,
+    PyLegendStrictDateLiteralExpression,
+)
+from pylegend.core.sql.metamodel import (
+    Expression,
+    QuerySpecification
+)
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
+if TYPE_CHECKING:
+    from pylegend.core.language.primitives.datetime import PyLegendDateTime
+    from pylegend.core.language.primitives.strictdate import PyLegendStrictDate
+
+
+__all__: PyLegendSequence[str] = [
+    "PyLegendDate"
+]
+
+
+class PyLegendDate(PyLegendPrimitive):
+    __value: PyLegendExpressionDateReturn
+
+    def __init__(
+            self,
+            value: PyLegendExpressionDateReturn
+    ) -> None:
+        self.__value = value
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
+
+    def value(self) -> PyLegendExpression:
+        return self.__value
+
+    @staticmethod
+    def __convert_to_date_expr(
+            val: PyLegendUnion[date, datetime, "PyLegendDateTime", "PyLegendStrictDate", "PyLegendDate"]
+    ) -> PyLegendExpressionDateReturn:
+        if isinstance(val, datetime):
+            return PyLegendDateTimeLiteralExpression(val)
+        if isinstance(val, date):
+            return PyLegendStrictDateLiteralExpression(val)
+        return val.__value
+
+    @staticmethod
+    def validate_param_to_be_date(
+            param: PyLegendUnion[date, datetime, "PyLegendDateTime", "PyLegendStrictDate", "PyLegendDate"],
+            desc: str
+    ) -> None:
+        from pylegend.core.language.primitives.datetime import PyLegendDateTime
+        from pylegend.core.language.primitives.strictdate import PyLegendStrictDate
+        if not isinstance(param, (date, datetime, PyLegendDateTime, PyLegendStrictDate, PyLegendDate)):
+            raise TypeError(desc + " should be a datetime.date/datetime.datetime or a Date expression"
+                                   " (PyLegendDateTime/PyLegendStrictDate/PyLegendDate)."
+                                   " Got value " + str(param) + " of type: " + str(type(param)))

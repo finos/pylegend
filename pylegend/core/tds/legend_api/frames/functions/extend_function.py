@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import date, datetime
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
@@ -72,7 +73,7 @@ class ExtendFunction(LegendApiAppliedFunction):
         for (func, name) in zip(self.__functions_list, self.__column_names_list):
             col_expr = func(tds_row)
 
-            if isinstance(col_expr, (bool, int, float, str)):
+            if isinstance(col_expr, (bool, int, float, str, date, datetime)):
                 col_sql_expr = convert_literal_to_literal_expression(col_expr).to_sql_expression(
                     {"frame": new_query},
                     config
