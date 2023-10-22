@@ -52,6 +52,7 @@ from pylegend.core.language.operations.collection_operation_expressions import (
     PyLegendJoinStringsExpression,
     PyLegendStrictDateMaxExpression,
     PyLegendStrictDateMinExpression,
+    PyLegendDateMaxExpression,
 )
 
 
@@ -262,6 +263,13 @@ class PyLegendDateCollection(PyLegendPrimitiveCollection):
     def __init__(self, nested: PyLegendUnion[date, datetime, PyLegendDate]) -> None:
         super().__init__(nested)
         self.__nested = nested
+
+    def max(self) -> "PyLegendDate":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (date, datetime))
+            else self.__nested.value()
+        )
+        return PyLegendDate(PyLegendDateMaxExpression(nested_expr))  # type: ignore
 
 
 class PyLegendDateTimeCollection(PyLegendDateCollection):
