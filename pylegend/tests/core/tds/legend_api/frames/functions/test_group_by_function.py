@@ -907,6 +907,29 @@ class TestGroupByAppliedFunction:
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
+    def test_sql_gen_group_by_date_min_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.number_column("col1"),
+            PrimitiveTdsColumn.date_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col1"],
+            [AggregateSpecification(lambda x: x["col2"], lambda y: y.min(), "Minimum")]  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Minimum, Type: Date)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                MIN("root".col2) AS "Minimum"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
         frame = frame.group_by(
@@ -1567,6 +1590,28 @@ class TestGroupByAppliedFunction:
                     'rows': [{'values': [None, None]},
                              {'values': ['Firm A', '2014-12-03T21:00:00.000000000+0000']},
                              {'values': ['Firm C', '2014-12-05T21:00:00.000000000+0000']},
+                             {'values': ['Firm X', '2014-12-02T21:00:00.000000000+0000']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_group_by_date_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame = frame.group_by(
+            ["Product/Name"],
+            [
+                AggregateSpecification(
+                    lambda x: x['Settlement Date Time'],
+                    lambda y: y.min(),  # type: ignore
+                    'Min Date Time'
+                )
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               "[TdsColumn(Name: Product/Name, Type: String), TdsColumn(Name: Min Date Time, Type: Date)]"
+        expected = {'columns': ['Product/Name', 'Min Date Time'],
+                    'rows': [{'values': [None, None]},
+                             {'values': ['Firm A', '2014-12-02T21:00:00.000000000+0000']},
+                             {'values': ['Firm C', '2014-12-04T15:22:23.123456789+0000']},
                              {'values': ['Firm X', '2014-12-02T21:00:00.000000000+0000']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
