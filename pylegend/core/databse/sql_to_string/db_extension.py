@@ -111,6 +111,10 @@ from pylegend.core.sql.metamodel_extension import (
     VarianceSampleExpression,
     VariancePopulationExpression,
     JoinStringsExpression,
+    FirstDayOfYearExpression,
+    FirstDayOfQuarterExpression,
+    FirstDayOfMonthExpression,
+    FirstDayOfWeekExpression,
 )
 
 
@@ -391,6 +395,14 @@ def expression_processor(
         return extension.process_variance_population_expression(expression, config)
     elif isinstance(expression, JoinStringsExpression):
         return extension.process_join_strings_expression(expression, config)
+    elif isinstance(expression, FirstDayOfYearExpression):
+        return extension.process_first_day_of_year_expression(expression, config)
+    elif isinstance(expression, FirstDayOfQuarterExpression):
+        return extension.process_first_day_of_quarter_expression(expression, config)
+    elif isinstance(expression, FirstDayOfMonthExpression):
+        return extension.process_first_day_of_month_expression(expression, config)
+    elif isinstance(expression, FirstDayOfWeekExpression):
+        return extension.process_first_day_of_week_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1042,6 +1054,18 @@ class SqlToStringDbExtension:
 
     def process_join_strings_expression(self, expr: JoinStringsExpression, config: SqlToStringConfig) -> str:
         return f"STRING_AGG({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_first_day_of_year_expression(self, expr: FirstDayOfYearExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_TRUNC('year', {self.process_expression(expr.value, config)})"
+
+    def process_first_day_of_quarter_expression(self, expr: FirstDayOfQuarterExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_TRUNC('quarter', {self.process_expression(expr.value, config)})"
+
+    def process_first_day_of_month_expression(self, expr: FirstDayOfMonthExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_TRUNC('month', {self.process_expression(expr.value, config)})"
+
+    def process_first_day_of_week_expression(self, expr: FirstDayOfWeekExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_TRUNC('week', {self.process_expression(expr.value, config)})"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

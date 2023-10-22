@@ -59,6 +59,10 @@ __all__: PyLegendSequence[str] = [
     "VarianceSampleExpression",
     "VariancePopulationExpression",
     "JoinStringsExpression",
+    "FirstDayOfYearExpression",
+    "FirstDayOfQuarterExpression",
+    "FirstDayOfMonthExpression",
+    "FirstDayOfWeekExpression",
 ]
 
 
@@ -489,3 +493,47 @@ class JoinStringsExpression(Expression):
         super().__init__(_type="joinStringsExpression")
         self.value = value
         self.other = other
+
+
+class FirstDayOfYearExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstDayOfYearExpression")
+        self.value = value
+
+
+class FirstDayOfQuarterExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstDayOfQuarterExpression")
+        self.value = value
+
+
+class FirstDayOfMonthExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstDayOfMonthExpression")
+        self.value = value
+
+
+class FirstDayOfWeekExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstDayOfWeekExpression")
+        self.value = value
