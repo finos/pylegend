@@ -63,6 +63,10 @@ __all__: PyLegendSequence[str] = [
     "FirstDayOfQuarterExpression",
     "FirstDayOfMonthExpression",
     "FirstDayOfWeekExpression",
+    "FirstHourOfDayExpression",
+    "FirstMinuteOfHourExpression",
+    "FirstSecondOfMinuteExpression",
+    "FirstMillisecondOfSecondExpression",
 ]
 
 
@@ -536,4 +540,48 @@ class FirstDayOfWeekExpression(Expression):
         value: "Expression",
     ) -> None:
         super().__init__(_type="firstDayOfWeekExpression")
+        self.value = value
+
+
+class FirstHourOfDayExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstHourOfDayExpression")
+        self.value = value
+
+
+class FirstMinuteOfHourExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstMinuteOfHourExpression")
+        self.value = value
+
+
+class FirstSecondOfMinuteExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstSecondOfMinuteExpression")
+        self.value = value
+
+
+class FirstMillisecondOfSecondExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="firstMillisecondOfSecondExpression")
         self.value = value
