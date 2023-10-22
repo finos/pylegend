@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import date, datetime
 from pylegend.core.language import (
     PyLegendBooleanLiteralExpression,
+    PyLegendDateTimeLiteralExpression,
+    PyLegendStrictDateLiteralExpression,
 )
 from pylegend.core.databse.sql_to_string import (
     SqlToStringFormat,
@@ -41,3 +44,17 @@ class TestLiteralExpressions:
             false_expr.to_sql_expression({}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         ) == "false"
+
+    def test_datetime_literal_expr_sql_gen(self) -> None:
+        expr = PyLegendDateTimeLiteralExpression(datetime(2023, 6, 1, 14, 45, 00))
+        assert self.db_extension.process_expression(
+            expr.to_sql_expression({}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == "CAST('2023-06-01T14:45:00' AS TIMESTAMP)"
+
+    def test_strictdate_literal_expr_sql_gen(self) -> None:
+        expr = PyLegendStrictDateLiteralExpression(date(2023, 6, 1))
+        assert self.db_extension.process_expression(
+            expr.to_sql_expression({}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == "CAST('2023-06-01' AS DATE)"

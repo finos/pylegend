@@ -30,12 +30,17 @@ from pylegend.core.language.expression import (
     PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDateReturn,
+    PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionStrictDateReturn,
 )
 from pylegend.core.language.literal_expressions import (
     PyLegendBooleanLiteralExpression,
     PyLegendStringLiteralExpression,
     PyLegendIntegerLiteralExpression,
     PyLegendFloatLiteralExpression,
+    PyLegendDateTimeLiteralExpression,
+    PyLegendStrictDateLiteralExpression,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.column_expressions import (
@@ -72,6 +77,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendExpressionNumberReturn",
     "PyLegendExpressionIntegerReturn",
     "PyLegendExpressionFloatReturn",
+    "PyLegendExpressionDateReturn",
+    "PyLegendExpressionDateTimeReturn",
+    "PyLegendExpressionStrictDateReturn",
 
     "PyLegendColumnExpression",
     "PyLegendBooleanColumnExpression",
@@ -84,6 +92,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLiteralExpression",
     "PyLegendIntegerLiteralExpression",
     "PyLegendFloatLiteralExpression",
+    "PyLegendDateTimeLiteralExpression",
+    "PyLegendStrictDateLiteralExpression",
     "convert_literal_to_literal_expression",
 
     "TdsRow",
