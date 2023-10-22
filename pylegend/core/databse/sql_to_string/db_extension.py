@@ -115,6 +115,10 @@ from pylegend.core.sql.metamodel_extension import (
     FirstDayOfQuarterExpression,
     FirstDayOfMonthExpression,
     FirstDayOfWeekExpression,
+    FirstHourOfDayExpression,
+    FirstMinuteOfHourExpression,
+    FirstSecondOfMinuteExpression,
+    FirstMillisecondOfSecondExpression,
 )
 
 
@@ -403,6 +407,14 @@ def expression_processor(
         return extension.process_first_day_of_month_expression(expression, config)
     elif isinstance(expression, FirstDayOfWeekExpression):
         return extension.process_first_day_of_week_expression(expression, config)
+    elif isinstance(expression, FirstHourOfDayExpression):
+        return extension.process_first_hour_of_day_expression(expression, config)
+    elif isinstance(expression, FirstMinuteOfHourExpression):
+        return extension.process_first_minute_of_hour_expression(expression, config)
+    elif isinstance(expression, FirstSecondOfMinuteExpression):
+        return extension.process_first_second_of_minute_expression(expression, config)
+    elif isinstance(expression, FirstMillisecondOfSecondExpression):
+        return extension.process_first_millisecond_of_second_expression(expression, config)
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1066,6 +1078,22 @@ class SqlToStringDbExtension:
 
     def process_first_day_of_week_expression(self, expr: FirstDayOfWeekExpression, config: SqlToStringConfig) -> str:
         return f"DATE_TRUNC('week', {self.process_expression(expr.value, config)})"
+
+    def process_first_hour_of_day_expression(self, expr: FirstHourOfDayExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_TRUNC('day', {self.process_expression(expr.value, config)})"
+
+    def process_first_minute_of_hour_expression(self, expr: FirstMinuteOfHourExpression, config: SqlToStringConfig) \
+            -> str:
+        return f"DATE_TRUNC('hour', {self.process_expression(expr.value, config)})"
+
+    def process_first_second_of_minute_expression(self, expr: FirstSecondOfMinuteExpression, config: SqlToStringConfig)\
+            -> str:
+        return f"DATE_TRUNC('minute', {self.process_expression(expr.value, config)})"
+
+    def process_first_millisecond_of_second_expression(
+            self, expr: FirstMillisecondOfSecondExpression, config: SqlToStringConfig
+    ) -> str:
+        return f"DATE_TRUNC('second', {self.process_expression(expr.value, config)})"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)

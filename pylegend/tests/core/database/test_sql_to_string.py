@@ -112,6 +112,10 @@ from pylegend.core.sql.metamodel_extension import (
     FirstDayOfQuarterExpression,
     FirstDayOfMonthExpression,
     FirstDayOfWeekExpression,
+    FirstHourOfDayExpression,
+    FirstMinuteOfHourExpression,
+    FirstSecondOfMinuteExpression,
+    FirstMillisecondOfSecondExpression,
 )
 
 
@@ -1509,3 +1513,35 @@ class TestSqlToStringDbExtensionProcessing:
         ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
         expr = FirstDayOfWeekExpression(ref)
         assert extension.process_expression(expr, config) == "DATE_TRUNC('week', test_schema.test_table.test_col)"
+
+    def test_process_first_hour_of_day_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstHourOfDayExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('day', test_schema.test_table.test_col)"
+
+    def test_process_first_minute_of_hour_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstMinuteOfHourExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('hour', test_schema.test_table.test_col)"
+
+    def test_process_first_second_of_minute_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstSecondOfMinuteExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('minute', test_schema.test_table.test_col)"
+
+    def test_process_first_millisecond_of_second_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstMillisecondOfSecondExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('second', test_schema.test_table.test_col)"
