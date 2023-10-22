@@ -70,6 +70,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDateMaxExpression",
     "PyLegendStrictDateMinExpression",
     "PyLegendDateMaxExpression",
+    "PyLegendDateMinExpression",
 ]
 
 
@@ -490,4 +491,23 @@ class PyLegendDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressionDateR
             self,
             operand,
             PyLegendDateMaxExpression.__to_sql_func
+        )
+
+
+class PyLegendDateMinExpression(PyLegendUnaryExpression, PyLegendExpressionDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MinExpression(value=expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionDateReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDateMinExpression.__to_sql_func
         )
