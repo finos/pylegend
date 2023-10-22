@@ -19,6 +19,7 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionIntegerReturn,
 )
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -35,6 +36,17 @@ from pylegend.core.sql.metamodel_extension import (
     FirstMinuteOfHourExpression,
     FirstSecondOfMinuteExpression,
     FirstMillisecondOfSecondExpression,
+    YearExpression,
+    QuarterExpression,
+    MonthExpression,
+    WeekOfYearExpression,
+    DayOfYearExpression,
+    DayOfMonthExpression,
+    DayOfWeekExpression,
+    HourExpression,
+    MinuteExpression,
+    SecondExpression,
+    EpochExpression,
 )
 
 
@@ -47,6 +59,17 @@ __all__: PyLegendSequence[str] = [
     "PyLegendFirstMinuteOfHourExpression",
     "PyLegendFirstSecondOfMinuteExpression",
     "PyLegendFirstMillisecondOfSecondExpression",
+    "PyLegendYearExpression",
+    "PyLegendQuarterExpression",
+    "PyLegendMonthExpression",
+    "PyLegendWeekOfYearExpression",
+    "PyLegendDayOfYearExpression",
+    "PyLegendDayOfMonthExpression",
+    "PyLegendDayOfWeekExpression",
+    "PyLegendHourExpression",
+    "PyLegendMinuteExpression",
+    "PyLegendSecondExpression",
+    "PyLegendEpochExpression",
 ]
 
 
@@ -199,4 +222,213 @@ class PyLegendFirstMillisecondOfSecondExpression(PyLegendUnaryExpression, PyLege
             self,
             operand,
             PyLegendFirstMillisecondOfSecondExpression.__to_sql_func
+        )
+
+
+class PyLegendYearExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return YearExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendYearExpression.__to_sql_func
+        )
+
+
+class PyLegendQuarterExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return QuarterExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendQuarterExpression.__to_sql_func
+        )
+
+
+class PyLegendMonthExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MonthExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendMonthExpression.__to_sql_func
+        )
+
+
+class PyLegendWeekOfYearExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return WeekOfYearExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendWeekOfYearExpression.__to_sql_func
+        )
+
+
+class PyLegendDayOfYearExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DayOfYearExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDayOfYearExpression.__to_sql_func
+        )
+
+
+class PyLegendDayOfMonthExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DayOfMonthExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDayOfMonthExpression.__to_sql_func
+        )
+
+
+class PyLegendDayOfWeekExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DayOfWeekExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDayOfWeekExpression.__to_sql_func
+        )
+
+
+class PyLegendHourExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return HourExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendHourExpression.__to_sql_func
+        )
+
+
+class PyLegendMinuteExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MinuteExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendMinuteExpression.__to_sql_func
+        )
+
+
+class PyLegendSecondExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return SecondExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendSecondExpression.__to_sql_func
+        )
+
+
+class PyLegendEpochExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return EpochExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendEpochExpression.__to_sql_func
         )

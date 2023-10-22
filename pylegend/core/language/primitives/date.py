@@ -20,6 +20,7 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.primitives.integer import PyLegendInteger
 from pylegend.core.language.expression import (
     PyLegendExpression,
     PyLegendExpressionDateReturn,
@@ -37,6 +38,17 @@ from pylegend.core.language.operations.date_operation_expressions import (
     PyLegendFirstMinuteOfHourExpression,
     PyLegendFirstSecondOfMinuteExpression,
     PyLegendFirstMillisecondOfSecondExpression,
+    PyLegendYearExpression,
+    PyLegendQuarterExpression,
+    PyLegendMonthExpression,
+    PyLegendWeekOfYearExpression,
+    PyLegendDayOfYearExpression,
+    PyLegendDayOfMonthExpression,
+    PyLegendDayOfWeekExpression,
+    PyLegendHourExpression,
+    PyLegendMinuteExpression,
+    PyLegendSecondExpression,
+    PyLegendEpochExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -99,6 +111,39 @@ class PyLegendDate(PyLegendPrimitive):
     def first_millisecond_of_second(self) -> "PyLegendDateTime":
         from pylegend.core.language.primitives.datetime import PyLegendDateTime
         return PyLegendDateTime(PyLegendFirstMillisecondOfSecondExpression(self.__value))
+
+    def year(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendYearExpression(self.__value))
+
+    def month(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendMonthExpression(self.__value))
+
+    def day(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendDayOfMonthExpression(self.__value))
+
+    def hour(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendHourExpression(self.__value))
+
+    def minute(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendMinuteExpression(self.__value))
+
+    def second(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendSecondExpression(self.__value))
+
+    def epoch_value(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendEpochExpression(self.__value))
+
+    def quarter(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendQuarterExpression(self.__value))
+
+    def week_of_year(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendWeekOfYearExpression(self.__value))
+
+    def day_of_year(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendDayOfYearExpression(self.__value))
+
+    def day_of_week(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendDayOfWeekExpression(self.__value))
 
     @staticmethod
     def __convert_to_date_expr(

@@ -86,6 +86,83 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_day_of_year().first_millisecond_of_second()) ==
                 'DATE_TRUNC(\'second\', DATE_TRUNC(\'year\', "root".col2))')
 
+    def test_year(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").year()) == \
+               'DATE_PART(\'year\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().year()) ==
+                'DATE_PART(\'year\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_month(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").month()) == \
+               'DATE_PART(\'month\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().month()) ==
+                'DATE_PART(\'month\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_day(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").day()) == \
+               'DATE_PART(\'day\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().day()) ==
+                'DATE_PART(\'day\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_hour(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").hour()) == \
+               'DATE_PART(\'hour\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().hour()) ==
+                'DATE_PART(\'hour\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_minute(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").minute()) == \
+               'DATE_PART(\'minute\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().minute()) ==
+                'DATE_PART(\'minute\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_second(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").second()) == \
+               'DATE_PART(\'second\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().second()) ==
+                'DATE_PART(\'second\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_epoch_value(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").epoch_value()) == \
+               'DATE_PART(\'epoch\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().epoch_value()) ==
+                'DATE_PART(\'epoch\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_quarter(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").quarter()) == \
+               'DATE_PART(\'quarter\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().quarter()) ==
+                'DATE_PART(\'quarter\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_week_of_year(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").week_of_year()) == \
+               'DATE_PART(\'week\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().week_of_year()) ==
+                'DATE_PART(\'week\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_day_of_year(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").day_of_year()) == \
+               'DATE_PART(\'doy\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().day_of_year()) ==
+                'DATE_PART(\'doy\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_day_of_week(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").day_of_week()) == \
+               'DATE_PART(\'dow\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().day_of_week()) ==
+                'DATE_PART(\'dow\', DATE_TRUNC(\'hour\', "root".col2))')
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
