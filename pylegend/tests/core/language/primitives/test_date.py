@@ -37,6 +37,30 @@ class TestPyLegendDate:
     def test_date_col_access(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2")) == '"root".col2'
 
+    def test_first_day_of_year(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year()) == \
+               'DATE_TRUNC(\'year\', "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_quarter().first_day_of_year()) == \
+               'DATE_TRUNC(\'year\', DATE_TRUNC(\'quarter\', "root".col2))'
+
+    def test_first_day_of_quarter(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_quarter()) == \
+               'DATE_TRUNC(\'quarter\', "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_quarter()) == \
+               'DATE_TRUNC(\'quarter\', DATE_TRUNC(\'year\', "root".col2))'
+
+    def test_first_day_of_month(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_month()) == \
+               'DATE_TRUNC(\'month\', "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_month()) == \
+               'DATE_TRUNC(\'month\', DATE_TRUNC(\'year\', "root".col2))'
+
+    def test_first_day_of_week(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_week()) == \
+               'DATE_TRUNC(\'week\', "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_week()) == \
+               'DATE_TRUNC(\'week\', DATE_TRUNC(\'year\', "root".col2))'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

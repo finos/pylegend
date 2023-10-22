@@ -28,6 +28,12 @@ from pylegend.core.language.literal_expressions import (
     PyLegendDateTimeLiteralExpression,
     PyLegendStrictDateLiteralExpression,
 )
+from pylegend.core.language.operations.date_operation_expressions import (
+    PyLegendFirstDayOfYearExpression,
+    PyLegendFirstDayOfQuarterExpression,
+    PyLegendFirstDayOfMonthExpression,
+    PyLegendFirstDayOfWeekExpression,
+)
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -61,6 +67,18 @@ class PyLegendDate(PyLegendPrimitive):
 
     def value(self) -> PyLegendExpression:
         return self.__value
+
+    def first_day_of_year(self) -> "PyLegendDate":
+        return PyLegendDate(PyLegendFirstDayOfYearExpression(self.__value))
+
+    def first_day_of_quarter(self) -> "PyLegendDate":
+        return PyLegendDate(PyLegendFirstDayOfQuarterExpression(self.__value))
+
+    def first_day_of_month(self) -> "PyLegendDate":
+        return PyLegendDate(PyLegendFirstDayOfMonthExpression(self.__value))
+
+    def first_day_of_week(self) -> "PyLegendDate":
+        return PyLegendDate(PyLegendFirstDayOfWeekExpression(self.__value))
 
     @staticmethod
     def __convert_to_date_expr(
