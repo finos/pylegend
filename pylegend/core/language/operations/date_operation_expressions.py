@@ -17,7 +17,8 @@ from pylegend._typing import (
     PyLegendDict,
 )
 from pylegend.core.language.expression import (
-    PyLegendExpressionDateReturn
+    PyLegendExpressionDateReturn,
+    PyLegendExpressionDateTimeReturn,
 )
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -30,6 +31,10 @@ from pylegend.core.sql.metamodel_extension import (
     FirstDayOfQuarterExpression,
     FirstDayOfMonthExpression,
     FirstDayOfWeekExpression,
+    FirstHourOfDayExpression,
+    FirstMinuteOfHourExpression,
+    FirstSecondOfMinuteExpression,
+    FirstMillisecondOfSecondExpression,
 )
 
 
@@ -38,6 +43,10 @@ __all__: PyLegendSequence[str] = [
     "PyLegendFirstDayOfQuarterExpression",
     "PyLegendFirstDayOfMonthExpression",
     "PyLegendFirstDayOfWeekExpression",
+    "PyLegendFirstHourOfDayExpression",
+    "PyLegendFirstMinuteOfHourExpression",
+    "PyLegendFirstSecondOfMinuteExpression",
+    "PyLegendFirstMillisecondOfSecondExpression",
 ]
 
 
@@ -114,4 +123,80 @@ class PyLegendFirstDayOfWeekExpression(PyLegendUnaryExpression, PyLegendExpressi
             self,
             operand,
             PyLegendFirstDayOfWeekExpression.__to_sql_func
+        )
+
+
+class PyLegendFirstHourOfDayExpression(PyLegendUnaryExpression, PyLegendExpressionDateTimeReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FirstHourOfDayExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendFirstHourOfDayExpression.__to_sql_func
+        )
+
+
+class PyLegendFirstMinuteOfHourExpression(PyLegendUnaryExpression, PyLegendExpressionDateTimeReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FirstMinuteOfHourExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendFirstMinuteOfHourExpression.__to_sql_func
+        )
+
+
+class PyLegendFirstSecondOfMinuteExpression(PyLegendUnaryExpression, PyLegendExpressionDateTimeReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FirstSecondOfMinuteExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendFirstSecondOfMinuteExpression.__to_sql_func
+        )
+
+
+class PyLegendFirstMillisecondOfSecondExpression(PyLegendUnaryExpression, PyLegendExpressionDateTimeReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FirstMillisecondOfSecondExpression(expression)
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendFirstMillisecondOfSecondExpression.__to_sql_func
         )
