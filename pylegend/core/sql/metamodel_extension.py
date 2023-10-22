@@ -67,6 +67,17 @@ __all__: PyLegendSequence[str] = [
     "FirstMinuteOfHourExpression",
     "FirstSecondOfMinuteExpression",
     "FirstMillisecondOfSecondExpression",
+    "YearExpression",
+    "QuarterExpression",
+    "MonthExpression",
+    "WeekOfYearExpression",
+    "DayOfYearExpression",
+    "DayOfMonthExpression",
+    "DayOfWeekExpression",
+    "HourExpression",
+    "MinuteExpression",
+    "SecondExpression",
+    "EpochExpression",
 ]
 
 
@@ -584,4 +595,125 @@ class FirstMillisecondOfSecondExpression(Expression):
         value: "Expression",
     ) -> None:
         super().__init__(_type="firstMillisecondOfSecondExpression")
+        self.value = value
+
+
+class YearExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="yearExpression")
+        self.value = value
+
+
+class QuarterExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="quarterExpression")
+        self.value = value
+
+
+class MonthExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="monthExpression")
+        self.value = value
+
+
+class WeekOfYearExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="weekOfYearExpression")
+        self.value = value
+
+
+class DayOfYearExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="dayOfYearExpression")
+        self.value = value
+
+
+class DayOfMonthExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="dayOfMonthExpression")
+        self.value = value
+
+
+class DayOfWeekExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="dayOfWeekExpression")
+        self.value = value
+
+
+class HourExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="hourExpression")
+        self.value = value
+
+
+class MinuteExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="minuteExpression")
+        self.value = value
+
+
+class SecondExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="secondExpression")
+        self.value = value
+
+
+class EpochExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="epochExpression")
         self.value = value

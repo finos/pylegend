@@ -116,6 +116,17 @@ from pylegend.core.sql.metamodel_extension import (
     FirstMinuteOfHourExpression,
     FirstSecondOfMinuteExpression,
     FirstMillisecondOfSecondExpression,
+    YearExpression,
+    QuarterExpression,
+    MonthExpression,
+    WeekOfYearExpression,
+    DayOfYearExpression,
+    DayOfMonthExpression,
+    DayOfWeekExpression,
+    HourExpression,
+    MinuteExpression,
+    SecondExpression,
+    EpochExpression,
 )
 
 
@@ -1545,3 +1556,91 @@ class TestSqlToStringDbExtensionProcessing:
         ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
         expr = FirstMillisecondOfSecondExpression(ref)
         assert extension.process_expression(expr, config) == "DATE_TRUNC('second', test_schema.test_table.test_col)"
+
+    def test_process_year_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = YearExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('year', test_schema.test_table.test_col)"
+
+    def test_process_quarter_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = QuarterExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('quarter', test_schema.test_table.test_col)"
+
+    def test_process_month_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = MonthExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('month', test_schema.test_table.test_col)"
+
+    def test_process_week_of_year_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = WeekOfYearExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('week', test_schema.test_table.test_col)"
+
+    def test_process_day_of_year_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = DayOfYearExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('doy', test_schema.test_table.test_col)"
+
+    def test_process_day_of_month_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = DayOfMonthExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('day', test_schema.test_table.test_col)"
+
+    def test_process_day_of_week_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = DayOfWeekExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('dow', test_schema.test_table.test_col)"
+
+    def test_process_hour_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = HourExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('hour', test_schema.test_table.test_col)"
+
+    def test_process_minute_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = MinuteExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('minute', test_schema.test_table.test_col)"
+
+    def test_process_second_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = SecondExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('second', test_schema.test_table.test_col)"
+
+    def test_process_epoch_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = EpochExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_PART('epoch', test_schema.test_table.test_col)"

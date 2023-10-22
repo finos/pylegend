@@ -119,6 +119,17 @@ from pylegend.core.sql.metamodel_extension import (
     FirstMinuteOfHourExpression,
     FirstSecondOfMinuteExpression,
     FirstMillisecondOfSecondExpression,
+    YearExpression,
+    QuarterExpression,
+    MonthExpression,
+    WeekOfYearExpression,
+    DayOfYearExpression,
+    DayOfMonthExpression,
+    DayOfWeekExpression,
+    HourExpression,
+    MinuteExpression,
+    SecondExpression,
+    EpochExpression,
 )
 
 
@@ -415,6 +426,29 @@ def expression_processor(
         return extension.process_first_second_of_minute_expression(expression, config)
     elif isinstance(expression, FirstMillisecondOfSecondExpression):
         return extension.process_first_millisecond_of_second_expression(expression, config)
+    elif isinstance(expression, YearExpression):
+        return extension.process_year_expression(expression, config)
+    elif isinstance(expression, QuarterExpression):
+        return extension.process_quarter_expression(expression, config)
+    elif isinstance(expression, MonthExpression):
+        return extension.process_month_expression(expression, config)
+    elif isinstance(expression, WeekOfYearExpression):
+        return extension.process_week_of_year_expression(expression, config)
+    elif isinstance(expression, DayOfYearExpression):
+        return extension.process_day_of_year_expression(expression, config)
+    elif isinstance(expression, DayOfMonthExpression):
+        return extension.process_day_of_month_expression(expression, config)
+    elif isinstance(expression, DayOfWeekExpression):
+        return extension.process_day_of_week_expression(expression, config)
+    elif isinstance(expression, HourExpression):
+        return extension.process_hour_expression(expression, config)
+    elif isinstance(expression, MinuteExpression):
+        return extension.process_minute_expression(expression, config)
+    elif isinstance(expression, SecondExpression):
+        return extension.process_second_expression(expression, config)
+    elif isinstance(expression, EpochExpression):
+        return extension.process_epoch_expression(expression, config)
+
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
 
@@ -1094,6 +1128,39 @@ class SqlToStringDbExtension:
             self, expr: FirstMillisecondOfSecondExpression, config: SqlToStringConfig
     ) -> str:
         return f"DATE_TRUNC('second', {self.process_expression(expr.value, config)})"
+
+    def process_year_expression(self, expr: YearExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('year', {self.process_expression(expr.value, config)})"
+
+    def process_quarter_expression(self, expr: QuarterExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('quarter', {self.process_expression(expr.value, config)})"
+
+    def process_month_expression(self, expr: MonthExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('month', {self.process_expression(expr.value, config)})"
+
+    def process_week_of_year_expression(self, expr: WeekOfYearExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('week', {self.process_expression(expr.value, config)})"
+
+    def process_day_of_year_expression(self, expr: DayOfYearExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('doy', {self.process_expression(expr.value, config)})"
+
+    def process_day_of_month_expression(self, expr: DayOfMonthExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('day', {self.process_expression(expr.value, config)})"
+
+    def process_day_of_week_expression(self, expr: DayOfWeekExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('dow', {self.process_expression(expr.value, config)})"
+
+    def process_hour_expression(self, expr: HourExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('hour', {self.process_expression(expr.value, config)})"
+
+    def process_minute_expression(self, expr: MinuteExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('minute', {self.process_expression(expr.value, config)})"
+
+    def process_second_expression(self, expr: SecondExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('second', {self.process_expression(expr.value, config)})"
+
+    def process_epoch_expression(self, expr: EpochExpression, config: SqlToStringConfig) -> str:
+        return f"DATE_PART('epoch', {self.process_expression(expr.value, config)})"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
