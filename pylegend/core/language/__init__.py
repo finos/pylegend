@@ -68,6 +68,10 @@ from pylegend.core.language.primitive_collection import (
     PyLegendBooleanCollection,
     create_primitive_collection,
 )
+from pylegend.core.language.functions import (
+    today,
+    now,
+)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
@@ -118,4 +122,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringCollection",
     "PyLegendBooleanCollection",
     "create_primitive_collection",
+
+    "today",
+    "now",
 ]

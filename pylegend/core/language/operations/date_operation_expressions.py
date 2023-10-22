@@ -19,13 +19,19 @@ from pylegend._typing import (
 from pylegend.core.language.expression import (
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionStrictDateReturn,
     PyLegendExpressionIntegerReturn,
 )
+from pylegend.core.language.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
+)
+from pylegend.core.sql.metamodel import (
+    CurrentTime,
+    CurrentTimeType,
 )
 from pylegend.core.sql.metamodel_extension import (
     FirstDayOfYearExpression,
@@ -70,6 +76,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendMinuteExpression",
     "PyLegendSecondExpression",
     "PyLegendEpochExpression",
+    "PyLegendTodayExpression",
+    "PyLegendNowExpression",
 ]
 
 
@@ -431,4 +439,38 @@ class PyLegendEpochExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
             self,
             operand,
             PyLegendEpochExpression.__to_sql_func
+        )
+
+
+class PyLegendTodayExpression(PyLegendNullaryExpression, PyLegendExpressionStrictDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CurrentTime(type_=CurrentTimeType.DATE, precision=None)
+
+    def __init__(self) -> None:
+        PyLegendExpressionStrictDateReturn.__init__(self)
+        PyLegendNullaryExpression.__init__(
+            self,
+            PyLegendTodayExpression.__to_sql_func
+        )
+
+
+class PyLegendNowExpression(PyLegendNullaryExpression, PyLegendExpressionDateTimeReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CurrentTime(type_=CurrentTimeType.TIMESTAMP, precision=None)
+
+    def __init__(self) -> None:
+        PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendNullaryExpression.__init__(
+            self,
+            PyLegendNowExpression.__to_sql_func
         )

@@ -20,7 +20,7 @@ from pylegend.core.databse.sql_to_string import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import TdsRow
+from pylegend.core.language import TdsRow, today, now
 
 
 class TestPyLegendDate:
@@ -162,6 +162,20 @@ class TestPyLegendDate:
         assert (self.__generate_sql_string(
             lambda x: x.get_date("col2").first_minute_of_hour().day_of_week()) ==
                 'DATE_PART(\'dow\', DATE_TRUNC(\'hour\', "root".col2))')
+
+    def test_today(self) -> None:
+        assert self.__generate_sql_string(lambda x: today()) == \
+               'CURRENT_DATE'
+        assert (self.__generate_sql_string(
+            lambda x: today().first_minute_of_hour().day_of_week()) ==
+                'DATE_PART(\'dow\', DATE_TRUNC(\'hour\', CURRENT_DATE))')
+
+    def test_now(self) -> None:
+        assert self.__generate_sql_string(lambda x: now()) == \
+               'CURRENT_TIMESTAMP'
+        assert (self.__generate_sql_string(
+            lambda x: now().first_minute_of_hour().day_of_week()) ==
+                'DATE_PART(\'dow\', DATE_TRUNC(\'hour\', CURRENT_TIMESTAMP))')
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
