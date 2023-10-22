@@ -108,6 +108,10 @@ from pylegend.core.sql.metamodel_extension import (
     VarianceSampleExpression,
     VariancePopulationExpression,
     JoinStringsExpression,
+    FirstDayOfYearExpression,
+    FirstDayOfQuarterExpression,
+    FirstDayOfMonthExpression,
+    FirstDayOfWeekExpression,
 )
 
 
@@ -1473,3 +1477,35 @@ class TestSqlToStringDbExtensionProcessing:
         ref = QualifiedNameReference(QualifiedName(["test_db", "test_schema", "test_table", "test_col"]))
         expr = JoinStringsExpression(ref, StringLiteral(" ", quoted=False))
         assert extension.process_expression(expr, config) == "STRING_AGG(test_db.test_schema.test_table.test_col, ' ')"
+
+    def test_process_first_day_of_year_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstDayOfYearExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('year', test_schema.test_table.test_col)"
+
+    def test_process_first_day_of_quarter_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstDayOfQuarterExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('quarter', test_schema.test_table.test_col)"
+
+    def test_process_first_day_of_month_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstDayOfMonthExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('month', test_schema.test_table.test_col)"
+
+    def test_process_first_day_of_week_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
+        expr = FirstDayOfWeekExpression(ref)
+        assert extension.process_expression(expr, config) == "DATE_TRUNC('week', test_schema.test_table.test_col)"
