@@ -549,10 +549,10 @@ class TestSqlToStringDbExtensionProcessing:
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
 
         assert extension.process_expression(CurrentTime(CurrentTimeType.TIME, 2), config) == "CURRENT_TIME(2)"
-        assert extension.process_expression(CurrentTime(CurrentTimeType.TIME, None), config) == "CURRENT_TIME()"
+        assert extension.process_expression(CurrentTime(CurrentTimeType.TIME, None), config) == "CURRENT_TIME"
         assert extension.process_expression(CurrentTime(CurrentTimeType.TIMESTAMP, 8), config) == "CURRENT_TIMESTAMP(8)"
         assert extension.process_expression(CurrentTime(CurrentTimeType.TIMESTAMP, None), config) == \
-               "CURRENT_TIMESTAMP()"
+               "CURRENT_TIMESTAMP"
         assert extension.process_expression(CurrentTime(CurrentTimeType.DATE, None), config) == "CURRENT_DATE"
 
     def test_process_extract(self) -> None:

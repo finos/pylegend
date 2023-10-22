@@ -646,9 +646,9 @@ def current_time_processor(
     if current_time.type_ == CurrentTimeType.DATE:
         return "CURRENT_DATE"
     elif current_time.type_ == CurrentTimeType.TIMESTAMP:
-        return "CURRENT_TIMESTAMP(" + (str(current_time.precision) if current_time.precision else "") + ")"
+        return "CURRENT_TIMESTAMP" + (("(" + str(current_time.precision) + ")") if current_time.precision else "")
     elif current_time.type_ == CurrentTimeType.TIME:
-        return "CURRENT_TIME(" + (str(current_time.precision) if current_time.precision else "") + ")"
+        return "CURRENT_TIME" + (("(" + str(current_time.precision) + ")") if current_time.precision else "")
     else:
         raise ValueError("Unknown current time type: " + str(current_time.type_))  # pragma: no cover
 
