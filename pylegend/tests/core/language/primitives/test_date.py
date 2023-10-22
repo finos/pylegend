@@ -61,6 +61,31 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_week()) == \
                'DATE_TRUNC(\'week\', DATE_TRUNC(\'year\', "root".col2))'
 
+    def test_first_hour_of_day(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_hour_of_day()) == \
+               'DATE_TRUNC(\'day\', "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_hour_of_day()) == \
+               'DATE_TRUNC(\'day\', DATE_TRUNC(\'year\', "root".col2))'
+
+    def test_first_minute_of_hour(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_minute_of_hour()) == \
+               'DATE_TRUNC(\'hour\', "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_minute_of_hour()) == \
+               'DATE_TRUNC(\'hour\', DATE_TRUNC(\'year\', "root".col2))'
+
+    def test_first_second_of_minute(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_second_of_minute()) == \
+               'DATE_TRUNC(\'minute\', "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_second_of_minute()) ==\
+               'DATE_TRUNC(\'minute\', DATE_TRUNC(\'year\', "root".col2))'
+
+    def test_first_millisecond_of_second(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").first_millisecond_of_second()) == \
+               'DATE_TRUNC(\'second\', "root".col2)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_day_of_year().first_millisecond_of_second()) ==
+                'DATE_TRUNC(\'second\', DATE_TRUNC(\'year\', "root".col2))')
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

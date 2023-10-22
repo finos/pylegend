@@ -33,6 +33,10 @@ from pylegend.core.language.operations.date_operation_expressions import (
     PyLegendFirstDayOfQuarterExpression,
     PyLegendFirstDayOfMonthExpression,
     PyLegendFirstDayOfWeekExpression,
+    PyLegendFirstHourOfDayExpression,
+    PyLegendFirstMinuteOfHourExpression,
+    PyLegendFirstSecondOfMinuteExpression,
+    PyLegendFirstMillisecondOfSecondExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -79,6 +83,22 @@ class PyLegendDate(PyLegendPrimitive):
 
     def first_day_of_week(self) -> "PyLegendDate":
         return PyLegendDate(PyLegendFirstDayOfWeekExpression(self.__value))
+
+    def first_hour_of_day(self) -> "PyLegendDateTime":
+        from pylegend.core.language.primitives.datetime import PyLegendDateTime
+        return PyLegendDateTime(PyLegendFirstHourOfDayExpression(self.__value))
+
+    def first_minute_of_hour(self) -> "PyLegendDateTime":
+        from pylegend.core.language.primitives.datetime import PyLegendDateTime
+        return PyLegendDateTime(PyLegendFirstMinuteOfHourExpression(self.__value))
+
+    def first_second_of_minute(self) -> "PyLegendDateTime":
+        from pylegend.core.language.primitives.datetime import PyLegendDateTime
+        return PyLegendDateTime(PyLegendFirstSecondOfMinuteExpression(self.__value))
+
+    def first_millisecond_of_second(self) -> "PyLegendDateTime":
+        from pylegend.core.language.primitives.datetime import PyLegendDateTime
+        return PyLegendDateTime(PyLegendFirstMillisecondOfSecondExpression(self.__value))
 
     @staticmethod
     def __convert_to_date_expr(
