@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: CVE Scan
+name: License Scan
 
 on:
   schedule:
@@ -26,7 +26,7 @@ env:
 
 jobs:
   scan:
-    name: CVE Scanning
+    name: License Scanning
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -37,17 +37,14 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install Safety
+      - name: Install pip-licenses
         run: |
           source .venv/bin/activate
           which pip
-          pip install safety
+          pip install pip-licenses
 
-      - name: Scan CVEs
+      - name: Scan Licenses
         run: |
           source .venv/bin/activate
           poetry install --with dev
-          poetry export --with dev --without-hashes -f requirements.txt --output requirements.txt
-          which safety
-          safety check -r requirements.txt --full-report
-          safety check --full-report
+          pip-licenses --format=markdown --order=license --allow-only="MIT License;Apache Software License;BSD License;Mozilla Public License 2.0 (MPL 2.0)"

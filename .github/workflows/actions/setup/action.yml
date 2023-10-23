@@ -29,6 +29,12 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
+    - name: Install Poetry
+      run: |
+        echo "Install poetry"
+        pip install poetry
+      shell: bash
+
     - name: Setup Virtual Environment
       run: |
         echo "Python version is:" $(python --version)
@@ -43,7 +49,5 @@ runs:
         echo "Python executable is:" $(which python)
         echo "Update pip and setuptools"
         python -m pip install --upgrade pip setuptools
-        echo "Install poetry"
-        pip install poetry
         echo "Setup complete"
       shell: bash
