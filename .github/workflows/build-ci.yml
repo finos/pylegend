@@ -64,12 +64,11 @@ jobs:
       - name: Install Type Checker
         run: |
           source .venv/bin/activate
-          echo "Pip executable is:" $(which pip)
+          echo "Running poetry install"
+          poetry install --with dev
           echo "Installing mypy"
           pip install mypy
           echo "Done with installing mypy"
-          echo "Running pip install -r dev.requirements.txt"
-          pip install -r dev.requirements.txt
           echo "Done with installing dependencies"
 
       - name: Perform Typing Check
@@ -108,8 +107,8 @@ jobs:
             source .venv/bin/activate
           fi
           echo "Pip executable is:" $(which pip)
-          echo "Running pip install -r dev.requirements.txt"
-          pip install -r dev.requirements.txt
+          echo "Running poetry install"
+          poetry install --with dev
           echo "Done with installing dependencies"
           
       - name: Set up JDK
