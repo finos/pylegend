@@ -1,16 +1,21 @@
 [![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![Build](https://github.com/finos/pylegend/workflows/Build%20CI/badge.svg)
 ![CVE Scan](https://github.com/finos/pylegend/workflows/CVE%20Scan/badge.svg)
+![License Scan](https://github.com/finos/pylegend/workflows/License%20Scan/badge.svg)
 [![Codecov](https://codecov.io/gh/finos/pylegend/branch/main/graph/badge.svg)](https://app.codecov.io/gh/finos/pylegend)
 
 # PyLegend
 
-PyLegend is aimed to be a python library featuring:
-
-1. Pandas API to SQL transpiler
-2. Pushdown execution on Legend
-
 <b> -- Library is under active development -- </b>
+
+PyLegend is part of [Legend](https://github.com/finos/legend) data management platform suite. It is a python client library which enables easy and streamlined integration of python clients with Legend ecosystem, providing interactive query building and push-down execution capabilities.
+
+## Build from source
+
+PyLegend requires Python 3.8 or higher. We use [Poetry](https://python-poetry.org/) tool for dependency management and packaging. To install poetry, follow instructions [here](https://python-poetry.org/docs/#installation).
+
+Run `poetry install` to install dependencies. If you intend to contribute, install dev dependencies using the command `poetry install --with dev`.
 
 ## Contributing
 For any questions, bugs or feature requests please open an [issue](https://github.com/finos/pylegend/issues).

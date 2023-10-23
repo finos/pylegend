@@ -1,0 +1,41 @@
+# Copyright 2023 Goldman Sachs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Poetry Build
+
+description: Poetry Build
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup
+      uses: ./.github/workflows/actions/setup
+      with:
+        python-version: 3.11
+
+    - name: Poetry Install Dependencies
+      uses: ./.github/workflows/actions/poetry_install_dependencies
+
+    - name: Poetry Build
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          source .venv/Scripts/activate
+        else
+          source .venv/bin/activate
+        fi
+        echo "Poetry executable is:" $(which poetry)
+        echo "Running poetry build"
+        poetry build
+        echo "Done with poetry build"

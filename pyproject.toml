@@ -5,6 +5,11 @@ description = "Python language binding for Legend data management platform"
 authors = ["PyLegend Maintainers <legend@finos.org>"]
 license = "Apache-2.0"
 readme = "README.md"
+repository = "https://github.com/finos/pylegend"
+packages = [
+    { include = "pylegend" }
+]
+
 
 [tool.poetry.dependencies]
 python = ">=3.8"

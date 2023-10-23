@@ -19,67 +19,24 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
 
   lint:
-    name: Lint Check
+    name: Flake8 Lint Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup
-        uses: ./.github/workflows/actions/setup
-        with:
-          python-version: 3.11
-
-      - name: Install Linter
-        run: |
-          source .venv/bin/activate
-          echo "Pip executable is:" $(which pip)
-          echo "Installing flake8"
-          pip install flake8
-          pip install -e ./.github/workflows/lint/pylegend_copyright_checker
-          echo "Done with installing flake8"
-
-      - name: Perform Lint Check
-        run: |
-          source .venv/bin/activate
-          echo "Flake8 executable is:" $(which flake8)
-          echo "Running flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics"
-          flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics
-          echo "Running flake8 ./pylegend ./tests --count --max-line-length=127 --show-source --statistics"
-          flake8 ./pylegend ./tests --count --max-line-length=127 --show-source --statistics
-          echo "Done with lint check"
+      - name: Flake8 Lint Check
+        uses: ./.github/workflows/actions/flake8_lint_check
 
   typing_check:
-    name: Typing Check
+    name: MyPy Type Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup
-        uses: ./.github/workflows/actions/setup
-        with:
-          python-version: 3.11
-
-      - name: Install Type Checker
-        run: |
-          source .venv/bin/activate
-          echo "Running poetry install"
-          poetry install --with dev
-          echo "Installing mypy"
-          pip install mypy
-          echo "Done with installing mypy"
-          echo "Done with installing dependencies"
-
-      - name: Perform Typing Check
-        run: |
-          source .venv/bin/activate
-          echo "MyPy executable is:" $(which mypy)
-          echo "Running mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg"
-          mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg 
-          echo "Running mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg"
-          mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg
-          echo "Done with typing check"
+      - name: MyPy Type Check
+        uses: ./.github/workflows/actions/mypy_type_check
 
   pytest:
     name: PyTest
@@ -93,47 +50,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup
-        uses: ./.github/workflows/actions/setup
+      - name: PyTest
+        uses: ./.github/workflows/actions/pytest
         with:
+          os: ${{ matrix.os }}
           python-version: ${{ matrix.python-version }}
-
-      - name: Install Dependencies
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-          echo "Pip executable is:" $(which pip)
-          echo "Running poetry install"
-          poetry install --with dev
-          echo "Done with installing dependencies"
-          
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: "zulu"
-          java-version: "11"
-
-      - name: Build Legend Server
-        shell: bash
-        run: |
-          mvn --batch-mode clean package -f ./tests/resources/legend/server/pylegend-sql-server/pom.xml
-
-      - name: Run PyTest
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-          echo "Pytest executable is:" $(which pytest)
-          echo "Running pytest ./tests --cov=pylegend --cov=tests -o log_cli=true -o log_cli_level=INFO -o log_cli_format=\"%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)\" -o log_cli_date_format=\"%Y-%m-%d %H:%M:%S\" --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml"
-          pytest ./tests --cov=pylegend --cov=tests -o log_cli=true -o log_cli_level=INFO -o log_cli_format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)" -o log_cli_date_format="%Y-%m-%d %H:%M:%S" --junitxml=./test-results/pytest_result_${{ matrix.os }}_${{ matrix.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
-          echo "Done with running pytest"
 
       - name: Upload Test Results
         if: always()
@@ -161,4 +82,21 @@ jobs:
         with:
           name: event-file
           path: ${{ github.event_path }}
-  
+
+  build:
+    name: Poetry Build
+    needs: [pytest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Poetry Build
+        uses: ./.github/workflows/actions/poetry_build
+
+      - name: Upload Built Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: ./dist/*
