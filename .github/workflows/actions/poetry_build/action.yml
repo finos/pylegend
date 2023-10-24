@@ -27,6 +27,18 @@ runs:
     - name: Poetry Install Dependencies
       uses: ./.github/workflows/actions/poetry_install_dependencies
 
+    - name: Poetry Version Bump
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          source .venv/Scripts/activate
+        else
+          source .venv/bin/activate
+        fi
+        echo "Poetry executable is:" $(which poetry)
+        poetry version $(poetry version --short).dev$GITHUB_RUN_NUMBER
+        echo "Updated version is:" $(poetry version --short)
+
     - name: Poetry Build
       shell: bash
       run: |
