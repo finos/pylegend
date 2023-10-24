@@ -35,7 +35,7 @@ jobs:
       - name: Setup
         uses: ./.github/workflows/actions/setup
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Install pip-licenses
         run: |
