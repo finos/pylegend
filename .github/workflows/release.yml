@@ -29,7 +29,7 @@ jobs:
       - name: Setup
         uses: ./.github/workflows/actions/setup
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Validate
         shell: bash
@@ -83,7 +83,7 @@ jobs:
         uses: ./.github/workflows/actions/pytest
         with:
           os: ubuntu-latest
-          python-version: 3.11
+          python-version: 3.12
 
   release:
     name: Release
@@ -96,7 +96,7 @@ jobs:
       - name: Setup
         uses: ./.github/workflows/actions/setup
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Poetry Install Dependencies
         uses: ./.github/workflows/actions/poetry_install_dependencies
