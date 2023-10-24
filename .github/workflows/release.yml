@@ -15,21 +15,43 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release-type:
-        description: 'Type of release'
-        required: true
-        default: patch
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
+  release:
+    types: [published]
+
 jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
+        with:
+          python-version: 3.11
+
+      - name: Validate
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          echo "Poetry executable is:" $(which poetry)
+          project_version=$(poetry version --short)
+          release_version=${GITHUB_REF#refs/*/pylegend-}
+          if [ ${project_version} == ${release_version} ]; then
+            echo "Version matches"
+          else
+            echo "Version in pyproject.toml ${project_version} doesn't match with release tag version ${release_version}"
+            exit 1
+          fi
 
   lint:
     name: Flake8 Lint Check
+    needs: [validate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -40,6 +62,7 @@ jobs:
 
   typing_check:
     name: MyPy Type Check
+    needs: [validate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -82,33 +105,14 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Version bump, Commit, Tag creation
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-          echo "Poetry executable is:" $(which poetry)
-          echo "Current version is:" $(poetry version --short)
-          poetry version ${{ release-type }}
-          echo "Updated version is:" $(poetry version --short)
-          git add pyproject.toml
-          git commit -m "Release - Updating version to $(poetry version --short)"
-          git tag pylegend-$(poetry version --short)
-
       - name: Poetry Install Dependencies
         uses: ./.github/workflows/actions/poetry_install_dependencies
 
-#      - name: PyPi Publish
-#        env:
-#          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-#          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-#        run: poetry publish --build --username "$PYPI_USERNAME" --password "$PYPI_PASSWORD"
-
-      - name: Git Push
+      - name: PyPi Publish
         shell: bash
+        env:
+          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
             source .venv/Scripts/activate
@@ -116,6 +120,4 @@ jobs:
             source .venv/bin/activate
           fi
           echo "Poetry executable is:" $(which poetry)
-          git push origin main
-          git push origin pylegend-$(poetry version --short)
-          
+          poetry publish --build --username "$PYPI_USERNAME" --password "$PYPI_PASSWORD"
