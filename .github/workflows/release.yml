@@ -1,0 +1,121 @@
+# Copyright 2023 Goldman Sachs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: 'Type of release'
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+jobs:
+
+  lint:
+    name: Flake8 Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Flake8 Lint Check
+        uses: ./.github/workflows/actions/flake8_lint_check
+
+  typing_check:
+    name: MyPy Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: MyPy Type Check
+        uses: ./.github/workflows/actions/mypy_type_check
+
+  pytest:
+    name: PyTest
+    needs: [lint, typing_check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: PyTest
+        uses: ./.github/workflows/actions/pytest
+        with:
+          os: ubuntu-latest
+          python-version: 3.11
+
+  release:
+    name: Release
+    needs: [pytest]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.FINOS_GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config --global user.email "37706051+finos-admin@users.noreply.github.com"
+          git config --global user.name "FINOS Administrator"
+
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
+        with:
+          python-version: 3.11
+
+      - name: Version bump, Commit, Tag creation
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          echo "Poetry executable is:" $(which poetry)
+          echo "Current version is:" $(poetry version --short)
+          poetry version ${{ release-type }}
+          echo "Updated version is:" $(poetry version --short)
+          git add pyproject.toml
+          git commit -m "Release - Updating version to $(poetry version --short)"
+          git tag pylegend-$(poetry version --short)
+
+      - name: Poetry Install Dependencies
+        uses: ./.github/workflows/actions/poetry_install_dependencies
+
+#      - name: PyPi Publish
+#        env:
+#          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+#          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+#        run: poetry publish --build --username "$PYPI_USERNAME" --password "$PYPI_PASSWORD"
+
+      - name: Git Push
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          echo "Poetry executable is:" $(which poetry)
+          git push origin main
+          git push origin pylegend-$(poetry version --short)
+          
