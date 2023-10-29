@@ -23,11 +23,9 @@ class TestLegendClientE2E:
         client = LegendClient("localhost", legend_test_server["engine_port"], False)
         res = client.get_sql_string_schema(
             "SELECT * FROM "
-            "   legend_service("
-            "       '/simplePersonService', "
-            "       groupId => 'org.finos.legend.pylegend',"
-            "       artifactId => 'pylegend-test-models',"
-            "       version => '0.0.1-SNAPSHOT'"
+            "   service("
+            "       pattern => '/simplePersonService', "
+            "       coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'"
             "   )"
         )
 
@@ -39,11 +37,9 @@ class TestLegendClientE2E:
         client = LegendClient("localhost", legend_test_server["engine_port"], False)
         res = client.execute_sql_string(
             "SELECT * FROM "
-            "   legend_service("
-            "       '/simplePersonService', "
-            "       groupId => 'org.finos.legend.pylegend',"
-            "       artifactId => 'pylegend-test-models',"
-            "       version => '0.0.1-SNAPSHOT'"
+            "   service("
+            "       pattern => '/simplePersonService', "
+            "       coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'"
             "   )"
         )
         expected = """\

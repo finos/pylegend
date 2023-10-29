@@ -150,7 +150,7 @@ def tds_columns_from_json(s: str) -> PyLegendSequence[TdsColumn]:
 
         result_columns: PyLegendList[TdsColumn] = []
         for col in columns:
-            if col["__TYPE"] == "meta::external::query::sql::PrimitiveValueSchemaColumn":
+            if col["_type"] == "primitiveSchemaColumn":
                 result_columns.append(PrimitiveTdsColumn(col["name"], PrimitiveType[col["type"]]))
             else:
                 result_columns.append(

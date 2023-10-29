@@ -95,7 +95,7 @@ class TestTdsColumn:
         s = """{
             "columns":
                 {
-                    "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
+                    "_type": "primitiveSchemaColumn",
                     "type": "String",
                     "name": "First Name"
                 }
@@ -105,7 +105,7 @@ class TestTdsColumn:
         s = """{
             "columns": [
                 {
-                    "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
+                    "_type": "primitiveSchemaColumn",
                     "type": "String",
                     "name": "First Name"
                 }
@@ -116,12 +116,12 @@ class TestTdsColumn:
         s = """{
             "columns": [
                 {
-                    "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
+                    "_type": "primitiveSchemaColumn",
                     "type": "String",
                     "name": "First Name"
                 },
                 {
-                    "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
+                    "_type": "primitiveSchemaColumn",
                     "type": "String",
                     "name": "Last Name"
                 }
@@ -133,7 +133,7 @@ class TestTdsColumn:
         s = """{
             "columns": [
                 {
-                    "__TYPE": "meta::external::query::sql::EnumValueSchemaColumn",
+                    "_type": "enumSchemaColumn",
                     "type": "my::EnumType",
                     "name": "CityType"
                 }
@@ -149,7 +149,7 @@ class TestTdsColumn:
         s = """{
             "columns": [
                 {
-                    "__TYPE": "meta::external::query::sql::EnumValueSchemaColumn",
+                    "_type": "enumSchemaColumn",
                     "type": "my::EnumType",
                     "name": "CityType"
                 }
@@ -165,12 +165,12 @@ class TestTdsColumn:
         s = """{
             "columns": [
                 {
-                    "__TYPE": "meta::external::query::sql::EnumValueSchemaColumn",
+                    "_type": "enumSchemaColumn",
                     "type": "my::EnumType1",
                     "name": "CityType1"
                 },
                 {
-                    "__TYPE": "meta::external::query::sql::EnumValueSchemaColumn",
+                    "_type": "enumSchemaColumn",
                     "type": "my::EnumType2",
                     "name": "CityType2"
                 }
@@ -198,7 +198,7 @@ class TestTdsColumn:
             s = """{
                 "columns": [
                     {
-                        "__TYPE": "meta::external::query::sql::EnumValueSchemaColumn",
+                        "_type": "enumSchemaColumn",
                         "type": "my::EnumType",
                         "name": "CityType"
                     }

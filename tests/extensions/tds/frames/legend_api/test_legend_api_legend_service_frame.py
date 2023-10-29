@@ -19,16 +19,19 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from tests.test_helpers.legend_service_frame import (
+from tests.test_helpers.test_legend_service_frames import (
     simple_person_service_frame,
     simple_trade_service_frame,
     simple_product_service_frame,
 )
 
 
-class TestLegendServiceFrame:
+class TestLegendApiLegendServiceFrame:
 
-    def test_legend_service_frame_sql_gen(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_legend_api_legend_service_frame_sql_gen(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
+    ) -> None:
         frame = simple_person_service_frame(legend_test_server["engine_port"])
         sql = frame.to_sql_query(FrameToSqlConfig())
 
@@ -39,17 +42,17 @@ class TestLegendServiceFrame:
             "root"."Age" AS "Age",
             "root"."Firm/Legal Name" AS "Firm/Legal Name"
         FROM
-            legend_service(
-                '/simplePersonService',
-                groupId => 'org.finos.legend.pylegend',
-                artifactId => 'pylegend-test-models',
-                version => '0.0.1-SNAPSHOT'
+            service(
+                pattern => '/simplePersonService',
+                coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'
             ) AS "root"'''
 
         assert sql == dedent(expected)
 
-    def test_legend_person_service_frame_execution(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
-            -> None:
+    def test_legend_api_legend_person_service_frame_execution(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
+    ) -> None:
         frame = simple_person_service_frame(legend_test_server["engine_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
@@ -62,8 +65,10 @@ class TestLegendServiceFrame:
                              {'values': ['David', 'Harris', 35, 'Firm C']}]}
         assert json.loads(res)["result"] == expected
 
-    def test_legend_trade_service_frame_execution(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
-            -> None:
+    def test_legend_api_legend_trade_service_frame_execution(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
+    ) -> None:
         frame = simple_trade_service_frame(legend_test_server["engine_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['Id',
@@ -140,8 +145,10 @@ class TestLegendServiceFrame:
                                          None]}]}
         assert json.loads(res)["result"] == expected
 
-    def test_legend_product_service_frame_execution(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
-            -> None:
+    def test_legend_api_legend_product_service_frame_execution(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
+    ) -> None:
         frame = simple_product_service_frame(legend_test_server["engine_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['Name', 'Synonyms/Name', 'Synonyms/Type'],
