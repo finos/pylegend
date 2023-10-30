@@ -15272,6 +15272,239 @@
       "taggedValues": [],
       "constraints": [],
       "package": "pylegend::test::model::simple"
+    },
+    {
+      "_type": "function",
+      "name": "SimplePersonFunction__TabularDataSet_1_",
+      "sourceInformation": null,
+      "preConstraints": [],
+      "postConstraints": [],
+      "parameters": [],
+      "returnType": "meta::pure::tds::TabularDataSet",
+      "returnMultiplicity": {
+        "lowerBound": 1,
+        "upperBound": 1
+      },
+      "stereotypes": [],
+      "taggedValues": [],
+      "body": [
+        {
+          "_type": "func",
+          "sourceInformation": null,
+          "function": "from",
+          "fControl": null,
+          "parameters": [
+            {
+              "_type": "func",
+              "sourceInformation": null,
+              "function": "project",
+              "fControl": null,
+              "parameters": [
+                {
+                  "_type": "func",
+                  "sourceInformation": null,
+                  "function": "getAll",
+                  "fControl": null,
+                  "parameters": [
+                    {
+                      "_type": "packageableElementPtr",
+                      "sourceInformation": null,
+                      "fullPath": "pylegend::test::model::simple::Person"
+                    }
+                  ]
+                },
+                {
+                  "_type": "collection",
+                  "sourceInformation": null,
+                  "multiplicity": {
+                    "lowerBound": 4,
+                    "upperBound": 4
+                  },
+                  "values": [
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "firstName",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "sourceInformation": null,
+                              "name": "x",
+                              "multiplicity": null,
+                              "supportsStream": null,
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "lastName",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "sourceInformation": null,
+                              "name": "x",
+                              "multiplicity": null,
+                              "supportsStream": null,
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "age",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "sourceInformation": null,
+                              "name": "x",
+                              "multiplicity": null,
+                              "supportsStream": null,
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "legalName",
+                          "parameters": [
+                            {
+                              "_type": "property",
+                              "sourceInformation": null,
+                              "property": "firm",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "sourceInformation": null,
+                                  "name": "x",
+                                  "multiplicity": null,
+                                  "supportsStream": null,
+                                  "class": null
+                                }
+                              ],
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "_type": "collection",
+                  "sourceInformation": null,
+                  "multiplicity": {
+                    "lowerBound": 4,
+                    "upperBound": 4
+                  },
+                  "values": [
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "First Name"
+                    },
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "Last Name"
+                    },
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "Age"
+                    },
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "Firm/Legal Name"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_type": "packageableElementPtr",
+              "sourceInformation": null,
+              "fullPath": "pylegend::test::mapping::simpleRelationalMapping"
+            },
+            {
+              "_type": "packageableElementPtr",
+              "sourceInformation": null,
+              "fullPath": "pylegend::test::runtime::LocalH2Runtime"
+            }
+          ]
+        }
+      ],
+      "package": "pylegend::test::function"
     }
   ]
 }
