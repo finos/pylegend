@@ -13,29 +13,46 @@
 # limitations under the License.
 
 import json
-import pathlib
-from pylegend.core.tds.result_handler import ToJsonFileResultHandler
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from textwrap import dedent
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from tests.test_helpers.test_legend_service_frames import (
+    simple_person_service_frame_pandas_api,
+)
 
 
-class TestToJsonFileResultHandler:
+class TestPandasApiLegendServiceFrame:
 
-    def test_to_json_file_result_handler(
+    def test_pandas_api_legend_service_frame_sql_gen(
             self,
-            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
-            tmp_path: pathlib.Path
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        file = str(tmp_path / "result.json")
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
-        frame.execute_frame(ToJsonFileResultHandler(file))
+        frame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        sql = frame.to_sql_query(FrameToSqlConfig())
 
-        with open(file, "r") as r:
-            res = r.read()
+        expected = '''\
+        SELECT
+            "root"."First Name" AS "First Name",
+            "root"."Last Name" AS "Last Name",
+            "root"."Age" AS "Age",
+            "root"."Firm/Legal Name" AS "Firm/Legal Name"
+        FROM
+            service(
+                pattern => '/simplePersonService',
+                coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'
+            ) AS "root"'''
 
+        assert sql == dedent(expected)
+
+    def test_pandas_api_legend_person_service_frame_execution(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
+    ) -> None:
+        frame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        res = frame.execute_frame_to_string()
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
                              {'values': ['John', 'Johnson', 22, 'Firm X']},

@@ -48,7 +48,8 @@
     },
     "sdlc": {
       "host": "localhost",
-      "port": 6100
+      "port": 6100,
+      "prefix": "/depot/api"
     }
   }
 }

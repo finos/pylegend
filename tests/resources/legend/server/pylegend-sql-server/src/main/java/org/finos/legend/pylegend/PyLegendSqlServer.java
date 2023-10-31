@@ -41,8 +41,13 @@ import org.finos.legend.engine.plan.generation.extension.PlanGeneratorExtension;
 import org.finos.legend.engine.protocol.pure.v1.PureProtocolObjectMapperFactory;
 import org.finos.legend.engine.protocol.pure.v1.model.context.PureModelContextData;
 import org.finos.legend.engine.pure.code.core.PureCoreExtensionLoader;
+import org.finos.legend.engine.query.sql.api.SQLExecutor;
 import org.finos.legend.engine.query.sql.api.execute.SqlExecute;
 import org.finos.legend.engine.query.sql.api.grammar.SqlGrammar;
+import org.finos.legend.engine.query.sql.providers.LegendServiceSQLSourceProvider;
+import org.finos.legend.engine.query.sql.providers.RelationalStoreSQLSourceProvider;
+import org.finos.legend.engine.query.sql.providers.shared.FunctionSQLSourceProvider;
+import org.finos.legend.engine.query.sql.providers.shared.project.ProjectCoordinateLoader;
 import org.finos.legend.engine.server.Server;
 import org.finos.legend.engine.server.ServerConfiguration;
 import org.finos.legend.engine.server.core.api.CurrentUser;
@@ -108,7 +113,12 @@ public class PyLegendSqlServer<T extends ServerConfiguration> extends Server<T>
                 return e.extraPureCoreExtensions(pureModel.getExecutionSupport());
             });
         };
-        environment.jersey().register(new SqlExecute(modelManager, planExecutor, routerExtensions, FastList.newListWith(new LegendServiceSQLSourceProvider()), generatorExtensions.flatCollect(PlanGeneratorExtension::getExtraPlanTransformers)));
+        ProjectCoordinateLoader projectCoordinateLoader = new ProjectCoordinateLoader(modelManager, serverConfiguration.metadataserver.getSdlc());
+        environment.jersey().register(new SqlExecute(new SQLExecutor(modelManager, planExecutor, routerExtensions, FastList.newListWith(
+                new RelationalStoreSQLSourceProvider(projectCoordinateLoader),
+                new FunctionSQLSourceProvider(projectCoordinateLoader),
+                new LegendServiceSQLSourceProvider(projectCoordinateLoader)),
+                generatorExtensions.flatCollect(PlanGeneratorExtension::getExtraPlanTransformers))));
         environment.jersey().register(new SqlGrammar());
         environment.jersey().register(new CatchAllExceptionMapper());
 

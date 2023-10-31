@@ -16,7 +16,7 @@ import csv
 import pathlib
 from textwrap import dedent
 from pylegend.core.tds.result_handler import ToCsvFileResultHandler
-from tests.test_helpers.legend_service_frame import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,

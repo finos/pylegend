@@ -24,33 +24,15 @@
     {
       "_type": "runtime",
       "name": "LocalH2Runtime",
-      "sourceInformation": {
-        "sourceId": "",
-        "startLine": 2,
-        "startColumn": 1,
-        "endLine": 29,
-        "endColumn": 1
-      },
+      "sourceInformation": null,
       "runtimeValue": {
         "_type": "engineRuntime",
-        "sourceInformation": {
-          "sourceId": "",
-          "startLine": 2,
-          "startColumn": 1,
-          "endLine": 29,
-          "endColumn": 1
-        },
+        "sourceInformation": null,
         "mappings": [
           {
             "type": "MAPPING",
             "path": "pylegend::test::mapping::simpleRelationalMapping",
-            "sourceInformation": {
-              "sourceId": "",
-              "startLine": 6,
-              "startColumn": 5,
-              "endLine": 6,
-              "endColumn": 52
-            }
+            "sourceInformation": null
           }
         ],
         "connections": [
@@ -58,83 +40,55 @@
             "store": {
               "type": "STORE",
               "path": "pylegend::test::store::db",
-              "sourceInformation": {
-                "sourceId": "",
-                "startLine": 10,
-                "startColumn": 5,
-                "endLine": 10,
-                "endColumn": 29
-              }
+              "sourceInformation": null
             },
             "storeConnections": [
               {
                 "id": "connection_1",
                 "connection": {
-                  "_type": "RelationalDatabaseConnection",
-                  "element": "pylegend::test::store::db",
-                  "elementSourceInformation": {
-                    "sourceId": "",
-                    "startLine": 16,
-                    "startColumn": 18,
-                    "endLine": 16,
-                    "endColumn": 42
-                  },
-                  "sourceInformation": {
-                    "sourceId": "",
-                    "startLine": 14,
-                    "startColumn": 9,
-                    "endLine": 25,
-                    "endColumn": 9
-                  },
-                  "type": "H2",
-                  "timeZone": null,
-                  "quoteIdentifiers": null,
-                  "postProcessorWithParameter": [],
-                  "datasourceSpecification": {
-                    "_type": "h2Local",
-                    "sourceInformation": {
-                      "sourceId": "",
-                      "startLine": 18,
-                      "startColumn": 11,
-                      "endLine": 23,
-                      "endColumn": 12
-                    },
-                    "testDataSetupCsv": null,
-                    "testDataSetupSqls": [
-                      "Drop table if exists PersonTable;\nCreate Table PersonTable(id INT, firstName VARCHAR(200), lastName VARCHAR(200), age INT, addressId INT, firmId INT, managerId INT);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (1, 'Peter', 'Smith',23, 1,1,2);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (2, 'John', 'Johnson',22, 2,1,4);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (3, 'John', 'Hill',12, 3,1,2);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (4, 'Anthony', 'Allen',22, 4,1,null);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (5, 'Fabrice', 'Roberts',34, 5,2,null);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (6, 'Oliver', 'Hill',32, 6,3,null);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (7, 'David', 'Harris',35, 7,4,null);\nDrop table if exists FirmTable;\nCreate Table FirmTable(id INT, legalName VARCHAR(200), addressId INT, ceoId INT);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (1, 'Firm X', 8, 1);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (2, 'Firm A', 9, 5);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (3, 'Firm B', 10, 3);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (4, 'Firm C', 11, 7);\nDrop table if exists addressTable;\nCreate Table addressTable(ID INT NOT NULL,TYPE INT NULL,NAME VARCHAR(200) NULL,STREET VARCHAR(100) NULL,COMMENTS VARCHAR(100) NULL, PRIMARY KEY(ID));\ninsert into addressTable (id, type, name, street, comments) values (1,1,'Hoboken', null, 'A comment with a % in the middle');\ninsert into addressTable (id, type, name, street, comments) values (2,1,'New York', null, 'A comment with a _ in the middle');\ninsert into addressTable (id, type, name, street) values (3,1,'New York', null);\ninsert into addressTable (id, type, name, street) values (4,1,'New York', null);\ninsert into addressTable (id, type, name, street) values (5,1,'San Fransisco', null);\ninsert into addressTable (id, type, name, street) values (6,1,'Hong Kong', null);\ninsert into addressTable (id, type, name, street) values (7,1,'New York', null);\ninsert into addressTable (id, type, name, street) values (8,1,'New York', 'West Street');\ninsert into addressTable (id, type, name, street) values (9,1,'Cupertino', 'Infinite Loop');\ninsert into addressTable (id, type, name, street) values (10,1,'Tokyo', null);\ninsert into addressTable (id, type, name, street) values (11,1,'Mountain View', null);\nDrop schema if exists productSchema cascade;\nCreate schema productSchema;\nDrop table if exists productSchema.ProductTable;\nCreate Table productSchema.ProductTable(id INT, name VARCHAR(200));\ninsert into productSchema.ProductTable (id, name) values (1, 'Firm X');\ninsert into productSchema.ProductTable (id, name) values (2, 'Firm A');\ninsert into productSchema.ProductTable (id, name) values (3, 'Firm C');\ninsert into productSchema.ProductTable (id, name) values (4, 'Firm D');\nDrop table if exists productSchema.SynonymTable;\nCreate Table productSchema.SynonymTable(id INT, prodid INT, type VARCHAR(200), name VARCHAR(200));\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (1, 1, 'CUSIP', 'CUSIP1');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (2, 1, 'ISIN', 'ISIN1');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (3, 2, 'CUSIP', 'CUSIP2');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (4, 2, 'ISIN', 'ISIN2');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (5, 3, 'CUSIP', 'CUSIP3');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (6, 3, 'ISIN', 'ISIN3');\nDrop table if exists accountTable;\nCreate Table accountTable(ID INT, name VARCHAR(200), createDate DATE);\ninsert into accountTable (ID, name, createDate) values (1, 'Account 1', '2013-12-01');\ninsert into accountTable (ID, name, createDate) values (2, 'Account 2', '2013-12-02');\nDrop table if exists orderTable;\nCreate Table orderTable(id INT, prodid INT, accountId INT, quantity FLOAT, orderDate DATE, settlementDateTime TIMESTAMP);\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (1, 1, 1, 25, '2014-12-01', '2014-12-02 21:00:00');\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (2, 1, 2, 320, '2014-12-01', '2014-12-02 21:00:00');\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (3, 2, 1, 11, '2014-12-01', '2014-12-02 21:00:00');\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (4, 1, 2, 300, '2014-12-02', '2014-12-03 21:00:00');\nDrop table if exists tradeTable;\nCreate Table tradeTable(id INT, prodid INT, accountId INT, quantity FLOAT, tradeDate DATE, settlementDateTime TIMESTAMP(9));\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (1, 1, 1, 25, '2014-12-01', '2014-12-02 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (2, 1, 2, 320, '2014-12-01','2014-12-02 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (3, 2, 1, 11, '2014-12-01', '2014-12-02 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (4, 2, 2, 23, '2014-12-02', '2014-12-03 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (5, 2, 1, 32, '2014-12-02', '2014-12-03 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (6, 3, 1, 27, '2014-12-03', '2014-12-04 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (7, 3, 1, 44, '2014-12-03', '2014-12-04 15:22:23.123456789');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (8, 3, 2, 22, '2014-12-04', '2014-12-05 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (9, 3, 2, 45, '2014-12-04', '2014-12-05 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate) values (10, 3, 2, 38, '2014-12-04');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate) values (11, -3, -4, 5, '2014-12-05');\nDrop table if exists orderPnlTable;\nCreate Table orderPnlTable(ORDER_ID INT, pnl FLOAT);\ninsert into orderPnlTable (ORDER_ID, pnl) values (1, 100);\ninsert into orderPnlTable (ORDER_ID, pnl) values (2, 200);\ninsert into orderPnlTable (ORDER_ID, pnl) values (3, 0);\ninsert into orderPnlTable (ORDER_ID, pnl) values (4, 150);\nDrop table if exists salesPersonTable;\nCreate Table salesPersonTable(PERSON_ID INT, ACCOUNT_ID INT, NAME VARCHAR(200));\ninsert into salesPersonTable (person_id, account_id, name) values (1, 1, 'Peter Smith');\ninsert into salesPersonTable (person_id, account_id, name) values (2, 2, 'John Johnson');\nDrop table if exists otherNamesTable;\nCreate Table otherNamesTable (PERSON_ID INT, OTHER_NAME VARCHAR(200));\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (1, 'abc');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (1, 'def');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (1, 'ghi');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (2, 'jkl');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (2, 'mno');"
-                    ]
-                  },
-                  "authenticationStrategy": {
-                    "_type": "h2Default",
-                    "sourceInformation": {
-                      "sourceId": "",
-                      "startLine": 24,
-                      "startColumn": 11,
-                      "endLine": 24,
-                      "endColumn": 26
-                    }
-                  },
-                  "databaseType": "H2",
-                  "postProcessors": []
+                  "_type": "connectionPointer",
+                  "element": null,
+                  "elementSourceInformation": null,
+                  "sourceInformation": null,
+                  "connection": "pylegend::test::runtime::LocalH2Connection"
                 },
-                "sourceInformation": {
-                  "sourceId": "",
-                  "startLine": 12,
-                  "startColumn": 7,
-                  "endLine": 26,
-                  "endColumn": 8
-                }
+                "sourceInformation": null
               }
             ],
-            "sourceInformation": {
-              "sourceId": "",
-              "startLine": 10,
-              "startColumn": 5,
-              "endLine": 27,
-              "endColumn": 5
-            }
+            "sourceInformation": null
           }
         ]
+      },
+      "package": "pylegend::test::runtime"
+    },
+    {
+      "_type": "connection",
+      "name": "LocalH2Connection",
+      "sourceInformation": null,
+      "connectionValue": {
+        "_type": "RelationalDatabaseConnection",
+        "element": "pylegend::test::store::db",
+        "elementSourceInformation": null,
+        "sourceInformation": null,
+        "type": "H2",
+        "timeZone": null,
+        "quoteIdentifiers": null,
+        "postProcessorWithParameter": [],
+        "datasourceSpecification": {
+          "_type": "h2Local",
+          "sourceInformation": null,
+          "testDataSetupCsv": null,
+          "testDataSetupSqls": [
+            "Drop table if exists PersonTable;\nCreate Table PersonTable(id INT, firstName VARCHAR(200), lastName VARCHAR(200), age INT, addressId INT, firmId INT, managerId INT);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (1, 'Peter', 'Smith',23, 1,1,2);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (2, 'John', 'Johnson',22, 2,1,4);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (3, 'John', 'Hill',12, 3,1,2);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (4, 'Anthony', 'Allen',22, 4,1,null);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (5, 'Fabrice', 'Roberts',34, 5,2,null);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (6, 'Oliver', 'Hill',32, 6,3,null);\ninsert into PersonTable (id, firstName, lastName, age, addressId, firmId, managerId) values (7, 'David', 'Harris',35, 7,4,null);\nDrop table if exists FirmTable;\nCreate Table FirmTable(id INT, legalName VARCHAR(200), addressId INT, ceoId INT);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (1, 'Firm X', 8, 1);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (2, 'Firm A', 9, 5);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (3, 'Firm B', 10, 3);\ninsert into FirmTable (id, legalName, addressId, ceoId) values (4, 'Firm C', 11, 7);\nDrop table if exists addressTable;\nCreate Table addressTable(ID INT NOT NULL,TYPE INT NULL,NAME VARCHAR(200) NULL,STREET VARCHAR(100) NULL,COMMENTS VARCHAR(100) NULL, PRIMARY KEY(ID));\ninsert into addressTable (id, type, name, street, comments) values (1,1,'Hoboken', null, 'A comment with a % in the middle');\ninsert into addressTable (id, type, name, street, comments) values (2,1,'New York', null, 'A comment with a _ in the middle');\ninsert into addressTable (id, type, name, street) values (3,1,'New York', null);\ninsert into addressTable (id, type, name, street) values (4,1,'New York', null);\ninsert into addressTable (id, type, name, street) values (5,1,'San Fransisco', null);\ninsert into addressTable (id, type, name, street) values (6,1,'Hong Kong', null);\ninsert into addressTable (id, type, name, street) values (7,1,'New York', null);\ninsert into addressTable (id, type, name, street) values (8,1,'New York', 'West Street');\ninsert into addressTable (id, type, name, street) values (9,1,'Cupertino', 'Infinite Loop');\ninsert into addressTable (id, type, name, street) values (10,1,'Tokyo', null);\ninsert into addressTable (id, type, name, street) values (11,1,'Mountain View', null);\nDrop schema if exists productSchema cascade;\nCreate schema productSchema;\nDrop table if exists productSchema.ProductTable;\nCreate Table productSchema.ProductTable(id INT, name VARCHAR(200));\ninsert into productSchema.ProductTable (id, name) values (1, 'Firm X');\ninsert into productSchema.ProductTable (id, name) values (2, 'Firm A');\ninsert into productSchema.ProductTable (id, name) values (3, 'Firm C');\ninsert into productSchema.ProductTable (id, name) values (4, 'Firm D');\nDrop table if exists productSchema.SynonymTable;\nCreate Table productSchema.SynonymTable(id INT, prodid INT, type VARCHAR(200), name VARCHAR(200));\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (1, 1, 'CUSIP', 'CUSIP1');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (2, 1, 'ISIN', 'ISIN1');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (3, 2, 'CUSIP', 'CUSIP2');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (4, 2, 'ISIN', 'ISIN2');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (5, 3, 'CUSIP', 'CUSIP3');\ninsert into productSchema.SynonymTable (id, prodid, type, name) values (6, 3, 'ISIN', 'ISIN3');\nDrop table if exists accountTable;\nCreate Table accountTable(ID INT, name VARCHAR(200), createDate DATE);\ninsert into accountTable (ID, name, createDate) values (1, 'Account 1', '2013-12-01');\ninsert into accountTable (ID, name, createDate) values (2, 'Account 2', '2013-12-02');\nDrop table if exists orderTable;\nCreate Table orderTable(id INT, prodid INT, accountId INT, quantity FLOAT, orderDate DATE, settlementDateTime TIMESTAMP);\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (1, 1, 1, 25, '2014-12-01', '2014-12-02 21:00:00');\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (2, 1, 2, 320, '2014-12-01', '2014-12-02 21:00:00');\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (3, 2, 1, 11, '2014-12-01', '2014-12-02 21:00:00');\ninsert into orderTable (id, prodid, accountId, quantity, orderDate, settlementDateTime) values (4, 1, 2, 300, '2014-12-02', '2014-12-03 21:00:00');\nDrop table if exists tradeTable;\nCreate Table tradeTable(id INT, prodid INT, accountId INT, quantity FLOAT, tradeDate DATE, settlementDateTime TIMESTAMP(9));\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (1, 1, 1, 25, '2014-12-01', '2014-12-02 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (2, 1, 2, 320, '2014-12-01','2014-12-02 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (3, 2, 1, 11, '2014-12-01', '2014-12-02 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (4, 2, 2, 23, '2014-12-02', '2014-12-03 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (5, 2, 1, 32, '2014-12-02', '2014-12-03 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (6, 3, 1, 27, '2014-12-03', '2014-12-04 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (7, 3, 1, 44, '2014-12-03', '2014-12-04 15:22:23.123456789');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (8, 3, 2, 22, '2014-12-04', '2014-12-05 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate, settlementDateTime) values (9, 3, 2, 45, '2014-12-04', '2014-12-05 21:00:00');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate) values (10, 3, 2, 38, '2014-12-04');\ninsert into tradeTable (id, prodid, accountId, quantity, tradeDate) values (11, -3, -4, 5, '2014-12-05');\nDrop table if exists orderPnlTable;\nCreate Table orderPnlTable(ORDER_ID INT, pnl FLOAT);\ninsert into orderPnlTable (ORDER_ID, pnl) values (1, 100);\ninsert into orderPnlTable (ORDER_ID, pnl) values (2, 200);\ninsert into orderPnlTable (ORDER_ID, pnl) values (3, 0);\ninsert into orderPnlTable (ORDER_ID, pnl) values (4, 150);\nDrop table if exists salesPersonTable;\nCreate Table salesPersonTable(PERSON_ID INT, ACCOUNT_ID INT, NAME VARCHAR(200));\ninsert into salesPersonTable (person_id, account_id, name) values (1, 1, 'Peter Smith');\ninsert into salesPersonTable (person_id, account_id, name) values (2, 2, 'John Johnson');\nDrop table if exists otherNamesTable;\nCreate Table otherNamesTable (PERSON_ID INT, OTHER_NAME VARCHAR(200));\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (1, 'abc');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (1, 'def');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (1, 'ghi');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (2, 'jkl');\ninsert into otherNamesTable (PERSON_ID, OTHER_NAME) values (2, 'mno');"
+          ]
+        },
+        "authenticationStrategy": {
+          "_type": "h2Default",
+          "sourceInformation": null
+        },
+        "databaseType": "H2",
+        "postProcessors": [],
+        "localMode": null
       },
       "package": "pylegend::test::runtime"
     },
@@ -15272,6 +15226,239 @@
       "taggedValues": [],
       "constraints": [],
       "package": "pylegend::test::model::simple"
+    },
+    {
+      "_type": "function",
+      "name": "SimplePersonFunction__TabularDataSet_1_",
+      "sourceInformation": null,
+      "preConstraints": [],
+      "postConstraints": [],
+      "parameters": [],
+      "returnType": "meta::pure::tds::TabularDataSet",
+      "returnMultiplicity": {
+        "lowerBound": 1,
+        "upperBound": 1
+      },
+      "stereotypes": [],
+      "taggedValues": [],
+      "body": [
+        {
+          "_type": "func",
+          "sourceInformation": null,
+          "function": "from",
+          "fControl": null,
+          "parameters": [
+            {
+              "_type": "func",
+              "sourceInformation": null,
+              "function": "project",
+              "fControl": null,
+              "parameters": [
+                {
+                  "_type": "func",
+                  "sourceInformation": null,
+                  "function": "getAll",
+                  "fControl": null,
+                  "parameters": [
+                    {
+                      "_type": "packageableElementPtr",
+                      "sourceInformation": null,
+                      "fullPath": "pylegend::test::model::simple::Person"
+                    }
+                  ]
+                },
+                {
+                  "_type": "collection",
+                  "sourceInformation": null,
+                  "multiplicity": {
+                    "lowerBound": 4,
+                    "upperBound": 4
+                  },
+                  "values": [
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "firstName",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "sourceInformation": null,
+                              "name": "x",
+                              "multiplicity": null,
+                              "supportsStream": null,
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "lastName",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "sourceInformation": null,
+                              "name": "x",
+                              "multiplicity": null,
+                              "supportsStream": null,
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "age",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "sourceInformation": null,
+                              "name": "x",
+                              "multiplicity": null,
+                              "supportsStream": null,
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "sourceInformation": null,
+                      "body": [
+                        {
+                          "_type": "property",
+                          "sourceInformation": null,
+                          "property": "legalName",
+                          "parameters": [
+                            {
+                              "_type": "property",
+                              "sourceInformation": null,
+                              "property": "firm",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "sourceInformation": null,
+                                  "name": "x",
+                                  "multiplicity": null,
+                                  "supportsStream": null,
+                                  "class": null
+                                }
+                              ],
+                              "class": null
+                            }
+                          ],
+                          "class": null
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "sourceInformation": null,
+                          "name": "x",
+                          "multiplicity": null,
+                          "supportsStream": null,
+                          "class": null
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "_type": "collection",
+                  "sourceInformation": null,
+                  "multiplicity": {
+                    "lowerBound": 4,
+                    "upperBound": 4
+                  },
+                  "values": [
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "First Name"
+                    },
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "Last Name"
+                    },
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "Age"
+                    },
+                    {
+                      "_type": "string",
+                      "sourceInformation": null,
+                      "value": "Firm/Legal Name"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "_type": "packageableElementPtr",
+              "sourceInformation": null,
+              "fullPath": "pylegend::test::mapping::simpleRelationalMapping"
+            },
+            {
+              "_type": "packageableElementPtr",
+              "sourceInformation": null,
+              "fullPath": "pylegend::test::runtime::LocalH2Runtime"
+            }
+          ]
+        }
+      ],
+      "package": "pylegend::test::function"
     }
   ]
 }

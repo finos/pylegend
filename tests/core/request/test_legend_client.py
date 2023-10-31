@@ -33,7 +33,7 @@ class TestLegendClient:
                     output = """{
                         "columns":
                             {
-                                "__TYPE": "meta::external::query::sql::PrimitiveValueSchemaColumn",
+                                "_type": "primitiveSchemaColumn",
                                 "type": "String",
                                 "name": "First Name"
                             }

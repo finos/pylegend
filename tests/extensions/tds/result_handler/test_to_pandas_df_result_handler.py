@@ -14,7 +14,7 @@
 
 import pathlib
 import pandas as pd
-from tests.test_helpers.legend_service_frame import (
+from tests.test_helpers.test_legend_service_frames import (
     simple_person_service_frame,
     simple_trade_service_frame,
     simple_product_service_frame,

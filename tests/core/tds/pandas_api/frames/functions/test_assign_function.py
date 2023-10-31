@@ -18,7 +18,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
-from tests.test_helpers.legend_service_frame import simple_person_service_frame_pandas_api
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
