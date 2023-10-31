@@ -17,6 +17,7 @@ from enum import Enum
 
 import requests
 from requests.adapters import HTTPAdapter, Retry
+from pylegend.core.request.auth import AuthScheme
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
@@ -39,9 +40,10 @@ class RequestMethod(Enum):
 
 class ServiceClient(metaclass=ABCMeta):
 
-    def __init__(self, host: str, port: int, secure_http: bool, retry_count: int) -> None:
+    def __init__(self, host: str, port: int, auth_scheme: AuthScheme, secure_http: bool, retry_count: int) -> None:
         self.__host = host
         self.__port = port
+        self.__auth_scheme = auth_scheme
         self.__secure_http = secure_http
         if retry_count < 1:
             raise ValueError("Retry count should be a number greater than 1. Got " + str(retry_count))
@@ -71,7 +73,8 @@ class ServiceClient(metaclass=ABCMeta):
             url=url,
             headers=headers,
             data=data,
-            params=query_params
+            params=query_params,
+            auth=self.__auth_scheme.get_auth_base(),
         )
 
         session = requests.Session()

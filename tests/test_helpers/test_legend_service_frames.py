@@ -40,7 +40,7 @@ def simple_person_service_frame(engine_port: int) -> LegendApiLegendServiceInput
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, False)
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
     )
 
 
@@ -52,7 +52,7 @@ def simple_trade_service_frame(engine_port: int) -> LegendApiLegendServiceInputF
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, False)
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
     )
 
 
@@ -64,7 +64,7 @@ def simple_product_service_frame(engine_port: int) -> LegendApiLegendServiceInpu
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, False)
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
     )
 
 
@@ -76,5 +76,5 @@ def simple_person_service_frame_pandas_api(engine_port: int) -> PandasApiLegendS
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, False)
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
     )

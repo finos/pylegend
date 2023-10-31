@@ -15,10 +15,40 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
+from pylegend.legend_api_tds_client import (
+    LegendApiTdsClient,
+    legend_api_tds_client,
+)
+from pylegend.core.request import (
+    LegendClient,
+    AuthScheme,
+    LocalhostEmptyAuthScheme,
+    ResponseReader,
+)
+from pylegend.core.project_cooridnates import (
+    VersionedProjectCoordinates,
+    PersonalWorkspaceProjectCoordinates,
+    GroupWorkspaceProjectCoordinates,
+)
+from pylegend.core.language import agg
 
 
 __all__: PyLegendSequence[str] = [
-    "__version__"
+    "__version__",
+
+    "LegendApiTdsClient",
+    "legend_api_tds_client",
+
+    "LegendClient",
+    "AuthScheme",
+    "LocalhostEmptyAuthScheme",
+    "ResponseReader",
+
+    "VersionedProjectCoordinates",
+    "PersonalWorkspaceProjectCoordinates",
+    "GroupWorkspaceProjectCoordinates",
+
+    "agg",
 ]
 
 

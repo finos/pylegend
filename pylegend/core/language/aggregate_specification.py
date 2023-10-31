@@ -25,6 +25,7 @@ from pylegend.core.language import (
 
 __all__: PyLegendSequence[str] = [
     "AggregateSpecification",
+    "agg",
 ]
 
 
@@ -51,3 +52,11 @@ class AggregateSpecification:
 
     def get_aggregate_fn(self) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
         return self.__aggregate_fn
+
+
+def agg(
+    map_fn: PyLegendCallable[[TdsRow], PyLegendPrimitiveOrPythonPrimitive],
+    aggregate_fn: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+    name: str
+) -> AggregateSpecification:
+    return AggregateSpecification(map_fn=map_fn, aggregate_fn=aggregate_fn, name=name)

@@ -12,18 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendOptional,
 )
-from pylegend.core.request.legend_client import LegendClient
-from pylegend.core.request.auth import AuthScheme, LocalhostEmptyAuthScheme
-from pylegend.core.request.response_reader import ResponseReader
+from requests.auth import AuthBase
 
 __all__: PyLegendSequence[str] = [
-    "LegendClient",
-
     "AuthScheme",
     "LocalhostEmptyAuthScheme",
-
-    "ResponseReader"
 ]
+
+
+class AuthScheme(metaclass=ABCMeta):
+
+    @abstractmethod
+    def get_auth_base(self) -> PyLegendOptional[AuthBase]:
+        pass
+
+
+class LocalhostEmptyAuthScheme(AuthScheme):
+
+    def get_auth_base(self) -> PyLegendOptional[AuthBase]:
+        return None
