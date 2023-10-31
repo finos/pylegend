@@ -39,7 +39,7 @@ class TestLegendApiLegendFunctionFrame:
                 artifact_id="pylegend-test-models",
                 version="0.0.1-SNAPSHOT"
             ),
-            legend_client=LegendClient("localhost", legend_test_server["engine_port"], False)
+            legend_client=LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
         )
         sql = frame.to_sql_query(FrameToSqlConfig())
 
@@ -68,7 +68,7 @@ class TestLegendApiLegendFunctionFrame:
                 artifact_id="pylegend-test-models",
                 version="0.0.1-SNAPSHOT"
             ),
-            legend_client=LegendClient("localhost", legend_test_server["engine_port"], False)
+            legend_client=LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
         )
         res = frame.execute_frame_to_string()
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

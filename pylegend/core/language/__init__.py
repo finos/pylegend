@@ -58,7 +58,7 @@ from pylegend.core.language.column_expressions import (
     PyLegendStrictDateColumnExpression,
 )
 from pylegend.core.language.tds_row import TdsRow
-from pylegend.core.language.aggregate_specification import AggregateSpecification
+from pylegend.core.language.aggregate_specification import AggregateSpecification, agg
 from pylegend.core.language.primitive_collection import (
     PyLegendPrimitiveCollection,
     PyLegendIntegerCollection,
@@ -117,6 +117,7 @@ __all__: PyLegendSequence[str] = [
 
     "TdsRow",
     "AggregateSpecification",
+    "agg",
 
     "PyLegendPrimitiveCollection",
     "PyLegendIntegerCollection",

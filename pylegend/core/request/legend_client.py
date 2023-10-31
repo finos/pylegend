@@ -17,6 +17,7 @@ from pylegend.core.request.service_client import (
     RequestMethod
 )
 from pylegend.core.request.response_reader import ResponseReader
+from pylegend.core.request.auth import AuthScheme, LocalhostEmptyAuthScheme
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
@@ -24,15 +25,23 @@ from pylegend._typing import (
 from pylegend.core.tds.tds_column import TdsColumn, tds_columns_from_json
 
 
+__all__: PyLegendSequence[str] = [
+    "LegendClient",
+]
+
+
 class LegendClient(ServiceClient):
     def __init__(
             self,
             host: str,
             port: int,
+            auth_scheme: AuthScheme = LocalhostEmptyAuthScheme(),
             secure_http: bool = True,
             retry_count: int = 2
     ) -> None:
-        super().__init__(host=host, port=port, secure_http=secure_http, retry_count=retry_count)
+        super().__init__(
+            host=host, port=port, auth_scheme=auth_scheme, secure_http=secure_http, retry_count=retry_count
+        )
 
     def get_sql_string_schema(
             self,

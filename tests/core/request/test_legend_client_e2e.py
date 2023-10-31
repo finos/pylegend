@@ -20,7 +20,7 @@ from pylegend._typing import PyLegendDict, PyLegendUnion
 class TestLegendClientE2E:
 
     def test_e2e_schema_string_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        client = LegendClient("localhost", legend_test_server["engine_port"], False)
+        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
         res = client.get_sql_string_schema(
             "SELECT * FROM "
             "   service("
@@ -34,7 +34,7 @@ class TestLegendClientE2E:
             "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String)"
 
     def test_e2e_execute_string_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        client = LegendClient("localhost", legend_test_server["engine_port"], False)
+        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
         res = client.execute_sql_string(
             "SELECT * FROM "
             "   service("
