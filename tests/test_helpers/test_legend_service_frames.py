@@ -16,7 +16,7 @@ from pylegend._typing import (
     PyLegendSequence,
 )
 from pylegend.core.request.legend_client import LegendClient
-from pylegend.core.tds.project_cooridnates import VersionedProjectCoordinates
+from pylegend.core.project_cooridnates import VersionedProjectCoordinates
 from pylegend.extensions.tds.legend_api.frames.legend_api_legend_service_input_frame import (
     LegendApiLegendServiceInputFrame
 )

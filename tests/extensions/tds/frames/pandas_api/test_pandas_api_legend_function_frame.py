@@ -20,7 +20,7 @@ from pylegend._typing import (
 )
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.project_cooridnates import VersionedProjectCoordinates
+from pylegend.core.project_cooridnates import VersionedProjectCoordinates
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_function_input_frame import (
     PandasApiLegendFunctionInputFrame,
 )

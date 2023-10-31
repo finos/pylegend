@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pylegend.core.tds.project_cooridnates import (
+from pylegend.core.project_cooridnates import (
     VersionedProjectCoordinates,
     PersonalWorkspaceProjectCoordinates,
     GroupWorkspaceProjectCoordinates,

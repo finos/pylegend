@@ -16,7 +16,7 @@ from pylegend._typing import (
     PyLegendSequence
 )
 from pylegend.core.tds.legend_api.frames.legend_api_input_tds_frame import LegendApiExecutableInputTdsFrame
-from pylegend.core.tds.project_cooridnates import ProjectCoordinates
+from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.extensions.tds.abstract.legend_function_input_frame import LegendFunctionInputFrameAbstract
 

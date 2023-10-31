@@ -21,7 +21,7 @@ from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame,
     FrameToSqlConfig,
 )
-from pylegend.core.tds.project_cooridnates import ProjectCoordinates
+from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     TableFunction,
