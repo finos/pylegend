@@ -40,10 +40,19 @@ class RequestMethod(Enum):
 
 class ServiceClient(metaclass=ABCMeta):
 
-    def __init__(self, host: str, port: int, auth_scheme: AuthScheme, secure_http: bool, retry_count: int) -> None:
+    def __init__(
+            self,
+            host: str,
+            port: int,
+            secure_http: bool,
+            path_prefix: PyLegendOptional[str],
+            auth_scheme: AuthScheme,
+            retry_count: int
+    ) -> None:
         self.__host = host
         self.__port = port
         self.__auth_scheme = auth_scheme
+        self.__path_prefix = path_prefix
         self.__secure_http = secure_http
         if retry_count < 1:
             raise ValueError("Retry count should be a number greater than 1. Got " + str(retry_count))
@@ -66,7 +75,9 @@ class ServiceClient(metaclass=ABCMeta):
     ) -> requests.Response:
 
         scheme = "https" if self.__secure_http else "http"
-        url = f"{scheme}://{self.__host}:{self.__port}/{path}"
+        prefix = (self.__path_prefix if self.__path_prefix.startswith("/") else f"/{self.__path_prefix}") \
+            if self.__path_prefix is not None else ""
+        url = f"{scheme}://{self.__host}:{self.__port}{prefix}/{path}"
 
         request = requests.Request(
             method=method.name,

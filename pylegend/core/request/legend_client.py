@@ -35,12 +35,18 @@ class LegendClient(ServiceClient):
             self,
             host: str,
             port: int,
-            auth_scheme: AuthScheme = LocalhostEmptyAuthScheme(),
             secure_http: bool = True,
+            path_prefix: PyLegendOptional[str] = None,
+            auth_scheme: AuthScheme = LocalhostEmptyAuthScheme(),
             retry_count: int = 2
     ) -> None:
         super().__init__(
-            host=host, port=port, auth_scheme=auth_scheme, secure_http=secure_http, retry_count=retry_count
+            host=host,
+            port=port,
+            secure_http=secure_http,
+            path_prefix=path_prefix,
+            auth_scheme=auth_scheme,
+            retry_count=retry_count
         )
 
     def get_sql_string_schema(
