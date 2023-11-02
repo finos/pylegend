@@ -36,7 +36,7 @@ class LegendClient(ServiceClient):
             host: str,
             port: int,
             secure_http: bool = True,
-            path_prefix: PyLegendOptional[str] = None,
+            path_prefix: PyLegendOptional[str] = "/api",
             auth_scheme: AuthScheme = LocalhostEmptyAuthScheme(),
             retry_count: int = 2
     ) -> None:
@@ -55,7 +55,7 @@ class LegendClient(ServiceClient):
     ) -> PyLegendSequence[TdsColumn]:
         response = super()._execute_service(
             method=RequestMethod.POST,
-            path="api/sql/v1/execution/getSchemaFromQueryString",
+            path="sql/v1/execution/getSchemaFromQueryString",
             data=sql,
             headers={"Content-Type": "text/plain"},
             stream=False
@@ -70,7 +70,7 @@ class LegendClient(ServiceClient):
     ) -> ResponseReader:
         iter_content = super()._execute_service(
             method=RequestMethod.POST,
-            path="api/sql/v1/execution/executeQueryString",
+            path="sql/v1/execution/executeQueryString",
             data=sql,
             headers={"Content-Type": "text/plain"},
             stream=True
