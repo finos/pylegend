@@ -70,10 +70,10 @@ class TestLegendClient:
             client.get_sql_string_schema("unknown sql")
 
     def test_legend_client_with_path_prefix(self) -> None:
-        client = LegendClient("localhost", self.dynamic_port, secure_http=False, path_prefix="/engine")
+        client = LegendClient("localhost", self.dynamic_port, secure_http=False, path_prefix="/engine/api")
         assert ", ".join([str(x) for x in client.get_sql_string_schema("select 1+2 as a")]) == \
                'TdsColumn(Name: First Name, Type: String)'
 
-        client = LegendClient("localhost", self.dynamic_port, secure_http=False, path_prefix="engine")
+        client = LegendClient("localhost", self.dynamic_port, secure_http=False, path_prefix="engine/api")
         assert ", ".join([str(x) for x in client.get_sql_string_schema("select 1+2 as a")]) == \
                'TdsColumn(Name: First Name, Type: String)'
