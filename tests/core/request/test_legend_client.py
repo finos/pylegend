@@ -28,8 +28,10 @@ class TestLegendClient:
                 content_len = int(self.headers.get_all('content-length')[0])  # type: ignore
                 data = self.rfile.read(content_len).decode()
 
-                if self.path == "/api/sql/v1/execution/getSchemaFromQueryString" and \
-                        data == "select 1+2 as a":
+                if self.path in (
+                        "/api/sql/v1/execution/getSchemaFromQueryString",
+                        "/engine/api/sql/v1/execution/getSchemaFromQueryString",
+                ) and data == "select 1+2 as a":
                     output = """{
                         "columns":
                             {
@@ -66,3 +68,12 @@ class TestLegendClient:
         with pytest.raises(RuntimeError, match=".*Unexpected error when executing on path.*"):
             client = LegendClient("localhost", self.dynamic_port, secure_http=False)
             client.get_sql_string_schema("unknown sql")
+
+    def test_legend_client_with_path_prefix(self) -> None:
+        client = LegendClient("localhost", self.dynamic_port, secure_http=False, path_prefix="/engine")
+        assert ", ".join([str(x) for x in client.get_sql_string_schema("select 1+2 as a")]) == \
+               'TdsColumn(Name: First Name, Type: String)'
+
+        client = LegendClient("localhost", self.dynamic_port, secure_http=False, path_prefix="engine")
+        assert ", ".join([str(x) for x in client.get_sql_string_schema("select 1+2 as a")]) == \
+               'TdsColumn(Name: First Name, Type: String)'
