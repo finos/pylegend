@@ -10,6 +10,9 @@
 # PyTest
 **/.pytest_cache/
 
+# Catch
+**/__pycache__
+
 # Egg Info
 **/*egg-info/
 
@@ -19,3 +22,4 @@
 poetry.lock
 
 /dist/
+/temp/
