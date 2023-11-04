@@ -19,13 +19,15 @@ from requests import PreparedRequest
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
+    PyLegendCallable,
+    PyLegendDict,
 )
 from requests.auth import AuthBase
 
 __all__: PyLegendSequence[str] = [
     "AuthScheme",
     "LocalhostEmptyAuthScheme",
-    "BearerAuthScheme"
+    "HeaderTokenAuthScheme"
 ]
 
 
@@ -42,20 +44,42 @@ class LocalhostEmptyAuthScheme(AuthScheme):
         return None
 
 
-class BearerAuth(AuthBase):
-    def __init__(self, headerName: str, token: str) -> None:
-        self.headerName = headerName
-        self.token = token
+class HeaderTokenAuth(AuthBase):
+    __header_name: str
+    __token_provider: PyLegendCallable[[], str]
+    __query_params: PyLegendOptional[PyLegendDict[str, str]]
+
+    def __init__(
+            self,
+            header_name: str,
+            token_provider: PyLegendCallable[[], str],
+            query_params: PyLegendOptional[PyLegendDict[str, str]] = None
+    ) -> None:
+        self.__header_name = header_name
+        self.__token_provider = token_provider
+        self.__query_params = query_params
 
     def __call__(self, r: PreparedRequest) -> PreparedRequest:
-        r.headers[self.headerName] = self.token
+        if self.__query_params:
+            r.prepare_url(r.url, self.__query_params)
+        r.headers[self.__header_name] = self.__token_provider()
         return r
 
 
-class BearerAuthScheme(AuthScheme):
-    def __init__(self, headerName: str, token: str) -> None:
-        self.headerName = headerName
-        self.token = token
+class HeaderTokenAuthScheme(AuthScheme):
+    __header_name: str
+    __token_provider: PyLegendCallable[[], str]
+    __query_params: PyLegendOptional[PyLegendDict[str, str]]
+
+    def __init__(
+            self,
+            header_name: str,
+            token_provider: PyLegendCallable[[], str],
+            query_params: PyLegendOptional[PyLegendDict[str, str]] = None
+    ) -> None:
+        self.__header_name = header_name
+        self.__token_provider = token_provider
+        self.__query_params = query_params
 
     def get_auth_base(self) -> PyLegendOptional[AuthBase]:
-        return BearerAuth(self.headerName, self.token)
+        return HeaderTokenAuth(self.__header_name, self.__token_provider, self.__query_params)
