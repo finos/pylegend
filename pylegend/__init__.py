@@ -23,6 +23,7 @@ from pylegend.core.request import (
     LegendClient,
     AuthScheme,
     LocalhostEmptyAuthScheme,
+    HeaderTokenAuthScheme,
     ResponseReader,
 )
 from pylegend.core.project_cooridnates import (
@@ -42,6 +43,7 @@ __all__: PyLegendSequence[str] = [
     "LegendClient",
     "AuthScheme",
     "LocalhostEmptyAuthScheme",
+    "HeaderTokenAuthScheme",
     "ResponseReader",
 
     "VersionedProjectCoordinates",

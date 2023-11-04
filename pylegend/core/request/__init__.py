@@ -16,7 +16,7 @@ from pylegend._typing import (
     PyLegendSequence,
 )
 from pylegend.core.request.legend_client import LegendClient
-from pylegend.core.request.auth import AuthScheme, LocalhostEmptyAuthScheme
+from pylegend.core.request.auth import AuthScheme, LocalhostEmptyAuthScheme, HeaderTokenAuthScheme
 from pylegend.core.request.response_reader import ResponseReader
 
 __all__: PyLegendSequence[str] = [
@@ -24,6 +24,7 @@ __all__: PyLegendSequence[str] = [
 
     "AuthScheme",
     "LocalhostEmptyAuthScheme",
+    "HeaderTokenAuthScheme",
 
     "ResponseReader"
 ]
