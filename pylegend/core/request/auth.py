@@ -15,6 +15,7 @@
 from abc import ABCMeta, abstractmethod
 
 from requests import PreparedRequest
+from requests.cookies import create_cookie
 
 from pylegend._typing import (
     PyLegendSequence,
@@ -27,7 +28,8 @@ from requests.auth import AuthBase
 __all__: PyLegendSequence[str] = [
     "AuthScheme",
     "LocalhostEmptyAuthScheme",
-    "HeaderTokenAuthScheme"
+    "HeaderTokenAuthScheme",
+    "CookieAuthScheme",
 ]
 
 
@@ -83,3 +85,55 @@ class HeaderTokenAuthScheme(AuthScheme):
 
     def get_auth_base(self) -> PyLegendOptional[AuthBase]:
         return HeaderTokenAuth(self.__header_name, self.__token_provider, self.__query_params)
+
+
+class CookieAuth(AuthBase):
+    __cookie_name: str
+    __cookie_provider: PyLegendCallable[[], str]
+    __query_params: PyLegendOptional[PyLegendDict[str, str]]
+
+    def __init__(  # type: ignore
+            self,
+            cookie_name: str,
+            cookie_provider: PyLegendCallable[[], str],
+            query_params: PyLegendOptional[PyLegendDict[str, str]] = None,
+            **extra_cookie_params
+    ) -> None:
+        self.__cookie_name = cookie_name
+        self.__cookie_provider = cookie_provider
+        self.__query_params = query_params
+        self.__extra_cookie_params = extra_cookie_params
+
+    def __call__(self, r: PreparedRequest) -> PreparedRequest:
+        if self.__query_params:
+            r.prepare_url(r.url, self.__query_params)
+        r.headers.pop("Cookie", None)
+        new_cookie = create_cookie(  # type: ignore
+            name=self.__cookie_name,
+            value=self.__cookie_provider(),
+            **self.__extra_cookie_params
+        )
+        r._cookies.set_cookie(new_cookie)  # type: ignore
+        r.prepare_cookies(r._cookies)  # type: ignore
+        return r
+
+
+class CookieAuthScheme(AuthScheme):
+    __cookie_name: str
+    __cookie_provider: PyLegendCallable[[], str]
+    __query_params: PyLegendOptional[PyLegendDict[str, str]]
+
+    def __init__(  # type: ignore
+            self,
+            cookie_name: str,
+            cookie_provider: PyLegendCallable[[], str],
+            query_params: PyLegendOptional[PyLegendDict[str, str]] = None,
+            **extra_cookie_params
+    ) -> None:
+        self.__cookie_name = cookie_name
+        self.__cookie_provider = cookie_provider
+        self.__query_params = query_params
+        self.__extra_cookie_params = extra_cookie_params
+
+    def get_auth_base(self) -> PyLegendOptional[AuthBase]:
+        return CookieAuth(self.__cookie_name, self.__cookie_provider, self.__query_params, **self.__extra_cookie_params)
