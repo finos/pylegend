@@ -47,4 +47,4 @@ jobs:
         run: |
           source .venv/bin/activate
           poetry install --with dev
-          pip-licenses --format=markdown --order=license --allow-only="MIT License;Apache Software License;BSD License;Mozilla Public License 2.0 (MPL 2.0)"
+          pip-licenses --format=markdown --order=license --allow-only="MIT License;Apache Software License;BSD License;Mozilla Public License 2.0 (MPL 2.0);MIT No Attribution License (MIT-0);Python Software Foundation License;"
