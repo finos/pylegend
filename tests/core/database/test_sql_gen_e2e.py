@@ -56,7 +56,7 @@ class E2EDbSpecificSqlGenerationTest(metaclass=ABCMeta):
     def wrap_and_execute_expression(self, db_test, expr):
         wrapped = QuerySpecification(
             select=Select(
-                selectItems=[SingleColumn(alias="res", expression=expr)],
+                selectItems=[SingleColumn(alias=self.db_extension().quote_identifier("res"), expression=expr)],
                 distinct=False
             ),
             from_=[],
