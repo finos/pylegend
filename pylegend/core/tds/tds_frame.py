@@ -27,6 +27,8 @@ from pylegend.extensions.tds.result_handler import PandasDfReadConfig
 
 postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
 importlib.import_module(postgres_ext)
+mysql_ext = 'pylegend.extensions.database.vendors.mysql.mysql_sql_to_string'
+importlib.import_module(mysql_ext)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendTdsFrame",
