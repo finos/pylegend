@@ -1,0 +1,5 @@
+security:
+  ignore-vulnerabilities:
+    67599:
+      reason: Not using extra index url
+      expires: '2024-07-02'
