@@ -12,7 +12,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.13"
+python = ">=3.13,<3.14"
 requests = ">=2.27.1"
 ijson = ">=3.1.4"
 pandas = [
