@@ -58,16 +58,16 @@ jobs:
 
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
           path: ./test-results/*.xml
 
       - name: Upload Test Coverage Report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports
+          name: coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}
           path: ./coverage/*.xml
 
       - name: CodeCov Coverage Report
@@ -78,9 +78,9 @@ jobs:
 
       - name: Upload CI Event
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: event-file
+          name: event-file-${{ matrix.os }}-${{ matrix.python-version }}
           path: ${{ github.event_path }}
 
   build:
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload Built Artifacts
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: ./dist/*

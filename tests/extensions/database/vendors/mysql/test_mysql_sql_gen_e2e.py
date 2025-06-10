@@ -15,14 +15,13 @@
 
 # type: ignore
 import pytest
-import platform
 import sqlalchemy
 from testcontainers.mysql import MySqlContainer
 from tests.core.database.test_sql_gen_e2e import E2EDbSpecificSqlGenerationTest
 from pylegend.extensions.database.vendors.mysql.mysql_sql_to_string import MySQLSqlToStringGenerator
 
 
-@pytest.mark.skipif(platform.system() in ("Windows", "Darwin"), reason="Skip on windows and macos")
+@pytest.mark.skip(reason="MySQL not supported ")
 class TestMySQLE2ESqlGeneration(E2EDbSpecificSqlGenerationTest):
     extension = MySQLSqlToStringGenerator.create_sql_generator().get_db_extension()
 

@@ -122,6 +122,6 @@ public class PyLegendSqlServer<T extends ServerConfiguration> extends Server<T>
         environment.jersey().register(new SqlGrammar());
         environment.jersey().register(new CatchAllExceptionMapper());
 
-        Compiler.compile(PureModelContextData.newBuilder().build(), DeploymentMode.TEST_IGNORE_FUNCTION_MATCH, Lists.mutable.empty());
+        Compiler.compile(PureModelContextData.newBuilder().build(), DeploymentMode.TEST_IGNORE_FUNCTION_MATCH, "test");
     }
 }
