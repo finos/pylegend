@@ -16,7 +16,7 @@ PyLegend is part of [Legend](https://github.com/finos/legend) data management pl
 
 ## Build from source
 
-PyLegend requires Python 3.8 or higher. We use [Poetry](https://python-poetry.org/) tool for dependency management and packaging. To install poetry, follow instructions [here](https://python-poetry.org/docs/#installation).
+PyLegend requires Python 3.9 or higher. We use [Poetry](https://python-poetry.org/) tool for dependency management and packaging. To install poetry, follow instructions [here](https://python-poetry.org/docs/#installation).
 
 Run `poetry install` to install dependencies. If you intend to contribute, install dev dependencies using the command `poetry install --with dev`.
 
