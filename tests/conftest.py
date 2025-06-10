@@ -57,7 +57,7 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
     class MetadataServerHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             if self.path == ("/depot/api/projects/org.finos.legend.pylegend/pylegend-test-models/versions/"
-                             "0.0.1-SNAPSHOT/pureModelContextData?clientVersion=v1_32_0"):
+                             "0.0.1-SNAPSHOT/pureModelContextData?convertToNewProtocol=false&clientVersion=v1_33_0"):
                 file = "org.finos.legend.pylegend_pylegend-test-models_0.0.1-SNAPSHOT.json"
             else:
                 raise RuntimeError("Unhandled metadata path: " + self.path)  # pragma: no cover
