@@ -28,9 +28,9 @@ from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.language import (
-    TdsRow,
-    AggregateSpecification,
-    PyLegendPrimitive,
+    LegendApiTdsRow,
+    LegendApiAggregateSpecification,
+    LegendApiPrimitive,
     create_primitive_collection,
     convert_literal_to_literal_expression,
 )
@@ -45,7 +45,7 @@ __all__: PyLegendSequence[str] = [
 class GroupByFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
     __grouping_columns: PyLegendList[str]
-    __aggregations: PyLegendList[AggregateSpecification]
+    __aggregations: PyLegendList[LegendApiAggregateSpecification]
 
     @classmethod
     def name(cls) -> str:
@@ -55,7 +55,7 @@ class GroupByFunction(LegendApiAppliedFunction):
             self,
             base_frame: LegendApiBaseTdsFrame,
             grouping_columns: PyLegendList[str],
-            aggregations: PyLegendList[AggregateSpecification],
+            aggregations: PyLegendList[LegendApiAggregateSpecification],
     ) -> None:
         self.__base_frame = base_frame
         self.__grouping_columns = grouping_columns
@@ -87,7 +87,7 @@ class GroupByFunction(LegendApiAppliedFunction):
 
         new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
 
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for agg in self.__aggregations:
             map_result = agg.get_map_fn()(tds_row)
             collection = create_primitive_collection(map_result)
@@ -125,7 +125,7 @@ class GroupByFunction(LegendApiAppliedFunction):
                 if base_col.get_name() == c:
                     new_columns.append(base_col.copy())
 
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for agg in self.__aggregations:
             map_result = agg.get_map_fn()(tds_row)
             collection = create_primitive_collection(map_result)
@@ -159,7 +159,7 @@ class GroupByFunction(LegendApiAppliedFunction):
             raise ValueError("Found duplicate column names in grouping columns and aggregation columns. "
                              f"Grouping columns - {self.__grouping_columns}, Aggregation columns - {agg_cols}")
 
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
         index = 0
         for agg in self.__aggregations:
             map_fn_copy = agg.get_map_fn()  # For MyPy
@@ -176,7 +176,7 @@ class GroupByFunction(LegendApiAppliedFunction):
                     f"Error occurred while evaluating map function. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(map_result, (int, float, bool, str, PyLegendPrimitive)):
+            if not isinstance(map_result, (int, float, bool, str, LegendApiPrimitive)):
                 raise ValueError(
                     f"AggregateSpecification at index {index} (0-indexed) incompatible. "
                     f"Map function returns non-primitive - {str(type(map_result))}"
@@ -198,7 +198,7 @@ class GroupByFunction(LegendApiAppliedFunction):
                     f"Error occurred while evaluating aggregate function. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(agg_result, PyLegendPrimitive):
+            if not isinstance(agg_result, LegendApiPrimitive):
                 raise ValueError(
                     f"AggregateSpecification at index {index} (0-indexed) incompatible. "
                     f"Aggregate function returns non-primitive - {str(type(agg_result))}"

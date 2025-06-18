@@ -15,19 +15,19 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
-from pylegend.core.language.primitives import (
-    PyLegendPrimitive,
-    PyLegendPrimitiveOrPythonPrimitive,
-    PyLegendBoolean,
-    PyLegendString,
-    PyLegendNumber,
-    PyLegendInteger,
-    PyLegendFloat,
-    PyLegendDate,
-    PyLegendDateTime,
-    PyLegendStrictDate,
+from pylegend.core.language.legend_api.primitives import (
+    LegendApiPrimitive,
+    LegendApiPrimitiveOrPythonPrimitive,
+    LegendApiBoolean,
+    LegendApiString,
+    LegendApiNumber,
+    LegendApiInteger,
+    LegendApiFloat,
+    LegendApiDate,
+    LegendApiDateTime,
+    LegendApiStrictDate,
 )
-from pylegend.core.language.expression import (
+from pylegend.core.language.shared.expression import (
     PyLegendExpressionBooleanReturn,
     PyLegendExpressionStringReturn,
     PyLegendExpressionNumberReturn,
@@ -37,7 +37,7 @@ from pylegend.core.language.expression import (
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
 )
-from pylegend.core.language.literal_expressions import (
+from pylegend.core.language.shared.literal_expressions import (
     PyLegendBooleanLiteralExpression,
     PyLegendStringLiteralExpression,
     PyLegendIntegerLiteralExpression,
@@ -46,47 +46,47 @@ from pylegend.core.language.literal_expressions import (
     PyLegendStrictDateLiteralExpression,
     convert_literal_to_literal_expression,
 )
-from pylegend.core.language.column_expressions import (
-    PyLegendColumnExpression,
-    PyLegendBooleanColumnExpression,
-    PyLegendStringColumnExpression,
-    PyLegendNumberColumnExpression,
-    PyLegendIntegerColumnExpression,
-    PyLegendFloatColumnExpression,
-    PyLegendDateColumnExpression,
-    PyLegendDateTimeColumnExpression,
-    PyLegendStrictDateColumnExpression,
+from pylegend.core.language.legend_api.column_expressions import (
+    LegendApiColumnExpression,
+    LegendApiBooleanColumnExpression,
+    LegendApiStringColumnExpression,
+    LegendApiNumberColumnExpression,
+    LegendApiIntegerColumnExpression,
+    LegendApiFloatColumnExpression,
+    LegendApiDateColumnExpression,
+    LegendApiDateTimeColumnExpression,
+    LegendApiStrictDateColumnExpression,
 )
-from pylegend.core.language.tds_row import TdsRow
-from pylegend.core.language.aggregate_specification import AggregateSpecification, agg
-from pylegend.core.language.primitive_collection import (
-    PyLegendPrimitiveCollection,
-    PyLegendIntegerCollection,
-    PyLegendFloatCollection,
-    PyLegendNumberCollection,
-    PyLegendStringCollection,
-    PyLegendBooleanCollection,
-    PyLegendDateCollection,
-    PyLegendDateTimeCollection,
-    PyLegendStrictDateCollection,
+from pylegend.core.language.legend_api.tds_row import LegendApiTdsRow
+from pylegend.core.language.legend_api.aggregate_specification import LegendApiAggregateSpecification, agg
+from pylegend.core.language.legend_api.primitive_collection import (
+    LegendApiPrimitiveCollection,
+    LegendApiIntegerCollection,
+    LegendApiFloatCollection,
+    LegendApiNumberCollection,
+    LegendApiStringCollection,
+    LegendApiBooleanCollection,
+    LegendApiDateCollection,
+    LegendApiDateTimeCollection,
+    LegendApiStrictDateCollection,
     create_primitive_collection,
 )
-from pylegend.core.language.functions import (
+from pylegend.core.language.shared.functions import (
     today,
     now,
 )
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendPrimitive",
-    "PyLegendPrimitiveOrPythonPrimitive",
-    "PyLegendBoolean",
-    "PyLegendString",
-    "PyLegendNumber",
-    "PyLegendInteger",
-    "PyLegendFloat",
-    "PyLegendDate",
-    "PyLegendDateTime",
-    "PyLegendStrictDate",
+    "LegendApiPrimitive",
+    "LegendApiPrimitiveOrPythonPrimitive",
+    "LegendApiBoolean",
+    "LegendApiString",
+    "LegendApiNumber",
+    "LegendApiInteger",
+    "LegendApiFloat",
+    "LegendApiDate",
+    "LegendApiDateTime",
+    "LegendApiStrictDate",
 
     "PyLegendExpressionBooleanReturn",
     "PyLegendExpressionStringReturn",
@@ -97,15 +97,15 @@ __all__: PyLegendSequence[str] = [
     "PyLegendExpressionDateTimeReturn",
     "PyLegendExpressionStrictDateReturn",
 
-    "PyLegendColumnExpression",
-    "PyLegendBooleanColumnExpression",
-    "PyLegendStringColumnExpression",
-    "PyLegendNumberColumnExpression",
-    "PyLegendIntegerColumnExpression",
-    "PyLegendFloatColumnExpression",
-    "PyLegendDateColumnExpression",
-    "PyLegendDateTimeColumnExpression",
-    "PyLegendStrictDateColumnExpression",
+    "LegendApiColumnExpression",
+    "LegendApiBooleanColumnExpression",
+    "LegendApiStringColumnExpression",
+    "LegendApiNumberColumnExpression",
+    "LegendApiIntegerColumnExpression",
+    "LegendApiFloatColumnExpression",
+    "LegendApiDateColumnExpression",
+    "LegendApiDateTimeColumnExpression",
+    "LegendApiStrictDateColumnExpression",
 
     "PyLegendBooleanLiteralExpression",
     "PyLegendStringLiteralExpression",
@@ -115,19 +115,19 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDateLiteralExpression",
     "convert_literal_to_literal_expression",
 
-    "TdsRow",
-    "AggregateSpecification",
+    "LegendApiTdsRow",
+    "LegendApiAggregateSpecification",
     "agg",
 
-    "PyLegendPrimitiveCollection",
-    "PyLegendIntegerCollection",
-    "PyLegendFloatCollection",
-    "PyLegendNumberCollection",
-    "PyLegendStringCollection",
-    "PyLegendBooleanCollection",
-    "PyLegendDateCollection",
-    "PyLegendDateTimeCollection",
-    "PyLegendStrictDateCollection",
+    "LegendApiPrimitiveCollection",
+    "LegendApiIntegerCollection",
+    "LegendApiFloatCollection",
+    "LegendApiNumberCollection",
+    "LegendApiStringCollection",
+    "LegendApiBooleanCollection",
+    "LegendApiDateCollection",
+    "LegendApiDateTimeCollection",
+    "LegendApiStrictDateCollection",
     "create_primitive_collection",
 
     "today",

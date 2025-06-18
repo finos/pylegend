@@ -28,7 +28,7 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import PyLegendPrimitive, TdsRow
+from pylegend.core.language import LegendApiPrimitive, LegendApiTdsRow
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -64,8 +64,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
     def assign(
             self,
             **kwargs: PyLegendCallable[
-                [TdsRow],
-                PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
+                [LegendApiTdsRow],
+                PyLegendUnion[int, float, bool, str, date, datetime, LegendApiPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (

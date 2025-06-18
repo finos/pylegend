@@ -24,10 +24,10 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language import (
-    TdsRow,
-    PyLegendBoolean,
-    PyLegendPrimitiveOrPythonPrimitive,
-    AggregateSpecification,
+    LegendApiTdsRow,
+    LegendApiBoolean,
+    LegendApiPrimitiveOrPythonPrimitive,
+    LegendApiAggregateSpecification,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -88,14 +88,14 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def filter(
             self,
-            filter_function: PyLegendCallable[[TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+            filter_function: PyLegendCallable[[LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]]
     ) -> "LegendApiTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod
     def extend(
             self,
-            functions_list: PyLegendList[PyLegendCallable[[TdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+            functions_list: PyLegendList[PyLegendCallable[[LegendApiTdsRow], LegendApiPrimitiveOrPythonPrimitive]],
             column_names_list: PyLegendList[str]
     ) -> "LegendApiTdsFrame":
         pass  # pragma: no cover
@@ -104,7 +104,7 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
     def join(
             self,
             other: "LegendApiTdsFrame",
-            join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
+            join_condition: PyLegendCallable[[LegendApiTdsRow, LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]],
             join_type: str = 'LEFT_OUTER'
     ) -> "LegendApiTdsFrame":
         pass  # pragma: no cover
@@ -122,7 +122,7 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
     def join_by_function(
             self,
             other: "LegendApiTdsFrame",
-            join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
+            join_condition: PyLegendCallable[[LegendApiTdsRow, LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]],
             join_type: str = 'LEFT_OUTER'
     ) -> "LegendApiTdsFrame":
         return self.join(other, join_condition, join_type)
@@ -131,6 +131,6 @@ class LegendApiTdsFrame(PyLegendTdsFrame):
     def group_by(
             self,
             grouping_columns: PyLegendList[str],
-            aggregations: PyLegendList[AggregateSpecification],
+            aggregations: PyLegendList[LegendApiAggregateSpecification],
     ) -> "LegendApiTdsFrame":
         pass  # pragma: no cover

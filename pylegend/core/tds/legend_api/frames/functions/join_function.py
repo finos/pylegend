@@ -39,8 +39,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.core.language import (
-    PyLegendBoolean,
-    TdsRow,
+    LegendApiBoolean,
+    LegendApiTdsRow,
     PyLegendBooleanLiteralExpression,
 )
 
@@ -53,7 +53,7 @@ __all__: PyLegendSequence[str] = [
 class JoinFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
     __other_frame: LegendApiBaseTdsFrame
-    __join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+    __join_condition: PyLegendCallable[[LegendApiTdsRow, LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]]
     __join_type: str
 
     @classmethod
@@ -64,7 +64,7 @@ class JoinFunction(LegendApiAppliedFunction):
             self,
             base_frame: LegendApiBaseTdsFrame,
             other_frame: LegendApiTdsFrame,
-            join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
+            join_condition: PyLegendCallable[[LegendApiTdsRow, LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]],
             join_type: str
     ) -> None:
         self.__base_frame = base_frame
@@ -86,12 +86,12 @@ class JoinFunction(LegendApiAppliedFunction):
             )
         )
 
-        left_row = TdsRow.from_tds_frame('left', self.__base_frame)
-        right_row = TdsRow.from_tds_frame('right', self.__other_frame)
+        left_row = LegendApiTdsRow.from_tds_frame('left', self.__base_frame)
+        right_row = LegendApiTdsRow.from_tds_frame('right', self.__other_frame)
 
         join_expr = self.__join_condition(left_row, right_row)
         if isinstance(join_expr, bool):
-            join_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(join_expr))
+            join_expr = LegendApiBoolean(PyLegendBooleanLiteralExpression(join_expr))
         join_sql_expr = join_expr.to_sql_expression(
             {
                 'left': create_sub_query(base_query, config, 'left'),
@@ -159,8 +159,8 @@ class JoinFunction(LegendApiAppliedFunction):
         if not isinstance(copy, type(lambda x: 0)) or (copy.__code__.co_argcount != 2):
             raise TypeError("Join condition function should be a lambda which takes two arguments (TDSRow, TDSRow)")
 
-        left_row = TdsRow.from_tds_frame("left", self.__base_frame)
-        right_row = TdsRow.from_tds_frame("right", self.__other_frame)
+        left_row = LegendApiTdsRow.from_tds_frame("left", self.__base_frame)
+        right_row = LegendApiTdsRow.from_tds_frame("right", self.__other_frame)
 
         try:
             result = self.__join_condition(left_row, right_row)
@@ -169,7 +169,7 @@ class JoinFunction(LegendApiAppliedFunction):
                 "Join condition function incompatible. Error occurred while evaluating. Message: " + str(e)
             ) from e
 
-        if not isinstance(result, (bool, PyLegendBoolean)):
+        if not isinstance(result, (bool, LegendApiBoolean)):
             raise RuntimeError("Join condition function incompatible. Returns non boolean - " + str(type(result)))
 
         left_cols = [c.get_name() for c in self.__base_frame.columns()]

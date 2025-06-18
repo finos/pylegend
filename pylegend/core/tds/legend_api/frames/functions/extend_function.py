@@ -28,9 +28,9 @@ from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.language import (
-    TdsRow,
-    PyLegendPrimitive,
-    PyLegendPrimitiveOrPythonPrimitive,
+    LegendApiTdsRow,
+    LegendApiPrimitive,
+    LegendApiPrimitiveOrPythonPrimitive,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.tds.legend_api.frames.functions.function_helpers import tds_column_for_primitive
@@ -42,7 +42,7 @@ __all__: PyLegendSequence[str] = [
 
 class ExtendFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
-    __functions_list: PyLegendList[PyLegendCallable[[TdsRow], PyLegendPrimitiveOrPythonPrimitive]]
+    __functions_list: PyLegendList[PyLegendCallable[[LegendApiTdsRow], LegendApiPrimitiveOrPythonPrimitive]]
     __column_names_list: PyLegendList[str]
 
     @classmethod
@@ -52,7 +52,7 @@ class ExtendFunction(LegendApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegendApiBaseTdsFrame,
-            functions_list: PyLegendList[PyLegendCallable[[TdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+            functions_list: PyLegendList[PyLegendCallable[[LegendApiTdsRow], LegendApiPrimitiveOrPythonPrimitive]],
             column_names_list: PyLegendList[str]
     ) -> None:
         self.__base_frame = base_frame
@@ -69,7 +69,7 @@ class ExtendFunction(LegendApiAppliedFunction):
             copy_query(base_query)
         )
 
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for (func, name) in zip(self.__functions_list, self.__column_names_list):
             col_expr = func(tds_row)
 
@@ -96,7 +96,7 @@ class ExtendFunction(LegendApiAppliedFunction):
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         new_columns = [c.copy() for c in self.__base_frame.columns()]
 
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for (func, name) in zip(self.__functions_list, self.__column_names_list):
             result = func(tds_row)
             new_columns.append(tds_column_for_primitive(name, result))
@@ -111,7 +111,7 @@ class ExtendFunction(LegendApiAppliedFunction):
                 f"Column names: {len(self.__column_names_list)}"
             )
 
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
         index = 0
         for (func, name) in zip(self.__functions_list, self.__column_names_list):
             copy = func  # For MyPy
@@ -134,7 +134,7 @@ class ExtendFunction(LegendApiAppliedFunction):
                     f"Error occurred while evaluating. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(result, (int, float, bool, str, PyLegendPrimitive)):
+            if not isinstance(result, (int, float, bool, str, LegendApiPrimitive)):
                 raise ValueError(
                     f"Extend function at index {index} (0-indexed) incompatible. "
                     f"Returns non-primitive - {str(type(result))}"

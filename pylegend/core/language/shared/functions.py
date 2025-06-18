@@ -12,32 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import abstractmethod
-from datetime import date, datetime
+
 from pylegend._typing import (
-    PyLegendCallable,
     PyLegendSequence,
-    PyLegendUnion,
 )
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame
-from pylegend.core.language import (
-    LegendApiTdsRow,
-    LegendApiPrimitive,
+from pylegend.core.language.legend_api.primitives.strictdate import LegendApiStrictDate
+from pylegend.core.language.legend_api.primitives.datetime import LegendApiDateTime
+from pylegend.core.language.shared.operations.date_operation_expressions import (
+    PyLegendTodayExpression,
+    PyLegendNowExpression,
 )
 
+
 __all__: PyLegendSequence[str] = [
-    "PandasApiTdsFrame"
+    "today",
+    "now",
 ]
 
 
-class PandasApiTdsFrame(PyLegendTdsFrame):
+def today() -> LegendApiStrictDate:
+    return LegendApiStrictDate(PyLegendTodayExpression())
 
-    @abstractmethod
-    def assign(
-            self,
-            **kwargs: PyLegendCallable[
-                [LegendApiTdsRow],
-                PyLegendUnion[int, float, bool, str, date, datetime, LegendApiPrimitive]
-            ],
-    ) -> "PandasApiTdsFrame":
-        pass  # pragma: no cover
+
+def now() -> LegendApiDateTime:
+    return LegendApiDateTime(PyLegendNowExpression())

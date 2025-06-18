@@ -29,8 +29,8 @@ from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.language import (
-    TdsRow,
-    PyLegendBoolean,
+    LegendApiTdsRow,
+    LegendApiBoolean,
     PyLegendBooleanLiteralExpression,
 )
 
@@ -41,7 +41,7 @@ __all__: PyLegendSequence[str] = [
 
 class FilterFunction(LegendApiAppliedFunction):
     __base_frame: LegendApiBaseTdsFrame
-    __filter_function: PyLegendCallable[[TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+    __filter_function: PyLegendCallable[[LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]]
 
     @classmethod
     def name(cls) -> str:
@@ -50,7 +50,7 @@ class FilterFunction(LegendApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegendApiBaseTdsFrame,
-            filter_function: PyLegendCallable[[TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+            filter_function: PyLegendCallable[[LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]]
     ) -> None:
         self.__base_frame = base_frame
         self.__filter_function = filter_function
@@ -64,10 +64,10 @@ class FilterFunction(LegendApiAppliedFunction):
             copy_query(base_query)
         )
 
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
         filter_expr = self.__filter_function(tds_row)
         if isinstance(filter_expr, bool):
-            filter_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(filter_expr))
+            filter_expr = LegendApiBoolean(PyLegendBooleanLiteralExpression(filter_expr))
         filter_sql_expr = filter_expr.to_sql_expression(
             {"frame": new_query},
             config
@@ -90,7 +90,7 @@ class FilterFunction(LegendApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
-        tds_row = TdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = LegendApiTdsRow.from_tds_frame("frame", self.__base_frame)
 
         copy = self.__filter_function  # For MyPy
         if not isinstance(copy, type(lambda x: 0)) or (copy.__code__.co_argcount != 1):
@@ -103,7 +103,7 @@ class FilterFunction(LegendApiAppliedFunction):
                 "Filter function incompatible. Error occurred while evaluating. Message: " + str(e)
             ) from e
 
-        if not isinstance(result, (bool, PyLegendBoolean)):
+        if not isinstance(result, (bool, LegendApiBoolean)):
             raise RuntimeError("Filter function incompatible. Returns non boolean - " + str(type(result)))
 
         return True
