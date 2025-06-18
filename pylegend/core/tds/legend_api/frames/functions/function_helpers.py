@@ -17,15 +17,15 @@ from pylegend._typing import (
 )
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.language import (
-    PyLegendPrimitiveOrPythonPrimitive,
-    PyLegendBoolean,
-    PyLegendString,
-    PyLegendNumber,
-    PyLegendInteger,
-    PyLegendFloat,
-    PyLegendDate,
-    PyLegendDateTime,
-    PyLegendStrictDate,
+    LegendApiPrimitiveOrPythonPrimitive,
+    LegendApiBoolean,
+    LegendApiString,
+    LegendApiNumber,
+    LegendApiInteger,
+    LegendApiFloat,
+    LegendApiDate,
+    LegendApiDateTime,
+    LegendApiStrictDate,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -33,22 +33,22 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-def tds_column_for_primitive(name: str, result: PyLegendPrimitiveOrPythonPrimitive) -> TdsColumn:
-    if isinstance(result, (bool, PyLegendBoolean)):
+def tds_column_for_primitive(name: str, result: LegendApiPrimitiveOrPythonPrimitive) -> TdsColumn:
+    if isinstance(result, (bool, LegendApiBoolean)):
         return PrimitiveTdsColumn.boolean_column(name)
-    elif isinstance(result, (str, PyLegendString)):
+    elif isinstance(result, (str, LegendApiString)):
         return PrimitiveTdsColumn.string_column(name)
-    elif isinstance(result, (int, PyLegendInteger)):
+    elif isinstance(result, (int, LegendApiInteger)):
         return PrimitiveTdsColumn.integer_column(name)
-    elif isinstance(result, (float, PyLegendFloat)):
+    elif isinstance(result, (float, LegendApiFloat)):
         return PrimitiveTdsColumn.float_column(name)
-    elif isinstance(result, PyLegendNumber):
+    elif isinstance(result, LegendApiNumber):
         return PrimitiveTdsColumn.number_column(name)
-    elif isinstance(result, PyLegendDateTime):
+    elif isinstance(result, LegendApiDateTime):
         return PrimitiveTdsColumn.datetime_column(name)
-    elif isinstance(result, PyLegendStrictDate):
+    elif isinstance(result, LegendApiStrictDate):
         return PrimitiveTdsColumn.strictdate_column(name)
-    elif isinstance(result, PyLegendDate):
+    elif isinstance(result, LegendApiDate):
         return PrimitiveTdsColumn.date_column(name)
     else:
         raise RuntimeError("Unhandled type: " + str(type(result)))  # pragma: no cover

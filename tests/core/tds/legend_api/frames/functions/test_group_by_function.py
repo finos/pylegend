@@ -24,7 +24,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language import AggregateSpecification
+from pylegend.core.language import LegendApiAggregateSpecification
 
 
 class TestGroupByAppliedFunction:
@@ -58,7 +58,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
-            frame.group_by(["col1"], [AggregateSpecification(lambda x: x, lambda y: y, "col1")])  # type: ignore
+            frame.group_by(["col1"], [LegendApiAggregateSpecification(lambda x: x, lambda y: y, "col1")])  # type: ignore
         assert r.value.args[0] == ("Found duplicate column names in grouping columns and aggregation columns. "
                                    "Grouping columns - ['col1'], Aggregation columns - ['col1']")
 
@@ -69,7 +69,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(TypeError) as r:
-            frame.group_by(["col1"], [AggregateSpecification(lambda: 1, lambda y: y, "col3")])  # type: ignore
+            frame.group_by(["col1"], [LegendApiAggregateSpecification(lambda: 1, lambda y: y, "col3")])  # type: ignore
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. "
                                    "Map function should be a lambda which takes one argument (TDSRow)")
 
@@ -80,7 +80,9 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(RuntimeError) as r:
-            frame.group_by(["col1"], [AggregateSpecification(lambda x: x["col5"], lambda y: y, "col3")])  # type: ignore
+            frame.group_by(
+                ["col1"], [LegendApiAggregateSpecification(lambda x: x["col5"], lambda y: y, "col3")]  # type: ignore
+            )
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. "
                                    "Error occurred while evaluating map function. "
                                    "Message: Column - 'col5' doesn't exist in the current frame. "
@@ -93,9 +95,9 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
-            frame.group_by(["col1"], [AggregateSpecification(lambda x: x, lambda y: y, "col3")])  # type: ignore
+            frame.group_by(["col1"], [LegendApiAggregateSpecification(lambda x: x, lambda y: y, "col3")])  # type: ignore
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. Map function returns "
-                                   "non-primitive - <class 'pylegend.core.language.tds_row.TdsRow'>")
+                                   "non-primitive - <class 'pylegend.core.language.legend_api.tds_row.LegendApiTdsRow'>")
 
     def test_group_by_error_on_incompatible_agg_fn(self) -> None:
         columns = [
@@ -106,7 +108,7 @@ class TestGroupByAppliedFunction:
         with pytest.raises(TypeError) as r:
             frame.group_by(
                 ["col1"],
-                [AggregateSpecification(lambda x: x["col2"], lambda: 1, "col3")]  # type: ignore
+                [LegendApiAggregateSpecification(lambda x: x["col2"], lambda: 1, "col3")]  # type: ignore
             )
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. Aggregate function "
                                    "should be a lambda which takes one argument (primitive collection)")
@@ -120,11 +122,11 @@ class TestGroupByAppliedFunction:
         with pytest.raises(RuntimeError) as r:
             frame.group_by(
                 ["col1"],
-                [AggregateSpecification(lambda x: x["col2"], lambda y: y.unknown(), "col3")]  # type: ignore
+                [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.unknown(), "col3")]  # type: ignore
             )
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. "
                                    "Error occurred while evaluating aggregate function. "
-                                   "Message: 'PyLegendStringCollection' object has no attribute 'unknown'")
+                                   "Message: 'LegendApiStringCollection' object has no attribute 'unknown'")
 
     def test_group_by_error_on_agg_fn_non_primitive(self) -> None:
         columns = [
@@ -135,11 +137,12 @@ class TestGroupByAppliedFunction:
         with pytest.raises(ValueError) as r:
             frame.group_by(
                 ["col1"],
-                [AggregateSpecification(lambda x: x["col2"], lambda y: y, "col3")]  # type: ignore
+                [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y, "col3")]  # type: ignore
             )
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. "
                                    "Aggregate function returns non-primitive - "
-                                   "<class 'pylegend.core.language.primitive_collection.PyLegendStringCollection'>")
+                                   "<class 'pylegend.core.language.legend_api.primitive_collection."
+                                   "LegendApiStringCollection'>")
 
     def test_sql_gen_group_by(self) -> None:
         columns = [
@@ -149,7 +152,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count")]
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count")]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count, Type: Integer)]"
@@ -173,7 +176,7 @@ class TestGroupByAppliedFunction:
         frame = frame.distinct()
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count")]
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count")]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count, Type: Integer)]"
@@ -203,7 +206,7 @@ class TestGroupByAppliedFunction:
         frame = frame.take(10)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count")]
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count")]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count, Type: Integer)]"
@@ -234,11 +237,11 @@ class TestGroupByAppliedFunction:
         frame = frame.take(10)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count1")]
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count1")]
         )
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["Count1"], lambda y: y.count(), "Count2")]
+            [LegendApiAggregateSpecification(lambda x: x["Count1"], lambda y: y.count(), "Count2")]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count2, Type: Integer)]"
@@ -277,8 +280,8 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["col1"],
             [
-                AggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count1"),
-                AggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count2")
+                LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count1"),
+                LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.count(), "Count2")
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -304,7 +307,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.distinct_count(), "Cnt")]
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.distinct_count(), "Cnt")]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Cnt, Type: Integer)]"
@@ -327,7 +330,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.average(), "Average")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.average(), "Average")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Float)]"
@@ -350,7 +353,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"] + 20, lambda y: y.average(), "Average")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"] + 20, lambda y: y.average(), "Average")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Float)]"
@@ -373,7 +376,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.average() + 2, "Average")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.average() + 2, "Average")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Number)]"
@@ -396,7 +399,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.max(), "Maximum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.max(), "Maximum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Integer)]"
@@ -419,7 +422,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.min(), "Minimum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.min(), "Minimum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Minimum, Type: Integer)]"
@@ -442,7 +445,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.sum(), "Sum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.sum(), "Sum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Sum, Type: Integer)]"
@@ -465,7 +468,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.max(), "Maximum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.max(), "Maximum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Float)]"
@@ -488,7 +491,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.min(), "Minimum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.min(), "Minimum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Minimum, Type: Float)]"
@@ -511,7 +514,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.sum(), "Sum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.sum(), "Sum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Sum, Type: Float)]"
@@ -534,7 +537,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.max(), "Maximum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.max(), "Maximum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Number)]"
@@ -557,7 +560,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.min(), "Minimum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.min(), "Minimum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Minimum, Type: Number)]"
@@ -580,7 +583,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col2"],
-            [AggregateSpecification(lambda x: x["col1"], lambda y: y.sum(), "Sum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col1"], lambda y: y.sum(), "Sum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Sum, Type: Number)]"
@@ -604,7 +607,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["col2"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x["col1"],
                     lambda y: y.std_dev_sample(),  # type: ignore
                     "Std Dev Sample"
@@ -633,7 +636,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["col2"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x["col1"],
                     lambda y: y.std_dev(),  # type: ignore
                     "Std Dev"
@@ -662,7 +665,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["col2"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x["col1"],
                     lambda y: y.std_dev_population(),  # type: ignore
                     "Std Dev Population"
@@ -691,7 +694,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["col2"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x["col1"],
                     lambda y: y.variance_sample(),  # type: ignore
                     "Variance Sample"
@@ -720,7 +723,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["col2"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x["col1"],
                     lambda y: y.variance(),  # type: ignore
                     "Variance"
@@ -749,7 +752,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["col2"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x["col1"],
                     lambda y: y.variance_population(),  # type: ignore
                     "Variance Population"
@@ -777,7 +780,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: String)]"
@@ -800,7 +803,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.min(), "Minimum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.min(), "Minimum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Minimum, Type: String)]"
@@ -823,7 +826,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.join(' '), "Joined")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.join(' '), "Joined")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Joined, Type: String)]"
@@ -846,7 +849,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: StrictDate)]"
@@ -869,7 +872,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.min(), "Minimum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.min(), "Minimum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Minimum, Type: StrictDate)]"
@@ -892,7 +895,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.max(), "Maximum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: Date)]"
@@ -915,7 +918,7 @@ class TestGroupByAppliedFunction:
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
             ["col1"],
-            [AggregateSpecification(lambda x: x["col2"], lambda y: y.min(), "Minimum")]  # type: ignore
+            [LegendApiAggregateSpecification(lambda x: x["col2"], lambda y: y.min(), "Minimum")]  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Minimum, Type: Date)]"
@@ -935,7 +938,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
-                AggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count')
+                LegendApiAggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count')
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -954,7 +957,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
-                AggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count')
+                LegendApiAggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count')
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -970,7 +973,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             [],
             [
-                AggregateSpecification(lambda x: 1, lambda y: y.count(), 'Total Employees')
+                LegendApiAggregateSpecification(lambda x: 1, lambda y: y.count(), 'Total Employees')
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -985,7 +988,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name", "First Name"],
             [
-                AggregateSpecification(lambda x: x['Last Name'], lambda y: y.count(), 'Employee Count')
+                LegendApiAggregateSpecification(lambda x: x['Last Name'], lambda y: y.count(), 'Employee Count')
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1008,7 +1011,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name", "Last Name Gen"],
             [
-                AggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count')
+                LegendApiAggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count')
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1027,8 +1030,8 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
-                AggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count1'),
-                AggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count2')
+                LegendApiAggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count1'),
+                LegendApiAggregateSpecification(lambda x: x['First Name'], lambda y: y.count(), 'Employee Count2')
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1048,7 +1051,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
-                AggregateSpecification(lambda x: x['First Name'], lambda y: y.distinct_count(), 'Employee Count')
+                LegendApiAggregateSpecification(lambda x: x['First Name'], lambda y: y.distinct_count(), 'Employee Count')
             ]
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1064,7 +1067,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.average(),  # type: ignore
                     'Average Qty'
@@ -1086,7 +1089,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'] + 20,  # type: ignore
                     lambda y: y.average(),  # type: ignore
                     'Average Qty'
@@ -1109,7 +1112,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.average() + 2,  # type: ignore
                     'Average Qty'
@@ -1131,7 +1134,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Id'],
                     lambda y: y.max(),  # type: ignore
                     'Max Trade Id'
@@ -1153,7 +1156,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Id'],
                     lambda y: y.min(),  # type: ignore
                     'Min Trade Id'
@@ -1175,7 +1178,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Id'],
                     lambda y: y.sum(),  # type: ignore
                     'Sum Trade Id'
@@ -1197,7 +1200,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.max(),  # type: ignore
                     'Max Qty'
@@ -1219,7 +1222,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.min(),  # type: ignore
                     'Min Qty'
@@ -1241,7 +1244,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.sum(),  # type: ignore
                     'Sum Qty'
@@ -1263,7 +1266,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'] + 2,  # type: ignore
                     lambda y: y.max(),  # type: ignore
                     'Max Qty'
@@ -1285,7 +1288,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'] + 2,  # type: ignore
                     lambda y: y.min(),  # type: ignore
                     'Min Qty'
@@ -1307,7 +1310,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'] + 2,  # type: ignore
                     lambda y: y.sum(),  # type: ignore
                     'Sum Qty'
@@ -1330,7 +1333,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.std_dev_sample(),  # type: ignore
                     'Std Dev Sample'
@@ -1353,7 +1356,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.std_dev(),  # type: ignore
                     'Std Dev'
@@ -1376,7 +1379,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.std_dev_population(),  # type: ignore
                     'Std Dev Population'
@@ -1399,7 +1402,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.variance_sample(),  # type: ignore
                     'Variance Sample'
@@ -1422,7 +1425,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.variance(),  # type: ignore
                     'Variance'
@@ -1445,7 +1448,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Quantity'],
                     lambda y: y.variance_population(),  # type: ignore
                     'Variance Population'
@@ -1467,7 +1470,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['First Name'],
                     lambda y: y.max(),  # type: ignore
                     'Max Str'
@@ -1489,7 +1492,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['First Name'],
                     lambda y: y.min(),  # type: ignore
                     'Min Str'
@@ -1511,7 +1514,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['First Name'],
                     lambda y: y.join('|'),  # type: ignore
                     'Joined'
@@ -1533,7 +1536,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Date'],
                     lambda y: y.max(),  # type: ignore
                     'Max Date'
@@ -1555,7 +1558,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Date'],
                     lambda y: y.min(),  # type: ignore
                     'Min Date'
@@ -1577,7 +1580,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Settlement Date Time'],
                     lambda y: y.max(),  # type: ignore
                     'Max Date Time'
@@ -1599,7 +1602,7 @@ class TestGroupByAppliedFunction:
         frame = frame.group_by(
             ["Product/Name"],
             [
-                AggregateSpecification(
+                LegendApiAggregateSpecification(
                     lambda x: x['Settlement Date Time'],
                     lambda y: y.min(),  # type: ignore
                     'Min Date Time'

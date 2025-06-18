@@ -39,10 +39,10 @@ from pylegend.extensions.tds.result_handler import (
     PandasDfReadConfig,
 )
 from pylegend.core.language import (
-    TdsRow,
-    PyLegendBoolean,
-    PyLegendPrimitiveOrPythonPrimitive,
-    AggregateSpecification,
+    LegendApiTdsRow,
+    LegendApiBoolean,
+    LegendApiPrimitiveOrPythonPrimitive,
+    LegendApiAggregateSpecification,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -153,7 +153,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
 
     def filter(
             self,
-            filter_function: PyLegendCallable[[TdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+            filter_function: PyLegendCallable[[LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]]
     ) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
             LegendApiAppliedFunctionTdsFrame
@@ -165,7 +165,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
 
     def extend(
             self,
-            functions_list: PyLegendList[PyLegendCallable[[TdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+            functions_list: PyLegendList[PyLegendCallable[[LegendApiTdsRow], LegendApiPrimitiveOrPythonPrimitive]],
             column_names_list: PyLegendList[str]
     ) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
@@ -179,7 +179,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
     def join(
             self,
             other: "LegendApiTdsFrame",
-            join_condition: PyLegendCallable[[TdsRow, TdsRow], PyLegendUnion[bool, PyLegendBoolean]],
+            join_condition: PyLegendCallable[[LegendApiTdsRow, LegendApiTdsRow], PyLegendUnion[bool, LegendApiBoolean]],
             join_type: str = 'LEFT_OUTER'
     ) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
@@ -212,7 +212,7 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
     def group_by(
             self,
             grouping_columns: PyLegendList[str],
-            aggregations: PyLegendList[AggregateSpecification],
+            aggregations: PyLegendList[LegendApiAggregateSpecification],
     ) -> "LegendApiTdsFrame":
         from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import (
             LegendApiAppliedFunctionTdsFrame

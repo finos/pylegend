@@ -38,7 +38,9 @@ class PyLegendCopyrightCheckerPlugin:
         ]
 
         __valid_copyright_first_lines: List[str] = [
-            "# Copyright 2023 Goldman Sachs\n"
+            "# Copyright 2023 Goldman Sachs\n",
+            "# Copyright 2024 Goldman Sachs\n",
+            "# Copyright 2025 Goldman Sachs\n",
         ]
 
         self.__copyright_line_count: int = 1 + len(__license_lines)
