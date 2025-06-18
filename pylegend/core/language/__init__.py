@@ -71,7 +71,7 @@ from pylegend.core.language.legend_api.primitive_collection import (
     LegendApiStrictDateCollection,
     create_primitive_collection,
 )
-from pylegend.core.language.shared.functions import (
+from pylegend.core.language.legend_api.functions import (
     today,
     now,
 )
