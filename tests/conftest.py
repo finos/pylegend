@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+import os
 import shlex
 import datetime
 import time
@@ -41,7 +42,11 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
     metadata_port = generate_dynamic_port()
     relative_path = tests.__file__.replace("\\", "/")[0:tests.__file__.replace("\\", "/").rindex("/")]
 
-    cmd = 'java -jar ' +\
+    java_home = os.environ.get("JAVA_HOME")
+    if java_home is None:
+        raise RuntimeError("JAVA_HOME environment variable is not set")
+    java_home = java_home.replace("\\", "/")
+    cmd = f'{java_home}/bin/java -jar ' +\
           '-Duser.timezone=UTC ' +\
           '-Ddw.server.connector.port=' + str(engine_port) + ' ' +\
           '-Ddw.metadataserver.alloy.port=' + str(metadata_port) + ' ' +\
