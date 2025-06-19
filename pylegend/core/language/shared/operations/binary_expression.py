@@ -40,6 +40,7 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
         [Expression, Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
         Expression
     ]
+    __to_pure_func: PyLegendCallable[[str, str], str]
 
     def __init__(
             self,
@@ -48,11 +49,13 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
             to_sql_func: PyLegendCallable[
                 [Expression, Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
                 Expression
-            ]
+            ],
+            to_pure_func: PyLegendCallable[[str, str], str]
     ) -> None:
         self.__operand1 = operand1
         self.__operand2 = operand2
         self.__to_sql_func = to_sql_func
+        self.__to_pure_func = to_pure_func
 
     def to_sql_expression(
             self,
@@ -67,3 +70,8 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
             frame_name_to_base_query_map,
             config
         )
+
+    def to_pure_expression(self) -> str:
+        op1_expr = self.__operand1.to_pure_expression()
+        op2_expr = self.__operand2.to_pure_expression()
+        return self.__to_pure_func(op1_expr, op2_expr)

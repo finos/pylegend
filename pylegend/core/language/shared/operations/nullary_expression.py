@@ -38,15 +38,18 @@ class PyLegendNullaryExpression(PyLegendExpression, metaclass=ABCMeta):
         [PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
         Expression
     ]
+    __to_pure_func: PyLegendCallable[[], str]
 
     def __init__(
             self,
             to_sql_func: PyLegendCallable[
                 [PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
                 Expression
-            ]
+            ],
+            to_pure_func: PyLegendCallable[[], str]
     ) -> None:
         self.__to_sql_func = to_sql_func
+        self.__to_pure_func = to_pure_func
 
     def to_sql_expression(
             self,
@@ -57,3 +60,6 @@ class PyLegendNullaryExpression(PyLegendExpression, metaclass=ABCMeta):
             frame_name_to_base_query_map,
             config
         )
+
+    def to_pure_expression(self) -> str:
+        return self.__to_pure_func()

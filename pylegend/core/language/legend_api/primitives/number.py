@@ -89,6 +89,9 @@ class LegendApiNumber(LegendApiPrimitive):
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
+    def to_pure_expression(self) -> str:
+        return self.__value.to_pure_expression()
+
     def value(self) -> PyLegendExpression:
         return self.__value
 

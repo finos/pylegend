@@ -46,11 +46,16 @@ class PyLegendPrimitiveEqualsExpression(PyLegendBinaryExpression, PyLegendExpres
     ) -> Expression:
         return ComparisonExpression(expression1, expression2, ComparisonOperator.EQUAL)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} == {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendPrimitiveEqualsExpression.__to_sql_func
+            PyLegendPrimitiveEqualsExpression.__to_sql_func,
+            PyLegendPrimitiveEqualsExpression.__to_pure_func
         )

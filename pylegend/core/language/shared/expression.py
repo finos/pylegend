@@ -47,6 +47,10 @@ class PyLegendExpression(metaclass=ABCMeta):
     ) -> Expression:
         pass
 
+    @abstractmethod
+    def to_pure_expression(self) -> str:
+        pass
+
 
 class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):
     pass

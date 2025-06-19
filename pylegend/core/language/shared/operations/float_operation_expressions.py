@@ -21,6 +21,7 @@ from pylegend.core.language.shared.expression import (
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
+from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -54,13 +55,18 @@ class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFlo
     ) -> Expression:
         return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} + {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendFloatAddExpression.__to_sql_func
+            PyLegendFloatAddExpression.__to_sql_func,
+            PyLegendFloatAddExpression.__to_pure_func
         )
 
 
@@ -75,13 +81,18 @@ class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressi
     ) -> Expression:
         return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} - {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendFloatSubtractExpression.__to_sql_func
+            PyLegendFloatSubtractExpression.__to_sql_func,
+            PyLegendFloatSubtractExpression.__to_pure_func
         )
 
 
@@ -96,13 +107,18 @@ class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressi
     ) -> Expression:
         return ArithmeticExpression(ArithmeticType.MULTIPLY, expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} * {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendFloatMultiplyExpression.__to_sql_func
+            PyLegendFloatMultiplyExpression.__to_sql_func,
+            PyLegendFloatMultiplyExpression.__to_pure_func
         )
 
 
@@ -116,12 +132,17 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
     ) -> Expression:
         return AbsoluteExpression(expression)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("abs", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendFloatAbsoluteExpression.__to_sql_func
+            PyLegendFloatAbsoluteExpression.__to_sql_func,
+            PyLegendFloatAbsoluteExpression.__to_pure_func
         )
 
 
@@ -135,10 +156,15 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
     ) -> Expression:
         return NegativeExpression(expression)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("minus", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendFloatNegativeExpression.__to_sql_func
+            PyLegendFloatNegativeExpression.__to_sql_func,
+            PyLegendFloatNegativeExpression.__to_pure_func
         )
