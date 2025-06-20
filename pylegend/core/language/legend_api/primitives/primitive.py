@@ -50,6 +50,10 @@ class LegendApiPrimitive(metaclass=ABCMeta):
     ) -> Expression:
         pass
 
+    @abstractmethod
+    def to_pure_expression(self) -> str:
+        pass
+
     def __eq__(  # type: ignore
             self,
             other: "PyLegendUnion[int, float, bool, str, date, datetime, LegendApiPrimitive]"

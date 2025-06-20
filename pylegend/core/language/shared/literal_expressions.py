@@ -65,6 +65,9 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     ) -> Expression:
         return BooleanLiteral(value=self.__value)
 
+    def to_pure_expression(self) -> str:
+        return "true" if self.__value else "false"
+
 
 class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
     __value: str
@@ -78,6 +81,10 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
             config: FrameToSqlConfig
     ) -> Expression:
         return StringLiteral(value=self.__value, quoted=False)
+
+    def to_pure_expression(self) -> str:
+        escaped = self.__value.replace('\'', '\\\'')
+        return f"'{escaped}'"
 
 
 class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
@@ -93,6 +100,9 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     ) -> Expression:
         return IntegerLiteral(value=self.__value)
 
+    def to_pure_expression(self) -> str:
+        return str(self.__value)
+
 
 class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
     __value: float
@@ -106,6 +116,9 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
             config: FrameToSqlConfig
     ) -> Expression:
         return DoubleLiteral(value=self.__value)
+
+    def to_pure_expression(self) -> str:
+        return str(self.__value)
 
 
 class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
@@ -124,6 +137,9 @@ class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
             type_=ColumnType(name="TIMESTAMP", parameters=[])
         )
 
+    def to_pure_expression(self) -> str:
+        return f"%{self.__value.isoformat()}"
+
 
 class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
     __value: date
@@ -140,6 +156,9 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
             expression=StringLiteral(value=self.__value.isoformat(), quoted=False),
             type_=ColumnType(name="DATE", parameters=[])
         )
+
+    def to_pure_expression(self) -> str:
+        return f"%{self.__value.isoformat()}"
 
 
 def convert_literal_to_literal_expression(

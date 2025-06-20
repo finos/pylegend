@@ -49,13 +49,18 @@ class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBo
     ) -> Expression:
         return LogicalBinaryExpression(LogicalBinaryType.OR, expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} || {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionBooleanReturn, operand2: PyLegendExpressionBooleanReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendBooleanOrExpression.__to_sql_func
+            PyLegendBooleanOrExpression.__to_sql_func,
+            PyLegendBooleanOrExpression.__to_pure_func
         )
 
 
@@ -70,13 +75,18 @@ class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionB
     ) -> Expression:
         return LogicalBinaryExpression(LogicalBinaryType.AND, expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} && {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionBooleanReturn, operand2: PyLegendExpressionBooleanReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendBooleanAndExpression.__to_sql_func
+            PyLegendBooleanAndExpression.__to_sql_func,
+            PyLegendBooleanAndExpression.__to_pure_func
         )
 
 
@@ -90,10 +100,15 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
     ) -> Expression:
         return NotExpression(expression)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return f"(!{op_expr})"
+
     def __init__(self, operand: PyLegendExpressionBooleanReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendBooleanNotExpression.__to_sql_func
+            PyLegendBooleanNotExpression.__to_sql_func,
+            PyLegendBooleanNotExpression.__to_pure_func
         )

@@ -74,6 +74,14 @@ class LegendApiColumnExpression(PyLegendExpression, metaclass=ABCMeta):
             raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
         return filtered[0].expression
 
+    def to_pure_expression(self) -> str:
+        if self.__column.isidentifier():
+            # Python identifier check is same as PURE identifier check
+            return f"${self.__frame_name}.{self.__column}"
+        else:
+            escaped = self.__column.replace('\'', '\\\'')
+            return f"${self.__frame_name}.{escaped}"
+
 
 class LegendApiBooleanColumnExpression(LegendApiColumnExpression, PyLegendExpressionBooleanReturn):
 

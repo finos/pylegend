@@ -92,6 +92,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
+        assert col_expr.to_pure_expression() == '$t.col2'
 
     def test_getitem_boolean_col(self) -> None:
         columns = [
@@ -111,6 +112,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
+        assert col_expr.to_pure_expression() == '$t.col2'
 
     def test_get_string_col(self) -> None:
         columns = [
@@ -130,6 +132,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
+        assert col_expr.to_pure_expression() == '$t.col2'
 
     def test_getitem_string_col(self) -> None:
         columns = [
@@ -149,6 +152,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
+        assert col_expr.to_pure_expression() == '$t.col2'
 
     def test_get_number_col(self) -> None:
         columns = [
@@ -168,6 +172,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'
 
     def test_getitem_number_col(self) -> None:
         columns = [
@@ -187,6 +192,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'
 
     def test_get_number_col_from_integer(self) -> None:
         columns = [
@@ -206,6 +212,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'
 
     def test_get_number_col_from_float(self) -> None:
         columns = [
@@ -225,6 +232,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'
 
     def test_get_integer_col(self) -> None:
         columns = [
@@ -244,6 +252,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'
 
     def test_getitem_integer_col(self) -> None:
         columns = [
@@ -263,6 +272,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'
 
     def test_get_float_col(self) -> None:
         columns = [
@@ -282,6 +292,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'
 
     def test_getitem_float_col(self) -> None:
         columns = [
@@ -301,3 +312,4 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
+        assert col_expr.to_pure_expression() == '$t.col1'

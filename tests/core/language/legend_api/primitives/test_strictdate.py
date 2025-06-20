@@ -36,9 +36,13 @@ class TestLegendApiStrictDate:
 
     def test_strictdate_col_access(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_strictdate("col2")) == '"root".col2'
+        assert self.__generate_pure_string(lambda x: x.get_strictdate("col2")) == '$t.col2'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         )
+
+    def __generate_pure_string(self, f) -> str:  # type: ignore
+        return str(f(self.tds_row).to_pure_expression())

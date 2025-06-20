@@ -39,6 +39,7 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
         [Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
         Expression
     ]
+    __to_pure_func: PyLegendCallable[[str], str]
 
     def __init__(
             self,
@@ -46,10 +47,12 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
             to_sql_func: PyLegendCallable[
                 [Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
                 Expression
-            ]
+            ],
+            to_pure_func: PyLegendCallable[[str], str]
     ) -> None:
         self.__operand = operand
         self.__to_sql_func = to_sql_func
+        self.__to_pure_func = to_pure_func
 
     def to_sql_expression(
             self,
@@ -62,3 +65,7 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
             frame_name_to_base_query_map,
             config
         )
+
+    def to_pure_expression(self) -> str:
+        op_expr = self.__operand.to_pure_expression()
+        return self.__to_pure_func(op_expr)

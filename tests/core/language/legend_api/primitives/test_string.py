@@ -37,10 +37,13 @@ class TestLegendApiString:
 
     def test_string_col_access(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2")) == '"root".col2'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2")) == '$t.col2'
 
     def test_string_length_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").len()) == 'CHAR_LENGTH("root".col2)'
         assert self.__generate_sql_string(lambda x: x.get_string("col2").length()) == 'CHAR_LENGTH("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").len()) == '$t.col2->length()'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").length()) == '$t.col2->length()'
 
     def test_string_startswith_expr(self) -> None:
         with pytest.raises(TypeError) as t:
@@ -71,18 +74,23 @@ class TestLegendApiString:
 
     def test_string_upper_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").upper()) == 'UPPER("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").upper()) == '$t.col2->upper()'
 
     def test_string_lower_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").lower()) == 'LOWER("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").lower()) == '$t.col2->lower()'
 
     def test_string_lstrip_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").lstrip()) == 'LTRIM("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").lstrip()) == '$t.col2->ltrim()'
 
     def test_string_rstrip_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").rstrip()) == 'RTRIM("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").rstrip()) == '$t.col2->rtrim()'
 
     def test_string_strip_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").strip()) == 'BTRIM("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").strip()) == '$t.col2->trim()'
 
     def test_string_index_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").index(x.get_string("col1"))) == \
@@ -91,16 +99,28 @@ class TestLegendApiString:
                'STRPOS("root".col2, \'Abc\')'
         assert self.__generate_sql_string(lambda x: x.get_string("col2").index_of("Abc")) == \
                'STRPOS("root".col2, \'Abc\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").index(x.get_string("col1"))) == \
+               '$t.col2->indexOf($t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").index("Abc")) == \
+               '$t.col2->indexOf(\'Abc\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").index_of("Abc")) == \
+               '$t.col2->indexOf(\'Abc\')'
 
     def test_string_parse_int_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_int()) == \
                'CAST("root".col2 AS INTEGER)'
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_integer()) == \
                'CAST("root".col2 AS INTEGER)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_int()) == \
+               '$t.col2->parseInteger()'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_integer()) == \
+               '$t.col2->parseInteger()'
 
     def test_string_parse_float_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_float()) == \
                'CAST("root".col2 AS DOUBLE PRECISION)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_float()) == \
+               '$t.col2->parseFloat()'
 
     def test_string_add_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2") + x.get_string("col1")) == \
@@ -109,6 +129,12 @@ class TestLegendApiString:
                'CONCAT("root".col2, \'Abc\')'
         assert self.__generate_sql_string(lambda x: "Abc" + x.get_string("col2")) == \
                'CONCAT(\'Abc\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") + x.get_string("col1")) == \
+               '($t.col2 + $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") + "Abc") == \
+               '($t.col2 + \'Abc\')'
+        assert self.__generate_pure_string(lambda x: "Abc" + x.get_string("col2")) == \
+               '(\'Abc\' + $t.col2)'
 
     def test_string_lt_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2") < x.get_string("col1")) == \
@@ -117,6 +143,12 @@ class TestLegendApiString:
                '("root".col2 < \'Abc\')'
         assert self.__generate_sql_string(lambda x: "Abc" < x.get_string("col2")) == \
                '("root".col2 > \'Abc\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") < x.get_string("col1")) == \
+               '($t.col2 < $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") < "Abc") == \
+               '($t.col2 < \'Abc\')'
+        assert self.__generate_pure_string(lambda x: "Abc" < x.get_string("col2")) == \
+               '($t.col2 > \'Abc\')'
 
     def test_string_le_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2") <= x.get_string("col1")) == \
@@ -125,6 +157,12 @@ class TestLegendApiString:
                '("root".col2 <= \'Abc\')'
         assert self.__generate_sql_string(lambda x: "Abc" <= x.get_string("col2")) == \
                '("root".col2 >= \'Abc\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") <= x.get_string("col1")) == \
+               '($t.col2 <= $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") <= "Abc") == \
+               '($t.col2 <= \'Abc\')'
+        assert self.__generate_pure_string(lambda x: "Abc" <= x.get_string("col2")) == \
+               '($t.col2 >= \'Abc\')'
 
     def test_string_gt_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2") > x.get_string("col1")) == \
@@ -133,6 +171,12 @@ class TestLegendApiString:
                '("root".col2 > \'Abc\')'
         assert self.__generate_sql_string(lambda x: "Abc" > x.get_string("col2")) == \
                '("root".col2 < \'Abc\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") > x.get_string("col1")) == \
+               '($t.col2 > $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") > "Abc") == \
+               '($t.col2 > \'Abc\')'
+        assert self.__generate_pure_string(lambda x: "Abc" > x.get_string("col2")) == \
+               '($t.col2 < \'Abc\')'
 
     def test_string_ge_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2") >= x.get_string("col1")) == \
@@ -141,6 +185,12 @@ class TestLegendApiString:
                '("root".col2 >= \'Abc\')'
         assert self.__generate_sql_string(lambda x: "Abc" >= x.get_string("col2")) == \
                '("root".col2 <= \'Abc\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") >= x.get_string("col1")) == \
+               '($t.col2 >= $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2") >= "Abc") == \
+               '($t.col2 >= \'Abc\')'
+        assert self.__generate_pure_string(lambda x: "Abc" >= x.get_string("col2")) == \
+               '($t.col2 <= \'Abc\')'
 
     def test_string_equals_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x["col2"] == x["col1"]) == \
@@ -151,9 +201,20 @@ class TestLegendApiString:
                '("root".col2 = \'Hello\')'
         assert self.__generate_sql_string(lambda x: 'Hello' == (x["col2"] + x["col1"])) == \
                '(CONCAT("root".col2, "root".col1) = \'Hello\')'
+        assert self.__generate_pure_string(lambda x: x["col2"] == x["col1"]) == \
+               '($t.col2 == $t.col1)'
+        assert self.__generate_pure_string(lambda x: x["col2"] == 'Hello') == \
+               '($t.col2 == \'Hello\')'
+        assert self.__generate_pure_string(lambda x: 'Hello' == x["col2"]) == \
+               '($t.col2 == \'Hello\')'
+        assert self.__generate_pure_string(lambda x: 'Hello' == (x["col2"] + x["col1"])) == \
+               '(($t.col2 + $t.col1) == \'Hello\')'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         )
+
+    def __generate_pure_string(self, f) -> str:  # type: ignore
+        return str(f(self.tds_row).to_pure_expression())

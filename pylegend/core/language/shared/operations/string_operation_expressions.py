@@ -24,6 +24,7 @@ from pylegend.core.language.shared.expression import (
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
+from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -74,12 +75,17 @@ class PyLegendStringLengthExpression(PyLegendUnaryExpression, PyLegendExpression
     ) -> Expression:
         return StringLengthExpression(expression)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("length", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringLengthExpression.__to_sql_func
+            PyLegendStringLengthExpression.__to_sql_func,
+            PyLegendStringLengthExpression.__to_pure_func
         )
 
 
@@ -94,13 +100,18 @@ class PyLegendStringLikeExpression(PyLegendBinaryExpression, PyLegendExpressionB
     ) -> Expression:
         return StringLikeExpression(expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        raise RuntimeError("Not supported")
+
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendStringLikeExpression.__to_sql_func
+            PyLegendStringLikeExpression.__to_sql_func,
+            PyLegendStringLikeExpression.__to_pure_func
         )
 
 
@@ -114,12 +125,17 @@ class PyLegendStringUpperExpression(PyLegendUnaryExpression, PyLegendExpressionS
     ) -> Expression:
         return StringUpperExpression(expression)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("upper", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringUpperExpression.__to_sql_func
+            PyLegendStringUpperExpression.__to_sql_func,
+            PyLegendStringUpperExpression.__to_pure_func
         )
 
 
@@ -133,12 +149,17 @@ class PyLegendStringLowerExpression(PyLegendUnaryExpression, PyLegendExpressionS
     ) -> Expression:
         return StringLowerExpression(expression)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("lower", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringLowerExpression.__to_sql_func
+            PyLegendStringLowerExpression.__to_sql_func,
+            PyLegendStringLowerExpression.__to_pure_func
         )
 
 
@@ -152,12 +173,17 @@ class PyLegendStringLTrimExpression(PyLegendUnaryExpression, PyLegendExpressionS
     ) -> Expression:
         return StringTrimExpression(expression, trim_type=TrimType.Left)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("ltrim", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringLTrimExpression.__to_sql_func
+            PyLegendStringLTrimExpression.__to_sql_func,
+            PyLegendStringLTrimExpression.__to_pure_func
         )
 
 
@@ -171,12 +197,17 @@ class PyLegendStringRTrimExpression(PyLegendUnaryExpression, PyLegendExpressionS
     ) -> Expression:
         return StringTrimExpression(expression, trim_type=TrimType.Right)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("rtrim", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringRTrimExpression.__to_sql_func
+            PyLegendStringRTrimExpression.__to_sql_func,
+            PyLegendStringRTrimExpression.__to_pure_func
         )
 
 
@@ -190,12 +221,17 @@ class PyLegendStringBTrimExpression(PyLegendUnaryExpression, PyLegendExpressionS
     ) -> Expression:
         return StringTrimExpression(expression, trim_type=TrimType.Both)
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("trim", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringBTrimExpression.__to_sql_func
+            PyLegendStringBTrimExpression.__to_sql_func,
+            PyLegendStringBTrimExpression.__to_pure_func
         )
 
 
@@ -210,13 +246,18 @@ class PyLegendStringPosExpression(PyLegendBinaryExpression, PyLegendExpressionIn
     ) -> Expression:
         return StringPosExpression(expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return generate_pure_functional_call("indexOf", [op1_expr, op2_expr])
+
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendStringPosExpression.__to_sql_func
+            PyLegendStringPosExpression.__to_sql_func,
+            PyLegendStringPosExpression.__to_pure_func
         )
 
 
@@ -230,12 +271,17 @@ class PyLegendStringParseIntExpression(PyLegendUnaryExpression, PyLegendExpressi
     ) -> Expression:
         return Cast(expression, ColumnType(name="INTEGER", parameters=[]))
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("parseInteger", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringParseIntExpression.__to_sql_func
+            PyLegendStringParseIntExpression.__to_sql_func,
+            PyLegendStringParseIntExpression.__to_pure_func
         )
 
 
@@ -249,12 +295,17 @@ class PyLegendStringParseFloatExpression(PyLegendUnaryExpression, PyLegendExpres
     ) -> Expression:
         return Cast(expression, ColumnType(name="DOUBLE PRECISION", parameters=[]))
 
+    @staticmethod
+    def __to_pure_func(op_expr: str) -> str:
+        return generate_pure_functional_call("parseFloat", [op_expr])
+
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringParseFloatExpression.__to_sql_func
+            PyLegendStringParseFloatExpression.__to_sql_func,
+            PyLegendStringParseFloatExpression.__to_pure_func
         )
 
 
@@ -269,13 +320,18 @@ class PyLegendStringConcatExpression(PyLegendBinaryExpression, PyLegendExpressio
     ) -> Expression:
         return StringConcatExpression(expression1, expression2)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} + {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendStringConcatExpression.__to_sql_func
+            PyLegendStringConcatExpression.__to_sql_func,
+            PyLegendStringConcatExpression.__to_pure_func
         )
 
 
@@ -290,13 +346,18 @@ class PyLegendStringLessThanExpression(PyLegendBinaryExpression, PyLegendExpress
     ) -> Expression:
         return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} < {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendStringLessThanExpression.__to_sql_func
+            PyLegendStringLessThanExpression.__to_sql_func,
+            PyLegendStringLessThanExpression.__to_pure_func
         )
 
 
@@ -311,13 +372,18 @@ class PyLegendStringLessThanEqualExpression(PyLegendBinaryExpression, PyLegendEx
     ) -> Expression:
         return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN_OR_EQUAL)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} <= {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendStringLessThanEqualExpression.__to_sql_func
+            PyLegendStringLessThanEqualExpression.__to_sql_func,
+            PyLegendStringLessThanEqualExpression.__to_pure_func
         )
 
 
@@ -332,13 +398,18 @@ class PyLegendStringGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpr
     ) -> Expression:
         return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} > {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendStringGreaterThanExpression.__to_sql_func
+            PyLegendStringGreaterThanExpression.__to_sql_func,
+            PyLegendStringGreaterThanExpression.__to_pure_func
         )
 
 
@@ -353,11 +424,16 @@ class PyLegendStringGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegen
     ) -> Expression:
         return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN_OR_EQUAL)
 
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+        return f"({op1_expr} >= {op2_expr})"
+
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
             operand2,
-            PyLegendStringGreaterThanEqualExpression.__to_sql_func
+            PyLegendStringGreaterThanEqualExpression.__to_sql_func,
+            PyLegendStringGreaterThanEqualExpression.__to_pure_func
         )
