@@ -59,28 +59,28 @@ class FrameToSqlConfig:
 
 
 class FrameToPureConfig:
+    __pretty: bool
     __indent: str
     __indent_level: int
-    __newline: str
 
     def __init__(
             self,
+            pretty: bool = True,
             ident: str = "  ",
             indent_level: int = 0,
-            newline: str = "\n"
     ) -> None:
-        self.indent = ident
-        self.indent_level = indent_level
-        self.newline = newline
+        self.__pretty = pretty
+        self.__indent = ident
+        self.__indent_level = indent_level
 
-    def get_indent(self) -> str:
-        return self.indent * self.indent_level
+    def push_indent(self, extra_indent_level: int = 1) -> "FrameToPureConfig":
+        return FrameToPureConfig(self.__pretty, self.__indent, self.__indent_level + extra_indent_level)
 
-    def push_indent(self) -> None:
-        self.indent_level += 1
-
-    def new_line(self) -> str:
-        return self.newline
+    def separator(self, extra_indent_level: int = 0, return_space_if_not_pretty: bool = False) -> str:
+        if self.__pretty:
+            return "\n" + (self.__indent * (self.__indent_level + extra_indent_level))
+        else:
+            return " " if return_space_if_not_pretty else ""
 
 
 R = PyLegendTypeVar('R')
