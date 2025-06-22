@@ -17,6 +17,7 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
@@ -97,7 +98,7 @@ class TestConcatenateAppliedFunction:
         )
         assert v.value.args[0] == expected
 
-    def test_sql_gen_concatenate_function(self) -> None:
+    def test_query_gen_concatenate_function(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -131,6 +132,19 @@ class TestConcatenateAppliedFunction:
                     OFFSET 2
                 ) AS "root"'''
         assert concatenate_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert concatenate_frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(2)
+              ->concatenate(
+                #Table(test_schema.test_table)#
+                  ->drop(2)
+                  ->limit(2)
+              )'''
+        )
+        assert concatenate_frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->limit(2)'
+                '->concatenate(#Table(test_schema.test_table)#->drop(2)->limit(2))')
 
     def test_e2e_concatenate_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
