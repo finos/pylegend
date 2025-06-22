@@ -25,12 +25,14 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringDbExtension,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 class TestLiteralExpressions:
     db_extension = SqlToStringDbExtension()
     sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
     frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
 
     def test_boolean_literal_expr(self) -> None:
 
@@ -39,14 +41,14 @@ class TestLiteralExpressions:
             true_expr.to_sql_expression({}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         ) == "true"
-        assert true_expr.to_pure_expression() == 'true'
+        assert true_expr.to_pure_expression(self.frame_to_pure_config) == 'true'
 
         false_expr = PyLegendBooleanLiteralExpression(False)
         assert self.db_extension.process_expression(
             false_expr.to_sql_expression({}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         ) == "false"
-        assert false_expr.to_pure_expression() == 'false'
+        assert false_expr.to_pure_expression(self.frame_to_pure_config) == 'false'
 
     def test_datetime_literal_expr(self) -> None:
         expr = PyLegendDateTimeLiteralExpression(datetime(2023, 6, 1, 14, 45, 00))
@@ -54,7 +56,7 @@ class TestLiteralExpressions:
             expr.to_sql_expression({}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         ) == "CAST('2023-06-01T14:45:00' AS TIMESTAMP)"
-        assert expr.to_pure_expression() == "%2023-06-01T14:45:00"
+        assert expr.to_pure_expression(self.frame_to_pure_config) == "%2023-06-01T14:45:00"
 
     def test_strictdate_literal_expr(self) -> None:
         expr = PyLegendStrictDateLiteralExpression(date(2023, 6, 1))
@@ -62,7 +64,7 @@ class TestLiteralExpressions:
             expr.to_sql_expression({}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         ) == "CAST('2023-06-01' AS DATE)"
-        assert expr.to_pure_expression() == "%2023-06-01"
+        assert expr.to_pure_expression(self.frame_to_pure_config) == "%2023-06-01"
 
     def test_string_literal_expr(self) -> None:
         expr = PyLegendStringLiteralExpression("Hello, World!")
@@ -70,11 +72,11 @@ class TestLiteralExpressions:
             expr.to_sql_expression({}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         ) == "'Hello, World!'"
-        assert expr.to_pure_expression() == "'Hello, World!'"
+        assert expr.to_pure_expression(self.frame_to_pure_config) == "'Hello, World!'"
 
         expr = PyLegendStringLiteralExpression("Hello,' World!")
         assert self.db_extension.process_expression(
             expr.to_sql_expression({}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         ) == "'Hello,'' World!'"
-        assert expr.to_pure_expression() == "'Hello,\\\' World!'"
+        assert expr.to_pure_expression(self.frame_to_pure_config) == "'Hello,\\\' World!'"

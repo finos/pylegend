@@ -20,6 +20,7 @@ from pylegend._typing import (
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
 
@@ -39,7 +40,7 @@ class LegendApiAppliedFunction(metaclass=ABCMeta):
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass  # pragma: no cover
 
-    def to_pure(self) -> str:
+    def to_pure(self, config: FrameToPureConfig) -> str:
         raise RuntimeError("PURE generation not supported for '" + self.name() + "' function")
 
     @abstractmethod
@@ -70,8 +71,8 @@ class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
 
-    def to_pure_query(self) -> str:
-        return self.__applied_function.to_pure()
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        return self.__applied_function.to_pure(config)
 
     def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return [

@@ -33,6 +33,7 @@ from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -57,7 +58,7 @@ class PyLegendIntegerAddExpression(PyLegendBinaryExpression, PyLegendExpressionI
         return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} + {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionIntegerReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
@@ -83,7 +84,7 @@ class PyLegendIntegerSubtractExpression(PyLegendBinaryExpression, PyLegendExpres
         return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} - {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionIntegerReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
@@ -109,7 +110,7 @@ class PyLegendIntegerMultiplyExpression(PyLegendBinaryExpression, PyLegendExpres
         return ArithmeticExpression(ArithmeticType.MULTIPLY, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} * {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionIntegerReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
@@ -135,7 +136,7 @@ class PyLegendIntegerModuloExpression(PyLegendBinaryExpression, PyLegendExpressi
         return ArithmeticExpression(ArithmeticType.MODULUS, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} % {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionIntegerReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
@@ -160,7 +161,7 @@ class PyLegendIntegerAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpress
         return AbsoluteExpression(expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("abs", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
@@ -184,7 +185,7 @@ class PyLegendIntegerNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
         return NegativeExpression(expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("minus", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:

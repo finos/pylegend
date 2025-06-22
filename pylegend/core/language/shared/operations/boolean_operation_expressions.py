@@ -29,6 +29,7 @@ from pylegend.core.sql.metamodel import (
     NotExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -50,7 +51,7 @@ class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBo
         return LogicalBinaryExpression(LogicalBinaryType.OR, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} || {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionBooleanReturn, operand2: PyLegendExpressionBooleanReturn) -> None:
@@ -76,7 +77,7 @@ class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionB
         return LogicalBinaryExpression(LogicalBinaryType.AND, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} && {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionBooleanReturn, operand2: PyLegendExpressionBooleanReturn) -> None:
@@ -101,7 +102,7 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
         return NotExpression(expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return f"(!{op_expr})"
 
     def __init__(self, operand: PyLegendExpressionBooleanReturn) -> None:

@@ -20,6 +20,7 @@ from pylegend._typing import (
 from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame,
     FrameToSqlConfig,
+    FrameToPureConfig,
 )
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.sql.metamodel import (
@@ -101,8 +102,8 @@ class LegendFunctionInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
             offset=None
         )
 
-    def to_pure_query(self) -> str:
-        raise RuntimeError("to_pure_query is not supported for LegendFunctionInputFrame")
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        raise RuntimeError("to_pure is not supported for LegendFunctionInputFrame")
 
     def get_path(self) -> str:
         return self.__path

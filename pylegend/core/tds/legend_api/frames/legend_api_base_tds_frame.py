@@ -29,6 +29,7 @@ from pylegend.core.databse.sql_to_string import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.core.tds.result_handler import (
     ResultHandler,
@@ -240,6 +241,13 @@ class LegendApiBaseTdsFrame(LegendApiTdsFrame, metaclass=ABCMeta):
             )
         )
         return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
+
+    @abstractmethod
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        pass  # pragma: no cover
+
+    def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
+        return self.to_pure(config)
 
     def execute_frame(
             self,

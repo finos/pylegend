@@ -55,6 +55,7 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
     from pylegend.core.language.legend_api.primitives.datetime import LegendApiDateTime
     from pylegend.core.language.legend_api.primitives.strictdate import LegendApiStrictDate
@@ -81,8 +82,8 @@ class LegendApiDate(LegendApiPrimitive):
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
-    def to_pure_expression(self) -> str:
-        return self.__value.to_pure_expression()
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return self.__value.to_pure_expression(config)
 
     def value(self) -> PyLegendExpression:
         return self.__value

@@ -33,6 +33,7 @@ from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -56,7 +57,7 @@ class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFlo
         return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} + {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
@@ -82,7 +83,7 @@ class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressi
         return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} - {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
@@ -108,7 +109,7 @@ class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressi
         return ArithmeticExpression(ArithmeticType.MULTIPLY, expression1, expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} * {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionFloatReturn, operand2: PyLegendExpressionFloatReturn) -> None:
@@ -133,7 +134,7 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
         return AbsoluteExpression(expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("abs", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
@@ -157,7 +158,7 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
         return NegativeExpression(expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("minus", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:

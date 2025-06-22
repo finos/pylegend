@@ -26,6 +26,7 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -40,7 +41,7 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
         [Expression, Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
         Expression
     ]
-    __to_pure_func: PyLegendCallable[[str, str], str]
+    __to_pure_func: PyLegendCallable[[str, str, FrameToPureConfig], str]
 
     def __init__(
             self,
@@ -50,7 +51,7 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
                 [Expression, Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
                 Expression
             ],
-            to_pure_func: PyLegendCallable[[str, str], str]
+            to_pure_func: PyLegendCallable[[str, str, FrameToPureConfig], str]
     ) -> None:
         self.__operand1 = operand1
         self.__operand2 = operand2
@@ -71,7 +72,7 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
             config
         )
 
-    def to_pure_expression(self) -> str:
-        op1_expr = self.__operand1.to_pure_expression()
-        op2_expr = self.__operand2.to_pure_expression()
-        return self.__to_pure_func(op1_expr, op2_expr)
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        op1_expr = self.__operand1.to_pure_expression(config)
+        op2_expr = self.__operand2.to_pure_expression(config)
+        return self.__to_pure_func(op1_expr, op2_expr, config)

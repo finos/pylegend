@@ -31,6 +31,7 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
     PyLegendPrimitiveEqualsExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
     from pylegend.core.language.legend_api.primitives.boolean import LegendApiBoolean
 
@@ -51,7 +52,7 @@ class LegendApiPrimitive(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         pass
 
     def __eq__(  # type: ignore

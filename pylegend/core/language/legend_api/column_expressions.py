@@ -35,6 +35,7 @@ from pylegend.core.sql.metamodel import (
     SingleColumn,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -74,7 +75,7 @@ class LegendApiColumnExpression(PyLegendExpression, metaclass=ABCMeta):
             raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
         return filtered[0].expression
 
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         if self.__column.isidentifier():
             # Python identifier check is same as PURE identifier check
             return f"${self.__frame_name}.{self.__column}"

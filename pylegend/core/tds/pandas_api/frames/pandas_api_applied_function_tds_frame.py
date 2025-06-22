@@ -20,6 +20,7 @@ from pylegend._typing import (
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 
 
@@ -67,8 +68,8 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
 
-    def to_pure_query(self) -> str:
-        raise RuntimeError("to_pure_query is not supported for PandasApiAppliedFunctionTdsFrame")
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        raise RuntimeError("to_pure is not supported for PandasApiAppliedFunctionTdsFrame")
 
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return [

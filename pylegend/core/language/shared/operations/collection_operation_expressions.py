@@ -29,6 +29,7 @@ from pylegend.core.language.shared.operations.unary_expression import PyLegendUn
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -86,7 +87,7 @@ class PyLegendCountExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
         return CountExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("count", [op_expr])
 
     def __init__(self, operand: PyLegendExpression) -> None:
@@ -110,7 +111,7 @@ class PyLegendDistinctCountExpression(PyLegendUnaryExpression, PyLegendExpressio
         return DistinctCountExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call(
             "count",
             [generate_pure_functional_call("distinct", [op_expr])]
@@ -137,7 +138,7 @@ class PyLegendAverageExpression(PyLegendUnaryExpression, PyLegendExpressionFloat
         return AverageExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("average", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -161,7 +162,7 @@ class PyLegendIntegerMaxExpression(PyLegendUnaryExpression, PyLegendExpressionIn
         return MaxExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
@@ -185,7 +186,7 @@ class PyLegendIntegerMinExpression(PyLegendUnaryExpression, PyLegendExpressionIn
         return MinExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
@@ -209,7 +210,7 @@ class PyLegendIntegerSumExpression(PyLegendUnaryExpression, PyLegendExpressionIn
         return SumExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("sum", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
@@ -233,7 +234,7 @@ class PyLegendFloatMaxExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
         return MaxExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
@@ -257,7 +258,7 @@ class PyLegendFloatMinExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
         return MinExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
@@ -281,7 +282,7 @@ class PyLegendFloatSumExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
         return SumExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("sum", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
@@ -305,7 +306,7 @@ class PyLegendNumberMaxExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         return MaxExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -329,7 +330,7 @@ class PyLegendNumberMinExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         return MinExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -353,7 +354,7 @@ class PyLegendNumberSumExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         return SumExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("sum", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -377,7 +378,7 @@ class PyLegendStdDevSampleExpression(PyLegendUnaryExpression, PyLegendExpression
         return StdDevSampleExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("stdDevSample", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -401,7 +402,7 @@ class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpres
         return StdDevPopulationExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("stdDevPopulation", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -425,7 +426,7 @@ class PyLegendVarianceSampleExpression(PyLegendUnaryExpression, PyLegendExpressi
         return VarianceSampleExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("variance", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -449,7 +450,7 @@ class PyLegendVariancePopulationExpression(PyLegendUnaryExpression, PyLegendExpr
         return VariancePopulationExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("variancePopulation", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
@@ -473,7 +474,7 @@ class PyLegendStringMaxExpression(PyLegendUnaryExpression, PyLegendExpressionStr
         return MaxExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
@@ -497,7 +498,7 @@ class PyLegendStringMinExpression(PyLegendUnaryExpression, PyLegendExpressionStr
         return MinExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
@@ -522,7 +523,7 @@ class PyLegendJoinStringsExpression(PyLegendBinaryExpression, PyLegendExpression
         return JoinStringsExpression(value=expression1, other=expression2)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("joinStrings", [op1_expr, op2_expr])
 
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
@@ -547,7 +548,7 @@ class PyLegendStrictDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressio
         return MaxExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionStrictDateReturn) -> None:
@@ -571,7 +572,7 @@ class PyLegendStrictDateMinExpression(PyLegendUnaryExpression, PyLegendExpressio
         return MinExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionStrictDateReturn) -> None:
@@ -595,7 +596,7 @@ class PyLegendDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressionDateR
         return MaxExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
@@ -619,7 +620,7 @@ class PyLegendDateMinExpression(PyLegendUnaryExpression, PyLegendExpressionDateR
         return MinExpression(value=expression)
 
     @staticmethod
-    def __to_pure_func(op_expr: str) -> str:
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:

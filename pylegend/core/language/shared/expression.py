@@ -23,6 +23,7 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -48,7 +49,7 @@ class PyLegendExpression(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         pass
 
 
