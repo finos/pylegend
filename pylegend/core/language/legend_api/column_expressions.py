@@ -80,7 +80,7 @@ class LegendApiColumnExpression(PyLegendExpression, metaclass=ABCMeta):
             return f"${self.__frame_name}.{self.__column}"
         else:
             escaped = self.__column.replace('\'', '\\\'')
-            return f"${self.__frame_name}.{escaped}"
+            return f"${self.__frame_name}.'{escaped}'"
 
 
 class LegendApiBooleanColumnExpression(LegendApiColumnExpression, PyLegendExpressionBooleanReturn):
