@@ -72,6 +72,10 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
+    def to_pure_query(self) -> str:
+        pass  # pragma: no cover
+
+    @abstractmethod
     def execute_frame(
             self,
             result_handler: ResultHandler[R],

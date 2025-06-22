@@ -33,6 +33,7 @@ class TestTableSpecInputFrame:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == '#Table(test_schema.test_table)#'
 
     def test_table_spec_frame_execution_error(self) -> None:
         columns = [

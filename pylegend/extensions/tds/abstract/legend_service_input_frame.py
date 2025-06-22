@@ -101,6 +101,9 @@ class LegendServiceInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
             offset=None
         )
 
+    def to_pure_query(self) -> str:
+        raise RuntimeError("to_pure_query is not supported for LegendServiceInputFrame")
+
     def get_pattern(self) -> str:
         return self.__pattern
 
