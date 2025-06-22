@@ -17,6 +17,7 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
@@ -28,7 +29,7 @@ from pylegend._typing import (
 
 class TestDropAppliedFunction:
 
-    def test_sql_gen_drop_function_no_offset(self) -> None:
+    def test_query_gen_drop_function_no_offset(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -43,8 +44,17 @@ class TestDropAppliedFunction:
                 test_schema.test_table AS "root"
             OFFSET 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->drop(10)'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == dedent(
+            '''\
+            #Table(test_schema.test_table)#->drop(10)'''
+        )
 
-    def test_sql_gen_drop_function_existing_offset(self) -> None:
+    def test_query_gen_drop_function_existing_offset(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -67,8 +77,18 @@ class TestDropAppliedFunction:
                 ) AS "root"
             OFFSET 20'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->drop(10)
+              ->drop(20)'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == dedent(
+            '''\
+            #Table(test_schema.test_table)#->drop(10)->drop(20)'''
+        )
 
-    def test_sql_gen_drop_function_existing_top(self) -> None:
+    def test_query_gen_drop_function_existing_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -91,6 +111,16 @@ class TestDropAppliedFunction:
                 ) AS "root"
             OFFSET 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(20)
+              ->drop(10)'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == dedent(
+            '''\
+            #Table(test_schema.test_table)#->limit(20)->drop(10)'''
+        )
 
     def test_drop_function_negative_row_count_error(self) -> None:
         columns = [
