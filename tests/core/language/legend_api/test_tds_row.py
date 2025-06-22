@@ -19,6 +19,7 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringDbExtension,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import LegendApiTdsRow, LegendApiBoolean, LegendApiString, LegendApiNumber, \
@@ -27,6 +28,7 @@ from pylegend.core.language import LegendApiTdsRow, LegendApiBoolean, LegendApiS
 
 class TestLegendApiTdsRow:
     frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
     db_extension = SqlToStringDbExtension()
     sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
 
@@ -93,8 +95,8 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
-        assert col_expr.to_pure_expression() == '$t.col2'
-        assert tds_row.get_boolean("col3 with spaces").to_pure_expression() == "$t.'col3 with spaces'"
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
+        assert tds_row.get_boolean("col3 with spaces").to_pure_expression(self.frame_to_pure_config) == "$t.'col3 with spaces'"
 
     def test_getitem_boolean_col(self) -> None:
         columns = [
@@ -114,7 +116,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
-        assert col_expr.to_pure_expression() == '$t.col2'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
     def test_get_string_col(self) -> None:
         columns = [
@@ -134,7 +136,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
-        assert col_expr.to_pure_expression() == '$t.col2'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
     def test_getitem_string_col(self) -> None:
         columns = [
@@ -154,7 +156,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col2'
-        assert col_expr.to_pure_expression() == '$t.col2'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
     def test_get_number_col(self) -> None:
         columns = [
@@ -174,7 +176,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_getitem_number_col(self) -> None:
         columns = [
@@ -194,7 +196,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_number_col_from_integer(self) -> None:
         columns = [
@@ -214,7 +216,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_number_col_from_float(self) -> None:
         columns = [
@@ -234,7 +236,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_integer_col(self) -> None:
         columns = [
@@ -254,7 +256,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_getitem_integer_col(self) -> None:
         columns = [
@@ -274,7 +276,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_float_col(self) -> None:
         columns = [
@@ -294,7 +296,7 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_getitem_float_col(self) -> None:
         columns = [
@@ -314,4 +316,4 @@ class TestLegendApiTdsRow:
             ),
             config=self.sql_to_string_config
         ) == '"root".col1'
-        assert col_expr.to_pure_expression() == '$t.col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'

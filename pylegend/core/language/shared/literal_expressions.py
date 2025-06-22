@@ -39,6 +39,7 @@ from pylegend.core.sql.metamodel import (
     ColumnType,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -65,7 +66,7 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     ) -> Expression:
         return BooleanLiteral(value=self.__value)
 
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return "true" if self.__value else "false"
 
 
@@ -82,7 +83,7 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
     ) -> Expression:
         return StringLiteral(value=self.__value, quoted=False)
 
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         escaped = self.__value.replace('\'', '\\\'')
         return f"'{escaped}'"
 
@@ -100,7 +101,7 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     ) -> Expression:
         return IntegerLiteral(value=self.__value)
 
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return str(self.__value)
 
 
@@ -117,7 +118,7 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
     ) -> Expression:
         return DoubleLiteral(value=self.__value)
 
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return str(self.__value)
 
 
@@ -137,7 +138,7 @@ class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
             type_=ColumnType(name="TIMESTAMP", parameters=[])
         )
 
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"%{self.__value.isoformat()}"
 
 
@@ -157,7 +158,7 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
             type_=ColumnType(name="DATE", parameters=[])
         )
 
-    def to_pure_expression(self) -> str:
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"%{self.__value.isoformat()}"
 
 

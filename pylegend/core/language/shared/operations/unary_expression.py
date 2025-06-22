@@ -26,6 +26,7 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -39,7 +40,7 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
         [Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
         Expression
     ]
-    __to_pure_func: PyLegendCallable[[str], str]
+    __to_pure_func: PyLegendCallable[[str, FrameToPureConfig], str]
 
     def __init__(
             self,
@@ -48,7 +49,7 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
                 [Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
                 Expression
             ],
-            to_pure_func: PyLegendCallable[[str], str]
+            to_pure_func: PyLegendCallable[[str, FrameToPureConfig], str]
     ) -> None:
         self.__operand = operand
         self.__to_sql_func = to_sql_func
@@ -66,6 +67,6 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
             config
         )
 
-    def to_pure_expression(self) -> str:
-        op_expr = self.__operand.to_pure_expression()
-        return self.__to_pure_func(op_expr)
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        op_expr = self.__operand.to_pure_expression(config)
+        return self.__to_pure_func(op_expr, config)

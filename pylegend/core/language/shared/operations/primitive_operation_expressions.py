@@ -28,6 +28,7 @@ from pylegend.core.sql.metamodel import (
     ComparisonOperator,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -47,7 +48,7 @@ class PyLegendPrimitiveEqualsExpression(PyLegendBinaryExpression, PyLegendExpres
         return ComparisonExpression(expression1, expression2, ComparisonOperator.EQUAL)
 
     @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str) -> str:
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} == {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:

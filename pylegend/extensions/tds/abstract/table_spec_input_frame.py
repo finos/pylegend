@@ -28,6 +28,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 __all__: PyLegendSequence[str] = [
     "TableSpecInputFrameAbstract",
@@ -69,5 +70,5 @@ class TableSpecInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
             offset=None
         )
 
-    def to_pure_query(self) -> str:
+    def to_pure(self, config: FrameToPureConfig) -> str:
         return f"#Table({'.'.join(self.table.parts)})#"

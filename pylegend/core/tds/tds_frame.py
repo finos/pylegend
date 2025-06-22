@@ -58,6 +58,31 @@ class FrameToSqlConfig:
         return self.__sql_to_string_generator
 
 
+class FrameToPureConfig:
+    __indent: str
+    __indent_level: int
+    __newline: str
+
+    def __init__(
+            self,
+            ident: str = "  ",
+            indent_level: int = 0,
+            newline: str = "\n"
+    ) -> None:
+        self.indent = ident
+        self.indent_level = indent_level
+        self.newline = newline
+
+    def get_indent(self) -> str:
+        return self.indent * self.indent_level
+
+    def push_indent(self) -> None:
+        self.indent_level += 1
+
+    def new_line(self) -> str:
+        return self.newline
+
+
 R = PyLegendTypeVar('R')
 
 
@@ -72,7 +97,7 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
-    def to_pure_query(self) -> str:
+    def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         pass  # pragma: no cover
 
     @abstractmethod

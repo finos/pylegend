@@ -32,6 +32,7 @@ from pylegend.core.language import LegendApiPrimitive, LegendApiTdsRow
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
@@ -77,6 +78,13 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass  # pragma: no cover
+
+    @abstractmethod
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        pass  # pragma: no cover
+
+    def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
+        return self.to_pure(config)
 
     @abstractmethod
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:

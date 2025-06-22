@@ -20,6 +20,7 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringDbExtension,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import LegendApiTdsRow, LegendApiPrimitive, LegendApiInteger
@@ -27,6 +28,7 @@ from pylegend.core.language import LegendApiTdsRow, LegendApiPrimitive, LegendAp
 
 class TestLegendApiInteger:
     frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
     db_extension = SqlToStringDbExtension()
     sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
     test_frame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], [
@@ -191,4 +193,4 @@ class TestLegendApiInteger:
         )
 
     def __generate_pure_string(self, f) -> str:  # type: ignore
-        return str(f(self.tds_row).to_pure_expression())
+        return str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
