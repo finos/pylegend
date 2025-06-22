@@ -101,6 +101,9 @@ class LegendFunctionInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
             offset=None
         )
 
+    def to_pure_query(self) -> str:
+        raise RuntimeError("to_pure_query is not supported for LegendFunctionInputFrame")
+
     def get_path(self) -> str:
         return self.__path
 

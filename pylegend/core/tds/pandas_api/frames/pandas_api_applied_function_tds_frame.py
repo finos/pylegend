@@ -67,6 +67,9 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
 
+    def to_pure_query(self) -> str:
+        raise RuntimeError("to_pure_query is not supported for PandasApiAppliedFunctionTdsFrame")
+
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return [
             y

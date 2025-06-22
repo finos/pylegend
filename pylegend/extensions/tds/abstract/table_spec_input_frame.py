@@ -68,3 +68,6 @@ class TableSpecInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
             limit=None,
             offset=None
         )
+
+    def to_pure_query(self) -> str:
+        return f"#Table({'.'.join(self.table.parts)})#"

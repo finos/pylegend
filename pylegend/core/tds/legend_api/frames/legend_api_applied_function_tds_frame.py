@@ -39,6 +39,9 @@ class LegendApiAppliedFunction(metaclass=ABCMeta):
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass  # pragma: no cover
 
+    def to_pure(self) -> str:
+        raise RuntimeError("PURE generation not supported for '" + self.name() + "' function")
+
     @abstractmethod
     def base_frame(self) -> LegendApiBaseTdsFrame:
         pass  # pragma: no cover
@@ -66,6 +69,9 @@ class LegendApiAppliedFunctionTdsFrame(LegendApiBaseTdsFrame):
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
+
+    def to_pure_query(self) -> str:
+        return self.__applied_function.to_pure()
 
     def get_all_tds_frames(self) -> PyLegendList["LegendApiBaseTdsFrame"]:
         return [
