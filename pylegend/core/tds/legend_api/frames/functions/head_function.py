@@ -24,6 +24,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
 
@@ -53,6 +54,10 @@ class HeadFunction(LegendApiAppliedFunction):
         )
         new_query.limit = LongLiteral(value=self.__row_count)
         return new_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+                f"->limit({self.__row_count})")
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame
