@@ -77,7 +77,8 @@ class TestLegendApiTdsRow:
     def test_get_boolean_col(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.boolean_column("col2")
+            PrimitiveTdsColumn.boolean_column("col2"),
+            PrimitiveTdsColumn.boolean_column("col3 with spaces"),
         ]
         frame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
@@ -93,6 +94,7 @@ class TestLegendApiTdsRow:
             config=self.sql_to_string_config
         ) == '"root".col2'
         assert col_expr.to_pure_expression() == '$t.col2'
+        assert tds_row.get_boolean("col3 with spaces").to_pure_expression() == "$t.'col3 with spaces'"
 
     def test_getitem_boolean_col(self) -> None:
         columns = [
