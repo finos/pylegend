@@ -24,6 +24,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
 
@@ -56,6 +57,10 @@ class SliceFunction(LegendApiAppliedFunction):
         new_query.offset = LongLiteral(self.__start_row)
         new_query.limit = LongLiteral(self.__end_row - self.__start_row)
         return new_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+                f"->slice({self.__start_row}, {self.__end_row})")
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame
