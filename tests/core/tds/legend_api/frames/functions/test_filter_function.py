@@ -17,6 +17,7 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
@@ -73,7 +74,7 @@ class TestFilterAppliedFunction:
         assert r.value.args[0] == ("Filter function incompatible. Returns non boolean - "
                                    "<class 'pylegend.core.language.legend_api.primitives.integer.LegendApiInteger'>")
 
-    def test_sql_gen_filter_function(self) -> None:
+    def test_query_gen_filter_function(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -89,8 +90,15 @@ class TestFilterAppliedFunction:
             WHERE
                 ("root".col2 LIKE \'A%\')'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->filter({r | $r.col2->startsWith('A')})'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->filter({r | $r.col2->startsWith(\'A\')})')
 
-    def test_sql_gen_filter_literal(self) -> None:
+    def test_query_gen_filter_literal(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -106,8 +114,15 @@ class TestFilterAppliedFunction:
             WHERE
                 false'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->filter({r | false})'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->filter({r | false})')
 
-    def test_sql_gen_filter_function_chained(self) -> None:
+    def test_query_gen_filter_function_chained(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -124,8 +139,17 @@ class TestFilterAppliedFunction:
             WHERE
                 (("root".col2 LIKE \'A%\') AND ("root".col1 > 10))'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->filter({r | $r.col2->startsWith('A')})
+              ->filter({r | $r.col1 > 10})'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->filter({r | $r.col2->startsWith(\'A\')})->filter({r | $r.col1 > 10})')
 
-    def test_sql_gen_filter_function_chained_with_top(self) -> None:
+    def test_query_gen_filter_function_chained_with_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -150,6 +174,16 @@ class TestFilterAppliedFunction:
             WHERE
                 (("root"."col2" LIKE \'A%\') AND ("root"."col1" > 10))'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(10)
+              ->filter({r | $r.col2->startsWith('A')})
+              ->filter({r | $r.col1 > 10})'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->limit(10)'
+                '->filter({r | $r.col2->startsWith(\'A\')})->filter({r | $r.col1 > 10})')
 
     @pytest.mark.skip(reason="Literal not supported ")
     def test_e2e_filter_function_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
