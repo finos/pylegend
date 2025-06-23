@@ -139,6 +139,29 @@ class TestExtendAppliedFunction:
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
                ('#Table(test_schema.test_table)#->extend(~col3:{r | $r.col1 + 1})')
 
+    def test_query_gen_extend_function_col_name_with_spaces(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.extend([lambda x: x.get_integer("col1") + 1], ["col3 with spaces"])
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                ("root".col1 + 1) AS "col3 with spaces"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(~'col3 with spaces':{r | $r.col1 + 1})'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->extend(~\'col3 with spaces\':{r | $r.col1 + 1})')
+
     def test_query_gen_extend_function_multi(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
