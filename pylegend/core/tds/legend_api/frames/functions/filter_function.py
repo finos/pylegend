@@ -27,12 +27,16 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.language import (
     LegendApiTdsRow,
     LegendApiBoolean,
     PyLegendBooleanLiteralExpression,
+    LegendApiPrimitive,
+    convert_literal_to_literal_expression,
 )
+from pylegend.core.language.shared.helpers import generate_pure_lambda
 
 __all__: PyLegendSequence[str] = [
     "FilterFunction"
@@ -79,6 +83,14 @@ class FilterFunction(LegendApiAppliedFunction):
             new_query.where = LogicalBinaryExpression(LogicalBinaryType.AND, new_query.where, filter_sql_expr)
 
         return new_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        tds_row = LegendApiTdsRow.from_tds_frame("r", self.__base_frame)
+        filter_expr = self.__filter_function(tds_row)
+        filter_expr_string = (filter_expr.to_pure_expression(config) if isinstance(filter_expr, LegendApiPrimitive) else
+                              convert_literal_to_literal_expression(filter_expr).to_pure_expression(config))
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                f"->filter({generate_pure_lambda('r', filter_expr_string)})")
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame
