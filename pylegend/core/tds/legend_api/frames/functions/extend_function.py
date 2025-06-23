@@ -26,6 +26,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.language import (
     LegendApiTdsRow,
@@ -33,6 +34,7 @@ from pylegend.core.language import (
     LegendApiPrimitiveOrPythonPrimitive,
     convert_literal_to_literal_expression,
 )
+from pylegend.core.language.shared.helpers import generate_pure_lambda
 from pylegend.core.tds.legend_api.frames.functions.function_helpers import tds_column_for_primitive
 
 __all__: PyLegendSequence[str] = [
@@ -86,6 +88,25 @@ class ExtendFunction(LegendApiAppliedFunction):
             )
 
         return new_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        tds_row = LegendApiTdsRow.from_tds_frame("r", self.__base_frame)
+        rendered_columns = []
+        for (func, col_name) in zip(self.__functions_list, self.__column_names_list):
+            col_expr = func(tds_row)
+            escaped_col_name = (col_name if col_name.isidentifier()
+                                else "'" + col_name.replace('\'', '\\\'') + "'")
+            pure_expr = (col_expr.to_pure_expression(config) if isinstance(col_expr, LegendApiPrimitive) else
+                         convert_literal_to_literal_expression(col_expr).to_pure_expression(config))
+            rendered_columns.append(f"{escaped_col_name}:{generate_pure_lambda('r', pure_expr)}")
+
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                (
+                    (f"->extend(~{rendered_columns[0]})") if len(rendered_columns) == 1 else
+                    (f"->extend(~[{config.separator(2)}"
+                     f"{(',' + config.separator(2, True)).join(rendered_columns)}"
+                     f"{config.separator(1)}])")
+                ))
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame

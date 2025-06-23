@@ -17,6 +17,7 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
@@ -115,7 +116,7 @@ class TestExtendAppliedFunction:
             frame.extend([lambda x: 1, lambda x: 2], ["col1", "col4"])
         assert r.value.args[0] == "Extend column name - 'col1' already exists in base frame"
 
-    def test_sql_gen_extend_function(self) -> None:
+    def test_query_gen_extend_function(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -130,8 +131,15 @@ class TestExtendAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(~col3:{r | $r.col1 + 1})'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->extend(~col3:{r | $r.col1 + 1})')
 
-    def test_sql_gen_extend_function_multi(self) -> None:
+    def test_query_gen_extend_function_multi(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -150,8 +158,18 @@ class TestExtendAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(~[
+                col3:{r | $r.col1 + 1},
+                col4:{r | $r.col1 + 2}
+              ])'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->extend(~[col3:{r | $r.col1 + 1}, col4:{r | $r.col1 + 2}])')
 
-    def test_sql_gen_extend_function_literals(self) -> None:
+    def test_query_gen_extend_function_literals(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -174,6 +192,19 @@ class TestExtendAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(~[
+                col3:{r | 1},
+                col4:{r | 2.0},
+                col5:{r | 'Hello'},
+                col6:{r | true}
+              ])'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->extend(~[col3:{r | 1}, col4:{r | 2.0}, '
+                'col5:{r | \'Hello\'}, col6:{r | true}])')
 
     def test_e2e_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
