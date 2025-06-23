@@ -32,6 +32,7 @@ from pylegend.core.sql.metamodel import (
     Cast,
     ComparisonOperator,
     ComparisonExpression,
+    StringLiteral,
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -49,7 +50,9 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 __all__: PyLegendSequence[str] = [
     "PyLegendStringLengthExpression",
-    "PyLegendStringLikeExpression",
+    "PyLegendStringStartsWithExpression",
+    "PyLegendStringEndsWithExpression",
+    "PyLegendStringContainsExpression",
     "PyLegendStringUpperExpression",
     "PyLegendStringLowerExpression",
     "PyLegendStringLTrimExpression",
@@ -90,7 +93,7 @@ class PyLegendStringLengthExpression(PyLegendUnaryExpression, PyLegendExpression
         )
 
 
-class PyLegendStringLikeExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+class PyLegendStringStartsWithExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
 
     @staticmethod
     def __to_sql_func(
@@ -99,11 +102,13 @@ class PyLegendStringLikeExpression(PyLegendBinaryExpression, PyLegendExpressionB
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return StringLikeExpression(expression1, expression2)
+        assert isinstance(expression2, StringLiteral)
+        escaped = _escape_like_param(expression2.value)
+        return StringLikeExpression(expression1, StringLiteral(value=escaped + "%", quoted=False))
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        raise RuntimeError("Not supported")
+        return generate_pure_functional_call("startsWith", [op1_expr, op2_expr])
 
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
@@ -111,8 +116,64 @@ class PyLegendStringLikeExpression(PyLegendBinaryExpression, PyLegendExpressionB
             self,
             operand1,
             operand2,
-            PyLegendStringLikeExpression.__to_sql_func,
-            PyLegendStringLikeExpression.__to_pure_func
+            PyLegendStringStartsWithExpression.__to_sql_func,
+            PyLegendStringStartsWithExpression.__to_pure_func
+        )
+
+
+class PyLegendStringEndsWithExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        assert isinstance(expression2, StringLiteral)
+        escaped = _escape_like_param(expression2.value)
+        return StringLikeExpression(expression1, StringLiteral(value="%" + escaped, quoted=False))
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("endsWith", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringEndsWithExpression.__to_sql_func,
+            PyLegendStringEndsWithExpression.__to_pure_func
+        )
+
+
+class PyLegendStringContainsExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        assert isinstance(expression2, StringLiteral)
+        escaped = _escape_like_param(expression2.value)
+        return StringLikeExpression(expression1, StringLiteral(value="%" + escaped + "%", quoted=False))
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("contains", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringContainsExpression.__to_sql_func,
+            PyLegendStringContainsExpression.__to_pure_func
         )
 
 
@@ -438,3 +499,7 @@ class PyLegendStringGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegen
             PyLegendStringGreaterThanEqualExpression.__to_sql_func,
             PyLegendStringGreaterThanEqualExpression.__to_pure_func
         )
+
+
+def _escape_like_param(param: str) -> str:
+    return param.replace("_", "\\_").replace("%", "\\%")

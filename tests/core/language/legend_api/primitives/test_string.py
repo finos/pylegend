@@ -55,6 +55,13 @@ class TestLegendApiString:
                "(\"root\".col2 LIKE 'Abc%')"
         assert self.__generate_sql_string(lambda x: x.get_string("col2").startswith("A_b%c")) == \
                "(\"root\".col2 LIKE 'A\\_b\\%c%')"
+        with pytest.raises(TypeError) as t:
+            self.__generate_pure_string(lambda x: x.get_string("col2").startswith(x.get_string("col2")))
+        assert t.value.args[0].startswith("startswith prefix parameter should be a str")
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").startswith("Abc")) == \
+               "$t.col2->startsWith('Abc')"
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").startswith("A_b%c")) == \
+               "$t.col2->startsWith('A_b%c')"
 
     def test_string_endswith_expr(self) -> None:
         with pytest.raises(TypeError) as t:
@@ -64,6 +71,13 @@ class TestLegendApiString:
                "(\"root\".col2 LIKE '%Abc')"
         assert self.__generate_sql_string(lambda x: x.get_string("col2").endswith("A_b%c")) == \
                "(\"root\".col2 LIKE '%A\\_b\\%c')"
+        with pytest.raises(TypeError) as t:
+            self.__generate_pure_string(lambda x: x.get_string("col2").endswith(x.get_string("col2")))
+        assert t.value.args[0].startswith("endswith suffix parameter should be a str")
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").endswith("Abc")) == \
+               "$t.col2->endsWith('Abc')"
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").endswith("A_b%c")) == \
+               "$t.col2->endsWith('A_b%c')"
 
     def test_string_contains_expr(self) -> None:
         with pytest.raises(TypeError) as t:
@@ -73,6 +87,13 @@ class TestLegendApiString:
                "(\"root\".col2 LIKE '%Abc%')"
         assert self.__generate_sql_string(lambda x: x.get_string("col2").contains("A_b%c")) == \
                "(\"root\".col2 LIKE '%A\\_b\\%c%')"
+        with pytest.raises(TypeError) as t:
+            self.__generate_pure_string(lambda x: x.get_string("col2").contains(x.get_string("col2")))
+        assert t.value.args[0].startswith("contains/in other parameter should be a str")
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").contains("Abc")) == \
+               "$t.col2->contains('Abc')"
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").contains("A_b%c")) == \
+               "$t.col2->contains('A_b%c')"
 
     def test_string_upper_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").upper()) == 'UPPER("root".col2)'
