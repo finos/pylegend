@@ -31,7 +31,9 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.language.shared.operations.string_operation_expressions import (
     PyLegendStringLengthExpression,
-    PyLegendStringLikeExpression,
+    PyLegendStringStartsWithExpression,
+    PyLegendStringEndsWithExpression,
+    PyLegendStringContainsExpression,
     PyLegendStringUpperExpression,
     PyLegendStringLowerExpression,
     PyLegendStringLTrimExpression,
@@ -70,23 +72,20 @@ class LegendApiString(LegendApiPrimitive):
 
     def startswith(self, prefix: str) -> LegendApiBoolean:
         LegendApiString.__validate_param_to_be_str(prefix, "startswith prefix parameter")
-        escaped_prefix = LegendApiString.__escape_like_param(prefix)
         return LegendApiBoolean(
-            PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression(escaped_prefix + '%'))
+            PyLegendStringStartsWithExpression(self.__value, PyLegendStringLiteralExpression(prefix))
         )
 
     def endswith(self, suffix: str) -> LegendApiBoolean:
         LegendApiString.__validate_param_to_be_str(suffix, "endswith suffix parameter")
-        escaped_suffix = LegendApiString.__escape_like_param(suffix)
         return LegendApiBoolean(
-            PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression("%" + escaped_suffix))
+            PyLegendStringEndsWithExpression(self.__value, PyLegendStringLiteralExpression(suffix))
         )
 
     def contains(self, other: str) -> LegendApiBoolean:
         LegendApiString.__validate_param_to_be_str(other, "contains/in other parameter")
-        escaped_other = LegendApiString.__escape_like_param(other)
         return LegendApiBoolean(
-            PyLegendStringLikeExpression(self.__value, PyLegendStringLiteralExpression("%" + escaped_other + "%"))
+            PyLegendStringContainsExpression(self.__value, PyLegendStringLiteralExpression(other))
         )
 
     def upper(self) -> "LegendApiString":
@@ -163,10 +162,6 @@ class LegendApiString(LegendApiPrimitive):
 
     def value(self) -> PyLegendExpression:
         return self.__value
-
-    @staticmethod
-    def __escape_like_param(param: str) -> str:
-        return param.replace("_", "\\_").replace("%", "\\%")
 
     @staticmethod
     def __validate_param_to_be_str_or_str_expr(param: PyLegendUnion[str, "LegendApiString"], desc: str) -> None:
