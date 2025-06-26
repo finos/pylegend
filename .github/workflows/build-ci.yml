@@ -75,6 +75,7 @@ jobs:
         with:
           files: ./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
           flags: pytest
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload CI Event
         if: always()
