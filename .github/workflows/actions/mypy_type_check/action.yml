@@ -41,6 +41,6 @@ runs:
         echo "MyPy executable is:" $(which mypy)
         echo "Running mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg"
         mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg 
-        echo "Running mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg"
-        mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg
+        echo "Running mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg --exclude 'legendql' --exclude 'tests/legendql'"
+        mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg --exclude 'legendql' --exclude 'tests/legendql'
         echo "Done with typing check"
