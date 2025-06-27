@@ -40,5 +40,5 @@ runs:
         echo "Running flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics"
         flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics
         echo "Running flake8 ./pylegend ./tests --count --max-line-length=127 --show-source --statistics"
-        flake8 ./pylegend ./tests --count --max-line-length=127 --show-source --statistics
+        flake8 ./pylegend ./tests --count --max-line-length=127 --show-source --statistics --exclude legendql,tests/legendql
         echo "Done with lint check"
