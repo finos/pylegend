@@ -204,7 +204,7 @@ class Parser:
         raise ValueError(f"Unsupported Rename {node}")
 
     @staticmethod
-    def _parse_group_by(node: ast.AST, args: [arg], src_table: Table, new_table: Table) -> List[GroupByExpression | Expression]:
+    def _parse_group_by(node: ast.AST, args: [arg], src_table: Table, new_table: Table) -> List[Union[GroupByExpression, Expression]]:
         if isinstance(node, ast.Call) and ((isinstance(node.func, ast.Name) and node.func.id == "aggregate") or (isinstance(node.func, ast.Attribute) and node.func.attr == "aggregate")):
             if len(node.args) != 2 and len(node.args) != 3:
                 raise ValueError(f"An aggregate function requires 2 or 3 arguments: {node.args}")
