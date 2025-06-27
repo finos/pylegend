@@ -20,9 +20,7 @@ from legendql.runtime.pure.db.type import DatabaseDefinition
 class Store(Enum):
 
     def database_definition(self) -> DatabaseDefinition:
-        match self:
-            case _:
-                raise ValueError(f"Unsupported store type: {self}")
+        raise ValueError(f"Unsupported store type: {self}")
 
 
 store = Store

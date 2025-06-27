@@ -23,9 +23,8 @@ class DialectType(Enum):
     PURE_RELATION = "pure_relation"
 
     def to_string(self, clauses: List[Clause]) -> str:
-        match self:
-            case DialectType.PURE_RELATION:
-                visitor = PureRelationExpressionVisitor()
-                return "->".join(map(lambda clause: clause.visit(visitor, ""), clauses)) + "->from(legendql::Runtime)"
+        if self == DialectType.PURE_RELATION:
+            visitor = PureRelationExpressionVisitor()
+            return "->".join(map(lambda clause: clause.visit(visitor, ""), clauses)) + "->from(legendql::Runtime)"
 
         raise ValueError(f"Unsupported dialect type: {self}")
