@@ -61,6 +61,12 @@ def using_db(database: Database, table: str) -> LegendQL:
     return LegendQL.using_db_def(database, table, None)
 
 
+def from_sql(sql: str, database: Database) -> LegendQL:
+    """Create a LegendQL query from a SQL statement."""
+    query = Query.from_sql(sql, None, database)
+    return LegendQL.__new__(LegendQL)._initialize_with_query(query)
+
+
 class LegendQL:
 
     def __init__(self, database_definition: DatabaseDefinition, database: Database, table: str):
@@ -69,6 +75,11 @@ class LegendQL:
     @classmethod
     def using_db_def(cls, database: Database, table: str, database_definition: DatabaseDefinition = None) -> LegendQL:
         return LegendQL(database_definition, database, table)
+
+    def _initialize_with_query(self, query: Query) -> LegendQL:
+        """Initialize LegendQL instance with an existing Query."""
+        self._query = query
+        return self
 
     def execute(self, store_or_def: Union[Store | DatabaseDefinition] = None, client: LegendClient = None) -> Result:
         database_def = None

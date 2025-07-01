@@ -46,6 +46,33 @@ class Query:
         cloned_table = Table(found_table.table, found_table.columns.copy(), found_table.schema)
         return Query(database_definition, database, [cloned_table], cloned_table, [DatabaseFromClause(database.name, cloned_table.table, cloned_table.schema.name if cloned_table.schema else None)])
 
+    @classmethod
+    def from_sql(cls, sql: str, database_definition: DatabaseDefinition, database: Database) -> Query:
+        """Create a Query from a SQL statement."""
+        from legendql.sql_parser import SQLParser
+        from legendql.model.metamodel import DatabaseFromClause
+        
+        parser = SQLParser(database)
+        clauses = parser.parse_sql(sql)
+        
+        table_name = None
+        for clause in clauses:
+            if isinstance(clause, DatabaseFromClause):
+                table_name = clause.table
+                break
+        
+        if not table_name:
+            raise ValueError("SQL statement must include a FROM clause with a table name")
+        
+        all_tables = [x for xs in map(lambda c: [c] if isinstance(c, Table) else c, database.children) for x in xs]
+        try:
+            found_table = next(t for t in all_tables if t.table == table_name)
+        except StopIteration:
+            raise ValueError(f"Table {table_name} not found in the database.")
+        
+        cloned_table = Table(found_table.table, found_table.columns.copy(), found_table.schema)
+        return Query(database_definition, database, [cloned_table], cloned_table, clauses)
+
     def execute(self, database_definition: DatabaseDefinition = None, client: LegendClient = None) -> Result:
         if database_definition is None and self._database_definition is None:
             raise ValueError("Database definition is required to execute the query.")
