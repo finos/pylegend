@@ -16,5 +16,6 @@ from legendql.ql import db, table, using, using_db, using_db_def
 from legendql.ql import query, LegendQL
 from legendql.store import store
 from legendql.functions import aggregate, over, unbounded, rows, range, left, avg, count, sum, rank, lead, lag, row_number
+from legendql.sql_parser import sql_to_pure_relation, SQLToLegendQLConverter
 
-__all__ = ['db', 'table', 'using', 'using_db', 'using_db_def', 'query', 'LegendQL', 'store', 'aggregate', 'over', 'unbounded', 'rows', 'range', 'left', 'avg', 'count', 'sum', 'rank', 'lead', 'lag', 'row_number']
+__all__ = ['db', 'table', 'using', 'using_db', 'using_db_def', 'query', 'LegendQL', 'store', 'aggregate', 'over', 'unbounded', 'rows', 'range', 'left', 'avg', 'count', 'sum', 'rank', 'lead', 'lag', 'row_number', 'sql_to_pure_relation', 'SQLToLegendQLConverter']
