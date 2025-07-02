@@ -25,6 +25,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
 
@@ -76,6 +77,19 @@ class RenameColumnsFunction(LegendApiAppliedFunction):
         new_query = copy_query(base_query)
         new_query.select.selectItems = new_select_items
         return new_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        def escape_column_name(name: str) -> str:
+            return name if name.isidentifier() else ("'" + name.replace('\'', '\\\'') + "'")
+
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                f"{config.separator(1)}".join([
+                    f"->rename(~{x},~{y})"
+                    for x, y in zip(
+                        map(escape_column_name, self.__column_names),
+                        map(escape_column_name, self.__renamed_column_names)
+                    )
+                ]))
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame
