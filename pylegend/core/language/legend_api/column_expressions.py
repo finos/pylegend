@@ -36,6 +36,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.language.shared.helpers import escape_column_name
 
 
 __all__: PyLegendSequence[str] = [
@@ -76,12 +77,7 @@ class LegendApiColumnExpression(PyLegendExpression, metaclass=ABCMeta):
         return filtered[0].expression
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        if self.__column.isidentifier():
-            # Python identifier check is same as PURE identifier check
-            return f"${self.__frame_name}.{self.__column}"
-        else:
-            escaped = self.__column.replace('\'', '\\\'')
-            return f"${self.__frame_name}.'{escaped}'"
+        return f"${self.__frame_name}.{escape_column_name(self.__column)}"
 
 
 class LegendApiBooleanColumnExpression(LegendApiColumnExpression, PyLegendExpressionBooleanReturn):

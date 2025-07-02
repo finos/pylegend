@@ -84,7 +84,7 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
         return StringLiteral(value=self.__value, quoted=False)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        escaped = self.__value.replace('\'', '\\\'')
+        escaped = self.__value.replace("'", "\\'")
         return f"'{escaped}'"
 
 

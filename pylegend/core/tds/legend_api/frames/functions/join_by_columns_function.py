@@ -43,7 +43,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
-from pylegend.core.language.shared.helpers import generate_pure_lambda
+from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 
 
 __all__: PyLegendSequence[str] = [
@@ -168,9 +168,9 @@ class JoinByColumnsFunction(LegendApiAppliedFunction):
                        self.__other_frame.rename_columns(common_join_cols, [c + "_gen_r" for c in common_join_cols]))
         sub_expressions = []
         for x, y in zip(self.__column_names_self, self.__column_names_other):
-            left = "$l." + (x if x.isidentifier() else "'" + x.replace('\'', '\\\'') + "'")
+            left = "$l." + escape_column_name(x)
             y = (y + "_gen_r") if y in common_join_cols else y
-            right = "$r." + (y if y.isidentifier() else "'" + y.replace('\'', '\\\'') + "'")
+            right = "$r." + escape_column_name(y)
             sub_expressions.append(f"({left} == {right})")
 
         join_expr_string = " && ".join(sub_expressions)

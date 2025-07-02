@@ -34,7 +34,7 @@ from pylegend.core.language import (
     LegendApiPrimitiveOrPythonPrimitive,
     convert_literal_to_literal_expression,
 )
-from pylegend.core.language.shared.helpers import generate_pure_lambda
+from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 from pylegend.core.tds.legend_api.frames.functions.function_helpers import tds_column_for_primitive
 
 __all__: PyLegendSequence[str] = [
@@ -94,8 +94,7 @@ class ExtendFunction(LegendApiAppliedFunction):
         rendered_columns = []
         for (func, col_name) in zip(self.__functions_list, self.__column_names_list):
             col_expr = func(tds_row)
-            escaped_col_name = (col_name if col_name.isidentifier()
-                                else "'" + col_name.replace('\'', '\\\'') + "'")
+            escaped_col_name = escape_column_name(col_name)
             pure_expr = (col_expr.to_pure_expression(config) if isinstance(col_expr, LegendApiPrimitive) else
                          convert_literal_to_literal_expression(col_expr).to_pure_expression(config))
             rendered_columns.append(f"{escaped_col_name}:{generate_pure_lambda('r', pure_expr)}")

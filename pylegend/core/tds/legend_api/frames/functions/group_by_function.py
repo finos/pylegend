@@ -17,7 +17,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTuple,
 )
-from pylegend.core.language.shared.helpers import generate_pure_lambda
+from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import LegendApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
@@ -116,14 +116,12 @@ class GroupByFunction(LegendApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         group_strings = []
         for col_name in self.__grouping_columns:
-            group_strings.append(col_name if col_name.isidentifier()
-                                 else "'" + col_name.replace('\'', '\\\'') + "'")
+            group_strings.append(escape_column_name(col_name))
 
         agg_strings = []
         tds_row = LegendApiTdsRow.from_tds_frame("r", self.__base_frame)
         for agg in self.__aggregations:
-            agg_name = (agg.get_name() if agg.get_name().isidentifier()
-                        else "'" + agg.get_name().replace('\'', '\\\'') + "'")
+            agg_name = escape_column_name(agg.get_name())
             map_expr = agg.get_map_fn()(tds_row)
             collection = create_primitive_collection(map_expr)
             agg_expr = agg.get_aggregate_fn()(collection)
