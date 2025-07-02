@@ -29,6 +29,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 
 
@@ -88,6 +89,16 @@ class SortFunction(LegendApiAppliedFunction):
             for i in range(len(self.__column_name_list))
         ]
         return new_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        direction_list = self._build_directions_list()
+        sort_infos = []
+        for col_name, direction in zip(self.__column_name_list, direction_list):
+            escaped = (col_name if col_name.isidentifier() else
+                       "'" + col_name.replace('\'', '\\\'') + "'")
+            sort_infos.append(f"{'ascending' if direction.upper() == 'ASC' else 'descending'}(~{escaped})")
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                f"->sort([{', '.join(sort_infos)}])")
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame

@@ -17,6 +17,7 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
@@ -60,7 +61,7 @@ class TestSortAppliedFunction:
         assert v.value.args[0] == "Sort directions (ASC/DESC) provided need to be in sync with columns or left empty " \
                                   "to choose defaults. Passed column list: ['col1'], directions: ['ASC', 'DESC']"
 
-    def test_sql_gen_sort_function_no_top(self) -> None:
+    def test_query_gen_sort_function_no_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -77,8 +78,15 @@ class TestSortAppliedFunction:
                 "root".col2,
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->sort([ascending(~col2), ascending(~col1)])'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->sort([ascending(~col2), ascending(~col1)])')
 
-    def test_sql_gen_sort_function_existing_top(self) -> None:
+    def test_query_gen_sort_function_existing_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -102,32 +110,53 @@ class TestSortAppliedFunction:
             ORDER BY
                 "root"."col2" DESC'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(10)
+              ->sort([descending(~col2)])'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->limit(10)->sort([descending(~col2)])')
 
-    def test_sql_gen_sort_function_existing_top_multi_column(self) -> None:
+    def test_query_gen_sort_function_existing_top_multi_column(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(10)
-        frame = frame.sort(["col2", "col1"], ["DESC", "ASC"])
+        frame = frame.extend([lambda x: x["col1"]], ["col3 with ' quote"])
+        frame = frame.sort(["col2", "col3 with ' quote"], ["DESC", "ASC"])
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
-                "root"."col2" AS "col2"
+                "root"."col2" AS "col2",
+                "root"."col3 with ' quote" AS "col3 with ' quote"
             FROM
                 (
                     SELECT
                         "root".col1 AS "col1",
-                        "root".col2 AS "col2"
+                        "root".col2 AS "col2",
+                        "root".col1 AS "col3 with ' quote"
                     FROM
                         test_schema.test_table AS "root"
                     LIMIT 10
                 ) AS "root"
             ORDER BY
                 "root"."col2" DESC,
-                "root"."col1"'''
+                "root"."col3 with ' quote"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(10)
+              ->extend(~'col3 with \\' quote':{r | $r.col1})
+              ->sort([descending(~col2), ascending(~'col3 with \\' quote')])'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->limit(10)->extend(~\'col3 with \\\' quote\':{r | $r.col1})'
+               '->sort([descending(~col2), ascending(~\'col3 with \\\' quote\')])')
 
     def test_e2e_sort_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
