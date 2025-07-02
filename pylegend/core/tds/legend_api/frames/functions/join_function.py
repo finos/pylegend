@@ -36,13 +36,17 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.core.language import (
     LegendApiBoolean,
     LegendApiTdsRow,
     PyLegendBooleanLiteralExpression,
+    LegendApiPrimitive,
+    convert_literal_to_literal_expression,
 )
+from pylegend.core.language.shared.helpers import generate_pure_lambda
 
 
 __all__: PyLegendSequence[str] = [
@@ -141,6 +145,26 @@ class JoinFunction(LegendApiAppliedFunction):
 
         wrapped_join_query = create_sub_query(join_query, config, "root")
         return wrapped_join_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        left_row = LegendApiTdsRow.from_tds_frame("l", self.__base_frame)
+        right_row = LegendApiTdsRow.from_tds_frame("r", self.__other_frame)
+        join_expr = self.__join_condition(left_row, right_row)
+        join_expr_string = (join_expr.to_pure_expression(config.push_indent(2))
+                            if isinstance(join_expr, LegendApiPrimitive) else
+                            convert_literal_to_literal_expression(join_expr).to_pure_expression(config.push_indent(2)))
+        join_kind = (
+            "INNER" if self.__join_type.lower() == 'inner' else
+            "LEFT" if self.__join_type.lower() in ('left_outer', 'leftouter') else
+            "RIGHT" if self.__join_type.lower() in ('right_outer', 'rightouter') else
+            "FULL"
+        )
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                f"->join({config.separator(2)}"
+                f"{self.__other_frame.to_pure(config.push_indent(2))},{config.separator(2, True)}"
+                f"JoinKind.{join_kind},{config.separator(2, True)}"
+                f"{generate_pure_lambda('l, r', join_expr_string)}{config.separator(1)}"
+                f")")
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame
