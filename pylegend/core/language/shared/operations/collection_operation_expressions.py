@@ -427,7 +427,7 @@ class PyLegendVarianceSampleExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("variance", [op_expr])
+        return generate_pure_functional_call("varianceSample", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)

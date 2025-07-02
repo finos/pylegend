@@ -17,6 +17,7 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame, simple_trade_service_frame
@@ -144,7 +145,7 @@ class TestGroupByAppliedFunction:
                                    "<class 'pylegend.core.language.legend_api.primitive_collection."
                                    "LegendApiStringCollection'>")
 
-    def test_sql_gen_group_by(self) -> None:
+    def test_query_gen_group_by(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -166,8 +167,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Count:{r | $r.col2}:{c | $c->count()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Count:{r | $r.col2}:{c | $c->count()}])')
 
-    def test_sql_gen_group_by_with_distinct(self) -> None:
+    def test_query_gen_group_by_with_distinct(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -196,8 +207,20 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->distinct()
+              ->groupBy(
+                ~[col1],
+                ~[Count:{r | $r.col2}:{c | $c->count()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->distinct()'
+                '->groupBy(~[col1], ~[Count:{r | $r.col2}:{c | $c->count()}])')
 
-    def test_sql_gen_group_by_with_limit(self) -> None:
+    def test_query_gen_group_by_with_limit(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -227,8 +250,20 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(10)
+              ->groupBy(
+                ~[col1],
+                ~[Count:{r | $r.col2}:{c | $c->count()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->limit(10)'
+                '->groupBy(~[col1], ~[Count:{r | $r.col2}:{c | $c->count()}])')
 
-    def test_sql_gen_multi_group_by(self) -> None:
+    def test_query_gen_multi_group_by(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -270,8 +305,25 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(10)
+              ->groupBy(
+                ~[col1],
+                ~[Count1:{r | $r.col2}:{c | $c->count()}]
+              )
+              ->groupBy(
+                ~[col1],
+                ~[Count2:{r | $r.Count1}:{c | $c->count()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->limit(10)'
+                '->groupBy(~[col1], ~[Count1:{r | $r.col2}:{c | $c->count()}])'
+                '->groupBy(~[col1], ~[Count2:{r | $r.Count1}:{c | $c->count()}])')
 
-    def test_sql_gen_group_by_multi_agg(self) -> None:
+    def test_query_gen_group_by_multi_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -298,8 +350,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Count1:{r | $r.col2}:{c | $c->count()}, Count2:{r | $r.col2}:{c | $c->count()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col1], ~[Count1:{r | $r.col2}:{c | $c->count()}, Count2:{r | $r.col2}:{c | $c->count()}])')
 
-    def test_sql_gen_group_by_distinct_count_agg(self) -> None:
+    def test_query_gen_group_by_distinct_count_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -321,8 +384,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Cnt:{r | $r.col1}:{c | $c->distinct()->count()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Cnt:{r | $r.col1}:{c | $c->distinct()->count()}])')
 
-    def test_sql_gen_group_by_average_agg(self) -> None:
+    def test_query_gen_group_by_average_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -344,8 +417,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Average:{r | $r.col1}:{c | $c->average()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col2], ~[Average:{r | $r.col1}:{c | $c->average()}])')
 
-    def test_sql_gen_group_by_average_agg_pre_op(self) -> None:
+    def test_query_gen_group_by_average_agg_pre_op(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -367,8 +451,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Average:{r | $r.col1 + 20}:{c | $c->average()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | $r.col1 + 20}:{c | $c->average()}])')
 
-    def test_sql_gen_group_by_average_agg_post_op(self) -> None:
+    def test_query_gen_group_by_average_agg_post_op(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -390,8 +484,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Average:{r | $r.col1}:{c | $c->average() + 2}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | $r.col1}:{c | $c->average() + 2}])')
 
-    def test_sql_gen_group_by_integer_max_agg(self) -> None:
+    def test_query_gen_group_by_integer_max_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -413,8 +517,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Maximum:{r | $r.col1}:{c | $c->max()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Maximum:{r | $r.col1}:{c | $c->max()}])')
 
-    def test_sql_gen_group_by_integer_min_agg(self) -> None:
+    def test_query_gen_group_by_integer_min_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -436,8 +550,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Minimum:{r | $r.col1}:{c | $c->min()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Minimum:{r | $r.col1}:{c | $c->min()}])')
 
-    def test_sql_gen_group_by_integer_sum_agg(self) -> None:
+    def test_query_gen_group_by_integer_sum_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -459,8 +583,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Sum:{r | $r.col1}:{c | $c->sum()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
-    def test_sql_gen_group_by_float_max_agg(self) -> None:
+    def test_query_gen_group_by_float_max_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.float_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -482,8 +616,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Maximum:{r | $r.col1}:{c | $c->max()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Maximum:{r | $r.col1}:{c | $c->max()}])')
 
-    def test_sql_gen_group_by_float_min_agg(self) -> None:
+    def test_query_gen_group_by_float_min_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.float_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -505,8 +649,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Minimum:{r | $r.col1}:{c | $c->min()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Minimum:{r | $r.col1}:{c | $c->min()}])')
 
-    def test_sql_gen_group_by_float_sum_agg(self) -> None:
+    def test_query_gen_group_by_float_sum_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.float_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -528,8 +682,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Sum:{r | $r.col1}:{c | $c->sum()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
-    def test_sql_gen_group_by_number_max_agg(self) -> None:
+    def test_query_gen_group_by_number_max_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -551,8 +715,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Maximum:{r | $r.col1}:{c | $c->max()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Maximum:{r | $r.col1}:{c | $c->max()}])')
 
-    def test_sql_gen_group_by_number_min_agg(self) -> None:
+    def test_query_gen_group_by_number_min_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -574,8 +748,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Minimum:{r | $r.col1}:{c | $c->min()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Minimum:{r | $r.col1}:{c | $c->min()}])')
 
-    def test_sql_gen_group_by_number_sum_agg(self) -> None:
+    def test_query_gen_group_by_number_sum_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -597,8 +781,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Sum:{r | $r.col1}:{c | $c->sum()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
-    def test_sql_gen_group_by_std_dev_sample_agg(self) -> None:
+    def test_query_gen_group_by_std_dev_sample_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -626,8 +820,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()}])')
 
-    def test_sql_gen_group_by_std_dev_agg(self) -> None:
+    def test_query_gen_group_by_std_dev_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -655,8 +860,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()}])')
 
-    def test_sql_gen_group_by_std_dev_population_agg(self) -> None:
+    def test_query_gen_group_by_std_dev_population_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -684,8 +900,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()}])')
 
-    def test_sql_gen_group_by_variance_sample_agg(self) -> None:
+    def test_query_gen_group_by_variance_sample_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -713,8 +940,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()}])')
 
-    def test_sql_gen_group_by_variance_agg(self) -> None:
+    def test_query_gen_group_by_variance_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -742,8 +980,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}])')
 
-    def test_sql_gen_group_by_variance_population_agg(self) -> None:
+    def test_query_gen_group_by_variance_population_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -771,8 +1020,19 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#'
+                '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()}])')
 
-    def test_sql_gen_group_by_string_max_agg(self) -> None:
+    def test_query_gen_group_by_string_max_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -794,8 +1054,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Maximum:{r | $r.col2}:{c | $c->max()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Maximum:{r | $r.col2}:{c | $c->max()}])')
 
-    def test_sql_gen_group_by_string_min_agg(self) -> None:
+    def test_query_gen_group_by_string_min_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -817,8 +1087,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Minimum:{r | $r.col2}:{c | $c->min()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
 
-    def test_sql_gen_group_by_join_strings_agg(self) -> None:
+    def test_query_gen_group_by_join_strings_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -840,8 +1120,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Joined:{r | $r.col2}:{c | $c->joinStrings(' ')}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Joined:{r | $r.col2}:{c | $c->joinStrings(\' \')}])')
 
-    def test_sql_gen_group_by_strictdate_max_agg(self) -> None:
+    def test_query_gen_group_by_strictdate_max_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.strictdate_column("col2")
@@ -863,8 +1153,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Maximum:{r | $r.col2}:{c | $c->max()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Maximum:{r | $r.col2}:{c | $c->max()}])')
 
-    def test_sql_gen_group_by_strictdate_min_agg(self) -> None:
+    def test_query_gen_group_by_strictdate_min_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.strictdate_column("col2")
@@ -886,8 +1186,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Minimum:{r | $r.col2}:{c | $c->min()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
 
-    def test_sql_gen_group_by_date_max_agg(self) -> None:
+    def test_query_gen_group_by_date_max_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.date_column("col2")
@@ -909,8 +1219,18 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Maximum:{r | $r.col2}:{c | $c->max()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Maximum:{r | $r.col2}:{c | $c->max()}])')
 
-    def test_sql_gen_group_by_date_min_agg(self) -> None:
+    def test_query_gen_group_by_date_min_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
             PrimitiveTdsColumn.date_column("col2")
@@ -932,6 +1252,16 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Minimum:{r | $r.col2}:{c | $c->min()}]
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
 
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
