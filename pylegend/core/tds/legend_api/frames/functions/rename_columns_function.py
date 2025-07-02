@@ -84,7 +84,7 @@ class RenameColumnsFunction(LegendApiAppliedFunction):
 
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
                 f"{config.separator(1)}".join([
-                    f"->rename(~{x},~{y})"
+                    f"->rename(~{x}, ~{y})"
                     for x, y in zip(
                         map(escape_column_name, self.__column_names),
                         map(escape_column_name, self.__renamed_column_names)

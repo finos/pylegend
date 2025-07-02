@@ -86,10 +86,10 @@ class TestRenameColumnsAppliedFunction:
         assert frame.to_pure_query() == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->rename(~col2,~col3)'''
+              ->rename(~col2, ~col3)'''
         )
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
-               ('#Table(test_schema.test_table)#->rename(~col2,~col3)')
+               ('#Table(test_schema.test_table)#->rename(~col2, ~col3)')
 
         frame = frame.rename_columns(["col1", "col3"], ["col4", "col5 with spaces"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -104,13 +104,13 @@ class TestRenameColumnsAppliedFunction:
         assert frame.to_pure_query() == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->rename(~col2,~col3)
-              ->rename(~col1,~col4)
-              ->rename(~col3,~'col5 with spaces')'''
+              ->rename(~col2, ~col3)
+              ->rename(~col1, ~col4)
+              ->rename(~col3, ~'col5 with spaces')'''
         )
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
                ('#Table(test_schema.test_table)#'
-                '->rename(~col2,~col3)->rename(~col1,~col4)->rename(~col3,~\'col5 with spaces\')')
+                '->rename(~col2, ~col3)->rename(~col1, ~col4)->rename(~col3, ~\'col5 with spaces\')')
 
     def test_e2e_rename_columns_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
