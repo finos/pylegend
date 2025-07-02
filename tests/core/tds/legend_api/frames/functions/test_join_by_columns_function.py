@@ -291,13 +291,13 @@ class TestJoinByColumnsAppliedFunction:
             #Table(test_schema.test_table1)#
               ->join(
                 #Table(test_schema.test_table2)#
-                  ->rename(~col1,~col1_gen_r),
+                  ->rename(~col1, ~col1_gen_r),
                 JoinKind.LEFT,
                 {l, r | $l.col1 == $r.col1_gen_r}
               )'''
         )
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
-               ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#->rename(~col1,~col1_gen_r), '
+               ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#->rename(~col1, ~col1_gen_r), '
                 'JoinKind.LEFT, '
                 '{l, r | $l.col1 == $r.col1_gen_r})')
 
@@ -359,15 +359,15 @@ class TestJoinByColumnsAppliedFunction:
             #Table(test_schema.test_table1)#
               ->join(
                 #Table(test_schema.test_table2)#
-                  ->rename(~col2,~col2_gen_r)
-                  ->rename(~col1,~col1_gen_r),
+                  ->rename(~col2, ~col2_gen_r)
+                  ->rename(~col1, ~col1_gen_r),
                 JoinKind.LEFT,
                 {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
               )'''
         )
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
                ('#Table(test_schema.test_table1)#->join('
-                '#Table(test_schema.test_table2)#->rename(~col2,~col2_gen_r)->rename(~col1,~col1_gen_r), '
+                '#Table(test_schema.test_table2)#->rename(~col2, ~col2_gen_r)->rename(~col1, ~col1_gen_r), '
                 'JoinKind.LEFT, '
                 '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
@@ -429,15 +429,15 @@ class TestJoinByColumnsAppliedFunction:
             #Table(test_schema.test_table1)#
               ->join(
                 #Table(test_schema.test_table2)#
-                  ->rename(~col2,~col2_gen_r)
-                  ->rename(~col1,~col1_gen_r),
+                  ->rename(~col2, ~col2_gen_r)
+                  ->rename(~col1, ~col1_gen_r),
                 JoinKind.INNER,
                 {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
               )'''
         )
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
                ('#Table(test_schema.test_table1)#->join('
-                '#Table(test_schema.test_table2)#->rename(~col2,~col2_gen_r)->rename(~col1,~col1_gen_r), '
+                '#Table(test_schema.test_table2)#->rename(~col2, ~col2_gen_r)->rename(~col1, ~col1_gen_r), '
                 'JoinKind.INNER, '
                 '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
@@ -499,15 +499,15 @@ class TestJoinByColumnsAppliedFunction:
             #Table(test_schema.test_table1)#
               ->join(
                 #Table(test_schema.test_table2)#
-                  ->rename(~col2,~col2_gen_r)
-                  ->rename(~col1,~col1_gen_r),
+                  ->rename(~col2, ~col2_gen_r)
+                  ->rename(~col1, ~col1_gen_r),
                 JoinKind.RIGHT,
                 {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
               )'''
         )
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
                ('#Table(test_schema.test_table1)#->join('
-                '#Table(test_schema.test_table2)#->rename(~col2,~col2_gen_r)->rename(~col1,~col1_gen_r), '
+                '#Table(test_schema.test_table2)#->rename(~col2, ~col2_gen_r)->rename(~col1, ~col1_gen_r), '
                 'JoinKind.RIGHT, '
                 '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
