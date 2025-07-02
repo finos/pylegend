@@ -16,6 +16,7 @@ from pylegend._typing import PyLegendList
 __all__ = [
     "generate_pure_functional_call",
     "generate_pure_lambda",
+    "escape_column_name",
 ]
 
 
@@ -45,6 +46,10 @@ def generate_pure_functional_call(
 def generate_pure_lambda(param_name: str, expr: str, wrap_in_braces: bool = True) -> str:
     lambda_code = param_name + " | " + (expr[1:-1] if __expr_has_matching_start_and_end_parentheses(expr) else expr)
     return "{" + lambda_code + "}" if wrap_in_braces else lambda_code
+
+
+def escape_column_name(name: str) -> str:
+    return (name if name.isidentifier() else "'" + name.replace("'", "\\'") + "'")
 
 
 def __expr_has_matching_start_and_end_parentheses(expr: str) -> bool:

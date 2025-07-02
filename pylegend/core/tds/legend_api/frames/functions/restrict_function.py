@@ -28,6 +28,7 @@ from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
+from pylegend.core.language.shared.helpers import escape_column_name
 
 
 __all__: PyLegendSequence[str] = [
@@ -78,8 +79,7 @@ class RestrictFunction(LegendApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         escaped_columns = []
         for col_name in self.__column_name_list:
-            escaped_columns.append(col_name if col_name.isidentifier()
-                                   else "'" + col_name.replace('\'', '\\\'') + "'")
+            escaped_columns.append(escape_column_name(col_name))
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
                 f"->select(~[{', '.join(escaped_columns)}])")
 
