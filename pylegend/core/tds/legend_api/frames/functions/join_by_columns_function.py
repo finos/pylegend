@@ -40,8 +40,10 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
+from pylegend.core.language.shared.helpers import generate_pure_lambda
 
 
 __all__: PyLegendSequence[str] = [
@@ -159,6 +161,31 @@ class JoinByColumnsFunction(LegendApiAppliedFunction):
 
         wrapped_join_query = create_sub_query(join_query, config, "root")
         return wrapped_join_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        common_join_cols = [x for x, y in zip(self.__column_names_self, self.__column_names_other) if x == y]
+        other_frame = (self.__other_frame if (len(common_join_cols) == 0) else
+                       self.__other_frame.rename_columns(common_join_cols, [c + "_gen_r" for c in common_join_cols]))
+        sub_expressions = []
+        for x, y in zip(self.__column_names_self, self.__column_names_other):
+            left = "$l." + (x if x.isidentifier() else "'" + x.replace('\'', '\\\'') + "'")
+            y = (y + "_gen_r") if y in common_join_cols else y
+            right = "$r." + (y if y.isidentifier() else "'" + y.replace('\'', '\\\'') + "'")
+            sub_expressions.append(f"({left} == {right})")
+
+        join_expr_string = " && ".join(sub_expressions)
+        join_kind = (
+            "INNER" if self.__join_type.lower() == 'inner' else
+            "LEFT" if self.__join_type.lower() in ('left_outer', 'leftouter') else
+            "RIGHT" if self.__join_type.lower() in ('right_outer', 'rightouter') else
+            "FULL"
+        )
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                f"->join({config.separator(2)}"
+                f"{other_frame.to_pure(config.push_indent(2))},{config.separator(2, True)}"  # type: ignore
+                f"JoinKind.{join_kind},{config.separator(2, True)}"
+                f"{generate_pure_lambda('l, r', join_expr_string)}{config.separator(1)}"
+                f")")
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame

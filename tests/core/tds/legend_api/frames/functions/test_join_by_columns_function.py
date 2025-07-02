@@ -17,6 +17,7 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_tds_frame import LegendApiTdsFrame
 from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
@@ -112,7 +113,7 @@ class TestJoinByColumnsAppliedFunction:
             frame1.join_by_columns(frame2, ["col1", "col2"], ["col1", "col2"], "i")
         assert r.value.args[0] == "Unknown join type - i. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER"
 
-    def test_sql_gen_join_by_columns_function(self) -> None:
+    def test_query_gen_join_by_columns_function(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -161,8 +162,21 @@ class TestJoinByColumnsAppliedFunction:
                             ON ("left"."col1" = "right"."col3")
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table1)#
+              ->join(
+                #Table(test_schema.test_table2)#,
+                JoinKind.LEFT,
+                {l, r | $l.col1 == $r.col3}
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#, '
+                'JoinKind.LEFT, '
+                '{l, r | $l.col1 == $r.col3})')
 
-    def test_sql_gen_join_by_columns_function_multi_key(self) -> None:
+    def test_query_gen_join_by_columns_function_multi_key(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -211,8 +225,21 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col1" = "right"."col3") AND ("left"."col2" = "right"."col4"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table1)#
+              ->join(
+                #Table(test_schema.test_table2)#,
+                JoinKind.LEFT,
+                {l, r | ($l.col1 == $r.col3) && ($l.col2 == $r.col4)}
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#, '
+                'JoinKind.LEFT, '
+                '{l, r | ($l.col1 == $r.col3) && ($l.col2 == $r.col4)})')
 
-    def test_sql_gen_join_by_columns_function_shared_key(self) -> None:
+    def test_query_gen_join_by_columns_function_shared_key(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
@@ -259,8 +286,22 @@ class TestJoinByColumnsAppliedFunction:
                             ON ("left"."col1" = "right"."col1")
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table1)#
+              ->join(
+                #Table(test_schema.test_table2)#
+                  ->rename(~col1,~col1_gen_r),
+                JoinKind.LEFT,
+                {l, r | $l.col1 == $r.col1_gen_r}
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#->rename(~col1,~col1_gen_r), '
+                'JoinKind.LEFT, '
+                '{l, r | $l.col1 == $r.col1_gen_r})')
 
-    def test_sql_gen_join_by_columns_function_shared_multi_key(self) -> None:
+    def test_query_gen_join_by_columns_function_shared_multi_key(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
@@ -313,8 +354,24 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col2" = "right"."col2") AND ("left"."col1" = "right"."col1"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table1)#
+              ->join(
+                #Table(test_schema.test_table2)#
+                  ->rename(~col2,~col2_gen_r)
+                  ->rename(~col1,~col1_gen_r),
+                JoinKind.LEFT,
+                {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table1)#->join('
+                '#Table(test_schema.test_table2)#->rename(~col2,~col2_gen_r)->rename(~col1,~col1_gen_r), '
+                'JoinKind.LEFT, '
+                '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
-    def test_sql_gen_join_by_columns_function_shared_multi_key_inner(self) -> None:
+    def test_query_gen_join_by_columns_function_shared_multi_key_inner(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
@@ -367,8 +424,24 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col2" = "right"."col2") AND ("left"."col1" = "right"."col1"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table1)#
+              ->join(
+                #Table(test_schema.test_table2)#
+                  ->rename(~col2,~col2_gen_r)
+                  ->rename(~col1,~col1_gen_r),
+                JoinKind.INNER,
+                {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table1)#->join('
+                '#Table(test_schema.test_table2)#->rename(~col2,~col2_gen_r)->rename(~col1,~col1_gen_r), '
+                'JoinKind.INNER, '
+                '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
-    def test_sql_gen_join_by_columns_function_shared_multi_key_right_outer(self) -> None:
+    def test_query_gen_join_by_columns_function_shared_multi_key_right_outer(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
@@ -421,6 +494,22 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col2" = "right"."col2") AND ("left"."col1" = "right"."col1"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table1)#
+              ->join(
+                #Table(test_schema.test_table2)#
+                  ->rename(~col2,~col2_gen_r)
+                  ->rename(~col1,~col1_gen_r),
+                JoinKind.RIGHT,
+                {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
+              )'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table1)#->join('
+                '#Table(test_schema.test_table2)#->rename(~col2,~col2_gen_r)->rename(~col1,~col1_gen_r), '
+                'JoinKind.RIGHT, '
+                '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
     def test_e2e_join_by_columns_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame1: LegendApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
