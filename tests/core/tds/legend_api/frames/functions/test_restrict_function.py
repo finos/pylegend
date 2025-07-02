@@ -51,6 +51,21 @@ class TestRestrictAppliedFunction:
         assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
                ('#Table(test_schema.test_table)#->select(~[col1])')
 
+    def test_query_gen_restrict_function_with_col_name_with_spaces(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1 with spaces"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendApiTdsFrame = LegendApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.restrict(['col1 with spaces'])
+        assert frame.to_pure_query() == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->select(~['col1 with spaces'])'''
+        )
+        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+               ('#Table(test_schema.test_table)#->select(~[\'col1 with spaces\'])')
+
     def test_query_gen_restrict_function_column_order(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
