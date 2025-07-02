@@ -17,6 +17,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTuple,
 )
+from pylegend.core.language.shared.helpers import generate_pure_lambda
 from pylegend.core.tds.legend_api.frames.legend_api_applied_function_tds_frame import LegendApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
@@ -26,6 +27,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legend_api.frames.legend_api_base_tds_frame import LegendApiBaseTdsFrame
 from pylegend.core.language import (
     LegendApiTdsRow,
@@ -110,6 +112,32 @@ class GroupByFunction(LegendApiAppliedFunction):
             (lambda x: x[c])(tds_row).to_sql_expression({"frame": new_query}, config) for c in self.__grouping_columns
         ]
         return new_query
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        group_strings = []
+        for col_name in self.__grouping_columns:
+            group_strings.append(col_name if col_name.isidentifier()
+                                 else "'" + col_name.replace('\'', '\\\'') + "'")
+
+        agg_strings = []
+        tds_row = LegendApiTdsRow.from_tds_frame("r", self.__base_frame)
+        for agg in self.__aggregations:
+            agg_name = (agg.get_name() if agg.get_name().isidentifier()
+                        else "'" + agg.get_name().replace('\'', '\\\'') + "'")
+            map_expr = agg.get_map_fn()(tds_row)
+            collection = create_primitive_collection(map_expr)
+            agg_expr = agg.get_aggregate_fn()(collection)
+            map_expr_string = (map_expr.to_pure_expression(config) if isinstance(map_expr, LegendApiPrimitive) else
+                               convert_literal_to_literal_expression(map_expr).to_pure_expression(config))
+            agg_expr_string = agg_expr.to_pure_expression(config).replace(map_expr_string, "$c")
+            agg_strings.append(f"{agg_name}:{generate_pure_lambda('r', map_expr_string)}:"
+                               f"{generate_pure_lambda('c', agg_expr_string)}")
+
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                f"->groupBy({config.separator(2)}"
+                f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
+                f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                f")")
 
     def base_frame(self) -> LegendApiBaseTdsFrame:
         return self.__base_frame
