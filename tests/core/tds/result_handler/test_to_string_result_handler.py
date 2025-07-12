@@ -14,7 +14,7 @@
 
 import time
 from pylegend.core.request.response_reader import ResponseReader
-from pylegend.extensions.tds.legend_api.frames.legend_api_table_spec_input_frame import LegendApiTableSpecInputFrame
+from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.result_handler import ToStringResultHandler
 from pylegend._typing import PyLegendIterator
 
@@ -25,7 +25,7 @@ class TestToStringResultHandler:
         handler = ToStringResultHandler()
         const = "<<RESULT>>"
         bytes_iter = [bytes(const, "utf-8")].__iter__()
-        res = handler.handle_result(LegendApiTableSpecInputFrame(["dummy"], []), ResponseReader(bytes_iter))
+        res = handler.handle_result(LegacyApiTableSpecInputFrame(["dummy"], []), ResponseReader(bytes_iter))
         assert const == res
 
     def test_to_string_result_handler_lazy(self) -> None:
@@ -37,5 +37,5 @@ class TestToStringResultHandler:
                 time.sleep(0.1)
 
         handler = ToStringResultHandler()
-        res = handler.handle_result(LegendApiTableSpecInputFrame(["dummy"], []), ResponseReader(gen()))
+        res = handler.handle_result(LegacyApiTableSpecInputFrame(["dummy"], []), ResponseReader(gen()))
         assert "0123456789" == res

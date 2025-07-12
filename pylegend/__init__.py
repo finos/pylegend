@@ -15,9 +15,9 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
-from pylegend.legend_api_tds_client import (
-    LegendApiTdsClient,
-    legend_api_tds_client,
+from pylegend.legacy_api_tds_client import (
+    LegacyApiTdsClient,
+    legacy_api_tds_client,
 )
 from pylegend.core.request import (
     LegendClient,
@@ -38,8 +38,8 @@ from pylegend.core.language import agg
 __all__: PyLegendSequence[str] = [
     "__version__",
 
-    "LegendApiTdsClient",
-    "legend_api_tds_client",
+    "LegacyApiTdsClient",
+    "legacy_api_tds_client",
 
     "LegendClient",
     "AuthScheme",

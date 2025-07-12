@@ -17,8 +17,8 @@ from pylegend._typing import (
 )
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.project_cooridnates import VersionedProjectCoordinates
-from pylegend.extensions.tds.legend_api.frames.legend_api_legend_service_input_frame import (
-    LegendApiLegendServiceInputFrame
+from pylegend.extensions.tds.legacy_api.frames.legacy_api_legend_service_input_frame import (
+    LegacyApiLegendServiceInputFrame
 )
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame import (
     PandasApiLegendServiceInputFrame
@@ -32,8 +32,8 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-def simple_person_service_frame(engine_port: int) -> LegendApiLegendServiceInputFrame:
-    return LegendApiLegendServiceInputFrame(
+def simple_person_service_frame(engine_port: int) -> LegacyApiLegendServiceInputFrame:
+    return LegacyApiLegendServiceInputFrame(
         pattern="/simplePersonService",
         project_coordinates=VersionedProjectCoordinates(
             group_id="org.finos.legend.pylegend",
@@ -44,8 +44,8 @@ def simple_person_service_frame(engine_port: int) -> LegendApiLegendServiceInput
     )
 
 
-def simple_trade_service_frame(engine_port: int) -> LegendApiLegendServiceInputFrame:
-    return LegendApiLegendServiceInputFrame(
+def simple_trade_service_frame(engine_port: int) -> LegacyApiLegendServiceInputFrame:
+    return LegacyApiLegendServiceInputFrame(
         pattern="/simpleTradeService",
         project_coordinates=VersionedProjectCoordinates(
             group_id="org.finos.legend.pylegend",
@@ -56,8 +56,8 @@ def simple_trade_service_frame(engine_port: int) -> LegendApiLegendServiceInputF
     )
 
 
-def simple_product_service_frame(engine_port: int) -> LegendApiLegendServiceInputFrame:
-    return LegendApiLegendServiceInputFrame(
+def simple_product_service_frame(engine_port: int) -> LegacyApiLegendServiceInputFrame:
+    return LegacyApiLegendServiceInputFrame(
         pattern="/simpleProductService",
         project_coordinates=VersionedProjectCoordinates(
             group_id="org.finos.legend.pylegend",
