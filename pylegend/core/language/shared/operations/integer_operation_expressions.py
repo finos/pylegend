@@ -137,7 +137,7 @@ class PyLegendIntegerModuloExpression(PyLegendBinaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return f"({op1_expr} % {op2_expr})"
+        return generate_pure_functional_call("mod", [op1_expr, op2_expr])
 
     def __init__(self, operand1: PyLegendExpressionIntegerReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)

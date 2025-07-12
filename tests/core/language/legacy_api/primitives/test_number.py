@@ -24,6 +24,8 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import LegacyApiTdsRow
+from pylegend.core.request.legend_client import LegendClient
+from pylegend._typing import PyLegendDict, PyLegendUnion
 
 
 class TestLegacyApiNumber:
@@ -37,6 +39,10 @@ class TestLegacyApiNumber:
     ])
     tds_row = LegacyApiTdsRow.from_tds_frame("t", test_frame)
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_number_col_access(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2")) == '"root".col2'
@@ -208,13 +214,13 @@ class TestLegacyApiNumber:
         assert self.__generate_sql_string(lambda x: math.ceil(x.get_number("col2") + x.get_number("col1"))) == \
                'CEIL(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").ceil()) == \
-               '$t.col2->ceil()'
+               '$t.col2->ceiling()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).ceil()) == \
-               '($t.col2 + $t.col1)->ceil()'
+               '($t.col2 + $t.col1)->ceiling()'
         assert self.__generate_pure_string(lambda x: math.ceil(x.get_number("col2"))) == \
-               '$t.col2->ceil()'
+               '$t.col2->ceiling()'
         assert self.__generate_pure_string(lambda x: math.ceil(x.get_number("col2") + x.get_number("col1"))) == \
-               '($t.col2 + $t.col1)->ceil()'
+               '($t.col2 + $t.col1)->ceiling()'
 
     def test_number_floor_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").floor()) == \
@@ -298,17 +304,17 @@ class TestLegacyApiNumber:
         assert self.__generate_sql_string(lambda x: round(x.get_number("col2"), 2)) == \
                'ROUND("root".col2, 2)'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").round()) == \
-               '$t.col2->round(0)'
+               '$t.col2->round()'
         assert self.__generate_pure_string(lambda x: round(x.get_number("col2"))) == \
-               '$t.col2->round(0)'
+               '$t.col2->round()'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").round(0)) == \
-               '$t.col2->round(0)'
+               '$t.col2->round()'
         assert self.__generate_pure_string(lambda x: round(x.get_number("col2"), 0)) == \
-               '$t.col2->round(0)'
+               '$t.col2->round()'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").round(2)) == \
-               '$t.col2->round(2)'
+               'cast($t.col2, @Float)->round(2)'
         assert self.__generate_pure_string(lambda x: round(x.get_number("col2"), 2)) == \
-               '$t.col2->round(2)'
+               'cast($t.col2, @Float)->round(2)'
 
         with pytest.raises(TypeError) as t:
             self.__generate_sql_string(lambda x: round(x.get_number("col2"), 2.1))  # type: ignore
@@ -423,4 +429,15 @@ class TestLegacyApiNumber:
         )
 
     def __generate_pure_string(self, f) -> str:  # type: ignore
-        return str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
+        expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
+        model_code = """
+        function test::testFunc(): Any[*]
+        {
+            []->toOne()->cast(
+                @meta::pure::metamodel::relation::Relation<(col1: Number[0..1], col2: Number[0..1])>
+            )
+            ->extend(~new_col:t|<<expression>>)
+        }
+        """
+        self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
+        return expr
