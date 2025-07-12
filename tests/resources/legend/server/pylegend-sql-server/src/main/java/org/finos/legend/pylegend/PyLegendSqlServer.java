@@ -27,7 +27,9 @@ import org.eclipse.collections.impl.list.mutable.FastList;
 import org.finos.legend.authentication.credentialprovider.CredentialProviderProvider;
 import org.finos.legend.engine.authentication.LegendDefaultDatabaseAuthenticationFlowProviderConfiguration;
 import org.finos.legend.engine.language.pure.compiler.Compiler;
+import org.finos.legend.engine.language.pure.compiler.api.Compile;
 import org.finos.legend.engine.language.pure.compiler.toPureGraph.PureModel;
+import org.finos.legend.engine.language.pure.grammar.api.grammarToJson.GrammarToJson;
 import org.finos.legend.engine.language.pure.modelManager.ModelManager;
 import org.finos.legend.engine.language.pure.modelManager.sdlc.SDLCLoader;
 import org.finos.legend.engine.plan.execution.PlanExecutor;
@@ -120,6 +122,8 @@ public class PyLegendSqlServer<T extends ServerConfiguration> extends Server<T>
                 new LegendServiceSQLSourceProvider(projectCoordinateLoader)),
                 generatorExtensions.flatCollect(PlanGeneratorExtension::getExtraPlanTransformers))));
         environment.jersey().register(new SqlGrammar());
+        environment.jersey().register(new GrammarToJson());
+        environment.jersey().register(new Compile(modelManager));
         environment.jersey().register(new CatchAllExceptionMapper());
 
         Compiler.compile(PureModelContextData.newBuilder().build(), DeploymentMode.TEST_IGNORE_FUNCTION_MATCH, "test");

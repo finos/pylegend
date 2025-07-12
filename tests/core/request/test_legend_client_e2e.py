@@ -111,3 +111,16 @@ class TestLegendClientE2E:
         }"""
 
         assert json.loads(b"".join(res))["result"] == json.loads(expected)
+
+    def test_e2e_parse_model_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        res = client.parse_model(
+            "function my::test():Integer[1] {1 + 2}"
+        )
+        assert any([x["_type"] == "function" and x["name"] == "test__Integer_1_" for x in json.loads(res)["elements"]])
+
+    def test_e2e_compile_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        client.parse_and_compile_model(
+            "function my::test():Integer[1] {1 + 2}"
+        )
