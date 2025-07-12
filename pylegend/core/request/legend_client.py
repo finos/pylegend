@@ -77,6 +77,38 @@ class LegendClient(ServiceClient):
         ).iter_content(chunk_size=chunk_size)
         return ResponseReader(iter_content)
 
+    def parse_model(
+            self,
+            model_code: str,
+            return_source_information: bool = False
+    ) -> str:
+        response = super()._execute_service(
+            method=RequestMethod.POST,
+            path="pure/v1/grammar/grammarToJson/model",
+            data=model_code,
+            headers={"Content-Type": "text/plain"},
+            query_params=[("returnSourceInformation", "true" if return_source_information else "false")]
+        )
+        return response.text
+
+    def compile_model(
+            self,
+            model_json: str
+    ) -> None:
+        super()._execute_service(
+            method=RequestMethod.POST,
+            path="pure/v1/compilation/compile",
+            data=model_json,
+            headers={"Content-Type": "application/json"}
+        )
+
+    def parse_and_compile_model(
+            self,
+            model_code: str
+    ) -> None:
+        parse_response = self.parse_model(model_code)
+        self.compile_model(parse_response)
+
     def __eq__(self, other: 'object') -> bool:
         if self is other:
             return True
