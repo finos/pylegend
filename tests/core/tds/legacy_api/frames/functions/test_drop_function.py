@@ -25,9 +25,15 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestDropAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_query_gen_drop_function_no_offset(self) -> None:
         columns = [
@@ -44,12 +50,12 @@ class TestDropAppliedFunction:
                 test_schema.test_table AS "root"
             OFFSET 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->drop(10)'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#->drop(10)'''
         )
@@ -77,13 +83,13 @@ class TestDropAppliedFunction:
                 ) AS "root"
             OFFSET 20'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->drop(10)
               ->drop(20)'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#->drop(10)->drop(20)'''
         )
@@ -111,13 +117,13 @@ class TestDropAppliedFunction:
                 ) AS "root"
             OFFSET 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->limit(20)
               ->drop(10)'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#->limit(20)->drop(10)'''
         )

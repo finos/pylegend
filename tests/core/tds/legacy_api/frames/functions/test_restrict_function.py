@@ -25,9 +25,15 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestRestrictAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_query_gen_restrict_function(self) -> None:
         columns = [
@@ -43,14 +49,15 @@ class TestRestrictAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[col1])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[col1])')
 
+    @pytest.mark.skip(reason="Quoted select col spec not supported by server")
     def test_query_gen_restrict_function_with_col_name_with_spaces(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1 with spaces"),
@@ -58,12 +65,12 @@ class TestRestrictAppliedFunction:
         ]
         frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.restrict(['col1 with spaces'])
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~['col1 with spaces'])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[\'col1 with spaces\'])')
 
     def test_query_gen_restrict_function_column_order(self) -> None:
@@ -82,12 +89,12 @@ class TestRestrictAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[col2, col1])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[col2, col1])')
 
     def test_restrict_error_on_unknown_col(self) -> None:
@@ -122,13 +129,13 @@ class TestRestrictAppliedFunction:
                         test_schema.test_table AS "root"
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->distinct()
               ->select(~[col1])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->distinct()->select(~[col1])')
 
     def test_e2e_restrict_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:

@@ -25,9 +25,15 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestFilterAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_filter_function_error_on_unknown_col(self) -> None:
         columns = [
@@ -90,12 +96,12 @@ class TestFilterAppliedFunction:
             WHERE
                 ("root".col2 LIKE \'A%\')'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->filter({r | $r.col2->startsWith('A')})'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->filter({r | $r.col2->startsWith(\'A\')})')
 
     def test_query_gen_filter_literal(self) -> None:
@@ -114,12 +120,12 @@ class TestFilterAppliedFunction:
             WHERE
                 false'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->filter({r | false})'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->filter({r | false})')
 
     def test_query_gen_filter_function_chained(self) -> None:
@@ -139,13 +145,13 @@ class TestFilterAppliedFunction:
             WHERE
                 (("root".col2 LIKE \'A%\') AND ("root".col1 > 10))'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->filter({r | $r.col2->startsWith('A')})
               ->filter({r | $r.col1 > 10})'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->filter({r | $r.col2->startsWith(\'A\')})->filter({r | $r.col1 > 10})')
 
@@ -174,14 +180,14 @@ class TestFilterAppliedFunction:
             WHERE
                 (("root"."col2" LIKE \'A%\') AND ("root"."col1" > 10))'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->limit(10)
               ->filter({r | $r.col2->startsWith('A')})
               ->filter({r | $r.col1 > 10})'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->limit(10)'
                 '->filter({r | $r.col2->startsWith(\'A\')})->filter({r | $r.col1 > 10})')
 

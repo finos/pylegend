@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -24,9 +25,15 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestDistinctAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_query_gen_distinct_function(self) -> None:
         columns = [
@@ -51,12 +58,12 @@ class TestDistinctAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert distinct_frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(distinct_frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->distinct()'''
         )
-        assert distinct_frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(distinct_frame, FrameToPureConfig(False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->distinct()')
 
     def test_query_gen_distinct_function_existing_top(self) -> None:
@@ -81,13 +88,13 @@ class TestDistinctAppliedFunction:
                     LIMIT 5
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->limit(5)
               ->distinct()'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->limit(5)->distinct()')
 
     def test_e2e_distinct_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:

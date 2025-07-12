@@ -25,9 +25,15 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestJoinByColumnsAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_join_by_columns_error_on_unknown_col(self) -> None:
         columns = [
@@ -162,7 +168,7 @@ class TestJoinByColumnsAppliedFunction:
                             ON ("left"."col1" = "right"."col3")
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
               ->join(
@@ -171,7 +177,7 @@ class TestJoinByColumnsAppliedFunction:
                 {l, r | $l.col1 == $r.col3}
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#, '
                 'JoinKind.LEFT, '
                 '{l, r | $l.col1 == $r.col3})')
@@ -225,7 +231,7 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col1" = "right"."col3") AND ("left"."col2" = "right"."col4"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
               ->join(
@@ -234,7 +240,7 @@ class TestJoinByColumnsAppliedFunction:
                 {l, r | ($l.col1 == $r.col3) && ($l.col2 == $r.col4)}
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#, '
                 'JoinKind.LEFT, '
                 '{l, r | ($l.col1 == $r.col3) && ($l.col2 == $r.col4)})')
@@ -286,7 +292,7 @@ class TestJoinByColumnsAppliedFunction:
                             ON ("left"."col1" = "right"."col1")
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
               ->join(
@@ -296,7 +302,7 @@ class TestJoinByColumnsAppliedFunction:
                 {l, r | $l.col1 == $r.col1_gen_r}
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#->rename(~col1, ~col1_gen_r), '
                 'JoinKind.LEFT, '
                 '{l, r | $l.col1 == $r.col1_gen_r})')
@@ -354,7 +360,7 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col2" = "right"."col2") AND ("left"."col1" = "right"."col1"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
               ->join(
@@ -365,7 +371,7 @@ class TestJoinByColumnsAppliedFunction:
                 {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table1)#->join('
                 '#Table(test_schema.test_table2)#->rename(~col2, ~col2_gen_r)->rename(~col1, ~col1_gen_r), '
                 'JoinKind.LEFT, '
@@ -424,7 +430,7 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col2" = "right"."col2") AND ("left"."col1" = "right"."col1"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
               ->join(
@@ -435,12 +441,13 @@ class TestJoinByColumnsAppliedFunction:
                 {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table1)#->join('
                 '#Table(test_schema.test_table2)#->rename(~col2, ~col2_gen_r)->rename(~col1, ~col1_gen_r), '
                 'JoinKind.INNER, '
                 '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
+    @pytest.mark.skip(reason="JoinKind.RIGHT not supported by server")
     def test_query_gen_join_by_columns_function_shared_multi_key_right_outer(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -494,7 +501,7 @@ class TestJoinByColumnsAppliedFunction:
                             ON (("left"."col2" = "right"."col2") AND ("left"."col1" = "right"."col1"))
                 ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
               ->join(
@@ -505,7 +512,7 @@ class TestJoinByColumnsAppliedFunction:
                 {l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)}
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table1)#->join('
                 '#Table(test_schema.test_table2)#->rename(~col2, ~col2_gen_r)->rename(~col1, ~col1_gen_r), '
                 'JoinKind.RIGHT, '

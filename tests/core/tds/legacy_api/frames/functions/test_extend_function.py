@@ -25,9 +25,15 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestExtendAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_extend_function_error_on_diff_sizes(self) -> None:
         columns = [
@@ -131,12 +137,12 @@ class TestExtendAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->extend(~col3:{r | $r.col1 + 1})'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->extend(~col3:{r | $r.col1 + 1})')
 
     def test_query_gen_extend_function_col_name_with_spaces(self) -> None:
@@ -154,12 +160,12 @@ class TestExtendAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->extend(~'col3 with spaces':{r | $r.col1 + 1})'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->extend(~\'col3 with spaces\':{r | $r.col1 + 1})')
 
     def test_query_gen_extend_function_multi(self) -> None:
@@ -181,7 +187,7 @@ class TestExtendAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->extend(~[
@@ -189,7 +195,7 @@ class TestExtendAppliedFunction:
                 col4:{r | $r.col1 + 2}
               ])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->extend(~[col3:{r | $r.col1 + 1}, col4:{r | $r.col1 + 2}])')
 
     def test_query_gen_extend_function_literals(self) -> None:
@@ -215,7 +221,7 @@ class TestExtendAppliedFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->extend(~[
@@ -225,7 +231,7 @@ class TestExtendAppliedFunction:
                 col6:{r | true}
               ])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->extend(~[col3:{r | 1}, col4:{r | 2.0}, '
                 'col5:{r | \'Hello\'}, col6:{r | true}])')
 

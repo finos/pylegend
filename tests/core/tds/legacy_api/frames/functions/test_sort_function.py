@@ -25,9 +25,15 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestSortAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_sort_function_error_on_unknown_col(self) -> None:
         columns = [
@@ -78,12 +84,12 @@ class TestSortAppliedFunction:
                 "root".col2,
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->sort([ascending(~col2), ascending(~col1)])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->sort([ascending(~col2), ascending(~col1)])')
 
     def test_query_gen_sort_function_existing_top(self) -> None:
@@ -110,13 +116,13 @@ class TestSortAppliedFunction:
             ORDER BY
                 "root"."col2" DESC'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->limit(10)
               ->sort([descending(~col2)])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->limit(10)->sort([descending(~col2)])')
 
     def test_query_gen_sort_function_existing_top_multi_column(self) -> None:
@@ -147,14 +153,14 @@ class TestSortAppliedFunction:
                 "root"."col2" DESC,
                 "root"."col3 with ' quote"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->limit(10)
               ->extend(~'col3 with \\' quote':{r | $r.col1})
               ->sort([descending(~col2), ascending(~'col3 with \\' quote')])'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->limit(10)->extend(~\'col3 with \\\' quote\':{r | $r.col1})'
                '->sort([descending(~col2), ascending(~\'col3 with \\\' quote\')])')
 

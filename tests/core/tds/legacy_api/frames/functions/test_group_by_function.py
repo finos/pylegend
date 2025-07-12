@@ -26,9 +26,15 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language import LegacyApiAggregateSpecification
+from pylegend.core.request.legend_client import LegendClient
+from tests.core.tds.legacy_api import generate_pure_query_and_compile
 
 
 class TestGroupByAppliedFunction:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_group_by_error_on_unknown_column(self) -> None:
         columns = [
@@ -167,7 +173,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -175,7 +181,7 @@ class TestGroupByAppliedFunction:
                 ~[Count:{r | $r.col2}:{c | $c->count()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Count:{r | $r.col2}:{c | $c->count()}])')
 
     def test_query_gen_group_by_with_distinct(self) -> None:
@@ -207,7 +213,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->distinct()
@@ -216,7 +222,7 @@ class TestGroupByAppliedFunction:
                 ~[Count:{r | $r.col2}:{c | $c->count()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->distinct()'
                 '->groupBy(~[col1], ~[Count:{r | $r.col2}:{c | $c->count()}])')
 
@@ -250,7 +256,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->limit(10)
@@ -259,7 +265,7 @@ class TestGroupByAppliedFunction:
                 ~[Count:{r | $r.col2}:{c | $c->count()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->limit(10)'
                 '->groupBy(~[col1], ~[Count:{r | $r.col2}:{c | $c->count()}])')
 
@@ -305,7 +311,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->limit(10)
@@ -318,7 +324,7 @@ class TestGroupByAppliedFunction:
                 ~[Count2:{r | $r.Count1}:{c | $c->count()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->limit(10)'
                 '->groupBy(~[col1], ~[Count1:{r | $r.col2}:{c | $c->count()}])'
                 '->groupBy(~[col1], ~[Count2:{r | $r.Count1}:{c | $c->count()}])')
@@ -350,7 +356,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -358,7 +364,7 @@ class TestGroupByAppliedFunction:
                 ~[Count1:{r | $r.col2}:{c | $c->count()}, Count2:{r | $r.col2}:{c | $c->count()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col1], ~[Count1:{r | $r.col2}:{c | $c->count()}, Count2:{r | $r.col2}:{c | $c->count()}])')
 
@@ -384,7 +390,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -392,7 +398,7 @@ class TestGroupByAppliedFunction:
                 ~[Cnt:{r | $r.col1}:{c | $c->distinct()->count()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Cnt:{r | $r.col1}:{c | $c->distinct()->count()}])')
 
     def test_query_gen_group_by_average_agg(self) -> None:
@@ -417,7 +423,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -425,7 +431,7 @@ class TestGroupByAppliedFunction:
                 ~[Average:{r | $r.col1}:{c | $c->average()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col2], ~[Average:{r | $r.col1}:{c | $c->average()}])')
 
@@ -451,7 +457,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -459,7 +465,7 @@ class TestGroupByAppliedFunction:
                 ~[Average:{r | $r.col1 + 20}:{c | $c->average()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | $r.col1 + 20}:{c | $c->average()}])')
 
     def test_query_gen_group_by_average_agg_post_op(self) -> None:
@@ -484,7 +490,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -492,7 +498,7 @@ class TestGroupByAppliedFunction:
                 ~[Average:{r | $r.col1}:{c | $c->average() + 2}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | $r.col1}:{c | $c->average() + 2}])')
 
     def test_query_gen_group_by_integer_max_agg(self) -> None:
@@ -517,7 +523,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -525,7 +531,7 @@ class TestGroupByAppliedFunction:
                 ~[Maximum:{r | $r.col1}:{c | $c->max()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Maximum:{r | $r.col1}:{c | $c->max()}])')
 
     def test_query_gen_group_by_integer_min_agg(self) -> None:
@@ -550,7 +556,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -558,7 +564,7 @@ class TestGroupByAppliedFunction:
                 ~[Minimum:{r | $r.col1}:{c | $c->min()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Minimum:{r | $r.col1}:{c | $c->min()}])')
 
     def test_query_gen_group_by_integer_sum_agg(self) -> None:
@@ -583,7 +589,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -591,7 +597,7 @@ class TestGroupByAppliedFunction:
                 ~[Sum:{r | $r.col1}:{c | $c->sum()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
     def test_query_gen_group_by_float_max_agg(self) -> None:
@@ -616,7 +622,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -624,7 +630,7 @@ class TestGroupByAppliedFunction:
                 ~[Maximum:{r | $r.col1}:{c | $c->max()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Maximum:{r | $r.col1}:{c | $c->max()}])')
 
     def test_query_gen_group_by_float_min_agg(self) -> None:
@@ -649,7 +655,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -657,7 +663,7 @@ class TestGroupByAppliedFunction:
                 ~[Minimum:{r | $r.col1}:{c | $c->min()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Minimum:{r | $r.col1}:{c | $c->min()}])')
 
     def test_query_gen_group_by_float_sum_agg(self) -> None:
@@ -682,7 +688,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -690,7 +696,7 @@ class TestGroupByAppliedFunction:
                 ~[Sum:{r | $r.col1}:{c | $c->sum()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
     def test_query_gen_group_by_number_max_agg(self) -> None:
@@ -715,7 +721,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -723,7 +729,7 @@ class TestGroupByAppliedFunction:
                 ~[Maximum:{r | $r.col1}:{c | $c->max()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Maximum:{r | $r.col1}:{c | $c->max()}])')
 
     def test_query_gen_group_by_number_min_agg(self) -> None:
@@ -748,7 +754,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -756,7 +762,7 @@ class TestGroupByAppliedFunction:
                 ~[Minimum:{r | $r.col1}:{c | $c->min()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Minimum:{r | $r.col1}:{c | $c->min()}])')
 
     def test_query_gen_group_by_number_sum_agg(self) -> None:
@@ -781,7 +787,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -789,7 +795,7 @@ class TestGroupByAppliedFunction:
                 ~[Sum:{r | $r.col1}:{c | $c->sum()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
     def test_query_gen_group_by_std_dev_sample_agg(self) -> None:
@@ -820,7 +826,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -828,7 +834,7 @@ class TestGroupByAppliedFunction:
                 ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()}])')
 
@@ -860,7 +866,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -868,7 +874,7 @@ class TestGroupByAppliedFunction:
                 ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()}])')
 
@@ -900,7 +906,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -908,7 +914,7 @@ class TestGroupByAppliedFunction:
                 ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()}])')
 
@@ -940,7 +946,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -948,7 +954,7 @@ class TestGroupByAppliedFunction:
                 ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()}])')
 
@@ -980,7 +986,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -988,7 +994,7 @@ class TestGroupByAppliedFunction:
                 ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}])')
 
@@ -1020,7 +1026,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col2'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1028,7 +1034,7 @@ class TestGroupByAppliedFunction:
                 ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
                 '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()}])')
 
@@ -1054,7 +1060,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1062,7 +1068,7 @@ class TestGroupByAppliedFunction:
                 ~[Maximum:{r | $r.col2}:{c | $c->max()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Maximum:{r | $r.col2}:{c | $c->max()}])')
 
     def test_query_gen_group_by_string_min_agg(self) -> None:
@@ -1087,7 +1093,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1095,7 +1101,7 @@ class TestGroupByAppliedFunction:
                 ~[Minimum:{r | $r.col2}:{c | $c->min()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
 
     def test_query_gen_group_by_join_strings_agg(self) -> None:
@@ -1120,7 +1126,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1128,7 +1134,7 @@ class TestGroupByAppliedFunction:
                 ~[Joined:{r | $r.col2}:{c | $c->joinStrings(' ')}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Joined:{r | $r.col2}:{c | $c->joinStrings(\' \')}])')
 
     def test_query_gen_group_by_strictdate_max_agg(self) -> None:
@@ -1153,7 +1159,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1161,7 +1167,7 @@ class TestGroupByAppliedFunction:
                 ~[Maximum:{r | $r.col2}:{c | $c->max()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Maximum:{r | $r.col2}:{c | $c->max()}])')
 
     def test_query_gen_group_by_strictdate_min_agg(self) -> None:
@@ -1186,7 +1192,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1194,7 +1200,7 @@ class TestGroupByAppliedFunction:
                 ~[Minimum:{r | $r.col2}:{c | $c->min()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
 
     def test_query_gen_group_by_date_max_agg(self) -> None:
@@ -1219,7 +1225,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1227,7 +1233,7 @@ class TestGroupByAppliedFunction:
                 ~[Maximum:{r | $r.col2}:{c | $c->max()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Maximum:{r | $r.col2}:{c | $c->max()}])')
 
     def test_query_gen_group_by_date_min_agg(self) -> None:
@@ -1252,7 +1258,7 @@ class TestGroupByAppliedFunction:
             GROUP BY
                 "root".col1'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert frame.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
@@ -1260,7 +1266,7 @@ class TestGroupByAppliedFunction:
                 ~[Minimum:{r | $r.col2}:{c | $c->min()}]
               )'''
         )
-        assert frame.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
 
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
