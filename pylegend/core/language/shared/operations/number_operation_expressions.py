@@ -382,7 +382,7 @@ class PyLegendNumberCeilExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("ceil", [op_expr])
+        return generate_pure_functional_call("ceiling", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -553,7 +553,9 @@ class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpression
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("round", [op1_expr, op2_expr])
+        if op2_expr == "0":
+            return generate_pure_functional_call("round", [op1_expr])
+        return generate_pure_functional_call("round", [f"cast({op1_expr}, @Float)", op2_expr])
 
     def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)

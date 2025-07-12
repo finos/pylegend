@@ -30,7 +30,7 @@
         <dependency>
             <groupId>org.finos.legend.engine</groupId>
             <artifactId>legend-engine-server-http-server</artifactId>
-            <version>4.88.0</version>
+            <version>4.90.0</version>
             <classifier>shaded</classifier>
             <exclusions>
                 <exclusion>

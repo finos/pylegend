@@ -189,7 +189,7 @@ class PyLegendStringUpperExpression(PyLegendUnaryExpression, PyLegendExpressionS
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("upper", [op_expr])
+        return generate_pure_functional_call("toUpper", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
@@ -213,7 +213,7 @@ class PyLegendStringLowerExpression(PyLegendUnaryExpression, PyLegendExpressionS
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("lower", [op_expr])
+        return generate_pure_functional_call("toLower", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)

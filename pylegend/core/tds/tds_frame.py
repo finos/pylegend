@@ -30,7 +30,8 @@ importlib.import_module(postgres_ext)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendTdsFrame",
-    "FrameToSqlConfig"
+    "FrameToSqlConfig",
+    "FrameToPureConfig",
 ]
 
 

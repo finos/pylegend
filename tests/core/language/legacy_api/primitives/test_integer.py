@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import typing
 from pylegend._typing import PyLegendCallable
 from pylegend.core.databse.sql_to_string import (
@@ -24,6 +25,8 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import LegacyApiTdsRow, LegacyApiPrimitive, LegacyApiInteger
+from pylegend.core.request.legend_client import LegendClient
+from pylegend._typing import PyLegendDict, PyLegendUnion
 
 
 class TestLegacyApiInteger:
@@ -37,6 +40,10 @@ class TestLegacyApiInteger:
     ])
     tds_row = LegacyApiTdsRow.from_tds_frame("t", test_frame)
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_integer_col_access(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_integer("col2")) == '"root".col2'
@@ -122,11 +129,11 @@ class TestLegacyApiInteger:
         assert self.__generate_sql_string(lambda x: 10 % x.get_integer("col2")) == \
                'MOD(10, "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2") % x.get_integer("col1")) == \
-               '($t.col2 % $t.col1)'
+               '$t.col2->mod($t.col1)'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2") % 10) == \
-               '($t.col2 % 10)'
+               '$t.col2->mod(10)'
         assert self.__generate_pure_string(lambda x: 10 % x.get_integer("col2")) == \
-               '(10 % $t.col2)'
+               '10->mod($t.col2)'
 
     def test_integer_abs_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: abs(x.get_integer("col2"))) == \
@@ -193,4 +200,15 @@ class TestLegacyApiInteger:
         )
 
     def __generate_pure_string(self, f) -> str:  # type: ignore
-        return str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
+        expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
+        model_code = """
+        function test::testFunc(): Any[*]
+        {
+            []->toOne()->cast(
+                @meta::pure::metamodel::relation::Relation<(col1: Integer[0..1], col2: Integer[0..1])>
+            )
+            ->extend(~new_col:t|<<expression>>)
+        }
+        """
+        self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
+        return expr
