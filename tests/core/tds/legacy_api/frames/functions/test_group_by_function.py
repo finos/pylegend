@@ -104,7 +104,8 @@ class TestGroupByAppliedFunction:
         with pytest.raises(ValueError) as r:
             frame.group_by(["col1"], [LegacyApiAggregateSpecification(lambda x: x, lambda y: y, "col3")])  # type: ignore
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. Map function returns "
-                                   "non-primitive - <class 'pylegend.core.language.legacy_api.tds_row.LegacyApiTdsRow'>")
+                                   "non-primitive - "
+                                   "<class 'pylegend.core.language.legacy_api.legacy_api_tds_row.LegacyApiTdsRow'>")
 
     def test_group_by_error_on_incompatible_agg_fn(self) -> None:
         columns = [

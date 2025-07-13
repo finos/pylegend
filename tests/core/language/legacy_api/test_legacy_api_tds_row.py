@@ -23,7 +23,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import LegacyApiTdsRow, PyLegendBoolean, PyLegendString, PyLegendNumber, \
-    PyLegendInteger, PyLegendFloat
+    PyLegendInteger, PyLegendFloat, PyLegendDate, PyLegendDateTime, PyLegendStrictDate, PyLegendPrimitive
 
 
 class TestLegacyApiTdsRow:
@@ -40,40 +40,24 @@ class TestLegacyApiTdsRow:
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
 
-        with pytest.raises(ValueError) as v:
+        with pytest.raises(ValueError) as v1:
             tds_row.get_boolean("UNKNOWN_COL")
 
-        assert v.value.args[0] == \
+        assert v1.value.args[0] == \
                "Column - 'UNKNOWN_COL' doesn't exist in the current frame. Current frame columns: ['col1', 'col2']"
 
-    def test_error_on_unknown_column_getitem(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.boolean_column("col2")
-        ]
-        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-
-        with pytest.raises(ValueError) as v:
+        with pytest.raises(ValueError) as v2:
             tds_row["UNKNOWN_COL"]
 
-        assert v.value.args[0] == \
+        assert v2.value.args[0] == \
                "Column - 'UNKNOWN_COL' doesn't exist in the current frame. Current frame columns: ['col1', 'col2']"
 
-    def test_error_on_invalid_type(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.string_column("col1"),
-            PrimitiveTdsColumn.boolean_column("col2")
-        ]
-        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-
-        with pytest.raises(RuntimeError) as v:
+        with pytest.raises(RuntimeError) as v3:
             tds_row.get_boolean("col1")
 
-        assert v.value.args[0] == \
+        assert v3.value.args[0] == \
                "Column expression for 'col1' is of type " \
-               "'<class 'pylegend.core.language.shared.column_expressions.PyLegendStringColumnExpression'>'. " \
+               "'<class 'pylegend.core.language.shared.column_expressions.PyLegendIntegerColumnExpression'>'. " \
                "get_boolean method is not valid on this column."
 
     def test_get_boolean_col(self) -> None:
@@ -85,7 +69,7 @@ class TestLegacyApiTdsRow:
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-        col_expr = tds_row.get_boolean("col2")
+        col_expr: PyLegendPrimitive = tds_row.get_boolean("col2")
 
         assert isinstance(col_expr, PyLegendBoolean)
         assert self.db_extension.process_expression(
@@ -98,14 +82,6 @@ class TestLegacyApiTdsRow:
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
         assert tds_row.get_boolean("col3 with spaces").to_pure_expression(self.frame_to_pure_config) == "$t.'col3 with spaces'"
 
-    def test_getitem_boolean_col(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.boolean_column("col2")
-        ]
-        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col2"]
 
         assert isinstance(col_expr, PyLegendBoolean)
@@ -126,7 +102,7 @@ class TestLegacyApiTdsRow:
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-        col_expr = tds_row.get_string("col2")
+        col_expr: PyLegendPrimitive = tds_row.get_string("col2")
 
         assert isinstance(col_expr, PyLegendString)
         assert self.db_extension.process_expression(
@@ -138,14 +114,6 @@ class TestLegacyApiTdsRow:
         ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
-    def test_getitem_string_col(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
-        ]
-        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col2"]
 
         assert isinstance(col_expr, PyLegendString)
@@ -166,7 +134,7 @@ class TestLegacyApiTdsRow:
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-        col_expr = tds_row.get_number("col1")
+        col_expr: PyLegendPrimitive = tds_row.get_number("col1")
 
         assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
@@ -178,14 +146,6 @@ class TestLegacyApiTdsRow:
         ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
-    def test_getitem_number_col(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.number_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
-        ]
-        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendNumber)
@@ -206,7 +166,7 @@ class TestLegacyApiTdsRow:
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-        col_expr = tds_row.get_number("col1")
+        col_expr: PyLegendPrimitive = tds_row.get_number("col1")
 
         assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
@@ -218,14 +178,6 @@ class TestLegacyApiTdsRow:
         ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
-    def test_get_number_col_from_float(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.float_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
-        ]
-        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_number("col1")
 
         assert isinstance(col_expr, PyLegendNumber)
@@ -246,7 +198,7 @@ class TestLegacyApiTdsRow:
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-        col_expr = tds_row.get_integer("col1")
+        col_expr: PyLegendPrimitive = tds_row.get_integer("col1")
 
         assert isinstance(col_expr, PyLegendInteger)
         assert self.db_extension.process_expression(
@@ -258,14 +210,6 @@ class TestLegacyApiTdsRow:
         ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
-    def test_getitem_integer_col(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
-        ]
-        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendInteger)
@@ -286,7 +230,7 @@ class TestLegacyApiTdsRow:
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
-        col_expr = tds_row.get_float("col1")
+        col_expr: PyLegendPrimitive = tds_row.get_float("col1")
 
         assert isinstance(col_expr, PyLegendFloat)
         assert self.db_extension.process_expression(
@@ -298,17 +242,137 @@ class TestLegacyApiTdsRow:
         ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
-    def test_getitem_float_col(self) -> None:
+        col_expr = tds_row["col1"]
+
+        assert isinstance(col_expr, PyLegendFloat)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+    def test_get_date_col(self) -> None:
         columns = [
-            PrimitiveTdsColumn.float_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
+            PrimitiveTdsColumn.date_column("col1"),
+            PrimitiveTdsColumn.date_column("col2")
         ]
         frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
+        col_expr: PyLegendPrimitive = tds_row.get_date("col1")
+
+        assert isinstance(col_expr, PyLegendDate)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
         col_expr = tds_row["col1"]
 
-        assert isinstance(col_expr, PyLegendFloat)
+        assert isinstance(col_expr, PyLegendDate)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+    def test_get_date_col_from_datetime(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.date_column("col1"),
+            PrimitiveTdsColumn.datetime_column("col2")
+        ]
+        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
+        col_expr: PyLegendPrimitive = tds_row.get_date("col1")
+
+        assert isinstance(col_expr, PyLegendDate)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+        col_expr = tds_row["col1"]
+
+        assert isinstance(col_expr, PyLegendDate)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+    def test_get_datetime_col(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.datetime_column("col1"),
+            PrimitiveTdsColumn.datetime_column("col2")
+        ]
+        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
+        col_expr: PyLegendPrimitive = tds_row.get_datetime("col1")
+
+        assert isinstance(col_expr, PyLegendDateTime)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+        col_expr = tds_row["col1"]
+
+        assert isinstance(col_expr, PyLegendDateTime)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+    def test_get_strictdate_col(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.strictdate_column("col1"),
+            PrimitiveTdsColumn.strictdate_column("col2")
+        ]
+        frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
+        col_expr: PyLegendPrimitive = tds_row.get_strictdate("col1")
+
+        assert isinstance(col_expr, PyLegendStrictDate)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(
+                {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
+                self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+        col_expr = tds_row["col1"]
+
+        assert isinstance(col_expr, PyLegendStrictDate)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
