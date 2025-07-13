@@ -31,9 +31,9 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
 from pylegend.core.language import (
     LegacyApiTdsRow,
-    LegacyApiBoolean,
+    PyLegendBoolean,
     PyLegendBooleanLiteralExpression,
-    LegacyApiPrimitive,
+    PyLegendPrimitive,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.shared.helpers import generate_pure_lambda
@@ -45,7 +45,7 @@ __all__: PyLegendSequence[str] = [
 
 class FilterFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
-    __filter_function: PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[bool, LegacyApiBoolean]]
+    __filter_function: PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
 
     @classmethod
     def name(cls) -> str:
@@ -54,7 +54,7 @@ class FilterFunction(LegacyApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegacyApiBaseTdsFrame,
-            filter_function: PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[bool, LegacyApiBoolean]]
+            filter_function: PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
     ) -> None:
         self.__base_frame = base_frame
         self.__filter_function = filter_function
@@ -71,7 +71,7 @@ class FilterFunction(LegacyApiAppliedFunction):
         tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
         filter_expr = self.__filter_function(tds_row)
         if isinstance(filter_expr, bool):
-            filter_expr = LegacyApiBoolean(PyLegendBooleanLiteralExpression(filter_expr))
+            filter_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(filter_expr))
         filter_sql_expr = filter_expr.to_sql_expression(
             {"frame": new_query},
             config
@@ -87,7 +87,7 @@ class FilterFunction(LegacyApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         tds_row = LegacyApiTdsRow.from_tds_frame("r", self.__base_frame)
         filter_expr = self.__filter_function(tds_row)
-        filter_expr_string = (filter_expr.to_pure_expression(config) if isinstance(filter_expr, LegacyApiPrimitive) else
+        filter_expr_string = (filter_expr.to_pure_expression(config) if isinstance(filter_expr, PyLegendPrimitive) else
                               convert_literal_to_literal_expression(filter_expr).to_pure_expression(config))
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
                 f"->filter({generate_pure_lambda('r', filter_expr_string)})")
@@ -115,7 +115,7 @@ class FilterFunction(LegacyApiAppliedFunction):
                 "Filter function incompatible. Error occurred while evaluating. Message: " + str(e)
             ) from e
 
-        if not isinstance(result, (bool, LegacyApiBoolean)):
+        if not isinstance(result, (bool, PyLegendBoolean)):
             raise RuntimeError("Filter function incompatible. Returns non boolean - " + str(type(result)))
 
         return True

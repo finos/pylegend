@@ -133,7 +133,7 @@ class TestGroupByAppliedFunction:
             )
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. "
                                    "Error occurred while evaluating aggregate function. "
-                                   "Message: 'LegacyApiStringCollection' object has no attribute 'unknown'")
+                                   "Message: 'PyLegendStringCollection' object has no attribute 'unknown'")
 
     def test_group_by_error_on_agg_fn_non_primitive(self) -> None:
         columns = [
@@ -148,8 +148,8 @@ class TestGroupByAppliedFunction:
             )
         assert r.value.args[0] == ("AggregateSpecification at index 0 (0-indexed) incompatible. "
                                    "Aggregate function returns non-primitive - "
-                                   "<class 'pylegend.core.language.legacy_api.primitive_collection."
-                                   "LegacyApiStringCollection'>")
+                                   "<class 'pylegend.core.language.shared.primitive_collection."
+                                   "PyLegendStringCollection'>")
 
     def test_query_gen_group_by(self) -> None:
         columns = [

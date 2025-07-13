@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import date
+from datetime import datetime
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language.legacy_api.primitives.date import LegacyApiDate
+from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
-    PyLegendExpressionStrictDateReturn,
+    PyLegendExpressionDateTimeReturn,
 )
 from pylegend.core.language.shared.literal_expressions import (
-    PyLegendStrictDateLiteralExpression,
+    PyLegendDateTimeLiteralExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -34,16 +34,16 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "LegacyApiStrictDate"
+    "PyLegendDateTime"
 ]
 
 
-class LegacyApiStrictDate(LegacyApiDate):
-    __value: PyLegendExpressionStrictDateReturn
+class PyLegendDateTime(PyLegendDate):
+    __value: PyLegendExpressionDateTimeReturn
 
     def __init__(
             self,
-            value: PyLegendExpressionStrictDateReturn
+            value: PyLegendExpressionDateTimeReturn
     ) -> None:
         super().__init__(value)
         self.__value = value
@@ -59,18 +59,18 @@ class LegacyApiStrictDate(LegacyApiDate):
         return self.__value
 
     @staticmethod
-    def __convert_to_strictdate_expr(
-            val: PyLegendUnion[date, "LegacyApiStrictDate"]
-    ) -> PyLegendExpressionStrictDateReturn:
-        if isinstance(val, date):
-            return PyLegendStrictDateLiteralExpression(val)
+    def __convert_to_datetime_expr(
+            val: PyLegendUnion[datetime, "PyLegendDateTime"]
+    ) -> PyLegendExpressionDateTimeReturn:
+        if isinstance(val, datetime):
+            return PyLegendDateTimeLiteralExpression(val)
         return val.__value
 
     @staticmethod
-    def validate_param_to_be_strictdate(
-            param: PyLegendUnion[date, "LegacyApiStrictDate"],
+    def validate_param_to_be_datetime(
+            param: PyLegendUnion[datetime, "PyLegendDateTime"],
             desc: str
     ) -> None:
-        if not isinstance(param, (date, LegacyApiStrictDate)):
-            raise TypeError(desc + " should be a datetime.date or a StrictDate expression (PyLegendStrictDate)."
+        if not isinstance(param, (datetime, PyLegendDateTime)):
+            raise TypeError(desc + " should be a datetime.datetime or a DateTime expression (PyLegendDateTime)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))

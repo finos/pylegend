@@ -33,15 +33,15 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
-    from pylegend.core.language.legacy_api.primitives.boolean import LegacyApiBoolean
+    from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 
 __all__: PyLegendSequence[str] = [
-    "LegacyApiPrimitive",
-    "LegacyApiPrimitiveOrPythonPrimitive",
+    "PyLegendPrimitive",
+    "PyLegendPrimitiveOrPythonPrimitive",
 ]
 
 
-class LegacyApiPrimitive(metaclass=ABCMeta):
+class PyLegendPrimitive(metaclass=ABCMeta):
 
     @abstractmethod
     def to_sql_expression(
@@ -57,24 +57,24 @@ class LegacyApiPrimitive(metaclass=ABCMeta):
 
     def __eq__(  # type: ignore
             self,
-            other: "PyLegendUnion[int, float, bool, str, date, datetime, LegacyApiPrimitive]"
-    ) -> "LegacyApiBoolean":
-        LegacyApiPrimitive.__validate_param_to_be_primitive(other, "Equals (==) parameter")
+            other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]"
+    ) -> "PyLegendBoolean":
+        PyLegendPrimitive.__validate_param_to_be_primitive(other, "Equals (==) parameter")
 
         if isinstance(other, (int, float, bool, str, date, datetime)):
             other_op = convert_literal_to_literal_expression(other)
         else:
             other_op = other.value()
 
-        from pylegend.core.language.legacy_api.primitives.boolean import LegacyApiBoolean
-        return LegacyApiBoolean(PyLegendPrimitiveEqualsExpression(self.value(), other_op))
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+        return PyLegendBoolean(PyLegendPrimitiveEqualsExpression(self.value(), other_op))
 
     @staticmethod
     def __validate_param_to_be_primitive(
-            param: "PyLegendUnion[int, float, bool, str, date, datetime, LegacyApiPrimitive]",
+            param: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]",
             desc: str
     ) -> None:
-        if not isinstance(param, (int, float, bool, str, date, datetime, LegacyApiPrimitive)):
+        if not isinstance(param, (int, float, bool, str, date, datetime, PyLegendPrimitive)):
             raise TypeError(
                 desc + " should be a int/float/bool/str/datetime.date/datetime.datetime or a primitive expression."
                        " Got value " + str(param) + " of type: " + str(type(param)))
@@ -84,4 +84,4 @@ class LegacyApiPrimitive(metaclass=ABCMeta):
         pass
 
 
-LegacyApiPrimitiveOrPythonPrimitive = PyLegendUnion[int, float, str, bool, date, datetime, LegacyApiPrimitive]
+PyLegendPrimitiveOrPythonPrimitive = PyLegendUnion[int, float, str, bool, date, datetime, PyLegendPrimitive]

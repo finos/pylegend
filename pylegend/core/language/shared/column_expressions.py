@@ -40,19 +40,19 @@ from pylegend.core.language.shared.helpers import escape_column_name
 
 
 __all__: PyLegendSequence[str] = [
-    "LegacyApiColumnExpression",
-    "LegacyApiBooleanColumnExpression",
-    "LegacyApiStringColumnExpression",
-    "LegacyApiNumberColumnExpression",
-    "LegacyApiIntegerColumnExpression",
-    "LegacyApiFloatColumnExpression",
-    "LegacyApiDateColumnExpression",
-    "LegacyApiDateTimeColumnExpression",
-    "LegacyApiStrictDateColumnExpression",
+    "PyLegendColumnExpression",
+    "PyLegendBooleanColumnExpression",
+    "PyLegendStringColumnExpression",
+    "PyLegendNumberColumnExpression",
+    "PyLegendIntegerColumnExpression",
+    "PyLegendFloatColumnExpression",
+    "PyLegendDateColumnExpression",
+    "PyLegendDateTimeColumnExpression",
+    "PyLegendStrictDateColumnExpression",
 ]
 
 
-class LegacyApiColumnExpression(PyLegendExpression, metaclass=ABCMeta):
+class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
     __frame_name: str
     __column: str
 
@@ -80,49 +80,49 @@ class LegacyApiColumnExpression(PyLegendExpression, metaclass=ABCMeta):
         return f"${self.__frame_name}.{escape_column_name(self.__column)}"
 
 
-class LegacyApiBooleanColumnExpression(LegacyApiColumnExpression, PyLegendExpressionBooleanReturn):
+class PyLegendBooleanColumnExpression(PyLegendColumnExpression, PyLegendExpressionBooleanReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)
 
 
-class LegacyApiStringColumnExpression(LegacyApiColumnExpression, PyLegendExpressionStringReturn):
+class PyLegendStringColumnExpression(PyLegendColumnExpression, PyLegendExpressionStringReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)
 
 
-class LegacyApiNumberColumnExpression(LegacyApiColumnExpression, PyLegendExpressionNumberReturn):
+class PyLegendNumberColumnExpression(PyLegendColumnExpression, PyLegendExpressionNumberReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)
 
 
-class LegacyApiIntegerColumnExpression(LegacyApiNumberColumnExpression, PyLegendExpressionIntegerReturn):
+class PyLegendIntegerColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionIntegerReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)
 
 
-class LegacyApiFloatColumnExpression(LegacyApiNumberColumnExpression, PyLegendExpressionFloatReturn):
+class PyLegendFloatColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionFloatReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)
 
 
-class LegacyApiDateColumnExpression(LegacyApiColumnExpression, PyLegendExpressionDateReturn):
+class PyLegendDateColumnExpression(PyLegendColumnExpression, PyLegendExpressionDateReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)
 
 
-class LegacyApiDateTimeColumnExpression(LegacyApiDateColumnExpression, PyLegendExpressionDateTimeReturn):
+class PyLegendDateTimeColumnExpression(PyLegendDateColumnExpression, PyLegendExpressionDateTimeReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)
 
 
-class LegacyApiStrictDateColumnExpression(LegacyApiDateColumnExpression, PyLegendExpressionStrictDateReturn):
+class PyLegendStrictDateColumnExpression(PyLegendDateColumnExpression, PyLegendExpressionStrictDateReturn):
 
     def __init__(self, frame_name: str, column: str) -> None:
         super().__init__(frame_name=frame_name, column=column)

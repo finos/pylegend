@@ -31,12 +31,12 @@ from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language import (
     LegacyApiTdsRow,
-    LegacyApiPrimitive,
-    LegacyApiInteger,
-    LegacyApiFloat,
-    LegacyApiNumber,
-    LegacyApiBoolean,
-    LegacyApiString,
+    PyLegendPrimitive,
+    PyLegendInteger,
+    PyLegendFloat,
+    PyLegendNumber,
+    PyLegendBoolean,
+    PyLegendString,
 )
 
 
@@ -44,7 +44,7 @@ class AssignFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
     __col_definitions: PyLegendDict[
         str,
-        PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, LegacyApiPrimitive]],
+        PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
     ]
 
     @classmethod
@@ -56,7 +56,7 @@ class AssignFunction(PandasApiAppliedFunction):
             base_frame: PandasApiBaseTdsFrame,
             col_definitions: PyLegendDict[
                 str,
-                PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, LegacyApiPrimitive]],
+                PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
             ]
     ) -> None:
         self.__base_frame = base_frame
@@ -75,7 +75,7 @@ class AssignFunction(PandasApiAppliedFunction):
         tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
-            if not isinstance(res, LegacyApiPrimitive):
+            if not isinstance(res, PyLegendPrimitive):
                 raise RuntimeError("Constants not supported")
             new_col_expr = res.to_sql_expression(
                 {"frame": base_query},
@@ -97,15 +97,15 @@ class AssignFunction(PandasApiAppliedFunction):
         tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
-            if isinstance(res, (int, LegacyApiInteger)):
+            if isinstance(res, (int, PyLegendInteger)):
                 new_cols.append(PrimitiveTdsColumn.integer_column(col))
-            elif isinstance(res, (float, LegacyApiFloat)):
+            elif isinstance(res, (float, PyLegendFloat)):
                 new_cols.append(PrimitiveTdsColumn.float_column(col))
-            elif isinstance(res, LegacyApiNumber):
+            elif isinstance(res, PyLegendNumber):
                 new_cols.append(PrimitiveTdsColumn.number_column(col))
-            elif isinstance(res, (bool, LegacyApiBoolean)):
+            elif isinstance(res, (bool, PyLegendBoolean)):
                 new_cols.append(PrimitiveTdsColumn.boolean_column(col))
-            elif isinstance(res, (str, LegacyApiString)):
+            elif isinstance(res, (str, PyLegendString)):
                 new_cols.append(PrimitiveTdsColumn.string_column(col))
             else:
                 raise RuntimeError("Type not supported")

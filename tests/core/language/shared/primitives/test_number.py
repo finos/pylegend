@@ -28,7 +28,7 @@ from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 
 
-class TestLegacyApiNumber:
+class TestPyLegendNumber:
     frame_to_sql_config = FrameToSqlConfig()
     frame_to_pure_config = FrameToPureConfig()
     db_extension = SqlToStringDbExtension()

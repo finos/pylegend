@@ -16,8 +16,8 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
-from pylegend.core.language.legacy_api.primitives.strictdate import LegacyApiStrictDate
-from pylegend.core.language.legacy_api.primitives.datetime import LegacyApiDateTime
+from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.operations.date_operation_expressions import (
     PyLegendTodayExpression,
     PyLegendNowExpression,
@@ -30,9 +30,9 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-def today() -> LegacyApiStrictDate:
-    return LegacyApiStrictDate(PyLegendTodayExpression())
+def today() -> PyLegendStrictDate:
+    return PyLegendStrictDate(PyLegendTodayExpression())
 
 
-def now() -> LegacyApiDateTime:
-    return LegacyApiDateTime(PyLegendNowExpression())
+def now() -> PyLegendDateTime:
+    return PyLegendDateTime(PyLegendNowExpression())

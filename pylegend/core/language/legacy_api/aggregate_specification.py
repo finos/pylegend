@@ -16,11 +16,11 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendCallable
 )
-from pylegend.core.language.legacy_api.primitive_collection import LegacyApiPrimitiveCollection
+from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.language import (
     LegacyApiTdsRow,
-    LegacyApiPrimitive,
-    LegacyApiPrimitiveOrPythonPrimitive,
+    PyLegendPrimitive,
+    PyLegendPrimitiveOrPythonPrimitive,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -30,14 +30,14 @@ __all__: PyLegendSequence[str] = [
 
 
 class LegacyApiAggregateSpecification:
-    __map_fn: PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitiveOrPythonPrimitive]
-    __aggregate_fn: PyLegendCallable[[LegacyApiPrimitiveCollection], LegacyApiPrimitive]
+    __map_fn: PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]
+    __aggregate_fn: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
     __name: str
 
     def __init__(
             self,
-            map_fn: PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitiveOrPythonPrimitive],
-            aggregate_fn: PyLegendCallable[[LegacyApiPrimitiveCollection], LegacyApiPrimitive],
+            map_fn: PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+            aggregate_fn: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
             name: str
     ) -> None:
         self.__map_fn = map_fn
@@ -47,16 +47,16 @@ class LegacyApiAggregateSpecification:
     def get_name(self) -> str:
         return self.__name
 
-    def get_map_fn(self) -> PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitiveOrPythonPrimitive]:
+    def get_map_fn(self) -> PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]:
         return self.__map_fn
 
-    def get_aggregate_fn(self) -> PyLegendCallable[[LegacyApiPrimitiveCollection], LegacyApiPrimitive]:
+    def get_aggregate_fn(self) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
         return self.__aggregate_fn
 
 
 def agg(
-    map_fn: PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitiveOrPythonPrimitive],
-    aggregate_fn: PyLegendCallable[[LegacyApiPrimitiveCollection], LegacyApiPrimitive],
+    map_fn: PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+    aggregate_fn: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
     name: str
 ) -> LegacyApiAggregateSpecification:
     return LegacyApiAggregateSpecification(map_fn=map_fn, aggregate_fn=aggregate_fn, name=name)

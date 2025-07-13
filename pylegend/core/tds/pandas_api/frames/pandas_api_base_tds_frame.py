@@ -28,7 +28,7 @@ from pylegend.core.databse.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import LegacyApiPrimitive, LegacyApiTdsRow
+from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -66,7 +66,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
             self,
             **kwargs: PyLegendCallable[
                 [LegacyApiTdsRow],
-                PyLegendUnion[int, float, bool, str, date, datetime, LegacyApiPrimitive]
+                PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (

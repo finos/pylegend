@@ -22,7 +22,7 @@ from pylegend._typing import (
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.language import (
     LegacyApiTdsRow,
-    LegacyApiPrimitive,
+    PyLegendPrimitive,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -37,7 +37,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             self,
             **kwargs: PyLegendCallable[
                 [LegacyApiTdsRow],
-                PyLegendUnion[int, float, bool, str, date, datetime, LegacyApiPrimitive]
+                PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

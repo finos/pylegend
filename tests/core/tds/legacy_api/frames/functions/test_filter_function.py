@@ -78,7 +78,7 @@ class TestFilterAppliedFunction:
         with pytest.raises(RuntimeError) as r:
             frame.filter(lambda x: x.get_integer("col1"))  # type: ignore
         assert r.value.args[0] == ("Filter function incompatible. Returns non boolean - "
-                                   "<class 'pylegend.core.language.legacy_api.primitives.integer.LegacyApiInteger'>")
+                                   "<class 'pylegend.core.language.shared.primitives.integer.PyLegendInteger'>")
 
     def test_query_gen_filter_function(self) -> None:
         columns = [

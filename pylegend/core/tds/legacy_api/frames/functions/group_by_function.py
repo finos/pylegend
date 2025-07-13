@@ -32,7 +32,7 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import Legacy
 from pylegend.core.language import (
     LegacyApiTdsRow,
     LegacyApiAggregateSpecification,
-    LegacyApiPrimitive,
+    PyLegendPrimitive,
     create_primitive_collection,
     convert_literal_to_literal_expression,
 )
@@ -125,7 +125,7 @@ class GroupByFunction(LegacyApiAppliedFunction):
             map_expr = agg.get_map_fn()(tds_row)
             collection = create_primitive_collection(map_expr)
             agg_expr = agg.get_aggregate_fn()(collection)
-            map_expr_string = (map_expr.to_pure_expression(config) if isinstance(map_expr, LegacyApiPrimitive) else
+            map_expr_string = (map_expr.to_pure_expression(config) if isinstance(map_expr, PyLegendPrimitive) else
                                convert_literal_to_literal_expression(map_expr).to_pure_expression(config))
             agg_expr_string = agg_expr.to_pure_expression(config).replace(map_expr_string, "$c")
             agg_strings.append(f"{agg_name}:{generate_pure_lambda('r', map_expr_string)}:"
@@ -202,7 +202,7 @@ class GroupByFunction(LegacyApiAppliedFunction):
                     f"Error occurred while evaluating map function. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(map_result, (int, float, bool, str, LegacyApiPrimitive)):
+            if not isinstance(map_result, (int, float, bool, str, PyLegendPrimitive)):
                 raise ValueError(
                     f"AggregateSpecification at index {index} (0-indexed) incompatible. "
                     f"Map function returns non-primitive - {str(type(map_result))}"
@@ -224,7 +224,7 @@ class GroupByFunction(LegacyApiAppliedFunction):
                     f"Error occurred while evaluating aggregate function. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(agg_result, LegacyApiPrimitive):
+            if not isinstance(agg_result, PyLegendPrimitive):
                 raise ValueError(
                     f"AggregateSpecification at index {index} (0-indexed) incompatible. "
                     f"Aggregate function returns non-primitive - {str(type(agg_result))}"

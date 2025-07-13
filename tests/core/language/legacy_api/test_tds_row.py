@@ -22,8 +22,8 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import LegacyApiTdsRow, LegacyApiBoolean, LegacyApiString, LegacyApiNumber, \
-    LegacyApiInteger, LegacyApiFloat
+from pylegend.core.language import LegacyApiTdsRow, PyLegendBoolean, PyLegendString, PyLegendNumber, \
+    PyLegendInteger, PyLegendFloat
 
 
 class TestLegacyApiTdsRow:
@@ -73,7 +73,7 @@ class TestLegacyApiTdsRow:
 
         assert v.value.args[0] == \
                "Column expression for 'col1' is of type " \
-               "'<class 'pylegend.core.language.legacy_api.column_expressions.LegacyApiStringColumnExpression'>'. " \
+               "'<class 'pylegend.core.language.shared.column_expressions.PyLegendStringColumnExpression'>'. " \
                "get_boolean method is not valid on this column."
 
     def test_get_boolean_col(self) -> None:
@@ -87,7 +87,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_boolean("col2")
 
-        assert isinstance(col_expr, LegacyApiBoolean)
+        assert isinstance(col_expr, PyLegendBoolean)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -108,7 +108,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col2"]
 
-        assert isinstance(col_expr, LegacyApiBoolean)
+        assert isinstance(col_expr, PyLegendBoolean)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -128,7 +128,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_string("col2")
 
-        assert isinstance(col_expr, LegacyApiString)
+        assert isinstance(col_expr, PyLegendString)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -148,7 +148,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col2"]
 
-        assert isinstance(col_expr, LegacyApiString)
+        assert isinstance(col_expr, PyLegendString)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -168,7 +168,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_number("col1")
 
-        assert isinstance(col_expr, LegacyApiNumber)
+        assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -188,7 +188,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col1"]
 
-        assert isinstance(col_expr, LegacyApiNumber)
+        assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -208,7 +208,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_number("col1")
 
-        assert isinstance(col_expr, LegacyApiNumber)
+        assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -228,7 +228,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_number("col1")
 
-        assert isinstance(col_expr, LegacyApiNumber)
+        assert isinstance(col_expr, PyLegendNumber)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -248,7 +248,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_integer("col1")
 
-        assert isinstance(col_expr, LegacyApiInteger)
+        assert isinstance(col_expr, PyLegendInteger)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -268,7 +268,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col1"]
 
-        assert isinstance(col_expr, LegacyApiInteger)
+        assert isinstance(col_expr, PyLegendInteger)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -288,7 +288,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row.get_float("col1")
 
-        assert isinstance(col_expr, LegacyApiFloat)
+        assert isinstance(col_expr, PyLegendFloat)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},
@@ -308,7 +308,7 @@ class TestLegacyApiTdsRow:
         tds_row = LegacyApiTdsRow.from_tds_frame("t", frame)
         col_expr = tds_row["col1"]
 
-        assert isinstance(col_expr, LegacyApiFloat)
+        assert isinstance(col_expr, PyLegendFloat)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(
                 {"t": frame.to_sql_query_object(self.frame_to_sql_config)},

@@ -24,12 +24,12 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import LegacyApiTdsRow, LegacyApiPrimitive
+from pylegend.core.language import LegacyApiTdsRow, PyLegendPrimitive
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 
 
-class TestLegacyApiBoolean:
+class TestPyLegendBoolean:
     frame_to_sql_config = FrameToSqlConfig()
     frame_to_pure_config = FrameToPureConfig()
     db_extension = SqlToStringDbExtension()
@@ -116,13 +116,13 @@ class TestLegacyApiBoolean:
         assert self.__generate_pure_string(lambda x: True == (x["col2"] & x["col1"])) == \
                '(($t.col2 && $t.col1) == true)'
 
-    def __generate_sql_string(self, f: PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitive]) -> str:
+    def __generate_sql_string(self, f: PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         )
 
-    def __generate_pure_string(self, f: PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitive]) -> str:
+    def __generate_pure_string(self, f: PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitive]) -> str:
         expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
         model_code = """
         function test::testFunc(): Any[*]

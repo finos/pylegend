@@ -40,10 +40,10 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.core.language import (
-    LegacyApiBoolean,
+    PyLegendBoolean,
     LegacyApiTdsRow,
     PyLegendBooleanLiteralExpression,
-    LegacyApiPrimitive,
+    PyLegendPrimitive,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.shared.helpers import generate_pure_lambda
@@ -57,7 +57,7 @@ __all__: PyLegendSequence[str] = [
 class JoinFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __other_frame: LegacyApiBaseTdsFrame
-    __join_condition: PyLegendCallable[[LegacyApiTdsRow, LegacyApiTdsRow], PyLegendUnion[bool, LegacyApiBoolean]]
+    __join_condition: PyLegendCallable[[LegacyApiTdsRow, LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
     __join_type: str
 
     @classmethod
@@ -68,7 +68,7 @@ class JoinFunction(LegacyApiAppliedFunction):
             self,
             base_frame: LegacyApiBaseTdsFrame,
             other_frame: LegacyApiTdsFrame,
-            join_condition: PyLegendCallable[[LegacyApiTdsRow, LegacyApiTdsRow], PyLegendUnion[bool, LegacyApiBoolean]],
+            join_condition: PyLegendCallable[[LegacyApiTdsRow, LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]],
             join_type: str
     ) -> None:
         self.__base_frame = base_frame
@@ -95,7 +95,7 @@ class JoinFunction(LegacyApiAppliedFunction):
 
         join_expr = self.__join_condition(left_row, right_row)
         if isinstance(join_expr, bool):
-            join_expr = LegacyApiBoolean(PyLegendBooleanLiteralExpression(join_expr))
+            join_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(join_expr))
         join_sql_expr = join_expr.to_sql_expression(
             {
                 'left': create_sub_query(base_query, config, 'left'),
@@ -151,7 +151,7 @@ class JoinFunction(LegacyApiAppliedFunction):
         right_row = LegacyApiTdsRow.from_tds_frame("r", self.__other_frame)
         join_expr = self.__join_condition(left_row, right_row)
         join_expr_string = (join_expr.to_pure_expression(config.push_indent(2))
-                            if isinstance(join_expr, LegacyApiPrimitive) else
+                            if isinstance(join_expr, PyLegendPrimitive) else
                             convert_literal_to_literal_expression(join_expr).to_pure_expression(config.push_indent(2)))
         join_kind = (
             "INNER" if self.__join_type.lower() == 'inner' else
@@ -193,7 +193,7 @@ class JoinFunction(LegacyApiAppliedFunction):
                 "Join condition function incompatible. Error occurred while evaluating. Message: " + str(e)
             ) from e
 
-        if not isinstance(result, (bool, LegacyApiBoolean)):
+        if not isinstance(result, (bool, PyLegendBoolean)):
             raise RuntimeError("Join condition function incompatible. Returns non boolean - " + str(type(result)))
 
         left_cols = [c.get_name() for c in self.__base_frame.columns()]
