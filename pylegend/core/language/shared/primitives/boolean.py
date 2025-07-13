@@ -17,7 +17,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language.legacy_api.primitives.primitive import LegacyApiPrimitive
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn, PyLegendExpression
 from pylegend.core.language.shared.literal_expressions import PyLegendBooleanLiteralExpression
 from pylegend.core.language.shared.operations.boolean_operation_expressions import (
@@ -34,11 +34,11 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 __all__: PyLegendSequence[str] = [
-    "LegacyApiBoolean"
+    "PyLegendBoolean"
 ]
 
 
-class LegacyApiBoolean(LegacyApiPrimitive):
+class PyLegendBoolean(PyLegendPrimitive):
     __value: PyLegendExpressionBooleanReturn
 
     def __init__(
@@ -60,31 +60,31 @@ class LegacyApiBoolean(LegacyApiPrimitive):
     def value(self) -> PyLegendExpression:
         return self.__value
 
-    def __or__(self, other: PyLegendUnion[bool, "LegacyApiBoolean"]) -> "LegacyApiBoolean":
-        LegacyApiBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
+    def __or__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
-        return LegacyApiBoolean(PyLegendBooleanOrExpression(self.__value, other_op))
+        return PyLegendBoolean(PyLegendBooleanOrExpression(self.__value, other_op))
 
-    def __ror__(self, other: PyLegendUnion[bool, "LegacyApiBoolean"]) -> "LegacyApiBoolean":
-        LegacyApiBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
+    def __ror__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
-        return LegacyApiBoolean(PyLegendBooleanOrExpression(other_op, self.__value))
+        return PyLegendBoolean(PyLegendBooleanOrExpression(other_op, self.__value))
 
-    def __and__(self, other: PyLegendUnion[bool, "LegacyApiBoolean"]) -> "LegacyApiBoolean":
-        LegacyApiBoolean.__validate__param_to_be_bool(other, "Boolean AND (&) parameter")
+    def __and__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean AND (&) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
-        return LegacyApiBoolean(PyLegendBooleanAndExpression(self.__value, other_op))
+        return PyLegendBoolean(PyLegendBooleanAndExpression(self.__value, other_op))
 
-    def __rand__(self, other: PyLegendUnion[bool, "LegacyApiBoolean"]) -> "LegacyApiBoolean":
-        LegacyApiBoolean.__validate__param_to_be_bool(other, "Boolean AND (&) parameter")
+    def __rand__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean AND (&) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
-        return LegacyApiBoolean(PyLegendBooleanAndExpression(other_op, self.__value))
+        return PyLegendBoolean(PyLegendBooleanAndExpression(other_op, self.__value))
 
-    def __invert__(self) -> "LegacyApiBoolean":
-        return LegacyApiBoolean(PyLegendBooleanNotExpression(self.__value))
+    def __invert__(self) -> "PyLegendBoolean":
+        return PyLegendBoolean(PyLegendBooleanNotExpression(self.__value))
 
     @staticmethod
-    def __validate__param_to_be_bool(param: PyLegendUnion[bool, "LegacyApiBoolean"], desc: str) -> None:
-        if not isinstance(param, (bool, LegacyApiBoolean)):
+    def __validate__param_to_be_bool(param: PyLegendUnion[bool, "PyLegendBoolean"], desc: str) -> None:
+        if not isinstance(param, (bool, PyLegendBoolean)):
             raise TypeError(desc + " should be a bool or a boolean expression (PyLegendBoolean)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))

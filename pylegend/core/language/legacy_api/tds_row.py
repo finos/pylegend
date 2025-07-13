@@ -18,24 +18,24 @@ from pylegend._typing import (
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.language import (
-    LegacyApiColumnExpression,
-    LegacyApiBooleanColumnExpression,
-    LegacyApiStringColumnExpression,
-    LegacyApiNumberColumnExpression,
-    LegacyApiIntegerColumnExpression,
-    LegacyApiFloatColumnExpression,
-    LegacyApiDateColumnExpression,
-    LegacyApiDateTimeColumnExpression,
-    LegacyApiStrictDateColumnExpression,
-    LegacyApiPrimitive,
-    LegacyApiBoolean,
-    LegacyApiString,
-    LegacyApiNumber,
-    LegacyApiInteger,
-    LegacyApiFloat,
-    LegacyApiDate,
-    LegacyApiDateTime,
-    LegacyApiStrictDate,
+    PyLegendColumnExpression,
+    PyLegendBooleanColumnExpression,
+    PyLegendStringColumnExpression,
+    PyLegendNumberColumnExpression,
+    PyLegendIntegerColumnExpression,
+    PyLegendFloatColumnExpression,
+    PyLegendDateColumnExpression,
+    PyLegendDateTimeColumnExpression,
+    PyLegendStrictDateColumnExpression,
+    PyLegendPrimitive,
+    PyLegendBoolean,
+    PyLegendString,
+    PyLegendNumber,
+    PyLegendInteger,
+    PyLegendFloat,
+    PyLegendDate,
+    PyLegendDateTime,
+    PyLegendStrictDate,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -55,127 +55,127 @@ class LegacyApiTdsRow:
     def from_tds_frame(frame_name: str, frame: PyLegendTdsFrame) -> "LegacyApiTdsRow":
         return LegacyApiTdsRow(frame_name=frame_name, frame=frame)
 
-    def get_boolean(self, column: str) -> LegacyApiBoolean:
+    def get_boolean(self, column: str) -> PyLegendBoolean:
         col_expr = self.__get_col(column)
-        if not isinstance(col_expr, LegacyApiBooleanColumnExpression):
+        if not isinstance(col_expr, PyLegendBooleanColumnExpression):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_boolean method is not valid on this column."
             )
-        return LegacyApiBoolean(col_expr)
+        return PyLegendBoolean(col_expr)
 
-    def get_string(self, column: str) -> LegacyApiString:
+    def get_string(self, column: str) -> PyLegendString:
         col_expr = self.__get_col(column)
-        if not isinstance(col_expr, LegacyApiStringColumnExpression):
+        if not isinstance(col_expr, PyLegendStringColumnExpression):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_string method is not valid on this column."
             )
-        return LegacyApiString(col_expr)
+        return PyLegendString(col_expr)
 
-    def get_number(self, column: str) -> LegacyApiNumber:
+    def get_number(self, column: str) -> PyLegendNumber:
         col_expr = self.__get_col(column)
-        allowed_types = (LegacyApiNumberColumnExpression, LegacyApiIntegerColumnExpression, LegacyApiFloatColumnExpression)
+        allowed_types = (PyLegendNumberColumnExpression, PyLegendIntegerColumnExpression, PyLegendFloatColumnExpression)
         if not isinstance(col_expr, allowed_types):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_number method is not valid on this column."
             )
-        return LegacyApiNumber(col_expr)
+        return PyLegendNumber(col_expr)
 
-    def get_integer(self, column: str) -> LegacyApiInteger:
+    def get_integer(self, column: str) -> PyLegendInteger:
         col_expr = self.__get_col(column)
-        if not isinstance(col_expr, LegacyApiIntegerColumnExpression):
+        if not isinstance(col_expr, PyLegendIntegerColumnExpression):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_integer method is not valid on this column."
             )
-        return LegacyApiInteger(col_expr)
+        return PyLegendInteger(col_expr)
 
-    def get_float(self, column: str) -> LegacyApiFloat:
+    def get_float(self, column: str) -> PyLegendFloat:
         col_expr = self.__get_col(column)
-        if not isinstance(col_expr, LegacyApiFloatColumnExpression):
+        if not isinstance(col_expr, PyLegendFloatColumnExpression):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_float method is not valid on this column."
             )
-        return LegacyApiFloat(col_expr)
+        return PyLegendFloat(col_expr)
 
-    def get_date(self, column: str) -> LegacyApiDate:
+    def get_date(self, column: str) -> PyLegendDate:
         col_expr = self.__get_col(column)
         allowed_types = (
-            LegacyApiDateColumnExpression, LegacyApiDateTimeColumnExpression, LegacyApiStrictDateColumnExpression
+            PyLegendDateColumnExpression, PyLegendDateTimeColumnExpression, PyLegendStrictDateColumnExpression
         )
         if not isinstance(col_expr, allowed_types):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_date method is not valid on this column."
             )
-        return LegacyApiDate(col_expr)
+        return PyLegendDate(col_expr)
 
-    def get_datetime(self, column: str) -> LegacyApiDateTime:
+    def get_datetime(self, column: str) -> PyLegendDateTime:
         col_expr = self.__get_col(column)
-        if not isinstance(col_expr, LegacyApiDateTimeColumnExpression):
+        if not isinstance(col_expr, PyLegendDateTimeColumnExpression):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_datetime method is not valid on this column."
             )
-        return LegacyApiDateTime(col_expr)
+        return PyLegendDateTime(col_expr)
 
-    def get_strictdate(self, column: str) -> LegacyApiStrictDate:
+    def get_strictdate(self, column: str) -> PyLegendStrictDate:
         col_expr = self.__get_col(column)
-        if not isinstance(col_expr, LegacyApiStrictDateColumnExpression):
+        if not isinstance(col_expr, PyLegendStrictDateColumnExpression):
             raise RuntimeError(
                 f"Column expression for '{column}' is of type '{type(col_expr)}'. "
                 "get_strictdate method is not valid on this column."
             )
-        return LegacyApiStrictDate(col_expr)
+        return PyLegendStrictDate(col_expr)
 
-    def __getitem__(self, item: str) -> LegacyApiPrimitive:
+    def __getitem__(self, item: str) -> PyLegendPrimitive:
         if not isinstance(item, str):
             raise TypeError("Column indexing on a TDSRow should be with column name (string). Got - " + str(type(item)))
 
         col_expr = self.__get_col(item)
 
-        if isinstance(col_expr, LegacyApiBooleanColumnExpression):
-            return LegacyApiBoolean(col_expr)
-        if isinstance(col_expr, LegacyApiStringColumnExpression):
-            return LegacyApiString(col_expr)
-        if isinstance(col_expr, LegacyApiIntegerColumnExpression):
-            return LegacyApiInteger(col_expr)
-        if isinstance(col_expr, LegacyApiFloatColumnExpression):
-            return LegacyApiFloat(col_expr)
-        if isinstance(col_expr, LegacyApiNumberColumnExpression):
-            return LegacyApiNumber(col_expr)
-        if isinstance(col_expr, LegacyApiDateTimeColumnExpression):
-            return LegacyApiDateTime(col_expr)
-        if isinstance(col_expr, LegacyApiStrictDateColumnExpression):
-            return LegacyApiStrictDate(col_expr)
-        if isinstance(col_expr, LegacyApiDateColumnExpression):
-            return LegacyApiDate(col_expr)
+        if isinstance(col_expr, PyLegendBooleanColumnExpression):
+            return PyLegendBoolean(col_expr)
+        if isinstance(col_expr, PyLegendStringColumnExpression):
+            return PyLegendString(col_expr)
+        if isinstance(col_expr, PyLegendIntegerColumnExpression):
+            return PyLegendInteger(col_expr)
+        if isinstance(col_expr, PyLegendFloatColumnExpression):
+            return PyLegendFloat(col_expr)
+        if isinstance(col_expr, PyLegendNumberColumnExpression):
+            return PyLegendNumber(col_expr)
+        if isinstance(col_expr, PyLegendDateTimeColumnExpression):
+            return PyLegendDateTime(col_expr)
+        if isinstance(col_expr, PyLegendStrictDateColumnExpression):
+            return PyLegendStrictDate(col_expr)
+        if isinstance(col_expr, PyLegendDateColumnExpression):
+            return PyLegendDate(col_expr)
 
         raise RuntimeError(f"Column expression for '{item}' of type {type(col_expr)} not supported yet")
 
-    def __get_col(self, column: str) -> LegacyApiColumnExpression:
+    def __get_col(self, column: str) -> PyLegendColumnExpression:
         for base_col in self.__columns:
             if base_col.get_name() == column:
                 if isinstance(base_col, PrimitiveTdsColumn):
                     if base_col.get_type() == "Boolean":
-                        return LegacyApiBooleanColumnExpression(self.__frame_name, column)
+                        return PyLegendBooleanColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "String":
-                        return LegacyApiStringColumnExpression(self.__frame_name, column)
+                        return PyLegendStringColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "Number":
-                        return LegacyApiNumberColumnExpression(self.__frame_name, column)
+                        return PyLegendNumberColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "Integer":
-                        return LegacyApiIntegerColumnExpression(self.__frame_name, column)
+                        return PyLegendIntegerColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "Float":
-                        return LegacyApiFloatColumnExpression(self.__frame_name, column)
+                        return PyLegendFloatColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "Date":
-                        return LegacyApiDateColumnExpression(self.__frame_name, column)
+                        return PyLegendDateColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "DateTime":
-                        return LegacyApiDateTimeColumnExpression(self.__frame_name, column)
+                        return PyLegendDateTimeColumnExpression(self.__frame_name, column)
                     if base_col.get_type() == "StrictDate":
-                        return LegacyApiStrictDateColumnExpression(self.__frame_name, column)
+                        return PyLegendStrictDateColumnExpression(self.__frame_name, column)
 
                 raise RuntimeError(f"Column '{column}' of type {base_col.get_type()} not supported yet")
 

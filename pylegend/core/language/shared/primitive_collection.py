@@ -18,16 +18,16 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendUnion,
 )
-from pylegend.core.language.legacy_api.primitives.primitive import LegacyApiPrimitiveOrPythonPrimitive
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language import (
-    LegacyApiInteger,
-    LegacyApiFloat,
-    LegacyApiNumber,
-    LegacyApiString,
-    LegacyApiBoolean,
-    LegacyApiDate,
-    LegacyApiDateTime,
-    LegacyApiStrictDate,
+    PyLegendInteger,
+    PyLegendFloat,
+    PyLegendNumber,
+    PyLegendString,
+    PyLegendBoolean,
+    PyLegendDate,
+    PyLegendDateTime,
+    PyLegendStrictDate,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.shared.operations.collection_operation_expressions import (
@@ -58,281 +58,281 @@ from pylegend.core.language.shared.operations.collection_operation_expressions i
 
 
 __all__: PyLegendSequence[str] = [
-    "LegacyApiPrimitiveCollection",
-    "LegacyApiIntegerCollection",
-    "LegacyApiFloatCollection",
-    "LegacyApiNumberCollection",
-    "LegacyApiStringCollection",
-    "LegacyApiBooleanCollection",
-    "LegacyApiDateCollection",
-    "LegacyApiDateTimeCollection",
-    "LegacyApiStrictDateCollection",
+    "PyLegendPrimitiveCollection",
+    "PyLegendIntegerCollection",
+    "PyLegendFloatCollection",
+    "PyLegendNumberCollection",
+    "PyLegendStringCollection",
+    "PyLegendBooleanCollection",
+    "PyLegendDateCollection",
+    "PyLegendDateTimeCollection",
+    "PyLegendStrictDateCollection",
     "create_primitive_collection"
 ]
 
 
-class LegacyApiPrimitiveCollection(metaclass=ABCMeta):
-    __nested: LegacyApiPrimitiveOrPythonPrimitive
+class PyLegendPrimitiveCollection(metaclass=ABCMeta):
+    __nested: PyLegendPrimitiveOrPythonPrimitive
 
-    def __init__(self, nested: LegacyApiPrimitiveOrPythonPrimitive) -> None:
+    def __init__(self, nested: PyLegendPrimitiveOrPythonPrimitive) -> None:
         self.__nested = nested
 
-    def count(self) -> "LegacyApiInteger":
+    def count(self) -> "PyLegendInteger":
         if isinstance(self.__nested, (bool, int, float, str, date, datetime)):
             nested_expr = convert_literal_to_literal_expression(self.__nested)
         else:
             nested_expr = self.__nested.value()
-        return LegacyApiInteger(PyLegendCountExpression(nested_expr))
+        return PyLegendInteger(PyLegendCountExpression(nested_expr))
 
-    def distinct_count(self) -> "LegacyApiInteger":
+    def distinct_count(self) -> "PyLegendInteger":
         if isinstance(self.__nested, (bool, int, float, str, date, datetime)):
             nested_expr = convert_literal_to_literal_expression(self.__nested)
         else:
             nested_expr = self.__nested.value()
-        return LegacyApiInteger(PyLegendDistinctCountExpression(nested_expr))
+        return PyLegendInteger(PyLegendDistinctCountExpression(nested_expr))
 
 
-class LegacyApiNumberCollection(LegacyApiPrimitiveCollection):
-    __nested: PyLegendUnion[int, float, LegacyApiInteger, LegacyApiFloat, LegacyApiNumber]
+class PyLegendNumberCollection(PyLegendPrimitiveCollection):
+    __nested: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber]
 
-    def __init__(self, nested: PyLegendUnion[int, float, LegacyApiInteger, LegacyApiFloat, LegacyApiNumber]) -> None:
+    def __init__(self, nested: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
-    def average(self) -> "LegacyApiFloat":
+    def average(self) -> "PyLegendFloat":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiFloat(PyLegendAverageExpression(nested_expr))  # type: ignore
+        return PyLegendFloat(PyLegendAverageExpression(nested_expr))  # type: ignore
 
-    def max(self) -> "LegacyApiNumber":
+    def max(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiNumber(PyLegendNumberMaxExpression(nested_expr))  # type: ignore
+        return PyLegendNumber(PyLegendNumberMaxExpression(nested_expr))  # type: ignore
 
-    def min(self) -> "LegacyApiNumber":
+    def min(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiNumber(PyLegendNumberMinExpression(nested_expr))  # type: ignore
+        return PyLegendNumber(PyLegendNumberMinExpression(nested_expr))  # type: ignore
 
-    def sum(self) -> "LegacyApiNumber":
+    def sum(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiNumber(PyLegendNumberSumExpression(nested_expr))  # type: ignore
+        return PyLegendNumber(PyLegendNumberSumExpression(nested_expr))  # type: ignore
 
-    def std_dev_sample(self) -> "LegacyApiNumber":
+    def std_dev_sample(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiNumber(PyLegendStdDevSampleExpression(nested_expr))  # type: ignore
+        return PyLegendNumber(PyLegendStdDevSampleExpression(nested_expr))  # type: ignore
 
-    def std_dev(self) -> "LegacyApiNumber":
+    def std_dev(self) -> "PyLegendNumber":
         return self.std_dev_sample()
 
-    def std_dev_population(self) -> "LegacyApiNumber":
+    def std_dev_population(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiNumber(PyLegendStdDevPopulationExpression(nested_expr))  # type: ignore
+        return PyLegendNumber(PyLegendStdDevPopulationExpression(nested_expr))  # type: ignore
 
-    def variance_sample(self) -> "LegacyApiNumber":
+    def variance_sample(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiNumber(PyLegendVarianceSampleExpression(nested_expr))  # type: ignore
+        return PyLegendNumber(PyLegendVarianceSampleExpression(nested_expr))  # type: ignore
 
-    def variance(self) -> "LegacyApiNumber":
+    def variance(self) -> "PyLegendNumber":
         return self.variance_sample()
 
-    def variance_population(self) -> "LegacyApiNumber":
+    def variance_population(self) -> "PyLegendNumber":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
             else self.__nested.value()
         )
-        return LegacyApiNumber(PyLegendVariancePopulationExpression(nested_expr))  # type: ignore
+        return PyLegendNumber(PyLegendVariancePopulationExpression(nested_expr))  # type: ignore
 
 
-class LegacyApiIntegerCollection(LegacyApiNumberCollection):
-    __nested: PyLegendUnion[int, LegacyApiInteger]
+class PyLegendIntegerCollection(PyLegendNumberCollection):
+    __nested: PyLegendUnion[int, PyLegendInteger]
 
-    def __init__(self, nested: PyLegendUnion[int, LegacyApiInteger]) -> None:
+    def __init__(self, nested: PyLegendUnion[int, PyLegendInteger]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
-    def max(self) -> "LegacyApiInteger":
+    def max(self) -> "PyLegendInteger":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, int)
             else self.__nested.value()
         )
-        return LegacyApiInteger(PyLegendIntegerMaxExpression(nested_expr))  # type: ignore
+        return PyLegendInteger(PyLegendIntegerMaxExpression(nested_expr))  # type: ignore
 
-    def min(self) -> "LegacyApiInteger":
+    def min(self) -> "PyLegendInteger":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, int)
             else self.__nested.value()
         )
-        return LegacyApiInteger(PyLegendIntegerMinExpression(nested_expr))  # type: ignore
+        return PyLegendInteger(PyLegendIntegerMinExpression(nested_expr))  # type: ignore
 
-    def sum(self) -> "LegacyApiInteger":
+    def sum(self) -> "PyLegendInteger":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, int)
             else self.__nested.value()
         )
-        return LegacyApiInteger(PyLegendIntegerSumExpression(nested_expr))  # type: ignore
+        return PyLegendInteger(PyLegendIntegerSumExpression(nested_expr))  # type: ignore
 
 
-class LegacyApiFloatCollection(LegacyApiNumberCollection):
-    __nested: PyLegendUnion[float, LegacyApiFloat]
+class PyLegendFloatCollection(PyLegendNumberCollection):
+    __nested: PyLegendUnion[float, PyLegendFloat]
 
-    def __init__(self, nested: PyLegendUnion[float, LegacyApiFloat]) -> None:
+    def __init__(self, nested: PyLegendUnion[float, PyLegendFloat]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
-    def max(self) -> "LegacyApiFloat":
+    def max(self) -> "PyLegendFloat":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, float)
             else self.__nested.value()
         )
-        return LegacyApiFloat(PyLegendFloatMaxExpression(nested_expr))  # type: ignore
+        return PyLegendFloat(PyLegendFloatMaxExpression(nested_expr))  # type: ignore
 
-    def min(self) -> "LegacyApiFloat":
+    def min(self) -> "PyLegendFloat":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, float)
             else self.__nested.value()
         )
-        return LegacyApiFloat(PyLegendFloatMinExpression(nested_expr))  # type: ignore
+        return PyLegendFloat(PyLegendFloatMinExpression(nested_expr))  # type: ignore
 
-    def sum(self) -> "LegacyApiFloat":
+    def sum(self) -> "PyLegendFloat":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, float)
             else self.__nested.value()
         )
-        return LegacyApiFloat(PyLegendFloatSumExpression(nested_expr))  # type: ignore
+        return PyLegendFloat(PyLegendFloatSumExpression(nested_expr))  # type: ignore
 
 
-class LegacyApiStringCollection(LegacyApiPrimitiveCollection):
-    __nested: PyLegendUnion[str, LegacyApiString]
+class PyLegendStringCollection(PyLegendPrimitiveCollection):
+    __nested: PyLegendUnion[str, PyLegendString]
 
-    def __init__(self, nested: PyLegendUnion[str, LegacyApiString]) -> None:
+    def __init__(self, nested: PyLegendUnion[str, PyLegendString]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
-    def max(self) -> "LegacyApiString":
+    def max(self) -> "PyLegendString":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, str)
             else self.__nested.value()
         )
-        return LegacyApiString(PyLegendStringMaxExpression(nested_expr))  # type: ignore
+        return PyLegendString(PyLegendStringMaxExpression(nested_expr))  # type: ignore
 
-    def min(self) -> "LegacyApiString":
+    def min(self) -> "PyLegendString":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, str)
             else self.__nested.value()
         )
-        return LegacyApiString(PyLegendStringMinExpression(nested_expr))  # type: ignore
+        return PyLegendString(PyLegendStringMinExpression(nested_expr))  # type: ignore
 
-    def join(self, separator: str) -> "LegacyApiString":
+    def join(self, separator: str) -> "PyLegendString":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, str)
             else self.__nested.value()
         )
         separator_expr = convert_literal_to_literal_expression(separator)
-        return LegacyApiString(PyLegendJoinStringsExpression(nested_expr, separator_expr))  # type: ignore
+        return PyLegendString(PyLegendJoinStringsExpression(nested_expr, separator_expr))  # type: ignore
 
 
-class LegacyApiBooleanCollection(LegacyApiPrimitiveCollection):
-    __nested: PyLegendUnion[bool, LegacyApiBoolean]
+class PyLegendBooleanCollection(PyLegendPrimitiveCollection):
+    __nested: PyLegendUnion[bool, PyLegendBoolean]
 
-    def __init__(self, nested: PyLegendUnion[bool, LegacyApiBoolean]) -> None:
+    def __init__(self, nested: PyLegendUnion[bool, PyLegendBoolean]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
 
-class LegacyApiDateCollection(LegacyApiPrimitiveCollection):
-    __nested: PyLegendUnion[date, datetime, LegacyApiDate]
+class PyLegendDateCollection(PyLegendPrimitiveCollection):
+    __nested: PyLegendUnion[date, datetime, PyLegendDate]
 
-    def __init__(self, nested: PyLegendUnion[date, datetime, LegacyApiDate]) -> None:
+    def __init__(self, nested: PyLegendUnion[date, datetime, PyLegendDate]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
-    def max(self) -> "LegacyApiDate":
+    def max(self) -> "PyLegendDate":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (date, datetime))
             else self.__nested.value()
         )
-        return LegacyApiDate(PyLegendDateMaxExpression(nested_expr))  # type: ignore
+        return PyLegendDate(PyLegendDateMaxExpression(nested_expr))  # type: ignore
 
-    def min(self) -> "LegacyApiDate":
+    def min(self) -> "PyLegendDate":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (date, datetime))
             else self.__nested.value()
         )
-        return LegacyApiDate(PyLegendDateMinExpression(nested_expr))  # type: ignore
+        return PyLegendDate(PyLegendDateMinExpression(nested_expr))  # type: ignore
 
 
-class LegacyApiDateTimeCollection(LegacyApiDateCollection):
-    __nested: PyLegendUnion[datetime, LegacyApiDateTime]
+class PyLegendDateTimeCollection(PyLegendDateCollection):
+    __nested: PyLegendUnion[datetime, PyLegendDateTime]
 
-    def __init__(self, nested: PyLegendUnion[datetime, LegacyApiDateTime]) -> None:
+    def __init__(self, nested: PyLegendUnion[datetime, PyLegendDateTime]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
 
-class LegacyApiStrictDateCollection(LegacyApiDateCollection):
-    __nested: PyLegendUnion[date, LegacyApiStrictDate]
+class PyLegendStrictDateCollection(PyLegendDateCollection):
+    __nested: PyLegendUnion[date, PyLegendStrictDate]
 
-    def __init__(self, nested: PyLegendUnion[date, LegacyApiStrictDate]) -> None:
+    def __init__(self, nested: PyLegendUnion[date, PyLegendStrictDate]) -> None:
         super().__init__(nested)
         self.__nested = nested
 
-    def max(self) -> "LegacyApiStrictDate":
+    def max(self) -> "PyLegendStrictDate":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, date)
             else self.__nested.value()
         )
-        return LegacyApiStrictDate(PyLegendStrictDateMaxExpression(nested_expr))  # type: ignore
+        return PyLegendStrictDate(PyLegendStrictDateMaxExpression(nested_expr))  # type: ignore
 
-    def min(self) -> "LegacyApiStrictDate":
+    def min(self) -> "PyLegendStrictDate":
         nested_expr = (
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, date)
             else self.__nested.value()
         )
-        return LegacyApiStrictDate(PyLegendStrictDateMinExpression(nested_expr))  # type: ignore
+        return PyLegendStrictDate(PyLegendStrictDateMinExpression(nested_expr))  # type: ignore
 
 
-def create_primitive_collection(nested: LegacyApiPrimitiveOrPythonPrimitive) -> LegacyApiPrimitiveCollection:
-    if isinstance(nested, (int, LegacyApiInteger)):
-        return LegacyApiIntegerCollection(nested)
+def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> PyLegendPrimitiveCollection:
+    if isinstance(nested, (int, PyLegendInteger)):
+        return PyLegendIntegerCollection(nested)
 
-    if isinstance(nested, (float, LegacyApiFloat)):
-        return LegacyApiFloatCollection(nested)
+    if isinstance(nested, (float, PyLegendFloat)):
+        return PyLegendFloatCollection(nested)
 
-    if isinstance(nested, LegacyApiNumber):
-        return LegacyApiNumberCollection(nested)
+    if isinstance(nested, PyLegendNumber):
+        return PyLegendNumberCollection(nested)
 
-    if isinstance(nested, (str, LegacyApiString)):
-        return LegacyApiStringCollection(nested)
+    if isinstance(nested, (str, PyLegendString)):
+        return PyLegendStringCollection(nested)
 
-    if isinstance(nested, (bool, LegacyApiBoolean)):
-        return LegacyApiBooleanCollection(nested)
+    if isinstance(nested, (bool, PyLegendBoolean)):
+        return PyLegendBooleanCollection(nested)
 
-    if isinstance(nested, (datetime, LegacyApiDateTime)):
-        return LegacyApiDateTimeCollection(nested)
+    if isinstance(nested, (datetime, PyLegendDateTime)):
+        return PyLegendDateTimeCollection(nested)
 
-    if isinstance(nested, (date, LegacyApiStrictDate)):
-        return LegacyApiStrictDateCollection(nested)
+    if isinstance(nested, (date, PyLegendStrictDate)):
+        return PyLegendStrictDateCollection(nested)
 
-    if isinstance(nested, LegacyApiDate):
-        return LegacyApiDateCollection(nested)
+    if isinstance(nested, PyLegendDate):
+        return PyLegendDateCollection(nested)
 
     raise RuntimeError(f"Not supported type - {type(nested)}")  # pragma: no cover

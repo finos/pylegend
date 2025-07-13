@@ -30,8 +30,8 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
 from pylegend.core.language import (
     LegacyApiTdsRow,
-    LegacyApiPrimitive,
-    LegacyApiPrimitiveOrPythonPrimitive,
+    PyLegendPrimitive,
+    PyLegendPrimitiveOrPythonPrimitive,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
@@ -44,7 +44,7 @@ __all__: PyLegendSequence[str] = [
 
 class ExtendFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
-    __functions_list: PyLegendList[PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitiveOrPythonPrimitive]]
+    __functions_list: PyLegendList[PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]]
     __column_names_list: PyLegendList[str]
 
     @classmethod
@@ -54,7 +54,7 @@ class ExtendFunction(LegacyApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegacyApiBaseTdsFrame,
-            functions_list: PyLegendList[PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitiveOrPythonPrimitive]],
+            functions_list: PyLegendList[PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]],
             column_names_list: PyLegendList[str]
     ) -> None:
         self.__base_frame = base_frame
@@ -95,7 +95,7 @@ class ExtendFunction(LegacyApiAppliedFunction):
         for (func, col_name) in zip(self.__functions_list, self.__column_names_list):
             col_expr = func(tds_row)
             escaped_col_name = escape_column_name(col_name)
-            pure_expr = (col_expr.to_pure_expression(config) if isinstance(col_expr, LegacyApiPrimitive) else
+            pure_expr = (col_expr.to_pure_expression(config) if isinstance(col_expr, PyLegendPrimitive) else
                          convert_literal_to_literal_expression(col_expr).to_pure_expression(config))
             rendered_columns.append(f"{escaped_col_name}:{generate_pure_lambda('r', pure_expr)}")
 
@@ -154,7 +154,7 @@ class ExtendFunction(LegacyApiAppliedFunction):
                     f"Error occurred while evaluating. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(result, (int, float, bool, str, LegacyApiPrimitive)):
+            if not isinstance(result, (int, float, bool, str, PyLegendPrimitive)):
                 raise ValueError(
                     f"Extend function at index {index} (0-indexed) incompatible. "
                     f"Returns non-primitive - {str(type(result))}"

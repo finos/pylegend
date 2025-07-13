@@ -41,8 +41,8 @@ from pylegend.extensions.tds.result_handler import (
 )
 from pylegend.core.language import (
     LegacyApiTdsRow,
-    LegacyApiBoolean,
-    LegacyApiPrimitiveOrPythonPrimitive,
+    PyLegendBoolean,
+    PyLegendPrimitiveOrPythonPrimitive,
     LegacyApiAggregateSpecification,
 )
 
@@ -154,7 +154,7 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, metaclass=ABCMeta):
 
     def filter(
             self,
-            filter_function: PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[bool, LegacyApiBoolean]]
+            filter_function: PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
     ) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
@@ -166,7 +166,7 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, metaclass=ABCMeta):
 
     def extend(
             self,
-            functions_list: PyLegendList[PyLegendCallable[[LegacyApiTdsRow], LegacyApiPrimitiveOrPythonPrimitive]],
+            functions_list: PyLegendList[PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]],
             column_names_list: PyLegendList[str]
     ) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
@@ -180,7 +180,7 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, metaclass=ABCMeta):
     def join(
             self,
             other: "LegacyApiTdsFrame",
-            join_condition: PyLegendCallable[[LegacyApiTdsRow, LegacyApiTdsRow], PyLegendUnion[bool, LegacyApiBoolean]],
+            join_condition: PyLegendCallable[[LegacyApiTdsRow, LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]],
             join_type: str = 'LEFT_OUTER'
     ) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
