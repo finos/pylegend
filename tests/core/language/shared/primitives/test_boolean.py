@@ -22,11 +22,11 @@ from pylegend.core.databse.sql_to_string import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import LegacyApiTdsRow, PyLegendPrimitive
+from pylegend.core.language import PyLegendPrimitive
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
+from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
 
 
 class TestPyLegendBoolean:
@@ -34,11 +34,11 @@ class TestPyLegendBoolean:
     frame_to_pure_config = FrameToPureConfig()
     db_extension = SqlToStringDbExtension()
     sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
-    test_frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], [
+    test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
         PrimitiveTdsColumn.boolean_column("col1"),
         PrimitiveTdsColumn.boolean_column("col2")
     ])
-    tds_row = LegacyApiTdsRow.from_tds_frame("t", test_frame)
+    tds_row = TestTdsRow.from_tds_frame("t", test_frame)
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
@@ -116,13 +116,13 @@ class TestPyLegendBoolean:
         assert self.__generate_pure_string(lambda x: True == (x["col2"] & x["col1"])) == \
                '(($t.col2 && $t.col1) == true)'
 
-    def __generate_sql_string(self, f: PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitive]) -> str:
+    def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
             config=self.sql_to_string_config
         )
 
-    def __generate_pure_string(self, f: PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitive]) -> str:
+    def __generate_pure_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
         model_code = """
         function test::testFunc(): Any[*]
