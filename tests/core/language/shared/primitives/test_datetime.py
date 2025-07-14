@@ -20,11 +20,10 @@ from pylegend.core.databse.sql_to_string import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import LegacyApiTdsRow
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
+from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
 
 
 class TestPyLegendDateTime:
@@ -32,11 +31,11 @@ class TestPyLegendDateTime:
     frame_to_pure_config = FrameToPureConfig()
     db_extension = SqlToStringDbExtension()
     sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
-    test_frame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], [
+    test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
         PrimitiveTdsColumn.datetime_column("col1"),
         PrimitiveTdsColumn.datetime_column("col2")
     ])
-    tds_row = LegacyApiTdsRow.from_tds_frame("t", test_frame)
+    tds_row = TestTdsRow.from_tds_frame("t", test_frame)
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
