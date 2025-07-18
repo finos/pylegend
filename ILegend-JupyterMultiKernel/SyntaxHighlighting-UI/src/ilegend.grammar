@@ -1,0 +1,28 @@
+@top Program { Statement* }
+
+Statement {
+  KeywordStmt | NewOneStmt1 | NewOneStmt2 | NewOneStmt3 | NumberStmt | OperatorStmt | IdentifierStmt | ParensStmt
+}
+
+KeywordStmt { Keyword }
+NewOneStmt1 { NewOne1}
+NewOneStmt2 { NewOne2}
+NewOneStmt3 { NewOne3}
+NumberStmt { Number }
+OperatorStmt { Operator }
+IdentifierStmt { Identifier }
+ParensStmt { Parens }
+
+@skip { whitespace }
+
+@tokens {
+  whitespace { "[ \t\r\n]+" }
+  Keyword { "def" | "print"| "filter" | "groupBy" | "select" | "project" | "from" | "rename" | "pivot" | "join" | "extend" | "distinct" | "concatenate"| "asofjoin" | "drop" | "sort" | "size"}
+  NewOne1 { "#" | "load" | "db" | "drop_all_tables" | "get_attributes" | "get_tables" | "show_macros" | "clear_macros" | "macro"}
+  NewOne2 {"local" | "DuckDuckDatabase" | "DuckDuckConnection" | "DuckDuckRuntime"}
+  NewOne3 {"%put" | "in"}
+  Number { "[0-9]+" }
+  Operator { "+" | "-" | "*" | "/" | "=" | "<" | ">" | "!" | "::" | "->" }
+  Identifier { "[a-zA-Z][a-zA-Z0-9]*" }
+  Parens { "(" | ")" }
+}
