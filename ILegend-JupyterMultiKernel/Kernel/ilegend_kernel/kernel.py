@@ -501,6 +501,75 @@ class ILegendRouterKernel(Kernel):
                         'payload': [],
                         'user_expressions': {}
                     }
+
+
+
+
+            elif code.strip().startswith("complete"):
+                from IPython.display import HTML
+                import threading, time
+                from IPython.display import clear_output
+                stop_event = threading.Event()
+                def show_running_time():
+                    start = time.time()
+                    while not stop_event.is_set():
+                        elapsed = time.time() - start
+                        s = HTML(f"<div style='color:  #AAAAAA;font-family:monospace;'>Getting suggestions... {elapsed:.2f} seconds elapsed\n</div>")
+                        self.send_response(self.iopub_socket,
+                            'display_data',
+                            {
+                                'data': {
+                                    'text/html': str(s.data)
+                                },
+                                'metadata': {}
+                            }
+                        )
+                        self.send_response(self.iopub_socket, 'clear_output', {'wait': True})
+                        time.sleep(0.01)
+                    s = HTML(f"<div style='color:  #AAAAAA;font-family:monospace;'>Suggestions fetched in - {elapsed:.2f}s\n</div>")
+                    self.send_response(self.iopub_socket,
+                        'display_data',
+                        {
+                            'data': {
+                                'text/html': str(s.data)
+                            },
+                            'metadata': {}
+                        }
+                    )
+                timer_thread = threading.Thread(target=show_running_time)
+                timer_thread.start()
+                try:
+                    response = requests.post("http://127.0.0.1:9095/api/server/execute", json={"line": magic_line})
+                finally:
+                    stop_event.set()
+                    timer_thread.join()
+                output = response.text
+                if(output.startswith("Invalid")):
+                    s = HTML(f"<div style='color: red;'>Error: {output}</div>")
+                    self.send_response(self.iopub_socket,
+                        'display_data',
+                        {
+                            'data': {
+                                'text/html': str(s.data)
+                            },
+                            'metadata': {}
+                        }
+                    )
+                    return {
+                        'status': 'error',
+                        'execution_count': self.execution_count,
+                        'payload': [],
+                        'user_expressions': {}
+                    }
+                stream_content = {'name': 'stdout', 'text': output}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
+                return {
+                    'status': 'ok',
+                    'execution_count': self.execution_count,
+                    'payload': [],
+                    'user_expressions': {}
+                }
+                               
         
 
                 
@@ -1820,14 +1889,13 @@ class ILegendRouterKernel(Kernel):
         else:
             suggestions = ["load ", "db ", "#>"]
             if code is None or code.strip() == "":
-                start = len(prefix)
                 return {
-                    'matches': suggestions,
-                    'cursor_start': start,
-                    'cursor_end': start,
-                    'metadata': {},
-                    'status': 'ok'
-                }
+                'matches': suggestions,
+                'cursor_start': 0,
+                'cursor_end': 0,
+                'metadata': {},
+                'status': 'ok'
+            }
             prefix = code[:cursor_pos]
             tokens = prefix.strip().split()
             if tokens and tokens[0] == "load" and prefix.rstrip() == "load":
