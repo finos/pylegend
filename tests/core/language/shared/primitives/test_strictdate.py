@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from pylegend.core.databse.sql_to_string import (
+from pylegend.core.database.sql_to_string import (
     SqlToStringFormat,
     SqlToStringConfig,
     SqlToStringDbExtension,

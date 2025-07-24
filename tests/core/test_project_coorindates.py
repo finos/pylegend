@@ -17,7 +17,7 @@ from pylegend.core.project_cooridnates import (
     PersonalWorkspaceProjectCoordinates,
     GroupWorkspaceProjectCoordinates,
 )
-from pylegend.core.databse.sql_to_string import (
+from pylegend.core.database.sql_to_string import (
     SqlToStringDbExtension,
     SqlToStringConfig,
     SqlToStringFormat

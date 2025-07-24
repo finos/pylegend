@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from pylegend._typing import PyLegendSequence
-from pylegend.core.databse.sql_to_string.generator import SqlToStringGenerator
-from pylegend.core.databse.sql_to_string.config import SqlToStringConfig, SqlToStringFormat
-from pylegend.core.databse.sql_to_string.db_extension import SqlToStringDbExtension
+from pylegend.core.database.sql_to_string.generator import SqlToStringGenerator
+from pylegend.core.database.sql_to_string.config import SqlToStringConfig, SqlToStringFormat
+from pylegend.core.database.sql_to_string.db_extension import SqlToStringDbExtension
 
 __all__: PyLegendSequence[str] = [
     "SqlToStringGenerator",

@@ -18,8 +18,8 @@ from pylegend._typing import (
     PyLegendDict
 )
 from pylegend.utils.class_utils import find_sub_classes
-from pylegend.core.databse.sql_to_string.config import SqlToStringConfig
-from pylegend.core.databse.sql_to_string.db_extension import SqlToStringDbExtension
+from pylegend.core.database.sql_to_string.config import SqlToStringConfig
+from pylegend.core.database.sql_to_string.db_extension import SqlToStringDbExtension
 from pylegend.core.sql.metamodel import QuerySpecification
 
 __all__: PyLegendSequence[str] = [

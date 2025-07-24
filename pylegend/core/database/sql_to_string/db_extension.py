@@ -18,7 +18,7 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
 )
-from pylegend.core.databse.sql_to_string.config import SqlToStringConfig
+from pylegend.core.database.sql_to_string.config import SqlToStringConfig
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     Select,
