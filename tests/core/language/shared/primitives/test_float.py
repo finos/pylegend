@@ -15,7 +15,7 @@
 import pytest
 import typing
 from pylegend._typing import PyLegendCallable
-from pylegend.core.databse.sql_to_string import (
+from pylegend.core.database.sql_to_string import (
     SqlToStringFormat,
     SqlToStringConfig,
     SqlToStringDbExtension,

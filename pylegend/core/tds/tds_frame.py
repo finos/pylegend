@@ -21,7 +21,7 @@ from pylegend._typing import (
     PyLegendOptional,
 )
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.databse.sql_to_string import SqlToStringGenerator
+from pylegend.core.database.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig
 

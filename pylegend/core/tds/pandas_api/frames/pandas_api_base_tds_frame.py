@@ -24,7 +24,7 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.databse.sql_to_string import (
+from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )

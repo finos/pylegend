@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pylegend.core.databse.sql_to_string import (
+from pylegend.core.database.sql_to_string import (
     SqlToStringGenerator,
     SqlToStringDbExtension,
 )

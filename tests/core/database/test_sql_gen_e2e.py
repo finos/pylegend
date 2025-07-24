@@ -16,7 +16,7 @@
 # type: ignore
 from abc import ABCMeta, abstractmethod
 import pytest
-from pylegend.core.databse.sql_to_string import SqlToStringFormat, SqlToStringConfig
+from pylegend.core.database.sql_to_string import SqlToStringFormat, SqlToStringConfig
 from pylegend.core.sql.metamodel import (
     IntegerLiteral,
     LongLiteral,
