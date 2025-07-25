@@ -20,6 +20,7 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame i
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
+    LongLiteral,
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -28,19 +29,23 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import Legacy
 
 
 __all__: PyLegendSequence[str] = [
-    "DistinctFunction"
+    "LegacyApiSliceFunction"
 ]
 
 
-class DistinctFunction(LegacyApiAppliedFunction):
+class LegacyApiSliceFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
+    __start_row: int
+    __end_row: int
 
     @classmethod
     def name(cls) -> str:
-        return "distinct"
+        return "slice"
 
-    def __init__(self, base_frame: LegacyApiBaseTdsFrame) -> None:
+    def __init__(self, base_frame: LegacyApiBaseTdsFrame, start_row: int, end_row: int) -> None:
         self.__base_frame = base_frame
+        self.__start_row = start_row
+        self.__end_row = end_row
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
@@ -49,12 +54,13 @@ class DistinctFunction(LegacyApiAppliedFunction):
             create_sub_query(base_query, config, "root") if should_create_sub_query else
             copy_query(base_query)
         )
-        new_query.select.distinct = True
+        new_query.offset = LongLiteral(self.__start_row)
+        new_query.limit = LongLiteral(self.__end_row - self.__start_row)
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                f"->distinct()")
+                f"->slice({self.__start_row}, {self.__end_row})")
 
     def base_frame(self) -> LegacyApiBaseTdsFrame:
         return self.__base_frame
@@ -66,4 +72,11 @@ class DistinctFunction(LegacyApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
+        if self.__start_row < 0:
+            raise ValueError(
+                "Start row argument of slice function cannot be negative. Start row: " + str(self.__start_row)
+            )
+        if self.__end_row <= self.__start_row:
+            raise ValueError("End row argument of slice function cannot be less than or equal to start row argument. "
+                             f"Start row: {self.__start_row}, End row: {self.__end_row}")
         return True

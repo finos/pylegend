@@ -36,11 +36,11 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import Legacy
 
 
 __all__: PyLegendSequence[str] = [
-    "ConcatenateFunction"
+    "LegacyApiConcatenateFunction"
 ]
 
 
-class ConcatenateFunction(LegacyApiAppliedFunction):
+class LegacyApiConcatenateFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __other_frame: LegacyApiBaseTdsFrame
 

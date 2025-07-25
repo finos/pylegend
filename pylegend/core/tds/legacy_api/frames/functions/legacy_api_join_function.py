@@ -50,11 +50,11 @@ from pylegend.core.language.shared.helpers import generate_pure_lambda
 
 
 __all__: PyLegendSequence[str] = [
-    "JoinFunction"
+    "LegacyApiJoinFunction"
 ]
 
 
-class JoinFunction(LegacyApiAppliedFunction):
+class LegacyApiJoinFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __other_frame: LegacyApiBaseTdsFrame
     __join_condition: PyLegendCallable[[LegacyApiTdsRow, LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]

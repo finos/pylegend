@@ -47,11 +47,11 @@ from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_c
 
 
 __all__: PyLegendSequence[str] = [
-    "JoinByColumnsFunction"
+    "LegacyApiJoinByColumnsFunction"
 ]
 
 
-class JoinByColumnsFunction(LegacyApiAppliedFunction):
+class LegacyApiJoinByColumnsFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __other_frame: LegacyApiBaseTdsFrame
     __column_names_self: PyLegendList[str]

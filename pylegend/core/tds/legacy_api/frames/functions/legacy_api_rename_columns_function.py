@@ -31,11 +31,11 @@ from pylegend.core.language.shared.helpers import escape_column_name
 
 
 __all__: PyLegendSequence[str] = [
-    "RenameColumnsFunction"
+    "LegacyApiRenameColumnsFunction"
 ]
 
 
-class RenameColumnsFunction(LegacyApiAppliedFunction):
+class LegacyApiRenameColumnsFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __column_names: PyLegendList[str]
     __renamed_column_names: PyLegendList[str]

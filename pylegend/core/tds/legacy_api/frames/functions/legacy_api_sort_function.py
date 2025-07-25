@@ -35,11 +35,11 @@ from pylegend.core.language.shared.helpers import escape_column_name
 
 
 __all__: PyLegendSequence[str] = [
-    "SortFunction"
+    "LegacyApiSortFunction"
 ]
 
 
-class SortFunction(LegacyApiAppliedFunction):
+class LegacyApiSortFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __column_name_list: PyLegendList[str]
     __directions: PyLegendOptional[PyLegendList[str]]
