@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABCMeta, abstractmethod
-import pandas as pd
+from abc import ABCMeta
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -22,29 +22,15 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.database.sql_to_string import (
-    SqlToStringConfig,
-    SqlToStringFormat
-)
-from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
-from pylegend.core.tds.result_handler import (
-    ResultHandler,
-    ToStringResultHandler,
-)
-from pylegend.extensions.tds.result_handler import (
-    ToPandasDfResultHandler,
-    PandasDfReadConfig,
-)
 from pylegend.core.language import (
     LegacyApiTdsRow,
     PyLegendBoolean,
     PyLegendPrimitiveOrPythonPrimitive,
     LegacyApiAggregateSpecification,
 )
+from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
+from pylegend.core.tds.tds_column import TdsColumn
 
 __all__: PyLegendSequence[str] = [
     "LegacyApiBaseTdsFrame"
@@ -53,18 +39,10 @@ __all__: PyLegendSequence[str] = [
 R = PyLegendTypeVar('R')
 
 
-class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, metaclass=ABCMeta):
-    __columns: PyLegendSequence[TdsColumn]
+class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
-        col_names = [c.get_name() for c in columns]
-        if len(col_names) != len(set(col_names)):
-            cols = "[" + ", ".join([str(c) for c in columns]) + "]"
-            raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
-        self.__columns = [c.copy() for c in columns]
-
-    def columns(self) -> PyLegendSequence[TdsColumn]:
-        return [c.copy() for c in self.__columns]
+        BaseTdsFrame.__init__(self, columns=columns)
 
     def head(self, row_count: int = 5) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
@@ -223,80 +201,4 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, metaclass=ABCMeta):
         )
         return LegacyApiAppliedFunctionTdsFrame(
             GroupByFunction(self, grouping_columns, aggregations)
-        )
-
-    @abstractmethod
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def get_all_tds_frames(self) -> PyLegendList["LegacyApiBaseTdsFrame"]:
-        pass  # pragma: no cover
-
-    def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        query = self.to_sql_query_object(config)
-        sql_to_string_config = SqlToStringConfig(
-            format_=SqlToStringFormat(
-                pretty=config.pretty
-            )
-        )
-        return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
-
-    @abstractmethod
-    def to_pure(self, config: FrameToPureConfig) -> str:
-        pass  # pragma: no cover
-
-    def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
-        return self.to_pure(config)
-
-    def execute_frame(
-            self,
-            result_handler: ResultHandler[R],
-            chunk_size: PyLegendOptional[int] = None
-    ) -> R:
-        from pylegend.core.tds.legacy_api.frames.legacy_api_input_tds_frame import (
-            LegacyApiInputTdsFrame,
-            LegacyApiExecutableInputTdsFrame
-        )
-
-        tds_frames = self.get_all_tds_frames()
-        input_frames = [x for x in tds_frames if isinstance(x, LegacyApiInputTdsFrame)]
-
-        non_exec_frames = [x for x in input_frames if not isinstance(x, LegacyApiExecutableInputTdsFrame)]
-        if non_exec_frames:
-            raise ValueError(
-                "Cannot execute frame as its built on top of non-executable input frames: [" +
-                (", ".join([str(f) for f in non_exec_frames]) + "]")
-            )
-
-        exec_frames = [x for x in input_frames if isinstance(x, LegacyApiExecutableInputTdsFrame)]
-
-        all_legend_clients = []
-        for e in exec_frames:
-            c = e.get_legend_client()
-            if c not in all_legend_clients:
-                all_legend_clients.append(c)
-        if len(all_legend_clients) > 1:
-            raise ValueError(
-                "Found tds frames with multiple legend_clients (which is not supported): [" +
-                (", ".join([str(f) for f in all_legend_clients]) + "]")
-            )
-        legend_client = all_legend_clients[0]
-        result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
-        return result_handler.handle_result(self, result)
-
-    def execute_frame_to_string(
-            self,
-            chunk_size: PyLegendOptional[int] = None
-    ) -> str:
-        return self.execute_frame(ToStringResultHandler(), chunk_size)
-
-    def execute_frame_to_pandas_df(
-            self,
-            chunk_size: PyLegendOptional[int] = None,
-            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
-    ) -> pd.DataFrame:
-        return self.execute_frame(
-            ToPandasDfResultHandler(pandas_df_read_config),
-            chunk_size
         )

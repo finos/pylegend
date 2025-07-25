@@ -15,12 +15,8 @@
 from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendList,
 )
-from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.abstract.frames.applied_function_tds_frame import AppliedFunction, AppliedFunctionTdsFrame
 from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
 
 
@@ -30,53 +26,12 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class LegacyApiAppliedFunction(metaclass=ABCMeta):
-    @classmethod
+class LegacyApiAppliedFunction(AppliedFunction, metaclass=ABCMeta):
     @abstractmethod
-    def name(cls) -> str:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass  # pragma: no cover
-
-    def to_pure(self, config: FrameToPureConfig) -> str:
-        raise RuntimeError("PURE generation not supported for '" + self.name() + "' function")
-
-    @abstractmethod
-    def base_frame(self) -> LegacyApiBaseTdsFrame:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def tds_frame_parameters(self) -> PyLegendList["LegacyApiBaseTdsFrame"]:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def validate(self) -> bool:
+    def tds_frame_parameters(self) -> PyLegendSequence["LegacyApiBaseTdsFrame"]:
         pass  # pragma: no cover
 
 
-class LegacyApiAppliedFunctionTdsFrame(LegacyApiBaseTdsFrame):
-    __applied_function: LegacyApiAppliedFunction
-
+class LegacyApiAppliedFunctionTdsFrame(LegacyApiBaseTdsFrame, AppliedFunctionTdsFrame):
     def __init__(self, applied_function: LegacyApiAppliedFunction):
-        applied_function.validate()
-        super().__init__(columns=applied_function.calculate_columns())
-        self.__applied_function = applied_function
-
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self.__applied_function.to_sql(config)
-
-    def to_pure(self, config: FrameToPureConfig) -> str:
-        return self.__applied_function.to_pure(config)
-
-    def get_all_tds_frames(self) -> PyLegendList["LegacyApiBaseTdsFrame"]:
-        return [
-            y
-            for x in [self.__applied_function.base_frame()] + self.__applied_function.tds_frame_parameters()
-            for y in x.get_all_tds_frames()
-        ] + [self]
+        AppliedFunctionTdsFrame.__init__(self, applied_function)
