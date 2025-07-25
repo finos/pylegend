@@ -15,7 +15,11 @@
 from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendList
+)
+from pylegend.core.tds.abstract.frames.input_tds_frame import (
+    InputTdsFrame,
+    ExecutableInputTdsFrame,
+    NonExecutableInputTdsFrame,
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
@@ -29,27 +33,19 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class LegacyApiInputTdsFrame(LegacyApiBaseTdsFrame, metaclass=ABCMeta):
-
+class LegacyApiInputTdsFrame(LegacyApiBaseTdsFrame, InputTdsFrame, metaclass=ABCMeta):
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
-        super().__init__(columns=columns)
-
-    def get_all_tds_frames(self) -> PyLegendList["LegacyApiBaseTdsFrame"]:
-        return [self]
+        LegacyApiBaseTdsFrame.__init__(self, columns=columns)
+        InputTdsFrame.__init__(self, columns=columns)
 
 
-class LegacyApiExecutableInputTdsFrame(LegacyApiInputTdsFrame, metaclass=ABCMeta):
-    __legend_client: LegendClient
-
+class LegacyApiExecutableInputTdsFrame(LegacyApiInputTdsFrame, ExecutableInputTdsFrame, metaclass=ABCMeta):
     def __init__(self, legend_client: LegendClient, columns: PyLegendSequence[TdsColumn]) -> None:
-        super().__init__(columns=columns)
-        self.__legend_client = legend_client
-
-    def get_legend_client(self) -> LegendClient:
-        return self.__legend_client
+        LegacyApiInputTdsFrame.__init__(self, columns=columns)
+        ExecutableInputTdsFrame.__init__(self, legend_client=legend_client, columns=columns)
 
 
-class LegacyApiNonExecutableInputTdsFrame(LegacyApiInputTdsFrame, metaclass=ABCMeta):
-
+class LegacyApiNonExecutableInputTdsFrame(LegacyApiInputTdsFrame, NonExecutableInputTdsFrame, metaclass=ABCMeta):
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
-        super().__init__(columns=columns)
+        LegacyApiInputTdsFrame.__init__(self, columns=columns)
+        NonExecutableInputTdsFrame.__init__(self, columns=columns)
