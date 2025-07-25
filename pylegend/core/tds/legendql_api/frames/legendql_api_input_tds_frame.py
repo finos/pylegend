@@ -14,13 +14,16 @@
 
 from abc import ABCMeta
 from pylegend._typing import (
-    PyLegendSequence,
-    PyLegendList
+    PyLegendSequence
 )
-from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.request.legend_client import LegendClient
-
+from pylegend.core.tds.abstract.frames.input_tds_frame import (
+    InputTdsFrame,
+    ExecutableInputTdsFrame,
+    NonExecutableInputTdsFrame,
+)
+from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
+from pylegend.core.tds.tds_column import TdsColumn
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiExecutableInputTdsFrame",
@@ -29,27 +32,19 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class LegendQLApiInputTdsFrame(LegendQLApiBaseTdsFrame, metaclass=ABCMeta):
-
+class LegendQLApiInputTdsFrame(LegendQLApiBaseTdsFrame, InputTdsFrame, metaclass=ABCMeta):
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
-        super().__init__(columns=columns)
-
-    def get_all_tds_frames(self) -> PyLegendList["LegendQLApiBaseTdsFrame"]:
-        return [self]
+        LegendQLApiBaseTdsFrame.__init__(self, columns=columns)
+        InputTdsFrame.__init__(self, columns=columns)
 
 
-class LegendQLApiExecutableInputTdsFrame(LegendQLApiInputTdsFrame, metaclass=ABCMeta):
-    __legend_client: LegendClient
-
+class LegendQLApiExecutableInputTdsFrame(LegendQLApiInputTdsFrame, ExecutableInputTdsFrame, metaclass=ABCMeta):
     def __init__(self, legend_client: LegendClient, columns: PyLegendSequence[TdsColumn]) -> None:
-        super().__init__(columns=columns)
-        self.__legend_client = legend_client
-
-    def get_legend_client(self) -> LegendClient:
-        return self.__legend_client
+        LegendQLApiInputTdsFrame.__init__(self, columns=columns)
+        ExecutableInputTdsFrame.__init__(self, legend_client=legend_client, columns=columns)
 
 
-class LegendQLApiNonExecutableInputTdsFrame(LegendQLApiInputTdsFrame, metaclass=ABCMeta):
-
+class LegendQLApiNonExecutableInputTdsFrame(LegendQLApiInputTdsFrame, NonExecutableInputTdsFrame, metaclass=ABCMeta):
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
-        super().__init__(columns=columns)
+        LegendQLApiInputTdsFrame.__init__(self, columns=columns)
+        NonExecutableInputTdsFrame.__init__(self, columns=columns)
