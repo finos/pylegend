@@ -35,14 +35,14 @@ from pylegend.core.language import (
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
-from pylegend.core.tds.legacy_api.frames.functions.function_helpers import tds_column_for_primitive
+from pylegend.core.tds.legacy_api.frames.functions.legacy_api_function_helpers import tds_column_for_primitive
 
 __all__: PyLegendSequence[str] = [
-    "ExtendFunction"
+    "LegacyApiExtendFunction"
 ]
 
 
-class ExtendFunction(LegacyApiAppliedFunction):
+class LegacyApiExtendFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __functions_list: PyLegendList[PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]]
     __column_names_list: PyLegendList[str]

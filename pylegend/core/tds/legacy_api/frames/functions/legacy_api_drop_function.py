@@ -14,7 +14,7 @@
 
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence,
+    PyLegendSequence
 )
 from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import LegacyApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -29,17 +29,17 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import Legacy
 
 
 __all__: PyLegendSequence[str] = [
-    "HeadFunction"
+    "LegacyApiDropFunction"
 ]
 
 
-class HeadFunction(LegacyApiAppliedFunction):
+class LegacyApiDropFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __row_count: int
 
     @classmethod
     def name(cls) -> str:
-        return "head"
+        return "drop"
 
     def __init__(self, base_frame: LegacyApiBaseTdsFrame, row_count: int) -> None:
         self.__base_frame = base_frame
@@ -47,17 +47,17 @@ class HeadFunction(LegacyApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = (base_query.limit is not None)
+        should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
         new_query = (
             create_sub_query(base_query, config, "root") if should_create_sub_query else
             copy_query(base_query)
         )
-        new_query.limit = LongLiteral(value=self.__row_count)
+        new_query.offset = LongLiteral(value=self.__row_count)
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                f"->limit({self.__row_count})")
+                f"->drop({self.__row_count})")
 
     def base_frame(self) -> LegacyApiBaseTdsFrame:
         return self.__base_frame
@@ -70,5 +70,5 @@ class HeadFunction(LegacyApiAppliedFunction):
 
     def validate(self) -> bool:
         if self.__row_count < 0:
-            raise ValueError("Row count argument of head/take/limit function cannot be negative")
+            raise ValueError("Row count argument of drop function cannot be negative")
         return True

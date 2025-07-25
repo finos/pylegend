@@ -48,10 +48,10 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.head_function import (
-            HeadFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_head_function import (
+            LegacyApiHeadFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(HeadFunction(self, row_count))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiHeadFunction(self, row_count))
 
     def take(self, row_count: int = 5) -> "LegacyApiTdsFrame":
         return self.head(row_count=row_count)
@@ -63,37 +63,37 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.drop_function import (
-            DropFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_drop_function import (
+            LegacyApiDropFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(DropFunction(self, row_count))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiDropFunction(self, row_count))
 
     def slice(self, start_row: int, end_row_exclusive: int) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.slice_function import (
-            SliceFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_slice_function import (
+            LegacyApiSliceFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(SliceFunction(self, start_row, end_row_exclusive))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiSliceFunction(self, start_row, end_row_exclusive))
 
     def distinct(self) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.distinct_function import (
-            DistinctFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_distinct_function import (
+            LegacyApiDistinctFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(DistinctFunction(self))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiDistinctFunction(self))
 
     def restrict(self, column_name_list: PyLegendList[str]) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.restrict_function import (
-            RestrictFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_restrict_function import (
+            LegacyApiRestrictFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(RestrictFunction(self, column_name_list))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiRestrictFunction(self, column_name_list))
 
     def sort(
             self,
@@ -103,19 +103,19 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.sort_function import (
-            SortFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_sort_function import (
+            LegacyApiSortFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(SortFunction(self, column_name_list, direction_list))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiSortFunction(self, column_name_list, direction_list))
 
     def concatenate(self, other: "LegacyApiTdsFrame") -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.concatenate_function import (
-            ConcatenateFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_concatenate_function import (
+            LegacyApiConcatenateFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(ConcatenateFunction(self, other))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiConcatenateFunction(self, other))
 
     def rename_columns(
             self,
@@ -125,10 +125,10 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.rename_columns_function import (
-            RenameColumnsFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_rename_columns_function import (
+            LegacyApiRenameColumnsFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(RenameColumnsFunction(self, column_names, renamed_column_names))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiRenameColumnsFunction(self, column_names, renamed_column_names))
 
     def filter(
             self,
@@ -137,10 +137,10 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.filter_function import (
-            FilterFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_filter_function import (
+            LegacyApiFilterFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(FilterFunction(self, filter_function))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiFilterFunction(self, filter_function))
 
     def extend(
             self,
@@ -150,10 +150,10 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.extend_function import (
-            ExtendFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_extend_function import (
+            LegacyApiExtendFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(ExtendFunction(self, functions_list, column_names_list))
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiExtendFunction(self, functions_list, column_names_list))
 
     def join(
             self,
@@ -164,11 +164,11 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.join_function import (
-            JoinFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_join_function import (
+            LegacyApiJoinFunction
         )
         return LegacyApiAppliedFunctionTdsFrame(
-            JoinFunction(self, other, join_condition, join_type)
+            LegacyApiJoinFunction(self, other, join_condition, join_type)
         )
 
     def join_by_columns(
@@ -181,11 +181,11 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.join_by_columns_function import (
-            JoinByColumnsFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_join_by_columns_function import (
+            LegacyApiJoinByColumnsFunction
         )
         return LegacyApiAppliedFunctionTdsFrame(
-            JoinByColumnsFunction(self, other, self_columns, other_columns, join_type)
+            LegacyApiJoinByColumnsFunction(self, other, self_columns, other_columns, join_type)
         )
 
     def group_by(
@@ -196,9 +196,9 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legacy_api.frames.functions.group_by_function import (
-            GroupByFunction
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_group_by_function import (
+            LegacyApiGroupByFunction
         )
         return LegacyApiAppliedFunctionTdsFrame(
-            GroupByFunction(self, grouping_columns, aggregations)
+            LegacyApiGroupByFunction(self, grouping_columns, aggregations)
         )

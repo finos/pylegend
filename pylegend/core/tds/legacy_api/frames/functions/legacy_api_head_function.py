@@ -14,7 +14,7 @@
 
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence
+    PyLegendSequence,
 )
 from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import LegacyApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -29,38 +29,35 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import Legacy
 
 
 __all__: PyLegendSequence[str] = [
-    "SliceFunction"
+    "LegacyApiHeadFunction"
 ]
 
 
-class SliceFunction(LegacyApiAppliedFunction):
+class LegacyApiHeadFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
-    __start_row: int
-    __end_row: int
+    __row_count: int
 
     @classmethod
     def name(cls) -> str:
-        return "slice"
+        return "head"
 
-    def __init__(self, base_frame: LegacyApiBaseTdsFrame, start_row: int, end_row: int) -> None:
+    def __init__(self, base_frame: LegacyApiBaseTdsFrame, row_count: int) -> None:
         self.__base_frame = base_frame
-        self.__start_row = start_row
-        self.__end_row = end_row
+        self.__row_count = row_count
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
+        should_create_sub_query = (base_query.limit is not None)
         new_query = (
             create_sub_query(base_query, config, "root") if should_create_sub_query else
             copy_query(base_query)
         )
-        new_query.offset = LongLiteral(self.__start_row)
-        new_query.limit = LongLiteral(self.__end_row - self.__start_row)
+        new_query.limit = LongLiteral(value=self.__row_count)
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                f"->slice({self.__start_row}, {self.__end_row})")
+                f"->limit({self.__row_count})")
 
     def base_frame(self) -> LegacyApiBaseTdsFrame:
         return self.__base_frame
@@ -72,11 +69,6 @@ class SliceFunction(LegacyApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
-        if self.__start_row < 0:
-            raise ValueError(
-                "Start row argument of slice function cannot be negative. Start row: " + str(self.__start_row)
-            )
-        if self.__end_row <= self.__start_row:
-            raise ValueError("End row argument of slice function cannot be less than or equal to start row argument. "
-                             f"Start row: {self.__start_row}, End row: {self.__end_row}")
+        if self.__row_count < 0:
+            raise ValueError("Row count argument of head/take/limit function cannot be negative")
         return True

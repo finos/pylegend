@@ -32,11 +32,11 @@ from pylegend.core.language.shared.helpers import escape_column_name
 
 
 __all__: PyLegendSequence[str] = [
-    "RestrictFunction"
+    "LegacyApiRestrictFunction"
 ]
 
 
-class RestrictFunction(LegacyApiAppliedFunction):
+class LegacyApiRestrictFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __column_name_list: PyLegendList[str]
 

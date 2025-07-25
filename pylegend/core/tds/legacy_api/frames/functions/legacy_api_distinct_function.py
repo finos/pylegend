@@ -20,7 +20,6 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame i
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    LongLiteral,
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -29,21 +28,19 @@ from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import Legacy
 
 
 __all__: PyLegendSequence[str] = [
-    "DropFunction"
+    "LegacyApiDistinctFunction"
 ]
 
 
-class DropFunction(LegacyApiAppliedFunction):
+class LegacyApiDistinctFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
-    __row_count: int
 
     @classmethod
     def name(cls) -> str:
-        return "drop"
+        return "distinct"
 
-    def __init__(self, base_frame: LegacyApiBaseTdsFrame, row_count: int) -> None:
+    def __init__(self, base_frame: LegacyApiBaseTdsFrame) -> None:
         self.__base_frame = base_frame
-        self.__row_count = row_count
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
@@ -52,12 +49,12 @@ class DropFunction(LegacyApiAppliedFunction):
             create_sub_query(base_query, config, "root") if should_create_sub_query else
             copy_query(base_query)
         )
-        new_query.offset = LongLiteral(value=self.__row_count)
+        new_query.select.distinct = True
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                f"->drop({self.__row_count})")
+                f"->distinct()")
 
     def base_frame(self) -> LegacyApiBaseTdsFrame:
         return self.__base_frame
@@ -69,6 +66,4 @@ class DropFunction(LegacyApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
-        if self.__row_count < 0:
-            raise ValueError("Row count argument of drop function cannot be negative")
         return True

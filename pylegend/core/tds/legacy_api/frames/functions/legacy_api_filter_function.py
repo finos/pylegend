@@ -39,11 +39,11 @@ from pylegend.core.language import (
 from pylegend.core.language.shared.helpers import generate_pure_lambda
 
 __all__: PyLegendSequence[str] = [
-    "FilterFunction"
+    "LegacyApiFilterFunction"
 ]
 
 
-class FilterFunction(LegacyApiAppliedFunction):
+class LegacyApiFilterFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __filter_function: PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
 

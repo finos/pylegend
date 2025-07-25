@@ -36,15 +36,15 @@ from pylegend.core.language import (
     create_primitive_collection,
     convert_literal_to_literal_expression,
 )
-from pylegend.core.tds.legacy_api.frames.functions.function_helpers import tds_column_for_primitive
+from pylegend.core.tds.legacy_api.frames.functions.legacy_api_function_helpers import tds_column_for_primitive
 
 
 __all__: PyLegendSequence[str] = [
-    "GroupByFunction"
+    "LegacyApiGroupByFunction"
 ]
 
 
-class GroupByFunction(LegacyApiAppliedFunction):
+class LegacyApiGroupByFunction(LegacyApiAppliedFunction):
     __base_frame: LegacyApiBaseTdsFrame
     __grouping_columns: PyLegendList[str]
     __aggregations: PyLegendList[LegacyApiAggregateSpecification]
