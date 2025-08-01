@@ -19,7 +19,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -79,7 +79,7 @@ class TestTakeAppliedFunction:
         assert v.value.args[0] == "Row count argument of head/take/limit function cannot be negative"
 
     def test_e2e_take_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.take(3)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -89,7 +89,7 @@ class TestTakeAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_take_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.take(3)
         frame = frame.take(10)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

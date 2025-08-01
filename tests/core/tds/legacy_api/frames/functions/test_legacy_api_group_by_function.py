@@ -20,14 +20,17 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame, simple_trade_service_frame
+from tests.test_helpers.test_legend_service_frames import (
+    simple_person_service_frame_legacy_api,
+    simple_trade_service_frame_legacy_api,
+)
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.language import LegacyApiAggregateSpecification
 from pylegend.core.request.legend_client import LegendClient
-from tests.core.tds.legacy_api import generate_pure_query_and_compile
+from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestGroupByAppliedFunction:
@@ -1271,7 +1274,7 @@ class TestGroupByAppliedFunction:
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
 
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
@@ -1289,7 +1292,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_with_limit(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.take(5)
         frame = frame.group_by(
             ["Firm/Legal Name"],
@@ -1306,7 +1309,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_on_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             [],
             [
@@ -1321,7 +1324,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_multi_grouping_cols(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Firm/Legal Name", "First Name"],
             [
@@ -1343,7 +1346,7 @@ class TestGroupByAppliedFunction:
 
     @pytest.mark.skip(reason="Legend server doesn't execute this SQL as group by clause has derivation")
     def test_e2e_group_by_on_extended_col(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.extend([lambda x: x['Last Name'] + '_Gen'], ["Last Name Gen"])  # type: ignore
         frame = frame.group_by(
             ["Firm/Legal Name", "Last Name Gen"],
@@ -1363,7 +1366,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_multi_aggregations(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
@@ -1383,7 +1386,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_distinct_count_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.take(5)
         frame = frame.group_by(
             ["Firm/Legal Name"],
@@ -1400,7 +1403,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_average_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1422,7 +1425,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_average_agg_pre_op(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1445,7 +1448,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_average_agg_post_op(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1467,7 +1470,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_integer_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1489,7 +1492,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_integer_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1511,7 +1514,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_integer_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1533,7 +1536,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_float_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1555,7 +1558,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_float_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1577,7 +1580,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_float_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1599,7 +1602,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_number_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1621,7 +1624,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_number_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1643,7 +1646,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_number_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1666,7 +1669,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_std_dev_sample_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1689,7 +1692,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_std_dev_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1712,7 +1715,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_std_dev_population_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1735,7 +1738,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_variance_sample_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1758,7 +1761,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_variance_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1781,7 +1784,7 @@ class TestGroupByAppliedFunction:
 
     def test_e2e_group_by_variance_population_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1803,7 +1806,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_string_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
@@ -1825,7 +1828,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_string_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
@@ -1847,7 +1850,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_join_strings_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
@@ -1869,7 +1872,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_strictdate_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1891,7 +1894,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_strictdate_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1913,7 +1916,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_date_max_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1935,7 +1938,7 @@ class TestGroupByAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_date_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_trade_service_frame(legend_test_server['engine_port'])
+        frame: LegacyApiTdsFrame = simple_trade_service_frame_legacy_api(legend_test_server['engine_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [

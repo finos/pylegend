@@ -15,9 +15,9 @@
 import pathlib
 import pandas as pd
 from tests.test_helpers.test_legend_service_frames import (
-    simple_person_service_frame,
-    simple_trade_service_frame,
-    simple_product_service_frame,
+    simple_person_service_frame_legacy_api,
+    simple_trade_service_frame_legacy_api,
+    simple_product_service_frame_legacy_api,
 )
 from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import PandasDfReadConfig
 from pylegend._typing import (
@@ -33,7 +33,7 @@ class TestToPandasDfResultHandler:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
             tmp_path: pathlib.Path
     ) -> None:
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         df = frame.execute_frame_to_pandas_df()
 
         expected = pd.DataFrame(
@@ -59,7 +59,7 @@ class TestToPandasDfResultHandler:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
             tmp_path: pathlib.Path
     ) -> None:
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         df = frame.execute_frame_to_pandas_df(pandas_df_read_config=PandasDfReadConfig(rows_per_batch=1))
 
         expected = pd.DataFrame(
@@ -85,7 +85,7 @@ class TestToPandasDfResultHandler:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
             tmp_path: pathlib.Path
     ) -> None:
-        frame = simple_trade_service_frame(legend_test_server["engine_port"])
+        frame = simple_trade_service_frame_legacy_api(legend_test_server["engine_port"])
         df = frame.take(4).execute_frame_to_pandas_df()
 
         expected = pd.DataFrame(
@@ -136,7 +136,7 @@ class TestToPandasDfResultHandler:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]],
             tmp_path: pathlib.Path
     ) -> None:
-        frame = simple_product_service_frame(legend_test_server["engine_port"])
+        frame = simple_product_service_frame_legacy_api(legend_test_server["engine_port"])
         df = frame.execute_frame_to_pandas_df(pandas_df_read_config=PandasDfReadConfig(rows_per_batch=1))
 
         expected = pd.DataFrame(

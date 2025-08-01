@@ -15,7 +15,7 @@
 import json
 import pathlib
 from pylegend.core.tds.result_handler import ToJsonFileResultHandler
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -30,7 +30,7 @@ class TestToJsonFileResultHandler:
             tmp_path: pathlib.Path
     ) -> None:
         file = str(tmp_path / "result.json")
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame.execute_frame(ToJsonFileResultHandler(file))
 
         with open(file, "r") as r:

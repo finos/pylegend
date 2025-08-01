@@ -19,7 +19,7 @@ from pylegend._typing import (
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 
 
 class TestColumnsApi:
@@ -35,7 +35,7 @@ class TestColumnsApi:
 
     def test_columns_api_legend_service_frame(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
             -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         assert "[" + ", ".join(str(s) for s in frame.columns()) + "]" == \
                "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), " \
                "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String)]"

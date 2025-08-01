@@ -1,4 +1,4 @@
-# Copyright 2023 Goldman Sachs
+# Copyright 2025 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
-from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
+from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
+from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -29,19 +29,19 @@ from pylegend.core.request.legend_client import LegendClient
 from tests.test_helpers import generate_pure_query_and_compile
 
 
-class TestRestrictAppliedFunction:
+class TestSelectAppliedFunction:
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_query_gen_restrict_function(self) -> None:
+    def test_query_gen_select_function(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.restrict(["col1"])
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.select(lambda r: r.col1)
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
         expected = '''\
             SELECT
@@ -58,13 +58,13 @@ class TestRestrictAppliedFunction:
                ('#Table(test_schema.test_table)#->select(~[col1])')
 
     @pytest.mark.skip(reason="Quoted select col spec not supported by server")
-    def test_query_gen_restrict_function_with_col_name_with_spaces(self) -> None:
+    def test_query_gen_select_function_with_col_name_with_spaces(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1 with spaces"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.restrict(['col1 with spaces'])
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.select(lambda r: ['col1 with spaces'])
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -73,13 +73,13 @@ class TestRestrictAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[\'col1 with spaces\'])')
 
-    def test_query_gen_restrict_function_column_order(self) -> None:
+    def test_query_gen_select_function_column_order(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.restrict(["col2", "col1"])
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.select(lambda r: [r.col2, r.col1])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: col1, Type: Integer)]"
         expected = '''\
@@ -97,25 +97,25 @@ class TestRestrictAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[col2, col1])')
 
-    def test_restrict_error_on_unknown_col(self) -> None:
+    def test_select_error_on_unknown_col(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
-            frame.restrict(["unknown_col"])
-        assert r.value.args[0] == "Column - 'unknown_col' in restrict columns list doesn't exist in the current frame."\
+            frame.select(lambda r: 'unknown_col')
+        assert r.value.args[0] == "Column - 'unknown_col' in select columns list doesn't exist in the current frame."\
                                   " Current frame columns: ['col1', 'col2']"
 
-    def test_query_gen_restrict_function_after_distinct_creates_subquery(self) -> None:
+    def test_query_gen_select_function_after_distinct_creates_subquery(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.distinct()
-        frame = frame.restrict(["col1"])
+        frame = frame.select(lambda r: r.col1)
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
         expected = '''\
             SELECT
@@ -138,10 +138,10 @@ class TestRestrictAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->distinct()->select(~[col1])')
 
-    def test_e2e_restrict_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
-        frame = frame.take(5)
-        frame = frame.restrict(["First Name", "Firm/Legal Name"])
+    def test_e2e_select_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.head(5)
+        frame = frame.select(lambda r: ["First Name", "Firm/Legal Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Firm/Legal Name, Type: String)]"
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
@@ -153,11 +153,11 @@ class TestRestrictAppliedFunction:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    def test_e2e_restrict_function_column_order(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
+    def test_e2e_select_function_column_order(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
-        frame = frame.take(5)
-        frame = frame.restrict(["Firm/Legal Name", "First Name"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.head(5)
+        frame = frame.select(lambda r: ["Firm/Legal Name", "First Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: Firm/Legal Name, Type: String), TdsColumn(Name: First Name, Type: String)]"
         expected = {'columns': ['Firm/Legal Name', 'First Name'],

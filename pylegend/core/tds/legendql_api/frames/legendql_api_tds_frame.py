@@ -12,12 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
+
+from pylegend.core.language import PyLegendPrimitive
+from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame
 )
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendCallable,
+    PyLegendUnion,
+    PyLegendList,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -26,4 +32,23 @@ __all__: PyLegendSequence[str] = [
 
 
 class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
-    pass
+
+    @abstractmethod
+    def head(self, count: int = 5) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def distinct(self) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def select(
+            self,
+            columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                PyLegendPrimitive,
+                PyLegendList[PyLegendPrimitive],
+                str,
+                PyLegendList[str]
+            ]]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover

@@ -20,13 +20,13 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
-from tests.core.tds.legacy_api import generate_pure_query_and_compile
+from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestRenameColumnsAppliedFunction:
@@ -119,7 +119,7 @@ class TestRenameColumnsAppliedFunction:
                 '->rename(~col2, ~col3)->rename(~col1, ~col4)->rename(~col3, ~\'col5 with spaces\')')
 
     def test_e2e_rename_columns_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.take(5)
         frame = frame.rename_columns(["First Name", "Firm/Legal Name"], ["Name", "Firm Name"])
         frame = frame.restrict(["Name", "Firm Name"])

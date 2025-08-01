@@ -20,13 +20,13 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
-from tests.core.tds.legacy_api import generate_pure_query_and_compile
+from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestJoinAppliedFunction:
@@ -361,10 +361,10 @@ class TestJoinAppliedFunction:
                 '{l, r | (($l.col2 == $r.col4) && (($l.col1 > 10) || ($r.col3 > 10))) && ($l.col1 > $r.col3)})')
 
     def test_e2e_join(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.restrict(['Last Name', 'First Name'])
         frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.restrict(['Age', 'Last Name'])
         frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'])
@@ -385,10 +385,10 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_join_inner(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.restrict(['Last Name', 'First Name'])
         frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.filter(lambda x: x['First Name'] == 'John')
         frame2 = frame2.restrict(['Age', 'Last Name'])
         frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
@@ -404,11 +404,11 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_join_right_outer(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.filter(lambda x: x['First Name'] == 'John')
         frame1 = frame1.restrict(['Last Name', 'First Name'])
         frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.restrict(['Age', 'Last Name'])
         frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'], 'RIGHT_OUTER')
@@ -427,11 +427,11 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_join_true_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.take(2)
         frame1 = frame1.restrict(['Last Name', 'First Name'])
         frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.take(2)
         frame2 = frame2.restrict(['Age', 'Last Name'])
         frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
@@ -448,11 +448,11 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_join_false_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.take(2)
         frame1 = frame1.restrict(['Last Name', 'First Name'])
         frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.take(2)
         frame2 = frame2.restrict(['Age', 'Last Name'])
         frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
@@ -467,10 +467,10 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_join_by_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.restrict(['Last Name', 'First Name'])
         frame1 = frame1.rename_columns(['Last Name', 'First Name'], ['Last Name 1', 'First Name'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.restrict(['Age', 'Last Name'])
         frame2 = frame2.rename_columns(['Age', 'Last Name'], ['Age', 'Last Name 2'])
         frame = frame1.join_by_function(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'])

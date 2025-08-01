@@ -1,4 +1,4 @@
-# Copyright 2023 Goldman Sachs
+# Copyright 2025 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
-from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
+from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
+from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -40,7 +40,7 @@ class TestDistinctAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         distinct_frame = frame.distinct()
         expected = '''\
@@ -71,8 +71,8 @@ class TestDistinctAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.take(5)
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.head(5)
         frame = frame.distinct()
         expected = '''\
             SELECT DISTINCT
@@ -98,8 +98,8 @@ class TestDistinctAppliedFunction:
                ('#Table(test_schema.test_table)#->limit(5)->distinct()')
 
     def test_e2e_distinct_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
-        frame = frame.restrict(["First Name", "Firm/Legal Name"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select(lambda r: ["First Name", "Firm/Legal Name"])
         frame = frame.distinct()
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['Anthony', 'Firm X']},
@@ -112,9 +112,9 @@ class TestDistinctAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_distinct_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
-        frame = frame.restrict(["First Name", "Firm/Legal Name"])
-        frame = frame.take(3)
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select(lambda r: ["First Name", "Firm/Legal Name"])
+        frame = frame.head(3)
         frame = frame.distinct()
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['John', 'Firm X']},

@@ -16,7 +16,7 @@ import csv
 import pathlib
 from textwrap import dedent
 from pylegend.core.tds.result_handler import ToCsvFileResultHandler
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -31,7 +31,7 @@ class TestToCsvFileResultHandler:
             tmp_path: pathlib.Path
     ) -> None:
         file = str(tmp_path / "result.csv")
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame.execute_frame(ToCsvFileResultHandler(file))
 
         with open(file, "r") as r:
@@ -55,7 +55,7 @@ class TestToCsvFileResultHandler:
             tmp_path: pathlib.Path
     ) -> None:
         file = str(tmp_path / "result.csv")
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         with open(file, "w", newline="") as f:
             writer = csv.writer(f, delimiter="|", quoting=csv.QUOTE_NONNUMERIC)
             frame.execute_frame(ToCsvFileResultHandler(writer))
