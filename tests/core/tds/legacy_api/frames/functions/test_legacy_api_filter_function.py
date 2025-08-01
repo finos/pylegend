@@ -20,13 +20,13 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
-from tests.core.tds.legacy_api import generate_pure_query_and_compile
+from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestFilterAppliedFunction:
@@ -193,7 +193,7 @@ class TestFilterAppliedFunction:
 
     @pytest.mark.skip(reason="Literal not supported ")
     def test_e2e_filter_function_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.filter(lambda r: 1 == 2)  # type: ignore
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': []}
@@ -201,7 +201,7 @@ class TestFilterAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.filter(lambda r: r.get_integer("Age") < 25)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -212,7 +212,7 @@ class TestFilterAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_filter_function_chained(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.filter(lambda r: (r.get_integer("Age") < 25))
         frame = frame.filter(lambda r: (r.get_integer("Age") < 23))
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
@@ -224,7 +224,7 @@ class TestFilterAppliedFunction:
 
     def test_e2e_filter_function_with_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
             -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.take(3)
         frame = frame.filter(lambda r: (r.get_integer("Age") < 25) | (r.get_integer("Age") >= 35))
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

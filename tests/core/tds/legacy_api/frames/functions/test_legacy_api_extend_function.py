@@ -20,13 +20,13 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
-from tests.core.tds.legacy_api import generate_pure_query_and_compile
+from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestExtendAppliedFunction:
@@ -236,7 +236,7 @@ class TestExtendAppliedFunction:
                 'col5:{r | \'Hello\'}, col6:{r | true}])')
 
     def test_e2e_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.extend([lambda r: r.get_string("First Name").upper()], ["Upper"])
         assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
                 "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), "
@@ -254,7 +254,7 @@ class TestExtendAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_extend_function_multi(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.extend([
             lambda r: r.get_string("First Name").upper(),
             lambda r: r["Age"] < 25  # type: ignore
@@ -280,7 +280,7 @@ class TestExtendAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_extend_function_literals(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         frame = frame.restrict(["Last Name"])
         frame = frame.extend([
             lambda x: 1,

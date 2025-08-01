@@ -20,13 +20,13 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
-from tests.core.tds.legacy_api import generate_pure_query_and_compile
+from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestJoinByColumnsAppliedFunction:
@@ -519,9 +519,9 @@ class TestJoinByColumnsAppliedFunction:
                 '{l, r | ($l.col2 == $r.col2_gen_r) && ($l.col1 == $r.col1_gen_r)})')
 
     def test_e2e_join_by_columns_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.restrict(['Last Name', 'First Name'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.restrict(['Age', 'Last Name'])
         frame = frame1.join_by_columns(frame2, ['Last Name'], ['Last Name'])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -542,9 +542,9 @@ class TestJoinByColumnsAppliedFunction:
 
     def test_e2e_join_by_columns_function_multi_key(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
             -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.restrict(['First Name', 'Last Name', 'Age'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.restrict(['First Name', 'Last Name', 'Firm/Legal Name'])
         frame = frame1.join_by_columns(frame2, ['First Name', 'Last Name'], ['First Name', 'Last Name'])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -563,9 +563,9 @@ class TestJoinByColumnsAppliedFunction:
 
     def test_e2e_join_by_columns_function_inner_join(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
             -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.restrict(['First Name', 'Last Name', 'Age'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.filter(lambda r: r['First Name'] == 'John')
         frame2 = frame2.restrict(['First Name', 'Last Name', 'Firm/Legal Name'])
         frame = frame1.join_by_columns(frame2, ['First Name', 'Last Name'], ['First Name', 'Last Name'], 'INNER')
@@ -580,10 +580,10 @@ class TestJoinByColumnsAppliedFunction:
 
     def test_e2e_join_by_columns_function_right_join(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
             -> None:
-        frame1: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame1: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame1 = frame1.filter(lambda r: r['First Name'] == 'John')
         frame1 = frame1.restrict(['First Name', 'Last Name', 'Age'])
-        frame2: LegacyApiTdsFrame = simple_person_service_frame(legend_test_server['engine_port'])
+        frame2: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server['engine_port'])
         frame2 = frame2.restrict(['First Name', 'Last Name', 'Firm/Legal Name'])
         frame = frame1.join_by_columns(frame2, ['First Name', 'Last Name'], ['First Name', 'Last Name'], 'RIGHT_OUTER')
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \

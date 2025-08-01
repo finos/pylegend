@@ -20,9 +20,9 @@ from pylegend._typing import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from tests.test_helpers.test_legend_service_frames import (
-    simple_person_service_frame,
-    simple_trade_service_frame,
-    simple_product_service_frame,
+    simple_person_service_frame_legacy_api,
+    simple_trade_service_frame_legacy_api,
+    simple_product_service_frame_legacy_api,
 )
 
 
@@ -32,7 +32,7 @@ class TestLegacyApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         sql = frame.to_sql_query(FrameToSqlConfig())
 
         expected = '''\
@@ -53,7 +53,7 @@ class TestLegacyApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_person_service_frame(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -69,7 +69,7 @@ class TestLegacyApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_trade_service_frame(legend_test_server["engine_port"])
+        frame = simple_trade_service_frame_legacy_api(legend_test_server["engine_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['Id',
                                 'Date',
@@ -149,7 +149,7 @@ class TestLegacyApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_product_service_frame(legend_test_server["engine_port"])
+        frame = simple_product_service_frame_legacy_api(legend_test_server["engine_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['Name', 'Synonyms/Name', 'Synonyms/Type'],
                     'rows': [{'values': ['Firm X', 'CUSIP1', 'CUSIP']},
