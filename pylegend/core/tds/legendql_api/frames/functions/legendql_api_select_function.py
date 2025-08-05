@@ -109,10 +109,10 @@ class LegendQLApiSelectFunction(LegendQLApiAppliedFunction):
             new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
             for col in base_query.select.selectItems:
                 if not isinstance(col, SingleColumn):
-                    raise ValueError("Restrict operation not supported for queries "
+                    raise ValueError("Select operation not supported for queries "
                                      "with columns other than SingleColumn")  # pragma: no cover
                 if col.alias is None:
-                    raise ValueError("Restrict operation not supported for queries "
+                    raise ValueError("Select operation not supported for queries "
                                      "with SingleColumns with missing alias")  # pragma: no cover
                 if col.alias in columns_to_retain:
                     new_cols_with_index.append((columns_to_retain.index(col.alias), col))

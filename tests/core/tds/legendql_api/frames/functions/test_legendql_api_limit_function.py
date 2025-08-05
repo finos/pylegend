@@ -17,7 +17,6 @@ import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
@@ -25,23 +24,17 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.request.legend_client import LegendClient
-from tests.test_helpers import generate_pure_query_and_compile
 
 
-class TestHeadAppliedFunction:
+class TestLimitAppliedFunction:
 
-    @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
-
-    def test_query_gen_head_function_no_top(self) -> None:
+    def test_sql_gen_limit_function_no_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.head(10)
+        frame = frame.limit(10)
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
@@ -50,23 +43,15 @@ class TestHeadAppliedFunction:
                 test_schema.test_table AS "root"
             LIMIT 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
-            '''\
-            #Table(test_schema.test_table)#
-              ->limit(10)'''
-        )
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
-            '''#Table(test_schema.test_table)#->limit(10)'''
-        )
 
-    def test_query_gen_head_function_existing_top(self) -> None:
+    def test_sql_gen_limit_function_existing_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.head(10)
-        frame = frame.head(20)
+        frame = frame.limit(10)
+        frame = frame.limit(20)
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
@@ -82,30 +67,20 @@ class TestHeadAppliedFunction:
                 ) AS "root"
             LIMIT 20'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
-            '''\
-            #Table(test_schema.test_table)#
-              ->limit(10)
-              ->limit(20)'''
-        )
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
-            '''\
-            #Table(test_schema.test_table)#->limit(10)->limit(20)'''
-        )
 
-    def test_head_function_negative_row_count_error(self) -> None:
+    def test_limit_function_negative_row_count_error(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as v:
-            frame.head(-10)
+            frame.limit(-10)
         assert v.value.args[0] == "Row count argument of head/limit function cannot be negative"
 
-    def test_e2e_head_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_limit_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.head(3)
+        frame = frame.limit(3)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
                              {'values': ['John', 'Johnson', 22, 'Firm X']},
@@ -113,10 +88,10 @@ class TestHeadAppliedFunction:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    def test_e2e_head_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_limit_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.head(3)
-        frame = frame.head(10)
+        frame = frame.limit(3)
+        frame = frame.limit(10)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
                              {'values': ['John', 'Johnson', 22, 'Firm X']},

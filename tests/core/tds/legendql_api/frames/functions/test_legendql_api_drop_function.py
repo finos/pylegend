@@ -29,44 +29,45 @@ from pylegend.core.request.legend_client import LegendClient
 from tests.test_helpers import generate_pure_query_and_compile
 
 
-class TestHeadAppliedFunction:
+class TestDropAppliedFunction:
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_query_gen_head_function_no_top(self) -> None:
+    def test_query_gen_drop_function_no_offset(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.head(10)
+        frame = frame.drop(10)
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2"
             FROM
                 test_schema.test_table AS "root"
-            LIMIT 10'''
+            OFFSET 10'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->limit(10)'''
+              ->drop(10)'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
-            '''#Table(test_schema.test_table)#->limit(10)'''
+            '''\
+            #Table(test_schema.test_table)#->drop(10)'''
         )
 
-    def test_query_gen_head_function_existing_top(self) -> None:
+    def test_query_gen_drop_function_existing_offset(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.head(10)
-        frame = frame.head(20)
+        frame = frame.drop(10)
+        frame = frame.drop(20)
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
@@ -78,48 +79,95 @@ class TestHeadAppliedFunction:
                         "root".col2 AS "col2"
                     FROM
                         test_schema.test_table AS "root"
-                    LIMIT 10
+                    OFFSET 10
                 ) AS "root"
-            LIMIT 20'''
+            OFFSET 20'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->limit(10)
-              ->limit(20)'''
+              ->drop(10)
+              ->drop(20)'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
             '''\
-            #Table(test_schema.test_table)#->limit(10)->limit(20)'''
+            #Table(test_schema.test_table)#->drop(10)->drop(20)'''
         )
 
-    def test_head_function_negative_row_count_error(self) -> None:
+    def test_query_gen_drop_function_existing_top(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.head(20)
+        frame = frame.drop(10)
+        expected = '''\
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2"
+            FROM
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    LIMIT 20
+                ) AS "root"
+            OFFSET 10'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->limit(20)
+              ->drop(10)'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#->limit(20)->drop(10)'''
+        )
+
+    def test_drop_function_negative_row_count_error(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as v:
-            frame.head(-10)
-        assert v.value.args[0] == "Row count argument of head/limit function cannot be negative"
+            frame.drop(-10)
+        assert v.value.args[0] == "Row count argument of drop function cannot be negative"
 
-    def test_e2e_head_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_drop_function_no_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.head(3)
+        frame = frame.drop(3)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
-                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
-                             {'values': ['John', 'Johnson', 22, 'Firm X']},
-                             {'values': ['John', 'Hill', 12, 'Firm X']}]}
+                    'rows': [{'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    def test_e2e_head_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_drop_function_existing_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> \
+            None:
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.drop(3)
+        frame = frame.drop(1)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_drop_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> \
+            None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.head(3)
-        frame = frame.head(10)
+        frame = frame.drop(1)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
-                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
-                             {'values': ['John', 'Johnson', 22, 'Firm X']},
+                    'rows': [{'values': ['John', 'Johnson', 22, 'Firm X']},
                              {'values': ['John', 'Hill', 12, 'Firm X']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected

@@ -46,6 +46,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiHeadFunction(self, row_count))
 
+    def limit(self, row_count: int = 5) -> "LegendQLApiTdsFrame":
+        return self.head(row_count=row_count)
+
     def distinct(self) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
@@ -67,7 +70,25 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
         )
-        from pylegend.core.tds.legendql_api.frames.functions.legacy_api_select_function import (
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_select_function import (
             LegendQLApiSelectFunction
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiSelectFunction(self, columns_function))
+
+    def drop(self, count: int = 5) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_drop_function import (
+            LegendQLApiDropFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiDropFunction(self, count))
+
+    def slice(self, start_row: int, end_row_exclusive: int) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_slice_function import (
+            LegendQLApiSliceFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiSliceFunction(self, start_row, end_row_exclusive))
