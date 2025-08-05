@@ -46,6 +46,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiHeadFunction(self, row_count))
 
+    def limit(self, row_count: int = 5) -> "LegendQLApiTdsFrame":
+        return self.head(row_count=row_count)
+
     def distinct(self) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame

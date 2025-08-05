@@ -38,6 +38,10 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
+    def limit(self, count: int = 5) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
     def drop(self, count: int = 5) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
 

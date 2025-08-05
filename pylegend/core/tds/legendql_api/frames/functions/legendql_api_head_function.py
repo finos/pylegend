@@ -70,5 +70,5 @@ class LegendQLApiHeadFunction(LegendQLApiAppliedFunction):
 
     def validate(self) -> bool:
         if self.__row_count < 0:
-            raise ValueError("Row count argument of head function cannot be negative")
+            raise ValueError("Row count argument of head/limit function cannot be negative")
         return True
