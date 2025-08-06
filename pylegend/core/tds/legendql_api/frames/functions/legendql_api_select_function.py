@@ -19,7 +19,8 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.language import PyLegendPrimitive, PyLegendColumnExpression
+from pylegend.core.language import PyLegendColumnExpression
+from pylegend.core.language.legendql_api.legendql_api_custom_expressions import LegendQLApiPrimitive
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -52,10 +53,9 @@ class LegendQLApiSelectFunction(LegendQLApiAppliedFunction):
             self,
             base_frame: LegendQLApiBaseTdsFrame,
             columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendPrimitive,
-                PyLegendList[PyLegendPrimitive],
+                LegendQLApiPrimitive,
                 str,
-                PyLegendList[str]
+                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
             ]]
     ) -> None:
         self.__base_frame = base_frame
@@ -70,7 +70,7 @@ class LegendQLApiSelectFunction(LegendQLApiAppliedFunction):
                 "Select lambda incompatible. Error occurred while evaluating. Message: " + str(e)
             ) from e
 
-        list_result: PyLegendUnion[PyLegendList[PyLegendPrimitive], PyLegendList[str]]
+        list_result: PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
         if isinstance(result, list):
             list_result = result
         elif isinstance(result, tuple):
@@ -82,7 +82,7 @@ class LegendQLApiSelectFunction(LegendQLApiAppliedFunction):
         for (i, r) in enumerate(list_result):
             if isinstance(r, str):
                 columns_list.append(r)
-            elif isinstance(r, PyLegendPrimitive) and isinstance(r.value(), PyLegendColumnExpression):
+            elif isinstance(r, LegendQLApiPrimitive) and isinstance(r.value(), PyLegendColumnExpression):
                 col_expr: PyLegendColumnExpression = r.value()
                 columns_list.append(col_expr.get_column())
             else:

@@ -20,7 +20,11 @@ from pylegend._typing import (
     PyLegendUnion,
     PyLegendList,
 )
-from pylegend.core.language import PyLegendPrimitive
+from pylegend.core.language import PyLegendBoolean
+from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
+    LegendQLApiPrimitive,
+    LegendQLApiSortInfo,
+)
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
@@ -61,10 +65,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
     def select(
             self,
             columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendPrimitive,
-                PyLegendList[PyLegendPrimitive],
+                LegendQLApiPrimitive,
                 str,
-                PyLegendList[str]
+                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
             ]]
     ) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
@@ -92,3 +95,41 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiSliceFunction
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiSliceFunction(self, start_row, end_row_exclusive))
+
+    def sort(
+            self,
+            sort_infos_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                LegendQLApiPrimitive,
+                str,
+                LegendQLApiSortInfo,
+                PyLegendList[PyLegendUnion[LegendQLApiPrimitive, str, LegendQLApiSortInfo]],
+            ]]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_sort_function import (
+            LegendQLApiSortFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiSortFunction(self, sort_infos_function))
+
+    def concatenate(self, other: "LegendQLApiTdsFrame") -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_concatenate_function import (
+            LegendQLApiConcatenateFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiConcatenateFunction(self, other))
+
+    def filter(
+            self,
+            filter_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_filter_function import (
+            LegendQLApiFilterFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiFilterFunction(self, filter_function))

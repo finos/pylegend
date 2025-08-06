@@ -22,7 +22,6 @@ from pylegend._typing import (
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.expression import (
-    PyLegendExpression,
     PyLegendExpressionNumberReturn,
 )
 from pylegend.core.language.shared.literal_expressions import (
@@ -93,7 +92,7 @@ class PyLegendNumber(PyLegendPrimitive):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.__value.to_pure_expression(config)
 
-    def value(self) -> PyLegendExpression:
+    def value(self) -> PyLegendExpressionNumberReturn:
         return self.__value
 
     def __add__(

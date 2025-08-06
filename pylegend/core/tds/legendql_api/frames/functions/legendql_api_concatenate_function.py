@@ -1,4 +1,4 @@
-# Copyright 2023 Goldman Sachs
+# Copyright 2025 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
 )
-from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import LegacyApiAppliedFunction
+from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     Union,
@@ -32,27 +32,27 @@ from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
-from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
+from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
+from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 
 
 __all__: PyLegendSequence[str] = [
-    "LegacyApiConcatenateFunction"
+    "LegendQLApiConcatenateFunction"
 ]
 
 
-class LegacyApiConcatenateFunction(LegacyApiAppliedFunction):
-    __base_frame: LegacyApiBaseTdsFrame
-    __other_frame: LegacyApiBaseTdsFrame
+class LegendQLApiConcatenateFunction(LegendQLApiAppliedFunction):
+    __base_frame: LegendQLApiBaseTdsFrame
+    __other_frame: LegendQLApiBaseTdsFrame
 
     @classmethod
     def name(cls) -> str:
         return "concatenate"
 
-    def __init__(self, base_frame: LegacyApiBaseTdsFrame, other: LegacyApiTdsFrame) -> None:
+    def __init__(self, base_frame: LegendQLApiBaseTdsFrame, other: LegendQLApiTdsFrame) -> None:
         self.__base_frame = base_frame
-        if not isinstance(other, LegacyApiBaseTdsFrame):
-            raise ValueError("Expected LegacyApiBaseTdsFrame")  # pragma: no cover
+        if not isinstance(other, LegendQLApiBaseTdsFrame):
+            raise ValueError("Expected LegendQLApiBaseTdsFrame")  # pragma: no cover
         self.__other_frame = other
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
@@ -104,10 +104,10 @@ class LegacyApiConcatenateFunction(LegacyApiAppliedFunction):
                 f"{self.__other_frame.to_pure(config.push_indent(2))}"
                 f"{config.separator(1)})")
 
-    def base_frame(self) -> LegacyApiBaseTdsFrame:
+    def base_frame(self) -> LegendQLApiBaseTdsFrame:
         return self.__base_frame
 
-    def tds_frame_parameters(self) -> PyLegendList["LegacyApiBaseTdsFrame"]:
+    def tds_frame_parameters(self) -> PyLegendList["LegendQLApiBaseTdsFrame"]:
         return [self.__other_frame]
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:

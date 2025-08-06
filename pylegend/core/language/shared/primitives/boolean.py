@@ -18,7 +18,7 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn, PyLegendExpression
+from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
 from pylegend.core.language.shared.literal_expressions import PyLegendBooleanLiteralExpression
 from pylegend.core.language.shared.operations.boolean_operation_expressions import (
     PyLegendBooleanOrExpression,
@@ -57,7 +57,7 @@ class PyLegendBoolean(PyLegendPrimitive):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.__value.to_pure_expression(config)
 
-    def value(self) -> PyLegendExpression:
+    def value(self) -> PyLegendExpressionBooleanReturn:
         return self.__value
 
     def __or__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
