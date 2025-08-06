@@ -20,7 +20,6 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.expression import (
-    PyLegendExpression,
     PyLegendExpressionStrictDateReturn,
 )
 from pylegend.core.language.shared.literal_expressions import (
@@ -55,7 +54,7 @@ class PyLegendStrictDate(PyLegendDate):
     ) -> Expression:
         return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
-    def value(self) -> PyLegendExpression:
+    def value(self) -> PyLegendExpressionStrictDateReturn:
         return self.__value
 
     @staticmethod

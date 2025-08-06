@@ -14,7 +14,11 @@
 
 from abc import ABCMeta, abstractmethod
 
-from pylegend.core.language import PyLegendPrimitive
+from pylegend.core.language import PyLegendBoolean
+from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
+    LegendQLApiPrimitive,
+    LegendQLApiSortInfo,
+)
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame
@@ -57,10 +61,32 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     def select(
             self,
             columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendPrimitive,
-                PyLegendList[PyLegendPrimitive],
+                LegendQLApiPrimitive,
                 str,
-                PyLegendList[str]
+                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
             ]]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def sort(
+            self,
+            sort_infos_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                LegendQLApiPrimitive,
+                str,
+                LegendQLApiSortInfo,
+                PyLegendList[PyLegendUnion[LegendQLApiPrimitive, str, LegendQLApiSortInfo]],
+            ]]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def concatenate(self, other: "LegendQLApiTdsFrame") -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def filter(
+            self,
+            filter_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover

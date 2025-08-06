@@ -21,7 +21,7 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
-from pylegend.core.language.shared.expression import PyLegendExpressionStringReturn, PyLegendExpression
+from pylegend.core.language.shared.expression import PyLegendExpressionStringReturn
 from pylegend.core.language.shared.literal_expressions import PyLegendStringLiteralExpression
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -160,7 +160,7 @@ class PyLegendString(PyLegendPrimitive):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.__value.to_pure_expression(config)
 
-    def value(self) -> PyLegendExpression:
+    def value(self) -> PyLegendExpressionStringReturn:
         return self.__value
 
     @staticmethod

@@ -22,7 +22,6 @@ from pylegend._typing import (
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.expression import (
-    PyLegendExpression,
     PyLegendExpressionDateReturn,
 )
 from pylegend.core.language.shared.literal_expressions import (
@@ -85,7 +84,7 @@ class PyLegendDate(PyLegendPrimitive):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.__value.to_pure_expression(config)
 
-    def value(self) -> PyLegendExpression:
+    def value(self) -> PyLegendExpressionDateReturn:
         return self.__value
 
     def first_day_of_year(self) -> "PyLegendDate":

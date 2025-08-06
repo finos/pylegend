@@ -1,4 +1,4 @@
-# Copyright 2023 Goldman Sachs
+# Copyright 2025 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
-from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legacy_api
+from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
+from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -40,14 +40,14 @@ class TestConcatenateAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame1: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns1)
+        frame1: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns1)
 
         columns2 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.string_column("col3")
         ]
-        frame2: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns2)
+        frame2: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns2)
 
         with pytest.raises(ValueError) as v:
             frame1.concatenate(frame2)
@@ -65,13 +65,13 @@ class TestConcatenateAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame1: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns1)
+        frame1: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns1)
 
         columns2 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col3")
         ]
-        frame2: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns2)
+        frame2: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns2)
 
         with pytest.raises(ValueError) as v:
             frame1.concatenate(frame2)
@@ -87,13 +87,13 @@ class TestConcatenateAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame1: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns1)
+        frame1: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns1)
 
         columns2 = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.float_column("col2")
         ]
-        frame2: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns2)
+        frame2: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns2)
 
         with pytest.raises(ValueError) as v:
             frame1.concatenate(frame2)
@@ -109,11 +109,11 @@ class TestConcatenateAppliedFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame1: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame1 = frame1.take(2)
-        frame2: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame1: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame1 = frame1.head(2)
+        frame2: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame2 = frame2.drop(2)
-        frame2 = frame2.take(2)
+        frame2 = frame2.head(2)
 
         concatenate_frame = frame1.concatenate(frame2)
         expected = '''\
@@ -165,8 +165,8 @@ class TestConcatenateAppliedFunction:
                 '->concatenate(#Table(test_schema.test_table)#->drop(2)->limit(2))')
 
     def test_e2e_concatenate_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
-        frame = frame.concatenate(frame).restrict(["First Name", "Firm/Legal Name"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.concatenate(frame).select(lambda r: ["First Name", "Firm/Legal Name"])
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Firm X']},
                              {'values': ['John', 'Firm X']},
@@ -187,16 +187,16 @@ class TestConcatenateAppliedFunction:
 
     def test_e2e_concatenate_function_complex(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegacyApiTdsFrame = simple_person_service_frame_legacy_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
 
-        frame1 = frame.restrict(["First Name", "Firm/Legal Name", "Age"])
-        frame1 = frame1.take(3)
+        frame1 = frame.select(lambda r: ["First Name", "Firm/Legal Name", "Age"])
+        frame1 = frame1.head(3)
 
-        frame2 = frame.restrict(["First Name", "Firm/Legal Name", "Age"])
+        frame2 = frame.select(lambda r: ["First Name", "Firm/Legal Name", "Age"])
         frame2 = frame2.drop(3)
-        frame2 = frame2.take(2)
+        frame2 = frame2.head(2)
 
-        result_frame = frame1.concatenate(frame2).restrict(["First Name", "Firm/Legal Name"])
+        result_frame = frame1.concatenate(frame2).select(lambda r: ["First Name", "Firm/Legal Name"])
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Firm X']},
                              {'values': ['John', 'Firm X']},
