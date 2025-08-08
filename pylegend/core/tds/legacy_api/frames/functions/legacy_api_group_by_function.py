@@ -18,6 +18,7 @@ from pylegend._typing import (
     PyLegendTuple,
 )
 from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
+from pylegend.core.tds.abstract.function_helpers import tds_column_for_primitive
 from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import LegacyApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
@@ -36,7 +37,6 @@ from pylegend.core.language import (
     create_primitive_collection,
     convert_literal_to_literal_expression,
 )
-from pylegend.core.tds.legacy_api.frames.functions.legacy_api_function_helpers import tds_column_for_primitive
 
 
 __all__: PyLegendSequence[str] = [
