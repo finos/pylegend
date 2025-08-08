@@ -44,7 +44,7 @@ class TestRenameColumnsAppliedFunction:
         with pytest.raises(TypeError) as v:
             frame.rename(lambda r: [r.col2])  # type: ignore
         assert v.value.args[0] == \
-               ('Sort lambda incompatible. Each element in rename list should be a tuple with '
+               ('Rename lambda incompatible. Each element in rename list should be a tuple with '
                 'first element being a string (existing column name) or a simple column '
                 'expression and second element being a string (renamed column name). E.g - '
                 "frame.rename(lambda r: [('c1', 'nc1'), (r.c2, 'nc2')]). Element at index 0 in "
@@ -73,6 +73,18 @@ class TestRenameColumnsAppliedFunction:
         assert v.value.args[0] == \
                ("renamed_column_names_list list shouldn't have duplicates when renaming columns.\n"
                 "renamed_column_names_list - (Count: 2) - ['col3', 'col3']\n")
+
+    def test_rename_columns_error_on_duplicates_after_rename(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        with pytest.raises(ValueError) as v:
+            frame.rename(lambda r: [(r.col1, 'col2')])
+        assert v.value.args[0] == \
+               ("TdsFrame cannot have duplicated column names. Passed columns: "
+                "[TdsColumn(Name: col2, Type: Integer), TdsColumn(Name: col2, Type: String)]")
 
     def test_query_gen_rename_columns_function(self) -> None:
         columns = [

@@ -61,9 +61,8 @@ class TestJoinAppliedFunction:
         with pytest.raises(ValueError) as r:
             frame1.join(frame2, lambda x, y: True)
         assert r.value.args[0] == (
-            "Found duplicate columns in joined frames. Either use join_by_columns function if joining on shared columns"
-            " or use rename_columns function to ensure there are no duplicate columns in joined frames. Columns - "
-            "Left Frame: ['col1', 'col2'], Right Frame: ['col1', 'col2']")
+            "Found duplicate columns in joined frames. Use rename function to ensure there are no duplicate columns in "
+            "joined frames. Columns - Left Frame: ['col1', 'col2'], Right Frame: ['col1', 'col2']")
 
     def test_join_error_on_non_boolean_lambda(self) -> None:
         columns = [
