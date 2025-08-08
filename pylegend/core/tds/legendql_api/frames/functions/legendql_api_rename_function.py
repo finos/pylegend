@@ -81,7 +81,7 @@ class LegendQLApiRenameFunction(LegendQLApiAppliedFunction):
 
         for (i, r) in enumerate(list_result):
 
-            error = ("Sort lambda incompatible. Each element in rename list should be a tuple with "
+            error = ("Rename lambda incompatible. Each element in rename list should be a tuple with "
                      "first element being a string (existing column name) or a simple column expression and "
                      "second element being a string (renamed column name). "
                      "E.g - frame.rename(lambda r: [('c1', 'nc1'), (r.c2, 'nc2')]). "

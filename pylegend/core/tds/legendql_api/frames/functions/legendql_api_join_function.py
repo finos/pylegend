@@ -202,9 +202,8 @@ class LegendQLApiJoinFunction(LegendQLApiAppliedFunction):
         final_cols = left_cols + right_cols
         if len(final_cols) != len(set(final_cols)):
             raise ValueError(
-                "Found duplicate columns in joined frames. Either use join_by_columns function if joining on shared "
-                "columns or use rename_columns function to ensure there are no duplicate columns in joined frames. "
-                f"Columns - Left Frame: {left_cols}, Right Frame: {right_cols}"
+                "Found duplicate columns in joined frames. Use rename function to ensure there are no duplicate columns "
+                f"in joined frames. Columns - Left Frame: {left_cols}, Right Frame: {right_cols}"
             )
 
         if self.__join_type.lower() not in ('inner', 'left_outer', 'right_outer', 'leftouter', 'rightouter'):
