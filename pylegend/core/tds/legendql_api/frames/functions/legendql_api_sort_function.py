@@ -61,7 +61,7 @@ class LegendQLApiSortFunction(LegendQLApiAppliedFunction):
         self.__base_frame = base_frame
         tds_row = LegendQLApiTdsRow.from_tds_frame("frame", self.__base_frame)
         if not isinstance(sort_infos_function, type(lambda x: 0)) or (sort_infos_function.__code__.co_argcount != 1):
-            raise TypeError("Sort sort_infos_function should be a lambda which takes one argument (TDSRow)")
+            raise TypeError("Sort function should be a lambda which takes one argument (TDSRow)")
 
         try:
             result = sort_infos_function(tds_row)

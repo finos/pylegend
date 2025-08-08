@@ -19,8 +19,10 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
     PyLegendList,
+    PyLegendTuple,
+    PyLegendOptional,
 )
-from pylegend.core.language import PyLegendBoolean
+from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
@@ -133,3 +135,96 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiFilterFunction
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiFilterFunction(self, filter_function))
+
+    def rename(
+            self,
+            rename_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str],
+                PyLegendList[PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str]]
+            ]]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_rename_function import (
+            LegendQLApiRenameFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiRenameFunction(self, rename_function))
+
+    def extend(
+            self,
+            extend_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
+                PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive]]
+            ]]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_extend_function import (
+            LegendQLApiExtendFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiExtendFunction(self, extend_function))
+
+    def join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ],
+            join_type: str = 'LEFT_OUTER'
+    ) -> "LegendQLApiTdsFrame":
+
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_join_function import (
+            LegendQLApiJoinFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiJoinFunction(self, other, join_condition, join_type))
+
+    def inner_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        return self.join(other, join_condition, "INNER")
+
+    def left_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        return self.join(other, join_condition, "LEFT_OUTER")
+
+    def right_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        return self.join(other, join_condition, "RIGHT_OUTER")
+
+    def as_of_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            match_function: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ],
+            join_condition: PyLegendOptional[
+                PyLegendCallable[[LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+            ] = None
+    ) -> "LegendQLApiTdsFrame":
+
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_asofjoin_function import (
+            LegendQLApiAsOfJoinFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiAsOfJoinFunction(self, other, match_function, join_condition))

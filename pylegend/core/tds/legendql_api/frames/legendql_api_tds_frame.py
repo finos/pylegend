@@ -14,7 +14,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-from pylegend.core.language import PyLegendBoolean
+from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
@@ -28,6 +28,8 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
     PyLegendList,
+    PyLegendOptional,
+    PyLegendTuple,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -88,5 +90,79 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     def filter(
             self,
             filter_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def rename(
+            self,
+            rename_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str],
+                PyLegendList[PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str]]
+            ]]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def extend(
+            self,
+            extend_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
+                PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive]]
+            ]]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ],
+            join_type: str = 'LEFT_OUTER'
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def inner_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def left_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def right_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def as_of_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            match_function: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ],
+            join_condition: PyLegendOptional[
+                PyLegendCallable[[LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
+            ] = None
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
