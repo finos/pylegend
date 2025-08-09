@@ -166,7 +166,7 @@ class TestConcatenateAppliedFunction:
 
     def test_e2e_concatenate_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.concatenate(frame).select(lambda r: ["First Name", "Firm/Legal Name"])
+        frame = frame.concatenate(frame).select(lambda r: [r["First Name"], r["Firm/Legal Name"]])
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Firm X']},
                              {'values': ['John', 'Firm X']},
@@ -189,14 +189,14 @@ class TestConcatenateAppliedFunction:
             -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
 
-        frame1 = frame.select(lambda r: ["First Name", "Firm/Legal Name", "Age"])
+        frame1 = frame.select(["First Name", "Firm/Legal Name", "Age"])
         frame1 = frame1.head(3)
 
-        frame2 = frame.select(lambda r: ["First Name", "Firm/Legal Name", "Age"])
+        frame2 = frame.select(["First Name", "Firm/Legal Name", "Age"])
         frame2 = frame2.drop(3)
         frame2 = frame2.head(2)
 
-        result_frame = frame1.concatenate(frame2).select(lambda r: ["First Name", "Firm/Legal Name"])
+        result_frame = frame1.concatenate(frame2).select(["First Name", "Firm/Legal Name"])
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Firm X']},
                              {'values': ['John', 'Firm X']},

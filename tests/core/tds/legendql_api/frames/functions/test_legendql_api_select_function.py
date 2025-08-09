@@ -64,7 +64,7 @@ class TestSelectAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.select(lambda r: ['col1 with spaces'])
+        frame = frame.select(lambda r: r['col1 with spaces'])
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -97,16 +97,35 @@ class TestSelectAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[col2, col1])')
 
-    def test_select_error_on_unknown_col(self) -> None:
+    def test_select_error_messages(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(ValueError) as r:
-            frame.select(lambda r: 'unknown_col')
-        assert r.value.args[0] == "Column - 'unknown_col' in select columns list doesn't exist in the current frame."\
-                                  " Current frame columns: ['col1', 'col2']"
+        with pytest.raises(TypeError) as r:
+            frame.select(1)  # type: ignore
+        assert r.value.args[0] == ("'select' function 'columns' argument can either be a list of strings (column "
+                                   "names) or a lambda function which takes one argument (LegendQLApiTdsRow)")
+        with pytest.raises(TypeError) as r:
+            frame.select(lambda: [])  # type: ignore
+        assert r.value.args[0] == ("'select' function 'columns' argument can either be a list of strings (column "
+                                   "names) or a lambda function which takes one argument (LegendQLApiTdsRow)")
+        with pytest.raises(ValueError) as r1:
+            frame.select('unknown_col')
+        assert r1.value.args[0] == ("Column - 'unknown_col' in select columns list doesn't exist in the current frame. "
+                                    "Current frame columns: ['col1', 'col2']")
+        with pytest.raises(RuntimeError) as r2:
+            frame.select(lambda r: r['unknown_col'])
+        assert r2.value.args[0] == ("'select' function 'columns' argument lambda incompatible. "
+                                    "Error occurred while evaluating. Message: Column - 'unknown_col' doesn't exist in "
+                                    "the current frame. Current frame columns: ['col1', 'col2']")
+        with pytest.raises(TypeError) as r:
+            frame.select(lambda r: r.get_integer('col1') + 1)  # type: ignore
+        assert r.value.args[0] == ("'select' function 'columns' argument lambda incompatible. "
+                                   "Columns can be simple column expressions "
+                                   "(E.g - lambda r: [r.column1, r.column2, r['column with spaces']). "
+                                   "Element at index 0 (0-indexed) is incompatible")
 
     def test_query_gen_select_function_after_distinct_creates_subquery(self) -> None:
         columns = [
@@ -141,7 +160,7 @@ class TestSelectAppliedFunction:
     def test_e2e_select_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.head(5)
-        frame = frame.select(lambda r: ["First Name", "Firm/Legal Name"])
+        frame = frame.select(lambda r: [r["First Name"], r["Firm/Legal Name"]])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Firm/Legal Name, Type: String)]"
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
@@ -157,7 +176,7 @@ class TestSelectAppliedFunction:
             -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.head(5)
-        frame = frame.select(lambda r: ["Firm/Legal Name", "First Name"])
+        frame = frame.select(["Firm/Legal Name", "First Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: Firm/Legal Name, Type: String), TdsColumn(Name: First Name, Type: String)]"
         expected = {'columns': ['Firm/Legal Name', 'First Name'],
