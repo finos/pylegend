@@ -14,7 +14,8 @@
 
 from abc import ABCMeta, abstractmethod
 
-from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitiveCollection, \
+    PyLegendPrimitive
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
@@ -164,5 +165,30 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             join_condition: PyLegendOptional[
                 PyLegendCallable[[LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]]
             ] = None
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def group_by(
+            self,
+            grouping_columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                LegendQLApiPrimitive,
+                str,
+                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
+            ]],
+            aggregate_specifications: PyLegendUnion[
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                ],
+                PyLegendList[
+                    PyLegendTuple[
+                        str,
+                        PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                    ]
+                ]
+            ]
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover

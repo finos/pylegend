@@ -81,7 +81,7 @@ class LegendQLApiExtendFunction(LegendQLApiAppliedFunction):
         col_expressions = []
         for (i, r) in enumerate(list_result):
             if isinstance(r, tuple) and isinstance(r[0], str):
-                if not isinstance(r[1], (int, float, bool, str, PyLegendPrimitive)):
+                if not isinstance(r[1], (int, float, bool, str, date, datetime, PyLegendPrimitive)):
                     raise ValueError(
                         f"Extend function element at index {i} (0-indexed) incompatible. "
                         f"Returns non-primitive - {str(type(r[1]))}"
