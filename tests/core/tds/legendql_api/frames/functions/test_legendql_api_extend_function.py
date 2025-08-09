@@ -265,7 +265,7 @@ class TestExtendAppliedFunction:
 
     def test_e2e_extend_function_literals(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.select(lambda r: ["Last Name"])
+        frame = frame.select(["Last Name"])
         frame = frame.extend(lambda r: [
             ("col3", 1),
             ("col4", 2.0),

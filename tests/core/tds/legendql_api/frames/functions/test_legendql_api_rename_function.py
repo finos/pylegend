@@ -141,7 +141,7 @@ class TestRenameColumnsAppliedFunction:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.head(5)
         frame = frame.rename(lambda r: [(r["First Name"], "Name"), (r["Firm/Legal Name"], "Firm Name")])
-        frame = frame.select(lambda r: ["Name", "Firm Name"])
+        frame = frame.select(["Name", "Firm Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: Name, Type: String), TdsColumn(Name: Firm Name, Type: String)]"
         expected = {'columns': ['Name', 'Firm Name'],

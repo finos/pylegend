@@ -67,11 +67,14 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
     def select(
             self,
-            columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                LegendQLApiPrimitive,
+            columns: PyLegendUnion[
                 str,
-                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
-            ]]
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ]
     ) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
@@ -79,7 +82,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_select_function import (
             LegendQLApiSelectFunction
         )
-        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiSelectFunction(self, columns_function))
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiSelectFunction(self, columns))
 
     def drop(self, count: int = 5) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (

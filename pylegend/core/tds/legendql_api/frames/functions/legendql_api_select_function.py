@@ -19,9 +19,9 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import LegendQLApiPrimitive
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import infer_columns_from_frame
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
@@ -52,47 +52,17 @@ class LegendQLApiSelectFunction(LegendQLApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegendQLApiBaseTdsFrame,
-            columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                LegendQLApiPrimitive,
+            columns: PyLegendUnion[
                 str,
-                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
-            ]]
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ]
     ) -> None:
         self.__base_frame = base_frame
-        tds_row = LegendQLApiTdsRow.from_tds_frame("frame", self.__base_frame)
-        if not isinstance(columns_function, type(lambda x: 0)) or (columns_function.__code__.co_argcount != 1):
-            raise TypeError("Select columns_function should be a lambda which takes one argument (TDSRow)")
-
-        try:
-            result = columns_function(tds_row)
-        except Exception as e:
-            raise RuntimeError(
-                "Select lambda incompatible. Error occurred while evaluating. Message: " + str(e)
-            ) from e
-
-        list_result: PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
-        if isinstance(result, list):
-            list_result = result
-        elif isinstance(result, tuple):
-            list_result = list(result)
-        else:
-            list_result = [result]
-
-        columns_list = []
-        for (i, r) in enumerate(list_result):
-            if isinstance(r, str):
-                columns_list.append(r)
-            elif isinstance(r, LegendQLApiPrimitive) and isinstance(r.value(), PyLegendColumnExpression):
-                col_expr: PyLegendColumnExpression = r.value()
-                columns_list.append(col_expr.get_column())
-            else:
-                raise RuntimeError(
-                    "Select lambda incompatible. Columns can either be strings (lambda r: ['c1', 'c2']) or "
-                    "simple column expressions (lambda r: [r.c1, r.c2]). "
-                    f"Element at index {i} in the list is incompatible."
-                )
-
-        self.__column_name_list = columns_list
+        self.__column_name_list = infer_columns_from_frame(base_frame, columns, "'select' function 'columns'")
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)

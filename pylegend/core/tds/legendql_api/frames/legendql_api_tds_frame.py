@@ -63,11 +63,14 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     @abstractmethod
     def select(
             self,
-            columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                LegendQLApiPrimitive,
+            columns: PyLegendUnion[
                 str,
-                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
-            ]]
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ]
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
 

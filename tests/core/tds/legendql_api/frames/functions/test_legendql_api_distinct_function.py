@@ -99,7 +99,7 @@ class TestDistinctAppliedFunction:
 
     def test_e2e_distinct_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.select(lambda r: ["First Name", "Firm/Legal Name"])
+        frame = frame.select(["First Name", "Firm/Legal Name"])
         frame = frame.distinct()
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['Anthony', 'Firm X']},
@@ -113,7 +113,7 @@ class TestDistinctAppliedFunction:
 
     def test_e2e_distinct_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.select(lambda r: ["First Name", "Firm/Legal Name"])
+        frame = frame.select(["First Name", "Firm/Legal Name"])
         frame = frame.head(3)
         frame = frame.distinct()
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
