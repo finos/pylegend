@@ -22,7 +22,8 @@ from pylegend._typing import (
     PyLegendTuple,
     PyLegendOptional,
 )
-from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitiveCollection, \
+    PyLegendPrimitive
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
@@ -228,3 +229,36 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiAsOfJoinFunction
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiAsOfJoinFunction(self, other, match_function, join_condition))
+
+    def group_by(
+            self,
+            grouping_columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
+                LegendQLApiPrimitive,
+                str,
+                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
+            ]],
+            aggregate_specifications: PyLegendUnion[
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                ],
+                PyLegendList[
+                    PyLegendTuple[
+                        str,
+                        PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                    ]
+                ]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_groupby_function import (
+            LegendQLApiGroupByFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(
+            LegendQLApiGroupByFunction(self, grouping_columns_function, aggregate_specifications)
+        )

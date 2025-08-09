@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from datetime import date, datetime
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
@@ -202,7 +203,7 @@ class LegacyApiGroupByFunction(LegacyApiAppliedFunction):
                     f"Error occurred while evaluating map function. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(map_result, (int, float, bool, str, PyLegendPrimitive)):
+            if not isinstance(map_result, (int, float, bool, str, date, datetime, PyLegendPrimitive)):
                 raise ValueError(
                     f"AggregateSpecification at index {index} (0-indexed) incompatible. "
                     f"Map function returns non-primitive - {str(type(map_result))}"

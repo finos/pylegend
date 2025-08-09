@@ -154,7 +154,7 @@ class LegacyApiExtendFunction(LegacyApiAppliedFunction):
                     f"Error occurred while evaluating. Message: {str(e)}"
                 ) from e
 
-            if not isinstance(result, (int, float, bool, str, PyLegendPrimitive)):
+            if not isinstance(result, (int, float, bool, str, date, datetime, PyLegendPrimitive)):
                 raise ValueError(
                     f"Extend function at index {index} (0-indexed) incompatible. "
                     f"Returns non-primitive - {str(type(result))}"
