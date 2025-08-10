@@ -53,52 +53,64 @@ class LegendQLApiRenameFunction(LegendQLApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegendQLApiBaseTdsFrame,
-            rename_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str],
-                PyLegendList[PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str]]
-            ]]
+            column_renames: PyLegendUnion[
+                PyLegendTuple[str, str],
+                PyLegendList[PyLegendTuple[str, str]],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[
+                        PyLegendTuple[LegendQLApiPrimitive, str],
+                        PyLegendList[PyLegendTuple[LegendQLApiPrimitive, str]]
+                    ]
+                ]
+            ]
     ) -> None:
         self.__base_frame = base_frame
-        tds_row = LegendQLApiTdsRow.from_tds_frame("frame", self.__base_frame)
-        if not isinstance(rename_function, type(lambda x: 0)) or (rename_function.__code__.co_argcount != 1):
-            raise TypeError("Rename function should be a lambda which takes one argument (TDSRow)")
 
-        try:
-            result = rename_function(tds_row)
-        except Exception as e:
-            raise RuntimeError(
-                "Rename lambda incompatible. Error occurred while evaluating. Message: " + str(e)
-            ) from e
+        col_names: PyLegendList[str] = []
+        renamed_col_names: PyLegendList[str] = []
 
-        list_result: PyLegendList[PyLegendTuple[str, PyLegendUnion[LegendQLApiPrimitive, str]]]
-        if isinstance(result, list):
-            list_result = result
-        else:
-            list_result = [result]
+        def rename_tuple_check(t):  # type: ignore
+            return isinstance(t, tuple) and (len(t) == 2) and isinstance(t[0], str) and isinstance(t[1], str)
 
-        col_names = []
-        renamed_col_names = []
+        if rename_tuple_check(column_renames):  # type: ignore
+            col_names.append(column_renames[0])  # type: ignore
+            renamed_col_names.append(column_renames[1])  # type: ignore
 
-        for (i, r) in enumerate(list_result):
+        elif isinstance(column_renames, list) and all([rename_tuple_check(r) for r in column_renames]):  # type: ignore
+            for t in column_renames:
+                col_names.append(t[0])
+                renamed_col_names.append(t[1])
 
-            error = ("Rename lambda incompatible. Each element in rename list should be a tuple with "
-                     "first element being a string (existing column name) or a simple column expression and "
-                     "second element being a string (renamed column name). "
-                     "E.g - frame.rename(lambda r: [('c1', 'nc1'), (r.c2, 'nc2')]). "
-                     f"Element at index {i} in the list is incompatible.")
+        elif isinstance(column_renames, type(lambda x: 0)) and (column_renames.__code__.co_argcount == 1):
+            tds_row = LegendQLApiTdsRow.from_tds_frame("frame", self.__base_frame)
+            try:
+                result = column_renames(tds_row)
+            except Exception as e:
+                raise RuntimeError(
+                    "rename' function column_renames argument lambda incompatible. "
+                    "Error occurred while evaluating. Message: " + str(e)
+                ) from e
 
-            if isinstance(r, tuple) and isinstance(r[1], str):
-                if isinstance(r[0], str):
-                    col_names.append(r[0])
-                    renamed_col_names.append(r[1])
-                elif isinstance(r[0], LegendQLApiPrimitive) and isinstance(r[0].value(), PyLegendColumnExpression):
+            list_result = result if isinstance(result, list) else [result]
+            for (i, r) in enumerate(list_result):
+                if (isinstance(r, tuple) and (len(r) == 2) and
+                        isinstance(r[0], LegendQLApiPrimitive) and isinstance(r[0].value(), PyLegendColumnExpression)
+                        and isinstance(r[1], str)):
                     col_expr: PyLegendColumnExpression = r[0].value()
                     col_names.append(col_expr.get_column())
                     renamed_col_names.append(r[1])
                 else:
-                    raise ValueError(error)
-            else:
-                raise TypeError(error)
+                    raise TypeError(
+                        "'rename' function column_renames argument lambda incompatible. Each element in rename list "
+                        "should be a tuple with first element being a simple column expression and "
+                        "second element being a string (renamed column name) "
+                        f"(E.g - lambda r: [(r.c1, 'c2')]). Element at index {i} (0-indexed) is incompatible"
+                    )
+
+        else:
+            raise TypeError("'rename' function column_renames argument can either be a list of renaming tuples or "
+                            "a lambda function which takes one argument (LegendQLApiTdsRow)")
 
         self.__column_names = col_names
         self.__renamed_column_names = renamed_col_names

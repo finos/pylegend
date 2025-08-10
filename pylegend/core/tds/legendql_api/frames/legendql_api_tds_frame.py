@@ -77,12 +77,18 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     @abstractmethod
     def sort(
             self,
-            sort_infos_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                LegendQLApiPrimitive,
+            sort_infos: PyLegendUnion[
                 str,
-                LegendQLApiSortInfo,
-                PyLegendList[PyLegendUnion[LegendQLApiPrimitive, str, LegendQLApiSortInfo]],
-            ]]
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[
+                        LegendQLApiPrimitive,
+                        LegendQLApiSortInfo,
+                        PyLegendList[PyLegendUnion[LegendQLApiPrimitive, LegendQLApiSortInfo]],
+                    ]
+                ]
+            ]
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
 
@@ -100,10 +106,17 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     @abstractmethod
     def rename(
             self,
-            rename_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str],
-                PyLegendList[PyLegendTuple[PyLegendUnion[LegendQLApiPrimitive, str], str]]
-            ]]
+            column_renames: PyLegendUnion[
+                PyLegendTuple[str, str],
+                PyLegendList[PyLegendTuple[str, str]],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[
+                        PyLegendTuple[LegendQLApiPrimitive, str],
+                        PyLegendList[PyLegendTuple[LegendQLApiPrimitive, str]]
+                    ]
+                ]
+            ]
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
 
@@ -174,11 +187,14 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     @abstractmethod
     def group_by(
             self,
-            grouping_columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                LegendQLApiPrimitive,
+            grouping_columns: PyLegendUnion[
                 str,
-                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
-            ]],
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ],
             aggregate_specifications: PyLegendUnion[
                 PyLegendTuple[
                     str,

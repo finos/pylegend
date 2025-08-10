@@ -43,12 +43,11 @@ class TestRenameColumnsAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(TypeError) as v:
             frame.rename(lambda r: [r.col2])  # type: ignore
-        assert v.value.args[0] == \
-               ('Rename lambda incompatible. Each element in rename list should be a tuple with '
-                'first element being a string (existing column name) or a simple column '
-                'expression and second element being a string (renamed column name). E.g - '
-                "frame.rename(lambda r: [('c1', 'nc1'), (r.c2, 'nc2')]). Element at index 0 in "
-                'the list is incompatible.')
+        assert v.value.args[0] == (
+            "'rename' function column_renames argument lambda incompatible. Each element in rename list should be a "
+            "tuple with first element being a simple column expression and second element being a string "
+            "(renamed column name) (E.g - lambda r: [(r.c1, 'c2')]). Element at index 0 (0-indexed) is incompatible"
+        )
 
     def test_rename_columns_error_on_duplicates_in_columns(self) -> None:
         columns = [
@@ -96,8 +95,6 @@ class TestRenameColumnsAppliedFunction:
         for variation in [
             lambda r: (r.col2, 'col3'),
             lambda r: [(r['col2'], 'col3')],
-            lambda r: ('col2', 'col3'),
-            lambda r: [('col2', 'col3')],
         ]:
             frame1 = frame.rename(variation)  # type: ignore
             assert "[" + ", ".join([str(c) for c in frame1.columns()]) + "]" == \
@@ -117,7 +114,7 @@ class TestRenameColumnsAppliedFunction:
             assert generate_pure_query_and_compile(frame1, FrameToPureConfig(pretty=False), self.legend_client) == \
                    ('#Table(test_schema.test_table)#->rename(~col2, ~col3)')
 
-        frame = frame.rename(lambda r: [("col1", "col4"), (r.col2, "col5 with spaces")])
+        frame = frame.rename([("col1", "col4"), ("col2", "col5 with spaces")])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: col4, Type: Integer), TdsColumn(Name: col5 with spaces, Type: String)]"
         expected = '''\
