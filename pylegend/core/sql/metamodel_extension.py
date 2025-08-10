@@ -19,6 +19,7 @@ from pylegend._typing import (
 )
 from pylegend.core.sql.metamodel import (
     Expression,
+    Window,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -78,6 +79,7 @@ __all__: PyLegendSequence[str] = [
     "MinuteExpression",
     "SecondExpression",
     "EpochExpression",
+    "WindowExpression",
 ]
 
 
@@ -717,3 +719,17 @@ class EpochExpression(Expression):
     ) -> None:
         super().__init__(_type="epochExpression")
         self.value = value
+
+
+class WindowExpression(Expression):
+    nested: "Expression"
+    window: "Window"
+
+    def __init__(
+        self,
+        nested: "Expression",
+        window: "Window",
+    ) -> None:
+        super().__init__(_type="windowExpression")
+        self.nested = nested
+        self.window = window

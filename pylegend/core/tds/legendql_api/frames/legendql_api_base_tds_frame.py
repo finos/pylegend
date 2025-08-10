@@ -171,9 +171,27 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
     def extend(
             self,
             extend_columns: PyLegendUnion[
-                PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]
+                ],
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                ],
                 PyLegendList[
-                    PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]]
+                    PyLegendUnion[
+                        PyLegendTuple[
+                            str,
+                            PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]
+                        ],
+                        PyLegendTuple[
+                            str,
+                            PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                        ]
+                    ]
                 ]
             ]
     ) -> "LegendQLApiTdsFrame":
