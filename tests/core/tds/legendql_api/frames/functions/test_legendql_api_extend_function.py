@@ -42,12 +42,11 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(TypeError) as r:
-            frame.extend(lambda r: [r.col1])  # type: ignore
+            frame.extend('col1')  # type: ignore
         assert r.value.args[0] == (
-            "Extend lambda incompatible. Each element in extend list should be a tuple "
-            "with first element being a string (new column name) and second element being "
-            "an expression. E.g - frame.rename(lambda r: [('nc1', r.c1 + 1), ('nc2', r.c2 + 2)]). "
-            "Element at index 0 in the list is incompatible."
+            "'extend' function extend_columns argument should be a list of tuples with two elements - "
+            "first element being a string (new column name) and second element being a lambda function which takes one "
+            "argument (LegendQLApiTdsRow). E.g - [('new col1', lambda r: r.c1 + 1), ('new col2', lambda r: r.c2 + 2)]"
         )
 
     def test_extend_function_error_on_incompatible_lambda_func(self) -> None:
@@ -57,10 +56,11 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(RuntimeError) as r:
-            frame.extend(lambda r: ("col4", r.unknown))
+            frame.extend(("col4", lambda r: r.unknown))
         assert r.value.args[0] == (
-            "Extend lambda incompatible. Error occurred while evaluating. "
-            "Message: Column - 'unknown' doesn't exist in the current frame. Current frame columns: ['col1', 'col2']"
+            "'extend' function extend_columns argument incompatible. Error occurred while evaluating "
+            "extend lambda at index 0 (0-indexed). Message: Column - 'unknown' doesn't exist in the current frame. "
+            "Current frame columns: ['col1', 'col2']"
         )
 
     def test_extend_function_error_on_non_string_name(self) -> None:
@@ -70,12 +70,11 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(TypeError) as r:
-            frame.extend(lambda r: (1, r.col1 + 1))  # type: ignore
+            frame.extend((1, lambda r: r.col1 + 1))  # type: ignore
         assert r.value.args[0] == (
-            "Extend lambda incompatible. Each element in extend list should be a tuple "
-            "with first element being a string (new column name) and second element being "
-            "an expression. E.g - frame.rename(lambda r: [('nc1', r.c1 + 1), ('nc2', r.c2 + 2)]). "
-            "Element at index 0 in the list is incompatible."
+            "'extend' function extend_columns argument incompatible. First element in an extend tuple should be "
+            "a string (new column name). E.g - ('new col', lambda r: r.c1 + 1). "
+            "Element at index 0 (0-indexed) is incompatible"
         )
 
     def test_extend_function_error_on_incompatible_lambda_1(self) -> None:
@@ -84,10 +83,10 @@ class TestExtendAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(ValueError) as r:
-            frame.extend(lambda r: ("col4", {}))  # type: ignore
-        assert r.value.args[0] == ("Extend function element at index 0 (0-indexed) incompatible. "
-                                   "Returns non-primitive - <class 'dict'>")
+        with pytest.raises(TypeError) as r:
+            frame.extend(("col4", lambda r: {}))  # type: ignore
+        assert r.value.args[0] == ("'extend' function extend_columns argument incompatible. "
+                                   "Extend lambda at index 0 (0-indexed) returns non-primitive - <class 'dict'>")
 
     def test_extend_function_error_on_duplicate_column_names(self) -> None:
         columns = [
@@ -96,7 +95,7 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
-            frame.extend(lambda r: [("col4", 1), ("col4", 2)])
+            frame.extend([("col4", lambda r: 1), ("col4", lambda r: 2)])
         assert r.value.args[0] == "Extend column names list has duplicates: ['col4', 'col4']"
 
     def test_extend_function_error_on_conflicting_column_names(self) -> None:
@@ -106,7 +105,7 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
-            frame.extend(lambda r: [("col1", 1), ("col4", 2)])
+            frame.extend([("col1", lambda r: 1), ("col4", lambda r: 2)])
         assert r.value.args[0] == "Extend column name - 'col1' already exists in base frame"
 
     def test_query_gen_extend_function(self) -> None:
@@ -115,7 +114,7 @@ class TestExtendAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.extend(lambda r: ("col3", r.get_integer('col1') + 1))
+        frame = frame.extend(("col3", lambda r: r.get_integer('col1') + 1))
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
@@ -138,7 +137,7 @@ class TestExtendAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.extend(lambda r: ("col3 with spaces", r.get_integer('col1') + 1))
+        frame = frame.extend(("col3 with spaces", lambda r: r.get_integer('col1') + 1))
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
@@ -161,7 +160,9 @@ class TestExtendAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.extend(lambda r: [("col3", r.get_integer('col1') + 1), ("col4", r.get_integer('col1') + 2)])
+        frame = frame.extend(
+            [("col3", lambda r: r.get_integer('col1') + 1), ("col4", lambda r: r.get_integer('col1') + 2)]
+        )
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
@@ -188,11 +189,11 @@ class TestExtendAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.extend(lambda r: [
-            ("col3", 1),
-            ("col4", 2.0),
-            ("col5", "Hello"),
-            ("col6", True)
+        frame = frame.extend([
+            ("col3", lambda r: 1),
+            ("col4", lambda r: 2.0),
+            ("col5", lambda r: "Hello"),
+            ("col6", lambda r: True)
         ])
         expected = '''\
             SELECT
@@ -221,7 +222,7 @@ class TestExtendAppliedFunction:
 
     def test_e2e_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.extend(lambda r: ("Upper", r.get_string("First Name").upper()))
+        frame = frame.extend(("Upper", lambda r: r.get_string("First Name").upper()))
         assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
                 "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), "
                 "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String), "
@@ -239,9 +240,9 @@ class TestExtendAppliedFunction:
 
     def test_e2e_extend_function_multi(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.extend(lambda r: [
-            ("Upper", r.get_string("First Name").upper()),
-            ("AgeCheck", r.get_integer('Age') < 25)
+        frame = frame.extend([
+            ("Upper", lambda r: r.get_string("First Name").upper()),
+            ("AgeCheck", lambda r: r.get_integer('Age') < 25)
         ])
         assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
                 "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), "
@@ -266,11 +267,11 @@ class TestExtendAppliedFunction:
     def test_e2e_extend_function_literals(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.select(["Last Name"])
-        frame = frame.extend(lambda r: [
-            ("col3", 1),
-            ("col4", 2.0),
-            ("col5", "Hello"),
-            ("col6", True)
+        frame = frame.extend([
+            ("col3", lambda r: 1),
+            ("col4", lambda r: 2.0),
+            ("col5", lambda r: "Hello"),
+            ("col6", lambda r: True)
         ])
         assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]") == \
                ('[TdsColumn(Name: Last Name, Type: String), TdsColumn(Name: col3, Type: Integer), '

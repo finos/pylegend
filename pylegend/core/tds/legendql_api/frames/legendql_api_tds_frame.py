@@ -123,10 +123,12 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     @abstractmethod
     def extend(
             self,
-            extend_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
-                PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive]]
-            ]]
+            extend_columns: PyLegendUnion[
+                PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+                PyLegendList[
+                    PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]]
+                ]
+            ]
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
 

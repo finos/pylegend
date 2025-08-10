@@ -170,10 +170,12 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
     def extend(
             self,
-            extend_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
-                PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive]]
-            ]]
+            extend_columns: PyLegendUnion[
+                PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+                PyLegendList[
+                    PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]]
+                ]
+            ]
     ) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
@@ -181,7 +183,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_extend_function import (
             LegendQLApiExtendFunction
         )
-        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiExtendFunction(self, extend_function))
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiExtendFunction(self, extend_columns))
 
     def join(
             self,
