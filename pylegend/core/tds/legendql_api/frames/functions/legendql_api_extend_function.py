@@ -55,44 +55,52 @@ class LegendQLApiExtendFunction(LegendQLApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegendQLApiBaseTdsFrame,
-            extend_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
-                PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive]]
-            ]]
+            extend_columns: PyLegendUnion[
+                PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]],
+                PyLegendList[
+                    PyLegendTuple[str, PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]]
+                ]
+            ]
     ) -> None:
         self.__base_frame = base_frame
+        col_expressions: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive]] = []
         tds_row = LegendQLApiTdsRow.from_tds_frame("r", self.__base_frame)
-        if not isinstance(extend_function, type(lambda x: 0)) or (extend_function.__code__.co_argcount != 1):
-            raise TypeError("Extend function should be a lambda which takes one argument (TDSRow)")
-
-        try:
-            result = extend_function(tds_row)
-        except Exception as e:
-            raise RuntimeError(
-                "Extend lambda incompatible. Error occurred while evaluating. Message: " + str(e)
-            ) from e
-
-        list_result: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive]]
-        if isinstance(result, list):
-            list_result = result
-        else:
-            list_result = [result]
-
-        col_expressions = []
-        for (i, r) in enumerate(list_result):
-            if isinstance(r, tuple) and isinstance(r[0], str):
-                if not isinstance(r[1], (int, float, bool, str, date, datetime, PyLegendPrimitive)):
-                    raise ValueError(
-                        f"Extend function element at index {i} (0-indexed) incompatible. "
-                        f"Returns non-primitive - {str(type(r[1]))}"
+        for (i, extend_column) in enumerate(extend_columns if isinstance(extend_columns, list) else [extend_columns]):
+            if isinstance(extend_column, tuple) and len(extend_column) == 2:
+                if not isinstance(extend_column[0], str):
+                    raise TypeError(
+                        "'extend' function extend_columns argument incompatible. "
+                        "First element in an extend tuple should be a string (new column name). "
+                        "E.g - ('new col', lambda r: r.c1 + 1). "
+                        f"Element at index {i} (0-indexed) is incompatible"
                     )
-                col_expressions.append(r)
+                if not isinstance(extend_column[1], type(lambda x: 0)) or (extend_column[1].__code__.co_argcount != 1):
+                    raise TypeError(
+                        "'extend' function extend_columns argument incompatible. "
+                        "Second element in an extend tuple should be a lambda function which takes one argument "
+                        "(LegendQLApiTdsRow) E.g - ('new col', lambda r: r.c1 + 1)."
+                        f"Element at index {i} (0-indexed) is incompatible"
+                    )
+                try:
+                    result = extend_column[1](tds_row)
+                except Exception as e:
+                    raise RuntimeError(
+                        "'extend' function extend_columns argument incompatible. "
+                        f"Error occurred while evaluating extend lambda at index {i} (0-indexed). Message: " + str(e)
+                    ) from e
+
+                if not isinstance(result, (int, float, bool, str, date, datetime, PyLegendPrimitive)):
+                    raise TypeError(
+                        "'extend' function extend_columns argument incompatible. "
+                        f"Extend lambda at index {i} (0-indexed) returns non-primitive - {str(type(result))}"
+                    )
+                col_expressions.append((extend_column[0], result))
             else:
                 raise TypeError(
-                    "Extend lambda incompatible. Each element in extend list should be a tuple with "
-                    "first element being a string (new column name) and second element being an expression. "
-                    "E.g - frame.rename(lambda r: [('nc1', r.c1 + 1), ('nc2', r.c2 + 2)]). "
-                    f"Element at index {i} in the list is incompatible."
+                    "'extend' function extend_columns argument should be a list of tuples with two elements - "
+                    "first element being a string (new column name) and second element being a lambda "
+                    "function which takes one argument (LegendQLApiTdsRow). "
+                    "E.g - [('new col1', lambda r: r.c1 + 1), ('new col2', lambda r: r.c2 + 2)]"
                 )
         self.__new_column_expression = col_expressions
 
