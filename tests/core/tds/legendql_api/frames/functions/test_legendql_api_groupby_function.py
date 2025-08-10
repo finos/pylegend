@@ -45,9 +45,10 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(TypeError) as r:
-            frame.group_by(["col1"], [])  # type: ignore
+            frame.group_by(lambda: ["col1"], [])  # type: ignore
         assert r.value.args[0] == (
-            "GroupBy grouping_columns_function should be a lambda which takes one argument (TDSRow)"
+            "'group_by' function grouping columns argument can either be a list of strings (column names) "
+            "or a lambda function which takes one argument (LegendQLApiTdsRow)"
         )
 
     def test_group_by_error_on_unknown_column(self) -> None:
@@ -56,10 +57,13 @@ class TestGroupByAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(ValueError) as r:
-            frame.group_by(lambda x: ["col3"], [])
-        assert r.value.args[0] == ("Column - 'col3' in group_by columns list doesn't exist in the current frame. "
-                                   "Current frame columns: ['col1', 'col2']")
+        with pytest.raises(RuntimeError) as r:
+            frame.group_by(lambda x: x["col3"], [])
+        assert r.value.args[0] == (
+            "'group_by' function grouping columns argument lambda incompatible. "
+            "Error occurred while evaluating. Message: Column - 'col3' doesn't exist in the current frame. "
+            "Current frame columns: ['col1', 'col2']"
+        )
 
     def test_group_by_error_on_unknown_column2(self) -> None:
         columns = [
@@ -68,10 +72,12 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(RuntimeError) as r:
-            frame.group_by(lambda x: x.col3, [])
-        assert r.value.args[0] == ("GroupBy columns lambda incompatible. Error occurred while evaluating. "
-                                   "Message: Column - 'col3' doesn't exist in the current frame. "
-                                   "Current frame columns: ['col1', 'col2']")
+            frame.group_by(lambda x: [x.col3], [])
+        assert r.value.args[0] == (
+            "'group_by' function grouping columns argument lambda incompatible. "
+            "Error occurred while evaluating. Message: Column - 'col3' doesn't exist in the current frame. "
+            "Current frame columns: ['col1', 'col2']"
+        )
 
     def test_group_by_error_on_incompatible_column(self) -> None:
         columns = [
@@ -79,12 +85,12 @@ class TestGroupByAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(RuntimeError) as r:
+        with pytest.raises(TypeError) as r:
             frame.group_by(lambda x: x.col1 + 1, [])  # type: ignore
-        assert r.value.args[0] == ("GroupBy columns lambda incompatible. "
-                                   "Columns can either be strings (lambda r: ['c1', 'c2']) or "
-                                   "simple column expressions (lambda r: [r.c1, r.c2]). "
-                                   "Element at index 0 in the list is incompatible.")
+        assert r.value.args[0] == (
+            "'group_by' function grouping columns argument lambda incompatible. "
+            "Columns can be simple column expressions (E.g - lambda r: [r.column1, r.column2, r['column with spaces']). "
+            "Element at index 0 (0-indexed) is incompatible")
 
     def test_group_by_error_on_empty_cols(self) -> None:
         columns = [
@@ -94,7 +100,7 @@ class TestGroupByAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
             frame.group_by(lambda x: [], [])
-        assert r.value.args[0] == ("At-least one grouping column or aggregate must be provided "
+        assert r.value.args[0] == ("At-least one grouping column or aggregate specification must be provided "
                                    "when using group_by function")
 
     def test_group_by_error_on_duplicate_cols(self) -> None:
@@ -105,7 +111,7 @@ class TestGroupByAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as r:
             frame.group_by(
-                lambda x: "col1", ("col1", lambda x: x.col1, lambda y: y.sum())  # type: ignore
+                "col1", ("col1", lambda x: x.col1, lambda y: y.sum())  # type: ignore
             )
         assert r.value.args[0] == ("Found duplicate column names in grouping columns and aggregation columns. "
                                    "Grouping columns - ['col1'], Aggregation columns - ['col1']")
@@ -116,14 +122,17 @@ class TestGroupByAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(RuntimeError) as r:
+        with pytest.raises(TypeError) as r:
             frame.group_by(
-                lambda x: "col1", ("col3", lambda: 1, lambda y: y.sum())   # type: ignore
+                "col1", ("col3", lambda: 1, lambda y: y.sum())   # type: ignore
             )
         assert r.value.args[0] == (
-            "GroupBy aggregate incompatible. Each element in aggregates list should be a triplet with second element "
-            "being a lambda (mapper function) which takes one argument (TDSRow). "
-            "Element at index 0 in the list is incompatible.")
+            "'group_by' function aggregate specifications incompatible. Each aggregate specification should be a "
+            "triplet with first element being the aggregation column name, second element being a mapper function "
+            "(single argument lambda) and third element being the aggregation function (single argument lambda). "
+            "E.g - ('count_col', lambda r: r['col1'], lambda c: c.count()). "
+            "Element at index 0 (0-indexed) is incompatible"
+        )
 
     def test_group_by_error_on_map_fn_evaluation(self) -> None:
         columns = [
@@ -133,12 +142,12 @@ class TestGroupByAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(RuntimeError) as r:
             frame.group_by(
-                lambda x: "col1", ("col1", lambda x: x.col3, lambda y: y.sum())  # type: ignore
+                "col1", ("col1", lambda x: x.col3, lambda y: y.sum())  # type: ignore
             )
         assert r.value.args[0] == (
-            "GroupBy aggregate incompatible. Error occurred while evaluating map lambda "
-            "at index 0. Message: Column - 'col3' doesn't exist in the current frame. "
-            "Current frame columns: ['col1', 'col2']"
+            "'group_by' function aggregate specifications incompatible. Error occurred while evaluating mapper lambda "
+            "in the aggregate specification at index 0 (0-indexed). "
+            "Message: Column - 'col3' doesn't exist in the current frame. Current frame columns: ['col1', 'col2']"
         )
 
     def test_group_by_error_on_map_fn_non_primitive(self) -> None:
@@ -147,13 +156,14 @@ class TestGroupByAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(RuntimeError) as r:
+        with pytest.raises(TypeError) as r:
             frame.group_by(
-                lambda x: "col1", ("col1", lambda x: x, lambda y: y.sum())  # type: ignore
+                "col1", ("col1", lambda x: x, lambda y: y.sum())  # type: ignore
             )
         assert r.value.args[0] == (
-            "GroupBy aggregate incompatible. Map lambda at index 0 returns non-primitive - "
-            "<class 'pylegend.core.language.legendql_api.legendql_api_tds_row.LegendQLApiTdsRow'>")
+            "'group_by' function aggregate specifications incompatible. Mapper lambda in the aggregate specification "
+            "at index 0 (0-indexed) returns non-primitive - <"
+            "class 'pylegend.core.language.legendql_api.legendql_api_tds_row.LegendQLApiTdsRow'>")
 
     def test_group_by_error_on_incompatible_agg_fn(self) -> None:
         columns = [
@@ -161,14 +171,16 @@ class TestGroupByAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(RuntimeError) as r:
+        with pytest.raises(TypeError) as r:
             frame.group_by(
-                lambda x: "col1", ("col3", lambda x: x.col2, lambda: 3)  # type: ignore
+                "col1", ("col3", lambda x: x.col2, lambda: 3)  # type: ignore
             )
         assert r.value.args[0] == (
-            "GroupBy aggregate incompatible. Each element in aggregates list should be a triplet with third element "
-            "being a lambda (aggregation function) which takes one argument (TDSRow). "
-            "Element at index 0 in the list is incompatible."
+            "'group_by' function aggregate specifications incompatible. Each aggregate specification should be a "
+            "triplet with first element being the aggregation column name, second element being a mapper function "
+            "(single argument lambda) and third element being the aggregation function (single argument lambda). "
+            "E.g - ('count_col', lambda r: r['col1'], lambda c: c.count()). "
+            "Element at index 0 (0-indexed) is incompatible"
         )
 
     def test_group_by_error_on_agg_fn_evaluation(self) -> None:
@@ -179,10 +191,11 @@ class TestGroupByAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(RuntimeError) as r:
             frame.group_by(
-                lambda x: "col1", ("col3", lambda x: x.col2, lambda y: y.unknown())  # type: ignore
+                "col1", ("col3", lambda x: x.col2, lambda y: y.unknown())  # type: ignore
             )
         assert r.value.args[0] == (
-            "GroupBy aggregate incompatible. Error occurred while evaluating aggregation lambda at index 0. "
+            "'group_by' function aggregate specifications incompatible. Error occurred while evaluating aggregation "
+            "lambda in the aggregate specification at index 0 (0-indexed). "
             "Message: 'PyLegendStringCollection' object has no attribute 'unknown'"
         )
 
@@ -192,12 +205,13 @@ class TestGroupByAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(RuntimeError) as r:
+        with pytest.raises(TypeError) as r:
             frame.group_by(
-                lambda x: "col1", ("col3", lambda x: x.col2, lambda y: y)  # type: ignore
+                "col1", ("col3", lambda x: x.col2, lambda y: y)  # type: ignore
             )
         assert r.value.args[0] == (
-            "GroupBy aggregate incompatible. Aggregation lambda at index 0 returns non-primitive - "
+            "'group_by' function aggregate specifications incompatible. Aggregation lambda in the aggregate "
+            "specification at index 0 (0-indexed) returns non-primitive - "
             "<class 'pylegend.core.language.shared.primitive_collection.PyLegendStringCollection'>"
         )
 
@@ -458,7 +472,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Cnt", lambda r: r.col1, lambda c: c.distinct_count()),
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -491,7 +505,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Average", lambda r: r.col1, lambda c: c.average()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -525,7 +539,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Average", lambda r: r.col1 + 20, lambda c: c.average()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -558,7 +572,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Average", lambda r: r.col1, lambda c: c.average() + 2),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -591,7 +605,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Maximum", lambda r: r.col1, lambda c: c.max()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -624,7 +638,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Minimum", lambda r: r.col1, lambda c: c.min()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -657,7 +671,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Sum", lambda r: r.col1, lambda c: c.sum()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -690,7 +704,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Maximum", lambda r: r.col1, lambda c: c.max()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -723,7 +737,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Minimum", lambda r: r.col1, lambda c: c.min()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -756,7 +770,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Sum", lambda r: r.col1, lambda c: c.sum()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -789,7 +803,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Maximum", lambda r: r.col1, lambda c: c.max()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -822,7 +836,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Minimum", lambda r: r.col1, lambda c: c.min()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -855,7 +869,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Sum", lambda r: r.col1, lambda c: c.sum()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -888,7 +902,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Std Dev Sample", lambda r: r.col1, lambda c: c.std_dev_sample()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -922,7 +936,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Std Dev", lambda r: r.col1, lambda c: c.std_dev()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -956,7 +970,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Std Dev Population", lambda r: r.col1, lambda c: c.std_dev_population()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -990,7 +1004,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Variance Sample", lambda r: r.col1, lambda c: c.variance_sample()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1024,7 +1038,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Variance", lambda r: r.col1, lambda c: c.variance()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1058,7 +1072,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col2"],
+            ["col2"],
             ("Variance Population", lambda r: r.col1, lambda c: c.variance_population()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1092,7 +1106,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col1"],
+            ["col1"],
             ("Maximum", lambda r: r.col2, lambda c: c.max()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1125,7 +1139,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col1"],
+            ["col1"],
             ("Minimum", lambda r: r.col2, lambda c: c.min()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1158,7 +1172,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col1"],
+            ["col1"],
             ("Joined", lambda r: r.col2, lambda c: c.join(' ')),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1191,7 +1205,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col1"],
+            ["col1"],
             ("Maximum", lambda r: r.col2, lambda c: c.max()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1224,7 +1238,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col1"],
+            ["col1"],
             ("Minimum", lambda r: r.col2, lambda c: c.min()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1257,7 +1271,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col1"],
+            ["col1"],
             ("Maximum", lambda r: r.col2, lambda c: c.max()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1290,7 +1304,7 @@ class TestGroupByAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.group_by(
-            lambda r: ["col1"],
+            ["col1"],
             ("Minimum", lambda r: r.col2, lambda c: c.min()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
@@ -1319,7 +1333,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Firm/Legal Name"],
+            ["Firm/Legal Name"],
             ("Employee Count", lambda r: r["First Name"], lambda c: c.count()),
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1336,7 +1350,7 @@ class TestGroupByAppliedFunction:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.head(5)
         frame = frame.group_by(
-            lambda r: ["Firm/Legal Name"],
+            ["Firm/Legal Name"],
             ("Employee Count", lambda r: r["First Name"], lambda c: c.count()),
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1363,7 +1377,7 @@ class TestGroupByAppliedFunction:
             -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Firm/Legal Name", "First Name"],
+            ["Firm/Legal Name", "First Name"],
             ("Employee Count", lambda r: r["Last Name"], lambda c: c.count()),
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1384,7 +1398,7 @@ class TestGroupByAppliedFunction:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.extend(lambda x: ("Last Name Gen", x['Last Name'] + '_Gen'))  # type: ignore
         frame = frame.group_by(
-            lambda r: ["Firm/Legal Name", "Last Name Gen"],
+            ["Firm/Legal Name", "Last Name Gen"],
             ("Employee Count", lambda r: r["First Name"], lambda c: c.count()),
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1401,7 +1415,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_multi_aggregations(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Firm/Legal Name"],
+            ["Firm/Legal Name"],
             [
                 ("Employee Count1", lambda r: r["First Name"], lambda c: c.count()),
                 ("Employee Count2", lambda r: r["First Name"], lambda c: c.count())
@@ -1422,7 +1436,7 @@ class TestGroupByAppliedFunction:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.head(5)
         frame = frame.group_by(
-            lambda r: ["Firm/Legal Name"],
+            ["Firm/Legal Name"],
             ("Employee Count", lambda r: r["First Name"], lambda c: c.distinct_count()),
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1436,7 +1450,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_average_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             ("Average Qty", lambda r: r["Quantity"], lambda c: c.average()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1452,7 +1466,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_average_agg_pre_op(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             ("Average Qty", lambda r: r["Quantity"] + 20, lambda c: c.average()),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1469,7 +1483,7 @@ class TestGroupByAppliedFunction:
             -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             ("Average Qty", lambda r: r["Quantity"], lambda c: c.average() + 2),  # type: ignore
         )
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -1485,7 +1499,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_integer_max_min_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             [
                 ("Max Trade Id", lambda r: r["Id"], lambda c: c.max()),  # type: ignore
                 ("Min Trade Id", lambda r: r["Id"], lambda c: c.min()),  # type: ignore
@@ -1506,7 +1520,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_float_max_min_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             [
                 ("Max Qty", lambda r: r["Quantity"], lambda c: c.max()),  # type: ignore
                 ("Min Qty", lambda r: r["Quantity"], lambda c: c.min()),  # type: ignore
@@ -1527,7 +1541,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_number_max_min_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             [
                 ("Max Qty", lambda r: (r["Quantity"] + 2) * 1.0 + 0, lambda c: c.max()),  # type: ignore
                 ("Min Qty", lambda r: (r["Quantity"] + 2) * 1.0 + 0, lambda c: c.min()),  # type: ignore
@@ -1549,7 +1563,7 @@ class TestGroupByAppliedFunction:
             -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             [
                 ("Std Dev", lambda r: r["Quantity"], lambda c: c.std_dev()),  # type: ignore
                 ("Std Dev Sample", lambda r: r["Quantity"], lambda c: c.std_dev_sample()),  # type: ignore
@@ -1571,7 +1585,7 @@ class TestGroupByAppliedFunction:
             -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             [
                 ("Variance", lambda r: r["Quantity"], lambda c: c.variance()),  # type: ignore
                 ("Variance Sample", lambda r: r["Quantity"], lambda c: c.variance_sample()),  # type: ignore
@@ -1592,7 +1606,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_string_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Firm/Legal Name"],
+            ["Firm/Legal Name"],
             [
                 ("Max Str", lambda r: r["First Name"], lambda c: c.max()),  # type: ignore
                 ("Min Str", lambda r: r["First Name"], lambda c: c.min()),  # type: ignore
@@ -1613,7 +1627,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_strictdate_max_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             [
                 ("Max Date", lambda r: r["Date"], lambda c: c.max()),  # type: ignore
                 ("Min Date", lambda r: r["Date"], lambda c: c.min()),  # type: ignore
@@ -1633,7 +1647,7 @@ class TestGroupByAppliedFunction:
     def test_e2e_group_by_date_max_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
         frame = frame.group_by(
-            lambda r: ["Product/Name"],
+            ["Product/Name"],
             [
                 ("Max Date Time", lambda r: r["Settlement Date Time"], lambda c: c.max()),  # type: ignore
                 ("Min Date Time", lambda r: r["Settlement Date Time"], lambda c: c.min()),  # type: ignore

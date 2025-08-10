@@ -42,7 +42,7 @@ class TestSortAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as v:
-            frame.sort(lambda r: ["col3"])
+            frame.sort(["col3"])
         assert v.value.args[0] == "Column - 'col3' doesn't exist in the current frame. " \
                                   "Current frame columns: ['col1', 'col2']"
 
@@ -54,9 +54,10 @@ class TestSortAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(RuntimeError) as v:
             frame.sort(lambda r: r.col3)
-        assert v.value.args[0] == ("Sort lambda incompatible. Error occurred while evaluating. Message: "
-                                   "Column - 'col3' doesn't exist in the current frame. "
-                                   "Current frame columns: ['col1', 'col2']")
+        assert v.value.args[0] == (
+            "'sort' function sort_infos argument lambda incompatible. Error occurred while evaluating. "
+            "Message: Column - 'col3' doesn't exist in the current frame. Current frame columns: ['col1', 'col2']"
+        )
 
     def test_sort_function_error_on_non_column_expr(self) -> None:
         columns = [
@@ -64,12 +65,13 @@ class TestSortAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        with pytest.raises(RuntimeError) as v:
+        with pytest.raises(TypeError) as v:
             frame.sort(lambda r: r.col1 + 1)  # type: ignore
-        assert v.value.args[0] == ("Sort lambda incompatible. Columns can either be strings (lambda r: ['c1', 'c2']) or "
-                                   "simple column expressions (lambda r: [r.c1, r.c2]) or "
-                                   "sort infos (lambda r: [r.c1.ascending(), r['c2'].descending()]). "
-                                   "Element at index 0 in the list is incompatible.")
+        assert v.value.args[0] == (
+            "'sort' function sort_infos argument lambda incompatible. Columns can be simple column expressions or "
+            "sort infos. (E.g - lambda r: [r.column1, r['column with spaces'].descending(), r.column3.ascending()). "
+            "Element at index 0 (0-indexed) is incompatible"
+        )
 
     def test_query_gen_sort_function_no_top(self) -> None:
         columns = [
@@ -77,7 +79,7 @@ class TestSortAppliedFunction:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.sort(lambda r: ["col2", "col1"])
+        frame = frame.sort(["col2", "col1"])
         expected = '''\
             SELECT
                 "root".col1 AS "col1",
@@ -131,7 +133,7 @@ class TestSortAppliedFunction:
 
     def test_e2e_sort_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
-        frame = frame.sort(lambda r: ["Firm/Legal Name"])
+        frame = frame.sort(lambda r: r["Firm/Legal Name"])
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
                              {'values': ['Oliver', 'Hill', 32, 'Firm B']},

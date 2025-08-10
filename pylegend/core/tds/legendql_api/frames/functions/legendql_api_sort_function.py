@@ -51,50 +51,58 @@ class LegendQLApiSortFunction(LegendQLApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegendQLApiBaseTdsFrame,
-            sort_infos_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                LegendQLApiPrimitive,
+            sort_infos: PyLegendUnion[
                 str,
-                LegendQLApiSortInfo,
-                PyLegendList[PyLegendUnion[LegendQLApiPrimitive, str, LegendQLApiSortInfo]],
-            ]]
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[
+                        LegendQLApiPrimitive,
+                        LegendQLApiSortInfo,
+                        PyLegendList[PyLegendUnion[LegendQLApiPrimitive, LegendQLApiSortInfo]],
+                    ]
+                ]
+            ]
     ) -> None:
         self.__base_frame = base_frame
         tds_row = LegendQLApiTdsRow.from_tds_frame("frame", self.__base_frame)
-        if not isinstance(sort_infos_function, type(lambda x: 0)) or (sort_infos_function.__code__.co_argcount != 1):
-            raise TypeError("Sort function should be a lambda which takes one argument (TDSRow)")
-
-        try:
-            result = sort_infos_function(tds_row)
-        except Exception as e:
-            raise RuntimeError(
-                "Sort lambda incompatible. Error occurred while evaluating. Message: " + str(e)
-            ) from e
-
-        list_result: PyLegendList[PyLegendUnion[LegendQLApiPrimitive, str, LegendQLApiSortInfo]]
-        if isinstance(result, list):
-            list_result = result
-        elif isinstance(result, tuple):
-            list_result = list(result)
-        else:
-            list_result = [result]
-
         sort_info_list = []
-        for (i, r) in enumerate(list_result):
-            if isinstance(r, str):
-                col_expr1: PyLegendColumnExpression = tds_row[r].value()
-                sort_info_list.append(LegendQLApiSortInfo(col_expr1, LegendQLApiSortDirection.ASC))
-            elif isinstance(r, LegendQLApiPrimitive) and isinstance(r.value(), PyLegendColumnExpression):
-                col_expr2: PyLegendColumnExpression = r.value()
+
+        if isinstance(sort_infos, str):
+            col_expr1: PyLegendColumnExpression = tds_row[sort_infos].value()  # type: ignore
+            sort_info_list.append(LegendQLApiSortInfo(col_expr1, LegendQLApiSortDirection.ASC))
+
+        elif isinstance(sort_infos, list) and all([isinstance(s, str) for s in sort_infos]):
+            for s in sort_infos:
+                col_expr2: PyLegendColumnExpression = tds_row[s].value()  # type: ignore
                 sort_info_list.append(LegendQLApiSortInfo(col_expr2, LegendQLApiSortDirection.ASC))
-            elif isinstance(r, LegendQLApiSortInfo):
-                sort_info_list.append(r)
-            else:
+
+        elif isinstance(sort_infos, type(lambda x: 0)) and (sort_infos.__code__.co_argcount == 1):
+            try:
+                result = sort_infos(tds_row)
+            except Exception as e:
                 raise RuntimeError(
-                    "Sort lambda incompatible. Columns can either be strings (lambda r: ['c1', 'c2']) or "
-                    "simple column expressions (lambda r: [r.c1, r.c2]) or "
-                    "sort infos (lambda r: [r.c1.ascending(), r['c2'].descending()]). "
-                    f"Element at index {i} in the list is incompatible."
-                )
+                    "'sort' function sort_infos argument lambda incompatible. "
+                    "Error occurred while evaluating. Message: " + str(e)
+                ) from e
+
+            list_result = result if isinstance(result, list) else [result]
+            for (i, r) in enumerate(list_result):
+                if isinstance(r, LegendQLApiPrimitive) and isinstance(r.value(), PyLegendColumnExpression):
+                    col_expr3: PyLegendColumnExpression = r.value()
+                    sort_info_list.append(LegendQLApiSortInfo(col_expr3, LegendQLApiSortDirection.ASC))
+                elif isinstance(r, LegendQLApiSortInfo):
+                    sort_info_list.append(r)
+                else:
+                    raise TypeError(
+                        f"'sort' function sort_infos argument lambda incompatible. Columns can be simple column "
+                        f"expressions or sort infos. "
+                        f"(E.g - lambda r: [r.column1, r['column with spaces'].descending(), r.column3.ascending()). "
+                        f"Element at index {i} (0-indexed) is incompatible"
+                    )
+        else:
+            raise TypeError("'sort' function sort_infos argument can either be a list of strings (column names) or "
+                            "a lambda function which takes one argument (LegendQLApiTdsRow)")
 
         self.__sort_infos = sort_info_list
 

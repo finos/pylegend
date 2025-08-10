@@ -20,11 +20,17 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.language import PyLegendColumnExpression, PyLegendPrimitiveOrPythonPrimitive, \
-    PyLegendPrimitiveCollection, PyLegendPrimitive, create_primitive_collection, convert_literal_to_literal_expression
+from pylegend.core.language import (
+    PyLegendPrimitiveOrPythonPrimitive,
+    PyLegendPrimitiveCollection,
+    PyLegendPrimitive,
+    create_primitive_collection,
+    convert_literal_to_literal_expression
+)
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import LegendQLApiPrimitive
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.function_helpers import tds_column_for_primitive
+from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import infer_columns_from_frame
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
@@ -46,13 +52,7 @@ __all__: PyLegendSequence[str] = [
 class LegendQLApiGroupByFunction(LegendQLApiAppliedFunction):
     __base_frame: LegendQLApiBaseTdsFrame
     __grouping_column_name_list: PyLegendList[str]
-    __aggregates_list: PyLegendList[
-        PyLegendTuple[
-            str,
-            PyLegendPrimitiveOrPythonPrimitive,
-            PyLegendPrimitive
-        ]
-    ]
+    __aggregates_list: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]]
 
     @classmethod
     def name(cls) -> str:
@@ -61,11 +61,14 @@ class LegendQLApiGroupByFunction(LegendQLApiAppliedFunction):
     def __init__(
             self,
             base_frame: LegendQLApiBaseTdsFrame,
-            grouping_columns_function: PyLegendCallable[[LegendQLApiTdsRow], PyLegendUnion[
-                LegendQLApiPrimitive,
+            grouping_columns: PyLegendUnion[
                 str,
-                PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
-            ]],
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ],
             aggregate_specifications: PyLegendUnion[
                 PyLegendTuple[
                     str,
@@ -82,109 +85,72 @@ class LegendQLApiGroupByFunction(LegendQLApiAppliedFunction):
             ]
     ) -> None:
         self.__base_frame = base_frame
+        self.__grouping_column_name_list = infer_columns_from_frame(
+            base_frame, grouping_columns, "'group_by' function grouping columns"
+        )
+
         tds_row = LegendQLApiTdsRow.from_tds_frame("r", self.__base_frame)
+        list_result = (
+            aggregate_specifications if isinstance(aggregate_specifications, list) else [aggregate_specifications]
+        )
+        aggregates_list: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]] = []
+        for (i, agg_spec) in enumerate(list_result):
+            error = (
+                "'group_by' function aggregate specifications incompatible. "
+                "Each aggregate specification should be a triplet with first element being the aggregation column "
+                "name, second element being a mapper function (single argument lambda) and third element being the "
+                "aggregation function (single argument lambda). "
+                "E.g - ('count_col', lambda r: r['col1'], lambda c: c.count()). "
+                f"Element at index {i} (0-indexed) is incompatible"
+            )
 
-        if (not isinstance(grouping_columns_function, type(lambda x: 0)) or
-                (grouping_columns_function.__code__.co_argcount != 1)):
-            raise TypeError("GroupBy grouping_columns_function should be a lambda which takes one argument (TDSRow)")
+            if isinstance(agg_spec, tuple) and isinstance(agg_spec[0], str):
 
-        try:
-            result = grouping_columns_function(tds_row)
-        except Exception as e:
-            raise RuntimeError(
-                "GroupBy columns lambda incompatible. Error occurred while evaluating. Message: " + str(e)
-            ) from e
-
-        list_result: PyLegendList[PyLegendUnion[str, LegendQLApiPrimitive]]
-        if isinstance(result, list):
-            list_result = result
-        elif isinstance(result, tuple):
-            list_result = list(result)
-        else:
-            list_result = [result]
-
-        columns_list = []
-        for (i, r) in enumerate(list_result):
-            if isinstance(r, str):
-                columns_list.append(r)
-            elif isinstance(r, LegendQLApiPrimitive) and isinstance(r.value(), PyLegendColumnExpression):
-                col_expr: PyLegendColumnExpression = r.value()
-                columns_list.append(col_expr.get_column())
-            else:
-                raise RuntimeError(
-                    "GroupBy columns lambda incompatible. Columns can either be strings (lambda r: ['c1', 'c2']) or "
-                    "simple column expressions (lambda r: [r.c1, r.c2]). "
-                    f"Element at index {i} in the list is incompatible."
-                )
-        self.__grouping_column_name_list = columns_list
-
-        list_result_2: PyLegendList[
-            PyLegendTuple[
-                str,
-                PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
-                PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
-            ]
-        ]
-        if isinstance(aggregate_specifications, list):
-            list_result_2 = aggregate_specifications
-        else:
-            list_result_2 = [aggregate_specifications]
-
-        aggregates_list = []
-        for (i, r) in enumerate(list_result_2):
-            if isinstance(r, tuple) and isinstance(r[0], str):
-                if not isinstance(r[1], type(lambda x: 0)) or (r[1].__code__.co_argcount != 1):
-                    raise RuntimeError(
-                        "GroupBy aggregate incompatible. Each element in aggregates list should be a triplet with "
-                        "second element being a lambda (mapper function) which takes one argument (TDSRow). "
-                        f"Element at index {i} in the list is incompatible."
-                    )
+                if not isinstance(agg_spec[1], type(lambda x: 0)) or (agg_spec[1].__code__.co_argcount != 1):
+                    raise TypeError(error)
 
                 try:
-                    map_result = r[1](tds_row)
+                    map_result = agg_spec[1](tds_row)
                 except Exception as e:
                     raise RuntimeError(
-                        "GroupBy aggregate incompatible. "
-                        f"Error occurred while evaluating map lambda at index {i}. Message: " + str(e)
+                        "'group_by' function aggregate specifications incompatible. "
+                        f"Error occurred while evaluating mapper lambda in the aggregate specification at "
+                        f"index {i} (0-indexed). Message: " + str(e)
                     ) from e
 
                 if not isinstance(map_result, (int, float, bool, str, date, datetime, PyLegendPrimitive)):
-                    raise RuntimeError(
-                        "GroupBy aggregate incompatible. "
-                        f"Map lambda at index {i} returns non-primitive - {str(type(map_result))}"
+                    raise TypeError(
+                        "'group_by' function aggregate specifications incompatible. "
+                        f"Mapper lambda in the aggregate specification at index {i} (0-indexed) "
+                        f"returns non-primitive - {str(type(map_result))}"
                     )
 
                 collection = create_primitive_collection(map_result)
 
-                if not isinstance(r[2], type(lambda x: 0)) or (r[2].__code__.co_argcount != 1):
-                    raise RuntimeError(
-                        "GroupBy aggregate incompatible. Each element in aggregates list should be a triplet with "
-                        "third element being a lambda (aggregation function) which takes one argument (TDSRow). "
-                        f"Element at index {i} in the list is incompatible."
-                    )
+                if not isinstance(agg_spec[2], type(lambda x: 0)) or (agg_spec[2].__code__.co_argcount != 1):
+                    raise TypeError(error)
 
                 try:
-                    agg_result = r[2](collection)
+                    agg_result = agg_spec[2](collection)
                 except Exception as e:
                     raise RuntimeError(
-                        "GroupBy aggregate incompatible. "
-                        f"Error occurred while evaluating aggregation lambda at index {i}. Message: " + str(e)
+                        "'group_by' function aggregate specifications incompatible. "
+                        f"Error occurred while evaluating aggregation lambda in the aggregate specification at "
+                        f"index {i} (0-indexed). Message: " + str(e)
                     ) from e
 
                 if not isinstance(agg_result, PyLegendPrimitive):
-                    raise RuntimeError(
-                        "GroupBy aggregate incompatible. "
-                        f"Aggregation lambda at index {i} returns non-primitive - {str(type(agg_result))}"
+                    raise TypeError(
+                        "'group_by' function aggregate specifications incompatible. "
+                        f"Aggregation lambda in the aggregate specification at index {i} (0-indexed) "
+                        f"returns non-primitive - {str(type(agg_result))}"
                     )
 
-                aggregates_list.append((r[0], map_result, agg_result))
+                aggregates_list.append((agg_spec[0], map_result, agg_result))
 
             else:
-                raise RuntimeError(
-                    "GroupBy aggregate incompatible. Each element in aggregates list should be a triplet with "
-                    "first element being a string (aggregate column name)"
-                    f"Element at index {i} in the list is incompatible."
-                )
+                raise TypeError(error)
+
         self.__aggregates_list = aggregates_list
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
@@ -282,7 +248,7 @@ class LegendQLApiGroupByFunction(LegendQLApiAppliedFunction):
         agg_cols = [c[0] for c in self.__aggregates_list]
         new_cols = self.__grouping_column_name_list + agg_cols
         if len(new_cols) == 0:
-            raise ValueError("At-least one grouping column or aggregate must be provided "
+            raise ValueError("At-least one grouping column or aggregate specification must be provided "
                              "when using group_by function")
         if len(new_cols) != len(set(new_cols)):
             raise ValueError("Found duplicate column names in grouping columns and aggregation columns. "

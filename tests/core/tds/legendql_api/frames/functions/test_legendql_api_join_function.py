@@ -362,10 +362,10 @@ class TestJoinAppliedFunction:
     def test_e2e_join(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame1 = frame1.select(['Last Name', 'First Name'])
-        frame1 = frame1.rename(lambda r: ('Last Name', 'Last Name 1'))
+        frame1 = frame1.rename(('Last Name', 'Last Name 1'))
         frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame2 = frame2.select(['Age', 'Last Name'])
-        frame2 = frame2.rename(lambda r: ('Last Name', 'Last Name 2'))
+        frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
@@ -389,11 +389,11 @@ class TestJoinAppliedFunction:
     def test_e2e_join_inner(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame1 = frame1.select(['Last Name', 'First Name'])
-        frame1 = frame1.rename(lambda r: ('Last Name', 'Last Name 1'))
+        frame1 = frame1.rename(('Last Name', 'Last Name 1'))
         frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame2 = frame2.filter(lambda x: x['First Name'] == 'John')
         frame2 = frame2.select(['Age', 'Last Name'])
-        frame2 = frame2.rename(lambda r: ('Last Name', 'Last Name 2'))
+        frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'], 'INNER')
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
@@ -412,10 +412,10 @@ class TestJoinAppliedFunction:
         frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame1 = frame1.filter(lambda x: x['First Name'] == 'John')
         frame1 = frame1.select(['Last Name', 'First Name'])
-        frame1 = frame1.rename(lambda r: ('Last Name', 'Last Name 1'))
+        frame1 = frame1.rename(('Last Name', 'Last Name 1'))
         frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame2 = frame2.select(['Age', 'Last Name'])
-        frame2 = frame2.rename(lambda r: ('Last Name', 'Last Name 2'))
+        frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'], 'RIGHT_OUTER')
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
@@ -438,11 +438,11 @@ class TestJoinAppliedFunction:
         frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame1 = frame1.head(2)
         frame1 = frame1.select(['Last Name', 'First Name'])
-        frame1 = frame1.rename(lambda r: ('Last Name', 'Last Name 1'))
+        frame1 = frame1.rename(('Last Name', 'Last Name 1'))
         frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame2 = frame2.head(2)
         frame2 = frame2.select(['Age', 'Last Name'])
-        frame2 = frame2.rename(lambda r: ('Last Name', 'Last Name 2'))
+        frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: True)
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
@@ -459,11 +459,11 @@ class TestJoinAppliedFunction:
         frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame1 = frame1.head(2)
         frame1 = frame1.select(['Last Name', 'First Name'])
-        frame1 = frame1.rename(lambda r: ('Last Name', 'Last Name 1'))
+        frame1 = frame1.rename(('Last Name', 'Last Name 1'))
         frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame2 = frame2.head(2)
         frame2 = frame2.select(['Age', 'Last Name'])
-        frame2 = frame2.rename(lambda r: ('Last Name', 'Last Name 2'))
+        frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: 1 == 2)  # type: ignore
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
@@ -477,10 +477,10 @@ class TestJoinAppliedFunction:
     def test_e2e_join_by_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame1 = frame1.select(['Last Name', 'First Name'])
-        frame1 = frame1.rename(lambda r: ('Last Name', 'Last Name 1'))
+        frame1 = frame1.rename(('Last Name', 'Last Name 1'))
         frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
         frame2 = frame2.select(['Age', 'Last Name'])
-        frame2 = frame2.rename(lambda r: ('Last Name', 'Last Name 2'))
+        frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
