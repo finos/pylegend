@@ -127,6 +127,7 @@ from pylegend.core.sql.metamodel_extension import (
     MinuteExpression,
     SecondExpression,
     EpochExpression,
+    WindowExpression,
 )
 
 
@@ -625,7 +626,7 @@ class TestSqlToStringDbExtensionProcessing:
         )
 
         assert extension.process_expression(func_call, config) == \
-               "rowNumber() OVER PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2"
+               "rowNumber() OVER (PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2)"
 
     def test_process_function_call_pretty_format(self) -> None:
         extension = SqlToStringDbExtension()
@@ -689,7 +690,7 @@ class TestSqlToStringDbExtensionProcessing:
         )
 
         assert extension.process_expression(func_call, config) == \
-               "rowNumber() OVER PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2"
+               "rowNumber() OVER (PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2)"
 
     def test_process_table(self) -> None:
         extension = SqlToStringDbExtension()
@@ -1644,3 +1645,41 @@ class TestSqlToStringDbExtensionProcessing:
         ref = QualifiedNameReference(QualifiedName(["test_schema", "test_table", "test_col"]))
         expr = EpochExpression(ref)
         assert extension.process_expression(expr, config) == "DATE_PART('epoch', test_schema.test_table.test_col)"
+
+    def test_process_window_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+
+        expr = WindowExpression(
+            nested=FunctionCall(
+                name=QualifiedName(parts=["rank"]), distinct=False, arguments=[], filter_=None, window=None
+            ),
+            window=Window(
+                windowRef=None,
+                partitions=[],
+                orderBy=[],
+                windowFrame=None
+            )
+        )
+        assert (extension.process_expression(expr, config) == "rank() OVER ()")
+
+        expr.window.orderBy = [
+            SortItem(
+                QualifiedNameReference(QualifiedName(["sort_col1"])),
+                SortItemOrdering.DESCENDING,
+                SortItemNullOrdering.UNDEFINED
+            ),
+            SortItem(
+                QualifiedNameReference(QualifiedName(["sort_col2"])),
+                SortItemOrdering.ASCENDING,
+                SortItemNullOrdering.UNDEFINED
+            )
+        ]
+        assert (extension.process_expression(expr, config) == "rank() OVER (ORDER BY sort_col1 DESC, sort_col2)")
+
+        expr.window.partitions = [
+            QualifiedNameReference(QualifiedName(["partition_col1"])),
+            QualifiedNameReference(QualifiedName(["partition_col2"]))
+        ]
+        assert (extension.process_expression(expr, config) ==
+                "rank() OVER (PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2)")

@@ -130,6 +130,7 @@ from pylegend.core.sql.metamodel_extension import (
     MinuteExpression,
     SecondExpression,
     EpochExpression,
+    WindowExpression,
 )
 
 
@@ -448,6 +449,8 @@ def expression_processor(
         return extension.process_second_expression(expression, config)
     elif isinstance(expression, EpochExpression):
         return extension.process_epoch_expression(expression, config)
+    elif isinstance(expression, WindowExpression):
+        return extension.process_window_expression(expression, config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -674,7 +677,7 @@ def function_call_processor(
 
     window = ""
     if function_call.window:
-        window = " OVER" + extension.process_window(function_call.window, config)
+        window = " " + extension.process_window(function_call.window, config)
 
     first_sep = config.format.separator(1) if function_call.arguments else ""
     sep0 = config.format.separator(0) if function_call.arguments else ""
@@ -838,14 +841,14 @@ def window_processor(
     if window.windowRef:
         return window.windowRef
 
-    partitions = " PARTITION BY " + (", ".join([extension.process_expression(e, config) for e in window.partitions])) \
+    partitions = "PARTITION BY " + (", ".join([extension.process_expression(e, config) for e in window.partitions])) \
         if window.partitions else ""
 
-    order_by = " ORDER BY " + (", ".join([extension.process_sort_item(o, config) for o in window.orderBy])) \
+    order_by = "ORDER BY " + (", ".join([extension.process_sort_item(o, config) for o in window.orderBy])) \
         if window.orderBy else ""
 
     # TODO: Handle window frame
-    return f"{partitions}{order_by}{''}"
+    return f"OVER ({partitions}{' ' if partitions else ''}{order_by}){''}"
 
 
 def table_function_processor(
@@ -1161,6 +1164,9 @@ class SqlToStringDbExtension:
 
     def process_epoch_expression(self, expr: EpochExpression, config: SqlToStringConfig) -> str:
         return f"DATE_PART('epoch', {self.process_expression(expr.value, config)})"
+
+    def process_window_expression(self, expr: WindowExpression, config: SqlToStringConfig) -> str:
+        return f"{self.process_expression(expr.nested, config)} {self.process_window(expr.window, config)}"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
