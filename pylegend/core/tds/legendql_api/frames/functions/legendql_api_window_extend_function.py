@@ -150,7 +150,7 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
                         raise TypeError(
                             "'window_extend' function extend_columns argument incompatible. "
                             "Third element in an window_extend tuple should be a lambda function which takes one argument "
-                            "(collection) E.g - ('new col', lambda r: r.c1, lambda c: c.sum()). "
+                            "(collection) E.g - ('new col', lambda p,w,r: r.c1, lambda c: c.sum()). "
                             f"Element at index {i} (0-indexed) is incompatible"
                         )
                     collection = create_primitive_collection(result)

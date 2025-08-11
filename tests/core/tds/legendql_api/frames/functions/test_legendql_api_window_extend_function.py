@@ -134,7 +134,7 @@ class TestWindowExtendAppliedFunction:
         assert r.value.args[0] == (
             "'window_extend' function extend_columns argument incompatible. "
             "Third element in an window_extend tuple should be a lambda function which takes one argument (collection) "
-            "E.g - ('new col', lambda r: r.c1, lambda c: c.sum()). "
+            "E.g - ('new col', lambda p,w,r: r.c1, lambda c: c.sum()). "
             "Element at index 0 (0-indexed) is incompatible"
         )
 
@@ -159,7 +159,7 @@ class TestWindowExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.window_extend(
-            frame.window(partition_by="col2", order_by="col3"),
+            frame.window(partition_by="col2"),
             ("col4", lambda p, w, r: r.get_integer('col1') + 1)
         )
         expected = '''\
@@ -167,18 +167,18 @@ class TestWindowExtendAppliedFunction:
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
                 "root".col3 AS "col3",
-                ("root".col1 + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4"
+                ("root".col1 + 1) OVER (PARTITION BY "root".col2) AS "col4"
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over(~[col2], [ascending(~col3)]), ~col4:{p,w,r | $r.col1 + 1})'''
+              ->extend(over(~[col2], []), ~col4:{p,w,r | $r.col1 + 1})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->extend(over(~[col2], [ascending(~col3)]), ~col4:{p,w,r | $r.col1 + 1})')
+                '->extend(over(~[col2], []), ~col4:{p,w,r | $r.col1 + 1})')
 
     def test_query_gen_window_extend_function_col_name_with_spaces(self) -> None:
         columns = [
@@ -188,7 +188,7 @@ class TestWindowExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.window_extend(
-            frame.window(partition_by="col2", order_by="col3"),
+            frame.window(order_by="col3"),
             ("col4 with spaces", lambda p, w, r: r.get_integer('col1') + 1)
         )
         expected = '''\
@@ -196,18 +196,18 @@ class TestWindowExtendAppliedFunction:
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
                 "root".col3 AS "col3",
-                ("root".col1 + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4 with spaces"
+                ("root".col1 + 1) OVER (ORDER BY "root".col3) AS "col4 with spaces"
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over(~[col2], [ascending(~col3)]), ~'col4 with spaces':{p,w,r | $r.col1 + 1})'''
+              ->extend(over([], [ascending(~col3)]), ~'col4 with spaces':{p,w,r | $r.col1 + 1})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->extend(over(~[col2], [ascending(~col3)]), ~\'col4 with spaces\':{p,w,r | $r.col1 + 1})')
+                '->extend(over([], [ascending(~col3)]), ~\'col4 with spaces\':{p,w,r | $r.col1 + 1})')
 
     def test_query_gen_window_extend_function_multi(self) -> None:
         columns = [
