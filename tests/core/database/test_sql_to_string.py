@@ -1683,3 +1683,7 @@ class TestSqlToStringDbExtensionProcessing:
         ]
         assert (extension.process_expression(expr, config) ==
                 "rank() OVER (PARTITION BY partition_col1, partition_col2 ORDER BY sort_col1 DESC, sort_col2)")
+
+        expr.window.orderBy = []
+        assert (extension.process_expression(expr, config) ==
+                "rank() OVER (PARTITION BY partition_col1, partition_col2)")

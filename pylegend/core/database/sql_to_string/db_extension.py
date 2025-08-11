@@ -848,7 +848,7 @@ def window_processor(
         if window.orderBy else ""
 
     # TODO: Handle window frame
-    return f"OVER ({partitions}{' ' if partitions else ''}{order_by}){''}"
+    return f"OVER ({partitions}{' ' if (partitions != '') and (order_by != '') else ''}{order_by}){''}"
 
 
 def table_function_processor(
