@@ -28,6 +28,8 @@ from pylegend.core.language import (
 )
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendOptional,
+    PyLegendList,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -42,12 +44,14 @@ __all__: PyLegendSequence[str] = [
     "LegendQLApiStrictDate",
     "LegendQLApiSortInfo",
     "LegendQLApiSortDirection",
+    "LegendQLApiWindow",
+    "LegendQLApiPartialRelation",
 ]
 
 from pylegend.core.language.shared.helpers import escape_column_name
 
 from pylegend.core.sql.metamodel import QuerySpecification, Expression, SingleColumn, SortItem, SortItemOrdering, \
-    SortItemNullOrdering
+    SortItemNullOrdering, Window
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 
 
@@ -150,3 +154,77 @@ class LegendQLApiSortInfo:
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         func = 'ascending' if self.__direction == LegendQLApiSortDirection.ASC else 'descending'
         return f"{func}(~{escape_column_name(self.__column)})"
+
+
+class LegendQLApiWindowFrame(metaclass=ABCMeta):
+    pass
+
+
+class LegendQLApiWindow:
+    __partition_by: PyLegendOptional[PyLegendList[str]]
+    __order_by: PyLegendOptional[PyLegendList[LegendQLApiSortInfo]]
+    __frame: PyLegendOptional[LegendQLApiWindowFrame]
+
+    def __init__(
+            self,
+            partition_by: PyLegendOptional[PyLegendList[str]] = None,
+            order_by: PyLegendOptional[PyLegendList[LegendQLApiSortInfo]] = None,
+            frame: PyLegendOptional[LegendQLApiWindowFrame] = None
+    ) -> None:
+        self.__partition_by = partition_by
+        self.__order_by = order_by
+        self.__frame = frame
+
+    def get_partition_by(self) -> PyLegendOptional[PyLegendList[str]]:
+        return self.__partition_by
+
+    def get_order_by(self) -> PyLegendOptional[PyLegendList[LegendQLApiSortInfo]]:
+        return self.__order_by
+
+    def get_frame(self) -> PyLegendOptional[LegendQLApiWindowFrame]:
+        return self.__frame
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig
+    ) -> Window:
+        return Window(
+            windowRef=None,
+            partitions=(
+                [] if self.__partition_by is None else
+                [LegendQLApiWindow.__find_column_expression(query, col, config) for col in self.__partition_by]
+            ),
+            orderBy=(
+                [] if self.__order_by is None else
+                [sort_info.to_sql_node(query, config) for sort_info in self.__order_by]
+            ),
+            windowFrame=None
+        )
+
+    @staticmethod
+    def __find_column_expression(query: QuerySpecification, col: str, config: FrameToSqlConfig) -> Expression:
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        filtered = [
+            s for s in query.select.selectItems
+            if (isinstance(s, SingleColumn) and
+                s.alias == db_extension.quote_identifier(col))
+        ]
+        if len(filtered) == 0:
+            raise RuntimeError("Cannot find column: " + col)  # pragma: no cover
+        return filtered[0].expression
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        partitions_str = (
+            "[]" if self.__partition_by is None or len(self.__partition_by) == 0
+            else "~[" + (', '.join(map(escape_column_name, self.__partition_by))) + "]"
+        )
+        sorts_str = (
+            "[]" if self.__order_by is None or len(self.__order_by) == 0
+            else "[" + (', '.join([s.to_pure_expression(config) for s in self.__order_by])) + "]"
+        )
+        return f"over({partitions_str}, {sorts_str})"
+
+
+class LegendQLApiPartialRelation:
+    pass

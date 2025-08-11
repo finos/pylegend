@@ -19,6 +19,8 @@ from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPri
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
+    LegendQLApiWindow,
+    LegendQLApiPartialRelation,
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.tds_frame import (
@@ -231,3 +233,76 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             ]
     ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
+
+    @abstractmethod
+    def window(
+            self,
+            partition_by: PyLegendOptional[
+                PyLegendUnion[
+                    str,
+                    PyLegendList[str],
+                    PyLegendCallable[
+                        [LegendQLApiTdsRow],
+                        PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                    ]
+                ]
+            ] = None,
+            order_by: PyLegendOptional[
+                PyLegendUnion[
+                    str,
+                    PyLegendList[str],
+                    PyLegendCallable[
+                        [LegendQLApiTdsRow],
+                        PyLegendUnion[
+                            LegendQLApiPrimitive,
+                            LegendQLApiSortInfo,
+                            PyLegendList[PyLegendUnion[LegendQLApiPrimitive, LegendQLApiSortInfo]],
+                        ]
+                    ]
+                ]
+            ] = None
+    ) -> LegendQLApiWindow:
+        pass
+
+    @abstractmethod
+    def window_extend(
+            self,
+            window: LegendQLApiWindow,
+            extend_columns: PyLegendUnion[
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[
+                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        PyLegendPrimitiveOrPythonPrimitive
+                    ]
+                ],
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[
+                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        PyLegendPrimitiveOrPythonPrimitive
+                    ],
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                ],
+                PyLegendList[
+                    PyLegendUnion[
+                        PyLegendTuple[
+                            str,
+                            PyLegendCallable[
+                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                PyLegendPrimitiveOrPythonPrimitive
+                            ]
+                        ],
+                        PyLegendTuple[
+                            str,
+                            PyLegendCallable[
+                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                PyLegendPrimitiveOrPythonPrimitive
+                            ],
+                            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                        ]
+                    ]
+                ]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        pass
