@@ -27,6 +27,8 @@ from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPri
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
+    LegendQLApiWindow,
+    LegendQLApiPartialRelation,
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
@@ -291,7 +293,6 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                 ]
             ]
     ) -> "LegendQLApiTdsFrame":
-
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
         )
@@ -301,3 +302,94 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         return LegendQLApiAppliedFunctionTdsFrame(
             LegendQLApiGroupByFunction(self, grouping_columns, aggregate_specifications)
         )
+
+    def window(
+            self,
+            partition_by: PyLegendOptional[
+                PyLegendUnion[
+                    str,
+                    PyLegendList[str],
+                    PyLegendCallable[
+                        [LegendQLApiTdsRow],
+                        PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                    ]
+                ]
+            ] = None,
+            order_by: PyLegendOptional[
+                PyLegendUnion[
+                    str,
+                    PyLegendList[str],
+                    PyLegendCallable[
+                        [LegendQLApiTdsRow],
+                        PyLegendUnion[
+                            LegendQLApiPrimitive,
+                            LegendQLApiSortInfo,
+                            PyLegendList[PyLegendUnion[LegendQLApiPrimitive, LegendQLApiSortInfo]],
+                        ]
+                    ]
+                ]
+            ] = None
+    ) -> "LegendQLApiWindow":
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import (
+            infer_columns_from_frame,
+            infer_sorts_from_frame,
+        )
+        return LegendQLApiWindow(
+            partition_by=(
+                None if partition_by is None else
+                infer_columns_from_frame(self, partition_by, "'window' function partition_by")
+            ),
+            order_by=(
+                None if order_by is None else
+                infer_sorts_from_frame(self, order_by, "'window' function order_by")
+            ),
+            frame=None
+        )
+
+    def window_extend(
+            self,
+            window: LegendQLApiWindow,
+            extend_columns: PyLegendUnion[
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[
+                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        PyLegendPrimitiveOrPythonPrimitive
+                    ]
+                ],
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[
+                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        PyLegendPrimitiveOrPythonPrimitive
+                    ],
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                ],
+                PyLegendList[
+                    PyLegendUnion[
+                        PyLegendTuple[
+                            str,
+                            PyLegendCallable[
+                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                PyLegendPrimitiveOrPythonPrimitive
+                            ]
+                        ],
+                        PyLegendTuple[
+                            str,
+                            PyLegendCallable[
+                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                PyLegendPrimitiveOrPythonPrimitive
+                            ],
+                            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                        ]
+                    ]
+                ]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_window_extend_function import (
+            LegendQLApiWindowExtendFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiWindowExtendFunction(self, window, extend_columns))
