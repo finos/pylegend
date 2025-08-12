@@ -291,8 +291,50 @@ class LegendQLApiPartialFrame:
     ) -> PyLegendInteger:
         return PyLegendInteger(LegendQLApiNtileExpression(self, row, num_buckets))
 
+    def lead(
+            self,
+            row: "LegendQLApiTdsRow"
+    ) -> "LegendQLApiTdsRow":
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiLeadRow
+        return LegendQLApiLeadRow(self, row)
+
+    def lag(
+            self,
+            row: "LegendQLApiTdsRow"
+    ) -> "LegendQLApiTdsRow":
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiLagRow
+        return LegendQLApiLagRow(self, row)
+
+    def first(
+            self,
+            window: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> "LegendQLApiTdsRow":
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiFirstRow
+        return LegendQLApiFirstRow(self, window, row)
+
+    def last(
+            self,
+            window: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> "LegendQLApiTdsRow":
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiLastRow
+        return LegendQLApiLastRow(self, window, row)
+
+    def nth(
+            self,
+            window: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow",
+            offset: int
+    ) -> "LegendQLApiTdsRow":
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiNthRow
+        return LegendQLApiNthRow(self, window, row, offset)
+
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__var_name}"
+
+    def get_base_frame(self) -> "LegendQLApiBaseTdsFrame":
+        return self.__base_frame
 
 
 class LegendQLApiWindowReference:
@@ -332,7 +374,7 @@ class LegendQLApiRowNumberExpression(PyLegendExpressionIntegerReturn):
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return f"{self.__partial_frame.to_pure_expression(config)}->rowNumber(${self.__row.get_frame_name()})"
+        return f"{self.__partial_frame.to_pure_expression(config)}->rowNumber({self.__row.to_pure_expression(config)})"
 
 
 class LegendQLApiRankExpression(PyLegendExpressionIntegerReturn):
@@ -364,7 +406,7 @@ class LegendQLApiRankExpression(PyLegendExpressionIntegerReturn):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->rank("
-                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
 
 class LegendQLApiDenseRankExpression(PyLegendExpressionIntegerReturn):
@@ -396,7 +438,7 @@ class LegendQLApiDenseRankExpression(PyLegendExpressionIntegerReturn):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->denseRank("
-                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
 
 class LegendQLApiPercentRankExpression(PyLegendExpressionFloatReturn):
@@ -428,7 +470,7 @@ class LegendQLApiPercentRankExpression(PyLegendExpressionFloatReturn):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->percentRank("
-                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
 
 class LegendQLApiCumeDistExpression(PyLegendExpressionFloatReturn):
@@ -460,7 +502,7 @@ class LegendQLApiCumeDistExpression(PyLegendExpressionFloatReturn):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->cumulativeDistribution("
-                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
 
 class LegendQLApiNtileExpression(PyLegendExpressionIntegerReturn):
@@ -495,5 +537,5 @@ class LegendQLApiNtileExpression(PyLegendExpressionIntegerReturn):
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return (f"{self.__partial_frame.to_pure_expression(config)}->ntile(${self.__row.get_frame_name()}, "
+        return (f"{self.__partial_frame.to_pure_expression(config)}->ntile({self.__row.to_pure_expression(config)}, "
                 f"{self.__num_buckets})")

@@ -398,6 +398,11 @@ class TestWindowExtendAppliedFunction:
                 ("col7", lambda p, w, r: p.percent_rank(w, r)),
                 ("col8", lambda p, w, r: round(p.cume_dist(w, r), 2)),
                 ("col9", lambda p, w, r: p.ntile(r, 10)),
+                ("col10", lambda p, w, r: p.lead(r).col1),
+                ("col11", lambda p, w, r: p.lag(r).col1 + 1),
+                ("col12", lambda p, w, r: p.first(w, r).col1),
+                ("col13", lambda p, w, r: p.last(w, r).col1),
+                ("col14", lambda p, w, r: p.nth(w, r, 10).col1),
             ]
         )
         expected = '''\
@@ -412,7 +417,23 @@ class TestWindowExtendAppliedFunction:
                 ROUND(cume_dist(), 2) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col8",
                 ntile(
                     10
-                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col9"
+                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col9",
+                lead(
+                    "root".col1
+                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col10",
+                (lag(
+                    "root".col1
+                ) + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col11",
+                first_value(
+                    "root".col1
+                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col12",
+                last_value(
+                    "root".col1
+                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col13",
+                nth_value(
+                    "root".col1,
+                    10
+                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col14"
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
@@ -425,7 +446,12 @@ class TestWindowExtendAppliedFunction:
                 col6:{p,w,r | $p->denseRank($w, $r) + 1},
                 col7:{p,w,r | $p->percentRank($w, $r)},
                 col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->round(2)},
-                col9:{p,w,r | $p->ntile($r, 10)}
+                col9:{p,w,r | $p->ntile($r, 10)},
+                col10:{p,w,r | $p->lead($r).col1},
+                col11:{p,w,r | $p->lag($r).col1 + 1},
+                col12:{p,w,r | $p->first($w, $r).col1},
+                col13:{p,w,r | $p->last($w, $r).col1},
+                col14:{p,w,r | $p->nth($w, $r, 10).col1}
               ])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
@@ -433,7 +459,9 @@ class TestWindowExtendAppliedFunction:
                 '~[col4:{p,w,r | $p->rowNumber($r)}, col5:{p,w,r | $p->rank($w, $r)}, '
                 'col6:{p,w,r | $p->denseRank($w, $r) + 1}, col7:{p,w,r | $p->percentRank($w, $r)}, '
                 'col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->round(2)}, '
-                'col9:{p,w,r | $p->ntile($r, 10)}])')
+                'col9:{p,w,r | $p->ntile($r, 10)}, col10:{p,w,r | $p->lead($r).col1}, '
+                'col11:{p,w,r | $p->lag($r).col1 + 1}, col12:{p,w,r | $p->first($w, $r).col1}, '
+                'col13:{p,w,r | $p->last($w, $r).col1}, col14:{p,w,r | $p->nth($w, $r, 10).col1}])')
 
     @pytest.mark.skip(reason="Server does not handle window functions of this form yet")
     def test_e2e_window_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
