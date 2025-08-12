@@ -32,11 +32,13 @@ from pylegend.core.language.shared.expression import (
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
-    SingleColumn,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.language.shared.helpers import escape_column_name
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pylegend.core.language.shared.tds_row import AbstractTdsRow
 
 
 __all__: PyLegendSequence[str] = [
@@ -53,11 +55,11 @@ __all__: PyLegendSequence[str] = [
 
 
 class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
-    __frame_name: str
+    __row: "AbstractTdsRow"
     __column: str
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        self.__frame_name = frame_name
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        self.__row = row
         self.__column = column
 
     def to_sql_expression(
@@ -65,19 +67,10 @@ class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        query = frame_name_to_base_query_map[self.__frame_name]
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        filtered = [
-            s for s in query.select.selectItems
-            if (isinstance(s, SingleColumn) and
-                s.alias == db_extension.quote_identifier(self.__column))
-        ]
-        if len(filtered) == 0:
-            raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
-        return filtered[0].expression
+        return self.__row.column_sql_expression(self.__column, frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return f"${self.__frame_name}.{escape_column_name(self.__column)}"
+        return f"{self.__row.to_pure_expression(config)}.{escape_column_name(self.__column)}"
 
     def get_column(self) -> str:
         return self.__column
@@ -85,47 +78,47 @@ class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
 
 class PyLegendBooleanColumnExpression(PyLegendColumnExpression, PyLegendExpressionBooleanReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
 
 
 class PyLegendStringColumnExpression(PyLegendColumnExpression, PyLegendExpressionStringReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
 
 
 class PyLegendNumberColumnExpression(PyLegendColumnExpression, PyLegendExpressionNumberReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
 
 
 class PyLegendIntegerColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionIntegerReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
 
 
 class PyLegendFloatColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionFloatReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
 
 
 class PyLegendDateColumnExpression(PyLegendColumnExpression, PyLegendExpressionDateReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
 
 
 class PyLegendDateTimeColumnExpression(PyLegendDateColumnExpression, PyLegendExpressionDateTimeReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
 
 
 class PyLegendStrictDateColumnExpression(PyLegendDateColumnExpression, PyLegendExpressionStrictDateReturn):
 
-    def __init__(self, frame_name: str, column: str) -> None:
-        super().__init__(frame_name=frame_name, column=column)
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)

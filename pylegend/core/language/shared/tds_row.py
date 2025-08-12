@@ -15,8 +15,18 @@
 from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendDict,
 )
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame
+from pylegend.core.sql.metamodel import (
+    QuerySpecification,
+    Expression,
+    SingleColumn,
+)
+from pylegend.core.tds.tds_frame import (
+    PyLegendTdsFrame,
+    FrameToPureConfig,
+    FrameToSqlConfig,
+)
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.language import (
     PyLegendColumnExpression,
@@ -158,21 +168,21 @@ class AbstractTdsRow(metaclass=ABCMeta):
             if base_col.get_name() == column:
                 if isinstance(base_col, PrimitiveTdsColumn):
                     if base_col.get_type() == "Boolean":
-                        return PyLegendBooleanColumnExpression(self.__frame_name, column)
+                        return PyLegendBooleanColumnExpression(self, column)
                     if base_col.get_type() == "String":
-                        return PyLegendStringColumnExpression(self.__frame_name, column)
+                        return PyLegendStringColumnExpression(self, column)
                     if base_col.get_type() == "Number":
-                        return PyLegendNumberColumnExpression(self.__frame_name, column)
+                        return PyLegendNumberColumnExpression(self, column)
                     if base_col.get_type() == "Integer":
-                        return PyLegendIntegerColumnExpression(self.__frame_name, column)
+                        return PyLegendIntegerColumnExpression(self, column)
                     if base_col.get_type() == "Float":
-                        return PyLegendFloatColumnExpression(self.__frame_name, column)
+                        return PyLegendFloatColumnExpression(self, column)
                     if base_col.get_type() == "Date":
-                        return PyLegendDateColumnExpression(self.__frame_name, column)
+                        return PyLegendDateColumnExpression(self, column)
                     if base_col.get_type() == "DateTime":
-                        return PyLegendDateTimeColumnExpression(self.__frame_name, column)
+                        return PyLegendDateTimeColumnExpression(self, column)
                     if base_col.get_type() == "StrictDate":
-                        return PyLegendStrictDateColumnExpression(self.__frame_name, column)
+                        return PyLegendStrictDateColumnExpression(self, column)
 
                 raise RuntimeError(f"Column '{column}' of type {base_col.get_type()} not supported yet")
 
@@ -183,3 +193,23 @@ class AbstractTdsRow(metaclass=ABCMeta):
 
     def get_frame_name(self) -> str:
         return self.__frame_name
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"${self.__frame_name}"
+
+    def column_sql_expression(
+            self,
+            column: str,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        query = frame_name_to_base_query_map[self.__frame_name]
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        filtered = [
+            s for s in query.select.selectItems
+            if (isinstance(s, SingleColumn) and
+                s.alias == db_extension.quote_identifier(column))
+        ]
+        if len(filtered) == 0:
+            raise RuntimeError("Cannot find column: " + column)  # pragma: no cover
+        return filtered[0].expression
