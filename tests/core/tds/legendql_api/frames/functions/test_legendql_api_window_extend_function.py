@@ -46,7 +46,7 @@ class TestWindowExtendAppliedFunction:
         assert r.value.args[0] == (
             "'window_extend' function extend_columns argument should be a list of tuples with two/three elements - "
             "first element being a string (new column name), second element being a lambda function which takes three "
-            "arguments (LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow) and third element being an "
+            "arguments (LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow) and third element being an "
             "optional aggregation lambda function which takes one argument "
             "E.g - [('new col1', lambda p,w,r: r.c1 + 1), ('new col2', lambda p,w,r: r.c2, lambda c: c.sum())]. "
             "Element at index 0 (0-indexed) is incompatible"
@@ -343,7 +343,7 @@ class TestWindowExtendAppliedFunction:
                ('#Table(test_schema.test_table)#->extend(over(~[col2], [ascending(~col3)]), '
                 '~[col4:{p,w,r | $r.col1}:{c | $c->sum()}, col5:{p,w,r | 1}:{c | $c->count()}])')
 
-    def test_query_gen_extend_function_mixed(self) -> None:
+    def test_query_gen_window_extend_function_mixed(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
@@ -381,6 +381,59 @@ class TestWindowExtendAppliedFunction:
                 '->extend(over(~[col2], [ascending(~col3)]), ~col4:{p,w,r | $r.col1 + 1})'
                 '->extend(over(~[col2], [ascending(~col3)]), ~col5:{p,w,r | 1}:{c | $c->count()})'
                 '->extend(over(~[col2], [ascending(~col3)]), ~col6:{p,w,r | $r.col1 + 2})')
+
+    def test_query_gen_window_extend_function_window_functions(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.window_extend(
+            frame.window(partition_by="col2", order_by="col3"),
+            [
+                ("col4", lambda p, w, r: p.row_number(r)),
+                ("col5", lambda p, w, r: p.rank(w, r)),
+                ("col6", lambda p, w, r: p.dense_rank(w, r) + 1),
+                ("col7", lambda p, w, r: p.percent_rank(w, r)),
+                ("col8", lambda p, w, r: round(p.cume_dist(w, r), 2)),
+                ("col9", lambda p, w, r: p.ntile(r, 10)),
+            ]
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                "root".col3 AS "col3",
+                row_number() OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4",
+                rank() OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col5",
+                (dense_rank() + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col6",
+                percent_rank() OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col7",
+                ROUND(cume_dist(), 2) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col8",
+                ntile(
+                    10
+                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col9"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(over(~[col2], [ascending(~col3)]), ~[
+                col4:{p,w,r | $p->rowNumber($r)},
+                col5:{p,w,r | $p->rank($w, $r)},
+                col6:{p,w,r | $p->denseRank($w, $r) + 1},
+                col7:{p,w,r | $p->percentRank($w, $r)},
+                col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->round(2)},
+                col9:{p,w,r | $p->ntile($r, 10)}
+              ])'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table)#->extend(over(~[col2], [ascending(~col3)]), '
+                '~[col4:{p,w,r | $p->rowNumber($r)}, col5:{p,w,r | $p->rank($w, $r)}, '
+                'col6:{p,w,r | $p->denseRank($w, $r) + 1}, col7:{p,w,r | $p->percentRank($w, $r)}, '
+                'col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->round(2)}, '
+                'col9:{p,w,r | $p->ntile($r, 10)}])')
 
     @pytest.mark.skip(reason="Server does not handle window functions of this form yet")
     def test_e2e_window_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:

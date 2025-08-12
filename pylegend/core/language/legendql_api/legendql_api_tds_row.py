@@ -33,7 +33,8 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiNumber,
     LegendQLApiStrictDate,
     LegendQLApiDateTime,
-    LegendQLApiDate, LegendQLApiPrimitive,
+    LegendQLApiDate,
+    LegendQLApiPrimitive,
 )
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame

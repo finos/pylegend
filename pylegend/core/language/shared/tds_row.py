@@ -180,3 +180,6 @@ class AbstractTdsRow(metaclass=ABCMeta):
             f"Column - '{column}' doesn't exist in the current frame. "
             f"Current frame columns: {[x.get_name() for x in self.__columns]}"
         )
+
+    def get_frame_name(self) -> str:
+        return self.__frame_name
