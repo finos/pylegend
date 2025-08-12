@@ -25,12 +25,29 @@ from pylegend.core.language import (
     PyLegendDateTime,
     PyLegendStrictDate,
     PyLegendColumnExpression,
+    PyLegendExpressionIntegerReturn,
+    PyLegendExpressionFloatReturn,
 )
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
     PyLegendList,
+    PyLegendDict,
 )
+from pylegend.core.language.shared.helpers import escape_column_name
+from pylegend.core.sql.metamodel import (
+    QuerySpecification,
+    Expression,
+    SingleColumn,
+    SortItem,
+    SortItemOrdering,
+    SortItemNullOrdering,
+    Window,
+    FunctionCall,
+    QualifiedName, IntegerLiteral
+)
+from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from typing import TYPE_CHECKING
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiPrimitive",
@@ -45,14 +62,9 @@ __all__: PyLegendSequence[str] = [
     "LegendQLApiSortInfo",
     "LegendQLApiSortDirection",
     "LegendQLApiWindow",
-    "LegendQLApiPartialRelation",
+    "LegendQLApiPartialFrame",
+    "LegendQLApiWindowReference",
 ]
-
-from pylegend.core.language.shared.helpers import escape_column_name
-
-from pylegend.core.sql.metamodel import QuerySpecification, Expression, SingleColumn, SortItem, SortItemOrdering, \
-    SortItemNullOrdering, Window
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 
 
 class LegendQLApiPrimitive(PyLegendPrimitive, metaclass=ABCMeta):
@@ -226,5 +238,262 @@ class LegendQLApiWindow:
         return f"over({partitions_str}, {sorts_str})"
 
 
-class LegendQLApiPartialRelation:
-    pass
+class LegendQLApiPartialFrame:
+    if TYPE_CHECKING:
+        from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+
+    __base_frame: "LegendQLApiBaseTdsFrame"
+    __var_name: str
+
+    def __init__(self, base_frame: "LegendQLApiBaseTdsFrame", var_name: str) -> None:
+        self.__base_frame = base_frame
+        self.__var_name = var_name
+
+    def row_number(
+            self,
+            row: "LegendQLApiTdsRow"
+    ) -> PyLegendInteger:
+        return PyLegendInteger(LegendQLApiRowNumberExpression(self, row))
+
+    def rank(
+            self,
+            window: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> PyLegendInteger:
+        return PyLegendInteger(LegendQLApiRankExpression(self, window, row))
+
+    def dense_rank(
+            self,
+            window: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> PyLegendInteger:
+        return PyLegendInteger(LegendQLApiDenseRankExpression(self, window, row))
+
+    def percent_rank(
+            self,
+            window: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> PyLegendFloat:
+        return PyLegendFloat(LegendQLApiPercentRankExpression(self, window, row))
+
+    def cume_dist(
+            self,
+            window: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> PyLegendFloat:
+        return PyLegendFloat(LegendQLApiCumeDistExpression(self, window, row))
+
+    def ntile(
+            self,
+            row: "LegendQLApiTdsRow",
+            num_buckets: int
+    ) -> PyLegendInteger:
+        return PyLegendInteger(LegendQLApiNtileExpression(self, row, num_buckets))
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"${self.__var_name}"
+
+
+class LegendQLApiWindowReference:
+    __window: LegendQLApiWindow
+    __var_name: str
+
+    def __init__(self, window: LegendQLApiWindow, var_name: str) -> None:
+        self.__window = window
+        self.__var_name = var_name
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"${self.__var_name}"
+
+
+class LegendQLApiRowNumberExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+
+    __partial_frame: LegendQLApiPartialFrame
+    __row: "LegendQLApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: LegendQLApiPartialFrame,
+            row: "LegendQLApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["row_number"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"{self.__partial_frame.to_pure_expression(config)}->rowNumber(${self.__row.get_frame_name()})"
+
+
+class LegendQLApiRankExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+
+    __partial_frame: LegendQLApiPartialFrame
+    __window_ref: "LegendQLApiWindowReference"
+    __row: "LegendQLApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: LegendQLApiPartialFrame,
+            window_ref: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["rank"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->rank("
+                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+
+
+class LegendQLApiDenseRankExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+
+    __partial_frame: LegendQLApiPartialFrame
+    __window_ref: "LegendQLApiWindowReference"
+    __row: "LegendQLApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: LegendQLApiPartialFrame,
+            window_ref: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["dense_rank"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->denseRank("
+                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+
+
+class LegendQLApiPercentRankExpression(PyLegendExpressionFloatReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+
+    __partial_frame: LegendQLApiPartialFrame
+    __window_ref: "LegendQLApiWindowReference"
+    __row: "LegendQLApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: LegendQLApiPartialFrame,
+            window_ref: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["percent_rank"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->percentRank("
+                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+
+
+class LegendQLApiCumeDistExpression(PyLegendExpressionFloatReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+
+    __partial_frame: LegendQLApiPartialFrame
+    __window_ref: "LegendQLApiWindowReference"
+    __row: "LegendQLApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: LegendQLApiPartialFrame,
+            window_ref: "LegendQLApiWindowReference",
+            row: "LegendQLApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["cume_dist"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->cumulativeDistribution("
+                f"{self.__window_ref.to_pure_expression(config)}, ${self.__row.get_frame_name()})")
+
+
+class LegendQLApiNtileExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
+
+    __partial_frame: LegendQLApiPartialFrame
+    __row: "LegendQLApiTdsRow"
+    __num_buckets: int
+
+    def __init__(
+            self,
+            partial_frame: LegendQLApiPartialFrame,
+            row: "LegendQLApiTdsRow",
+            num_buckets: int
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__row = row
+        self.__num_buckets = num_buckets
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["ntile"]),
+            distinct=False,
+            arguments=[IntegerLiteral(self.__num_buckets)],
+            filter_=None,
+            window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->ntile(${self.__row.get_frame_name()}, "
+                f"{self.__num_buckets})")

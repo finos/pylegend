@@ -20,8 +20,11 @@ from pylegend._typing import (
     PyLegendUnion,
     PyLegendTuple,
 )
-from pylegend.core.language.legendql_api.legendql_api_custom_expressions import LegendQLApiWindow, \
-    LegendQLApiPartialRelation
+from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
+    LegendQLApiWindow,
+    LegendQLApiPartialFrame,
+    LegendQLApiWindowReference
+)
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
@@ -69,14 +72,14 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
                 PyLegendTuple[
                     str,
                     PyLegendCallable[
-                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                         PyLegendPrimitiveOrPythonPrimitive
                     ]
                 ],
                 PyLegendTuple[
                     str,
                     PyLegendCallable[
-                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                         PyLegendPrimitiveOrPythonPrimitive
                     ],
                     PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
@@ -86,14 +89,14 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
                         PyLegendTuple[
                             str,
                             PyLegendCallable[
-                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                                 PyLegendPrimitiveOrPythonPrimitive
                             ]
                         ],
                         PyLegendTuple[
                             str,
                             PyLegendCallable[
-                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                                 PyLegendPrimitiveOrPythonPrimitive
                             ],
                             PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
@@ -111,7 +114,8 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
             ]
         ] = []
         tds_row = LegendQLApiTdsRow.from_tds_frame("r", self.__base_frame)
-        partial_relation = LegendQLApiPartialRelation()
+        partial_frame = LegendQLApiPartialFrame(base_frame=self.__base_frame, var_name="p")
+        window_ref = LegendQLApiWindowReference(window=self.__window, var_name="w")
         for (i, extend_column) in enumerate(extend_columns if isinstance(extend_columns, list) else [extend_columns]):
             if isinstance(extend_column, tuple) and len(extend_column) in [2, 3]:
                 if not isinstance(extend_column[0], str):
@@ -125,11 +129,11 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
                     raise TypeError(
                         "'window_extend' function extend_columns argument incompatible. "
                         "Second element in an window_extend tuple should be a lambda function which takes three "
-                        "arguments (LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow) "
+                        "arguments (LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow) "
                         "E.g - ('new col', lambda p,w,r: r.c1 + 1). Element at index {i} (0-indexed) is incompatible"
                     )
                 try:
-                    result = extend_column[1](partial_relation, window, tds_row)
+                    result = extend_column[1](partial_frame, window_ref, tds_row)
                 except Exception as e:
                     raise RuntimeError(
                         "'window_extend' function extend_columns argument incompatible. "
@@ -173,7 +177,7 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
                 raise TypeError(
                     "'window_extend' function extend_columns argument should be a list of tuples with two/three elements"
                     " - first element being a string (new column name), second element being a lambda function which "
-                    "takes three arguments (LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow) and "
+                    "takes three arguments (LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow) and "
                     "third element being an optional aggregation lambda function which takes one argument "
                     "E.g - [('new col1', lambda p,w,r: r.c1 + 1), ('new col2', lambda p,w,r: r.c2, lambda c: c.sum())]. "
                     f"Element at index {i} (0-indexed) is incompatible"

@@ -20,7 +20,8 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
     LegendQLApiWindow,
-    LegendQLApiPartialRelation,
+    LegendQLApiPartialFrame,
+    LegendQLApiWindowReference,
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.tds_frame import (
@@ -272,14 +273,14 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                 PyLegendTuple[
                     str,
                     PyLegendCallable[
-                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                         PyLegendPrimitiveOrPythonPrimitive
                     ]
                 ],
                 PyLegendTuple[
                     str,
                     PyLegendCallable[
-                        [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                        [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                         PyLegendPrimitiveOrPythonPrimitive
                     ],
                     PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
@@ -289,14 +290,14 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                         PyLegendTuple[
                             str,
                             PyLegendCallable[
-                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                                 PyLegendPrimitiveOrPythonPrimitive
                             ]
                         ],
                         PyLegendTuple[
                             str,
                             PyLegendCallable[
-                                [LegendQLApiPartialRelation, LegendQLApiWindow, LegendQLApiTdsRow],
+                                [LegendQLApiPartialFrame, LegendQLApiWindowReference, LegendQLApiTdsRow],
                                 PyLegendPrimitiveOrPythonPrimitive
                             ],
                             PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
