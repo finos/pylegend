@@ -174,11 +174,11 @@ class TestWindowExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over(~[col2], []), ~col4:{p,w,r | $r.col1 + 1})'''
+              ->extend(over(~[col2], []), ~col4:{p,w,r | toOne($r.col1) + 1})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->extend(over(~[col2], []), ~col4:{p,w,r | $r.col1 + 1})')
+                '->extend(over(~[col2], []), ~col4:{p,w,r | toOne($r.col1) + 1})')
 
     def test_query_gen_window_extend_function_col_name_with_spaces(self) -> None:
         columns = [
@@ -203,11 +203,11 @@ class TestWindowExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over([], [ascending(~col3)]), ~'col4 with spaces':{p,w,r | $r.col1 + 1})'''
+              ->extend(over([], [ascending(~col3)]), ~'col4 with spaces':{p,w,r | toOne($r.col1) + 1})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->extend(over([], [ascending(~col3)]), ~\'col4 with spaces\':{p,w,r | $r.col1 + 1})')
+                '->extend(over([], [ascending(~col3)]), ~\'col4 with spaces\':{p,w,r | toOne($r.col1) + 1})')
 
     def test_query_gen_window_extend_function_multi(self) -> None:
         columns = [
@@ -237,13 +237,13 @@ class TestWindowExtendAppliedFunction:
             '''\
             #Table(test_schema.test_table)#
               ->extend(over(~[col2], [ascending(~col3)]), ~[
-                col4:{p,w,r | $r.col1 + 1},
-                col5:{p,w,r | $r.col1 + 2}
+                col4:{p,w,r | toOne($r.col1) + 1},
+                col5:{p,w,r | toOne($r.col1) + 2}
               ])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->extend(over(~[col2], [ascending(~col3)]), '
-                '~[col4:{p,w,r | $r.col1 + 1}, col5:{p,w,r | $r.col1 + 2}])')
+                '~[col4:{p,w,r | toOne($r.col1) + 1}, col5:{p,w,r | toOne($r.col1) + 2}])')
 
     def test_query_gen_window_extend_function_complex_window(self) -> None:
         columns = [
@@ -272,11 +272,11 @@ class TestWindowExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over(~[col2, col3], [descending(~col4), ascending(~col5)]), ~col6:{p,w,r | $r.col1 + 1})'''
+              ->extend(over(~[col2, col3], [descending(~col4), ascending(~col5)]), ~col6:{p,w,r | toOne($r.col1) + 1})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->extend(over(~[col2, col3], [descending(~col4), ascending(~col5)]), ~col6:{p,w,r | $r.col1 + 1})')
+                '->extend(over(~[col2, col3], [descending(~col4), ascending(~col5)]), ~col6:{p,w,r | toOne($r.col1) + 1})')
 
     def test_query_gen_window_extend_function_with_agg(self) -> None:
         columns = [
@@ -372,15 +372,15 @@ class TestWindowExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over(~[col2], [ascending(~col3)]), ~col4:{p,w,r | $r.col1 + 1})
+              ->extend(over(~[col2], [ascending(~col3)]), ~col4:{p,w,r | toOne($r.col1) + 1})
               ->extend(over(~[col2], [ascending(~col3)]), ~col5:{p,w,r | 1}:{c | $c->count()})
-              ->extend(over(~[col2], [ascending(~col3)]), ~col6:{p,w,r | $r.col1 + 2})'''
+              ->extend(over(~[col2], [ascending(~col3)]), ~col6:{p,w,r | toOne($r.col1) + 2})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->extend(over(~[col2], [ascending(~col3)]), ~col4:{p,w,r | $r.col1 + 1})'
+                '->extend(over(~[col2], [ascending(~col3)]), ~col4:{p,w,r | toOne($r.col1) + 1})'
                 '->extend(over(~[col2], [ascending(~col3)]), ~col5:{p,w,r | 1}:{c | $c->count()})'
-                '->extend(over(~[col2], [ascending(~col3)]), ~col6:{p,w,r | $r.col1 + 2})')
+                '->extend(over(~[col2], [ascending(~col3)]), ~col6:{p,w,r | toOne($r.col1) + 2})')
 
     def test_query_gen_window_extend_function_window_functions(self) -> None:
         columns = [
@@ -443,12 +443,12 @@ class TestWindowExtendAppliedFunction:
               ->extend(over(~[col2], [ascending(~col3)]), ~[
                 col4:{p,w,r | $p->rowNumber($r)},
                 col5:{p,w,r | $p->rank($w, $r)},
-                col6:{p,w,r | $p->denseRank($w, $r) + 1},
+                col6:{p,w,r | toOne($p->denseRank($w, $r)) + 1},
                 col7:{p,w,r | $p->percentRank($w, $r)},
-                col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->round(2)},
+                col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->map(op | $op->round(2))},
                 col9:{p,w,r | $p->ntile($r, 10)},
                 col10:{p,w,r | $p->lead($r).col1},
-                col11:{p,w,r | $p->lag($r).col1 + 1},
+                col11:{p,w,r | toOne($p->lag($r).col1) + 1},
                 col12:{p,w,r | $p->first($w, $r).col1},
                 col13:{p,w,r | $p->last($w, $r).col1},
                 col14:{p,w,r | $p->nth($w, $r, 10).col1}
@@ -457,10 +457,10 @@ class TestWindowExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->extend(over(~[col2], [ascending(~col3)]), '
                 '~[col4:{p,w,r | $p->rowNumber($r)}, col5:{p,w,r | $p->rank($w, $r)}, '
-                'col6:{p,w,r | $p->denseRank($w, $r) + 1}, col7:{p,w,r | $p->percentRank($w, $r)}, '
-                'col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->round(2)}, '
+                'col6:{p,w,r | toOne($p->denseRank($w, $r)) + 1}, col7:{p,w,r | $p->percentRank($w, $r)}, '
+                'col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->map(op | $op->round(2))}, '
                 'col9:{p,w,r | $p->ntile($r, 10)}, col10:{p,w,r | $p->lead($r).col1}, '
-                'col11:{p,w,r | $p->lag($r).col1 + 1}, col12:{p,w,r | $p->first($w, $r).col1}, '
+                'col11:{p,w,r | toOne($p->lag($r).col1) + 1}, col12:{p,w,r | $p->first($w, $r).col1}, '
                 'col13:{p,w,r | $p->last($w, $r).col1}, col14:{p,w,r | $p->nth($w, $r, 10).col1}])')
 
     @pytest.mark.skip(reason="Server does not handle window functions of this form yet")

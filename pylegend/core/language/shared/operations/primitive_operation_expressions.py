@@ -60,3 +60,6 @@ class PyLegendPrimitiveEqualsExpression(PyLegendBinaryExpression, PyLegendExpres
             PyLegendPrimitiveEqualsExpression.__to_sql_func,
             PyLegendPrimitiveEqualsExpression.__to_pure_func
         )
+
+    def is_non_nullable(self) -> bool:
+        return True

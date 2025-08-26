@@ -140,10 +140,10 @@ class TestExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(~col3:{r | $r.col1 + 1})'''
+              ->extend(~col3:{r | toOne($r.col1) + 1})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->extend(~col3:{r | $r.col1 + 1})')
+               ('#Table(test_schema.test_table)#->extend(~col3:{r | toOne($r.col1) + 1})')
 
     def test_query_gen_extend_function_col_name_with_spaces(self) -> None:
         columns = [
@@ -163,10 +163,10 @@ class TestExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(~'col3 with spaces':{r | $r.col1 + 1})'''
+              ->extend(~'col3 with spaces':{r | toOne($r.col1) + 1})'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->extend(~\'col3 with spaces\':{r | $r.col1 + 1})')
+               ('#Table(test_schema.test_table)#->extend(~\'col3 with spaces\':{r | toOne($r.col1) + 1})')
 
     def test_query_gen_extend_function_multi(self) -> None:
         columns = [
@@ -191,12 +191,12 @@ class TestExtendAppliedFunction:
             '''\
             #Table(test_schema.test_table)#
               ->extend(~[
-                col3:{r | $r.col1 + 1},
-                col4:{r | $r.col1 + 2}
+                col3:{r | toOne($r.col1) + 1},
+                col4:{r | toOne($r.col1) + 2}
               ])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->extend(~[col3:{r | $r.col1 + 1}, col4:{r | $r.col1 + 2}])')
+               ('#Table(test_schema.test_table)#->extend(~[col3:{r | toOne($r.col1) + 1}, col4:{r | toOne($r.col1) + 2}])')
 
     def test_query_gen_extend_function_literals(self) -> None:
         columns = [

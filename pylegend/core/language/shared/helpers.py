@@ -17,25 +17,34 @@ __all__ = [
     "generate_pure_functional_call",
     "generate_pure_lambda",
     "escape_column_name",
+    "expr_has_matching_start_and_end_parentheses",
 ]
 
 
 def generate_pure_functional_call(
         func: str,
         params: PyLegendList[str],
-        force_prefix: bool = False
+        force_prefix: bool = False,
+        auto_map: bool = False
 ) -> str:
     should_prefix = force_prefix or (len(params) == 0)
 
     updated_params: PyLegendList[str] = []
     for param in params:
         if param.startswith("(") and param.endswith(")"):
-            if __expr_has_matching_start_and_end_parentheses(param):
+            if expr_has_matching_start_and_end_parentheses(param):
                 updated_params.append(param[1:-1])
             else:
                 updated_params.append(param)
         else:
             updated_params.append(param)
+
+    if auto_map and len(updated_params) == 1:
+        return f"{params[0]}->map(op | {generate_pure_functional_call(func, ['$op'], force_prefix, False)})"
+
+    if auto_map and len(updated_params) == 2:
+        new_params = ['$op'] + [updated_params[1]]
+        return f"{params[0]}->map(op | {generate_pure_functional_call(func, new_params, force_prefix, False)})"
 
     if should_prefix:
         return f"{func}({', '.join(updated_params)})"
@@ -44,7 +53,7 @@ def generate_pure_functional_call(
 
 
 def generate_pure_lambda(param_name: str, expr: str, wrap_in_braces: bool = True) -> str:
-    lambda_code = param_name + " | " + (expr[1:-1] if __expr_has_matching_start_and_end_parentheses(expr) else expr)
+    lambda_code = param_name + " | " + (expr[1:-1] if expr_has_matching_start_and_end_parentheses(expr) else expr)
     return "{" + lambda_code + "}" if wrap_in_braces else lambda_code
 
 
@@ -52,7 +61,7 @@ def escape_column_name(name: str) -> str:
     return (name if name.isidentifier() else "'" + name.replace("'", "\\'") + "'")
 
 
-def __expr_has_matching_start_and_end_parentheses(expr: str) -> bool:
+def expr_has_matching_start_and_end_parentheses(expr: str) -> bool:
     if expr.startswith("(") and expr.endswith(")"):
         bracket_indices = [0]
         for (i, char) in enumerate(expr[1:-1]):

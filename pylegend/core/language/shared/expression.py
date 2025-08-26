@@ -52,6 +52,9 @@ class PyLegendExpression(metaclass=ABCMeta):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         pass
 
+    def is_non_nullable(self) -> bool:
+        return False
+
 
 class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):
     pass

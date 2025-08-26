@@ -63,43 +63,45 @@ class TestPyLegendBoolean:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") | x.get_boolean("col1")) == \
                '("root".col2 OR "root".col1)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") | x.get_boolean("col1")) == \
-               '($t.col2 || $t.col1)'
+               '(toOne($t.col2) || toOne($t.col1))'
 
     def test_boolean_or_operation_with_literal(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") | True) == \
                '("root".col2 OR true)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") | True) == \
-               '($t.col2 || true)'
+               '(toOne($t.col2) || true)'
 
     def test_boolean_reverse_or_operation_with_literal(self) -> None:
         assert self.__generate_sql_string(lambda x: True | x.get_boolean("col2")) == \
                '(true OR "root".col2)'
         assert self.__generate_pure_string(lambda x: True | x.get_boolean("col2")) == \
-               '(true || $t.col2)'
+               '(true || toOne($t.col2))'
 
     def test_boolean_and_operation(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") & x.get_boolean("col1")) == \
                '("root".col2 AND "root".col1)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") & x.get_boolean("col1")) == \
-               '($t.col2 && $t.col1)'
+               '(toOne($t.col2) && toOne($t.col1))'
 
     def test_boolean_and_operation_with_literal(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") & True) == \
                '("root".col2 AND true)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") & True) == \
-               '($t.col2 && true)'
+               '(toOne($t.col2) && true)'
 
     def test_boolean_reverse_and_operation_with_literal(self) -> None:
         assert self.__generate_sql_string(lambda x: False & x.get_boolean("col2")) == \
                '(false AND "root".col2)'
         assert self.__generate_pure_string(lambda x: False & x.get_boolean("col2")) == \
-               '(false && $t.col2)'
+               '(false && toOne($t.col2))'
 
     def test_boolean_not_operation(self) -> None:
         assert self.__generate_sql_string(lambda x: ~x.get_boolean("col2")) == \
                'NOT("root".col2)'
         assert self.__generate_pure_string(lambda x: ~x.get_boolean("col2")) == \
-               '(!$t.col2)'
+               '$t.col2->map(op | !$op)'
+        assert self.__generate_pure_string(lambda x: ~(x.get_boolean("col2") | x.get_boolean("col1"))) == \
+               '(toOne($t.col2) || toOne($t.col1))->map(op | !$op)'
 
     @typing.no_type_check
     def test_boolean_equals_expr(self) -> None:
@@ -114,7 +116,7 @@ class TestPyLegendBoolean:
         assert self.__generate_pure_string(lambda x: x["col2"] == True) == '($t.col2 == true)'  # noqa: E712
         assert self.__generate_pure_string(lambda x: True == x["col2"]) == '($t.col2 == true)'  # noqa: E712
         assert self.__generate_pure_string(lambda x: True == (x["col2"] & x["col1"])) == \
-               '(($t.col2 && $t.col1) == true)'
+               '((toOne($t.col2) && toOne($t.col1)) == true)'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(

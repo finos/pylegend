@@ -95,7 +95,7 @@ class PyLegendFirstDayOfYearExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstDayOfYear", [op_expr])
+        return generate_pure_functional_call("firstDayOfYear", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateReturn.__init__(self)
@@ -119,7 +119,7 @@ class PyLegendFirstDayOfQuarterExpression(PyLegendUnaryExpression, PyLegendExpre
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstDayOfQuarter", [op_expr])
+        return generate_pure_functional_call("firstDayOfQuarter", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateReturn.__init__(self)
@@ -143,7 +143,7 @@ class PyLegendFirstDayOfMonthExpression(PyLegendUnaryExpression, PyLegendExpress
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstDayOfMonth", [op_expr])
+        return generate_pure_functional_call("firstDayOfMonth", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateReturn.__init__(self)
@@ -167,7 +167,7 @@ class PyLegendFirstDayOfWeekExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstDayOfWeek", [op_expr])
+        return generate_pure_functional_call("firstDayOfWeek", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateReturn.__init__(self)
@@ -191,7 +191,7 @@ class PyLegendFirstHourOfDayExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstHourOfDay", [op_expr])
+        return generate_pure_functional_call("firstHourOfDay", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
@@ -215,7 +215,7 @@ class PyLegendFirstMinuteOfHourExpression(PyLegendUnaryExpression, PyLegendExpre
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstMinuteOfHour", [op_expr])
+        return generate_pure_functional_call("firstMinuteOfHour", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
@@ -239,7 +239,7 @@ class PyLegendFirstSecondOfMinuteExpression(PyLegendUnaryExpression, PyLegendExp
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstSecondOfMinute", [op_expr])
+        return generate_pure_functional_call("firstSecondOfMinute", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
@@ -263,7 +263,7 @@ class PyLegendFirstMillisecondOfSecondExpression(PyLegendUnaryExpression, PyLege
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("firstMillisecondOfSecond", [op_expr])
+        return generate_pure_functional_call("firstMillisecondOfSecond", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
@@ -287,7 +287,7 @@ class PyLegendYearExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerR
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("year", [op_expr])
+        return generate_pure_functional_call("year", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -311,7 +311,7 @@ class PyLegendQuarterExpression(PyLegendUnaryExpression, PyLegendExpressionInteg
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("quarter", [op_expr])
+        return generate_pure_functional_call("quarter", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -335,7 +335,7 @@ class PyLegendMonthExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("month", [op_expr])
+        return generate_pure_functional_call("month", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -359,7 +359,7 @@ class PyLegendWeekOfYearExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("weekOfYear", [op_expr])
+        return generate_pure_functional_call("weekOfYear", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -383,7 +383,7 @@ class PyLegendDayOfYearExpression(PyLegendUnaryExpression, PyLegendExpressionInt
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("dayOfYear", [op_expr])
+        return generate_pure_functional_call("dayOfYear", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -407,7 +407,7 @@ class PyLegendDayOfMonthExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("dayOfMonth", [op_expr])
+        return generate_pure_functional_call("dayOfMonth", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -431,7 +431,7 @@ class PyLegendDayOfWeekExpression(PyLegendUnaryExpression, PyLegendExpressionInt
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("dayOfWeekNumber", [op_expr])
+        return generate_pure_functional_call("dayOfWeekNumber", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -455,7 +455,7 @@ class PyLegendHourExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerR
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("hour", [op_expr])
+        return generate_pure_functional_call("hour", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -479,7 +479,7 @@ class PyLegendMinuteExpression(PyLegendUnaryExpression, PyLegendExpressionIntege
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("minute", [op_expr])
+        return generate_pure_functional_call("minute", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -503,7 +503,7 @@ class PyLegendSecondExpression(PyLegendUnaryExpression, PyLegendExpressionIntege
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("second", [op_expr])
+        return generate_pure_functional_call("second", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -527,7 +527,7 @@ class PyLegendEpochExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("toEpochValue", [op_expr])
+        return generate_pure_functional_call("toEpochValue", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)

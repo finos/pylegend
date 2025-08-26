@@ -64,6 +64,12 @@ class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBo
             PyLegendBooleanOrExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
+
 
 class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
 
@@ -90,6 +96,12 @@ class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionB
             PyLegendBooleanAndExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
+
 
 class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
 
@@ -103,7 +115,7 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return f"(!{op_expr})"
+        return f"{op_expr}->map(op | !$op)"
 
     def __init__(self, operand: PyLegendExpressionBooleanReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)

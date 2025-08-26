@@ -113,6 +113,12 @@ class PyLegendNumberAddExpression(PyLegendBinaryExpression, PyLegendExpressionNu
             PyLegendNumberAddExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
+
 
 class PyLegendNumberMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
 
@@ -139,6 +145,12 @@ class PyLegendNumberMultiplyExpression(PyLegendBinaryExpression, PyLegendExpress
             PyLegendNumberMultiplyExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
+
 
 class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
 
@@ -153,7 +165,7 @@ class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressio
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return f"({op1_expr} / {op2_expr})"
+        return f"{op1_expr}->map(op | $op / {op2_expr})"
 
     def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -164,6 +176,9 @@ class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressio
             PyLegendNumberDivideExpression.__to_sql_func,
             PyLegendNumberDivideExpression.__to_pure_func
         )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_second_operand(self, config)
 
 
 class PyLegendNumberSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
@@ -191,6 +206,12 @@ class PyLegendNumberSubtractExpression(PyLegendBinaryExpression, PyLegendExpress
             PyLegendNumberSubtractExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
+
 
 class PyLegendNumberLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
 
@@ -216,6 +237,9 @@ class PyLegendNumberLessThanExpression(PyLegendBinaryExpression, PyLegendExpress
             PyLegendNumberLessThanExpression.__to_sql_func,
             PyLegendNumberLessThanExpression.__to_pure_func
         )
+
+    def is_non_nullable(self) -> bool:
+        return True
 
 
 class PyLegendNumberLessThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
@@ -243,6 +267,9 @@ class PyLegendNumberLessThanEqualExpression(PyLegendBinaryExpression, PyLegendEx
             PyLegendNumberLessThanEqualExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
 
 class PyLegendNumberGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
 
@@ -268,6 +295,9 @@ class PyLegendNumberGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpr
             PyLegendNumberGreaterThanExpression.__to_sql_func,
             PyLegendNumberGreaterThanExpression.__to_pure_func
         )
+
+    def is_non_nullable(self) -> bool:
+        return True
 
 
 class PyLegendNumberGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
@@ -295,6 +325,9 @@ class PyLegendNumberGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegen
             PyLegendNumberGreaterThanEqualExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
 
 class PyLegendNumberNegativeExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
 
@@ -308,7 +341,7 @@ class PyLegendNumberNegativeExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("minus", [op_expr])
+        return generate_pure_functional_call("minus", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -332,7 +365,7 @@ class PyLegendNumberAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("abs", [op_expr])
+        return generate_pure_functional_call("abs", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -357,7 +390,7 @@ class PyLegendNumberPowerExpression(PyLegendBinaryExpression, PyLegendExpression
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("pow", [op1_expr, op2_expr])
+        return generate_pure_functional_call("pow", [op1_expr, op2_expr], auto_map=True)
 
     def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -368,6 +401,9 @@ class PyLegendNumberPowerExpression(PyLegendBinaryExpression, PyLegendExpression
             PyLegendNumberPowerExpression.__to_sql_func,
             PyLegendNumberPowerExpression.__to_pure_func
         )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_second_operand(self, config)
 
 
 class PyLegendNumberCeilExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
@@ -382,7 +418,7 @@ class PyLegendNumberCeilExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("ceiling", [op_expr])
+        return generate_pure_functional_call("ceiling", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -406,7 +442,7 @@ class PyLegendNumberFloorExpression(PyLegendUnaryExpression, PyLegendExpressionI
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("floor", [op_expr])
+        return generate_pure_functional_call("floor", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -430,7 +466,7 @@ class PyLegendNumberSqrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("sqrt", [op_expr])
+        return generate_pure_functional_call("sqrt", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -454,7 +490,7 @@ class PyLegendNumberCbrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("cbrt", [op_expr])
+        return generate_pure_functional_call("cbrt", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -478,7 +514,7 @@ class PyLegendNumberExpExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("exp", [op_expr])
+        return generate_pure_functional_call("exp", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -502,7 +538,7 @@ class PyLegendNumberLogExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("log", [op_expr])
+        return generate_pure_functional_call("log", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -527,7 +563,7 @@ class PyLegendNumberRemainderExpression(PyLegendBinaryExpression, PyLegendExpres
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("rem", [op1_expr, op2_expr])
+        return generate_pure_functional_call("rem", [op1_expr, op2_expr], auto_map=True)
 
     def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -538,6 +574,9 @@ class PyLegendNumberRemainderExpression(PyLegendBinaryExpression, PyLegendExpres
             PyLegendNumberRemainderExpression.__to_sql_func,
             PyLegendNumberRemainderExpression.__to_pure_func
         )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_second_operand(self, config)
 
 
 class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
@@ -554,8 +593,8 @@ class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpression
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         if op2_expr == "0":
-            return generate_pure_functional_call("round", [op1_expr])
-        return generate_pure_functional_call("round", [f"cast({op1_expr}, @Float)", op2_expr])
+            return generate_pure_functional_call("round", [op1_expr], auto_map=True)
+        return generate_pure_functional_call("round", [f"cast({op1_expr}, @Float)", op2_expr], auto_map=True)
 
     def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -580,7 +619,7 @@ class PyLegendNumberSineExpression(PyLegendUnaryExpression, PyLegendExpressionNu
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("sin", [op_expr])
+        return generate_pure_functional_call("sin", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -604,7 +643,7 @@ class PyLegendNumberArcSineExpression(PyLegendUnaryExpression, PyLegendExpressio
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("asin", [op_expr])
+        return generate_pure_functional_call("asin", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -628,7 +667,7 @@ class PyLegendNumberCosineExpression(PyLegendUnaryExpression, PyLegendExpression
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("cos", [op_expr])
+        return generate_pure_functional_call("cos", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -652,7 +691,7 @@ class PyLegendNumberArcCosineExpression(PyLegendUnaryExpression, PyLegendExpress
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("acos", [op_expr])
+        return generate_pure_functional_call("acos", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -676,7 +715,7 @@ class PyLegendNumberTanExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("tan", [op_expr])
+        return generate_pure_functional_call("tan", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -700,7 +739,7 @@ class PyLegendNumberArcTanExpression(PyLegendUnaryExpression, PyLegendExpression
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("atan", [op_expr])
+        return generate_pure_functional_call("atan", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -725,7 +764,7 @@ class PyLegendNumberArcTan2Expression(PyLegendBinaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("atan2", [op1_expr, op2_expr])
+        return generate_pure_functional_call("atan2", [op1_expr, op2_expr], auto_map=True)
 
     def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -736,6 +775,9 @@ class PyLegendNumberArcTan2Expression(PyLegendBinaryExpression, PyLegendExpressi
             PyLegendNumberArcTan2Expression.__to_sql_func,
             PyLegendNumberArcTan2Expression.__to_pure_func
         )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_second_operand(self, config)
 
 
 class PyLegendNumberCotExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
@@ -750,7 +792,7 @@ class PyLegendNumberCotExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("cot", [op_expr])
+        return generate_pure_functional_call("cot", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
