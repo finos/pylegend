@@ -307,3 +307,21 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             ]
     ) -> "LegendQLApiTdsFrame":
         pass
+
+    @abstractmethod
+    def project(
+            self,
+            project_columns: PyLegendUnion[
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]
+                ],
+                PyLegendList[
+                    PyLegendTuple[
+                        str,
+                        PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]
+                    ]
+                ]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
