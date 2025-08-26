@@ -21,7 +21,9 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionIntegerReturn,
+    PyLegendExpressionBooleanReturn,
 )
+from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
@@ -36,6 +38,8 @@ from pylegend.core.sql.metamodel import (
     CurrentTimeType,
     Cast,
     ColumnType,
+    ComparisonExpression,
+    ComparisonOperator,
 )
 from pylegend.core.sql.metamodel_extension import (
     FirstDayOfYearExpression,
@@ -83,6 +87,10 @@ __all__: PyLegendSequence[str] = [
     "PyLegendTodayExpression",
     "PyLegendNowExpression",
     "PyLegendDatePartExpression",
+    "PyLegendDateLessThanExpression",
+    "PyLegendDateLessThanEqualExpression",
+    "PyLegendDateGreaterThanExpression",
+    "PyLegendDateGreaterThanEqualExpression",
 ]
 
 
@@ -614,3 +622,119 @@ class PyLegendDatePartExpression(PyLegendUnaryExpression, PyLegendExpressionStri
             PyLegendDatePartExpression.__to_sql_func,
             PyLegendDatePartExpression.__to_pure_func
         )
+
+
+class PyLegendDateLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} < {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpressionDateReturn, operand2: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendDateLessThanExpression.__to_sql_func,
+            PyLegendDateLessThanExpression.__to_pure_func
+        )
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
+class PyLegendDateLessThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN_OR_EQUAL)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} <= {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpressionDateReturn, operand2: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendDateLessThanEqualExpression.__to_sql_func,
+            PyLegendDateLessThanEqualExpression.__to_pure_func
+        )
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
+class PyLegendDateGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} > {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpressionDateReturn, operand2: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendDateGreaterThanExpression.__to_sql_func,
+            PyLegendDateGreaterThanExpression.__to_pure_func
+        )
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
+class PyLegendDateGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN_OR_EQUAL)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} >= {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpressionDateReturn, operand2: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendDateGreaterThanEqualExpression.__to_sql_func,
+            PyLegendDateGreaterThanEqualExpression.__to_pure_func
+        )
+
+    def is_non_nullable(self) -> bool:
+        return True
