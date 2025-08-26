@@ -21,6 +21,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateReturn,
 )
@@ -49,6 +50,10 @@ from pylegend.core.language.shared.operations.date_operation_expressions import 
     PyLegendSecondExpression,
     PyLegendEpochExpression,
     PyLegendDatePartExpression,
+    PyLegendDateLessThanExpression,
+    PyLegendDateLessThanEqualExpression,
+    PyLegendDateGreaterThanExpression,
+    PyLegendDateGreaterThanEqualExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -152,6 +157,38 @@ class PyLegendDate(PyLegendPrimitive):
     def date_part(self) -> "PyLegendStrictDate":
         from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
         return PyLegendStrictDate(PyLegendDatePartExpression(self.__value))
+
+    def __lt__(
+            self,
+            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"]
+    ) -> "PyLegendBoolean":
+        PyLegendDate.validate_param_to_be_date(other, "Date less than (<) parameter")
+        other_op = PyLegendDate.__convert_to_date_expr(other)
+        return PyLegendBoolean(PyLegendDateLessThanExpression(self.__value, other_op))
+
+    def __le__(
+            self,
+            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"]
+    ) -> "PyLegendBoolean":
+        PyLegendDate.validate_param_to_be_date(other, "Date less than equal (<=) parameter")
+        other_op = PyLegendDate.__convert_to_date_expr(other)
+        return PyLegendBoolean(PyLegendDateLessThanEqualExpression(self.__value, other_op))
+
+    def __gt__(
+            self,
+            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"]
+    ) -> "PyLegendBoolean":
+        PyLegendDate.validate_param_to_be_date(other, "Date greater than (>) parameter")
+        other_op = PyLegendDate.__convert_to_date_expr(other)
+        return PyLegendBoolean(PyLegendDateGreaterThanExpression(self.__value, other_op))
+
+    def __ge__(
+            self,
+            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"]
+    ) -> "PyLegendBoolean":
+        PyLegendDate.validate_param_to_be_date(other, "Date greater than equal (>=) parameter")
+        other_op = PyLegendDate.__convert_to_date_expr(other)
+        return PyLegendBoolean(PyLegendDateGreaterThanEqualExpression(self.__value, other_op))
 
     @staticmethod
     def __convert_to_date_expr(

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import pytest
 from pylegend.core.database.sql_to_string import (
     SqlToStringFormat,
@@ -296,6 +297,62 @@ class TestPyLegendDate:
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().date_part()) ==
                '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->datePart())->cast(@StrictDate)')
+
+    def test_date_lt_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") < x.get_date("col1")) == \
+               '("root".col2 < "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") < datetime.date(2025, 1, 1)) == \
+               '("root".col2 < CAST(\'2025-01-01\' AS DATE))'
+        assert self.__generate_sql_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) < x.get_date("col2")) == \
+               '("root".col2 > CAST(\'2025-01-01T10:00:00\' AS TIMESTAMP))'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") < x.get_date("col1")) == \
+               '($t.col2 < $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") < datetime.date(2025, 1, 1)) == \
+               '($t.col2 < %2025-01-01)'
+        assert self.__generate_pure_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) < x.get_date("col2")) == \
+               '($t.col2 > %2025-01-01T10:00:00)'
+
+    def test_date_le_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") <= x.get_date("col1")) == \
+               '("root".col2 <= "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") <= datetime.date(2025, 1, 1)) == \
+               '("root".col2 <= CAST(\'2025-01-01\' AS DATE))'
+        assert self.__generate_sql_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) <= x.get_date("col2")) == \
+               '("root".col2 >= CAST(\'2025-01-01T10:00:00\' AS TIMESTAMP))'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") <= x.get_date("col1")) == \
+               '($t.col2 <= $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") <= datetime.date(2025, 1, 1)) == \
+               '($t.col2 <= %2025-01-01)'
+        assert self.__generate_pure_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) <= x.get_date("col2")) == \
+               '($t.col2 >= %2025-01-01T10:00:00)'
+
+    def test_date_gt_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") > x.get_date("col1")) == \
+               '("root".col2 > "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") > datetime.date(2025, 1, 1)) == \
+               '("root".col2 > CAST(\'2025-01-01\' AS DATE))'
+        assert self.__generate_sql_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) > x.get_date("col2")) == \
+               '("root".col2 < CAST(\'2025-01-01T10:00:00\' AS TIMESTAMP))'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") > x.get_date("col1")) == \
+               '($t.col2 > $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") > datetime.date(2025, 1, 1)) == \
+               '($t.col2 > %2025-01-01)'
+        assert self.__generate_pure_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) > x.get_date("col2")) == \
+               '($t.col2 < %2025-01-01T10:00:00)'
+
+    def test_date_ge_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") >= x.get_date("col1")) == \
+               '("root".col2 >= "root".col1)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2") >= datetime.date(2025, 1, 1)) == \
+               '("root".col2 >= CAST(\'2025-01-01\' AS DATE))'
+        assert self.__generate_sql_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) >= x.get_date("col2")) == \
+               '("root".col2 <= CAST(\'2025-01-01T10:00:00\' AS TIMESTAMP))'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") >= x.get_date("col1")) == \
+               '($t.col2 >= $t.col1)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2") >= datetime.date(2025, 1, 1)) == \
+               '($t.col2 >= %2025-01-01)'
+        assert self.__generate_pure_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) >= x.get_date("col2")) == \
+               '($t.col2 <= %2025-01-01T10:00:00)'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
