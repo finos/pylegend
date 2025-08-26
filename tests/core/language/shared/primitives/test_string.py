@@ -22,6 +22,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.language.shared.functions import current_user
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
 
@@ -237,6 +238,10 @@ class TestPyLegendString:
                '($t.col2 == \'Hello\')'
         assert self.__generate_pure_string(lambda x: 'Hello' == (x["col2"] + x["col1"])) == \
                '((toOne($t.col2) + toOne($t.col1)) == \'Hello\')'
+
+    def test_string_current_user_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: current_user()) == 'CURRENT_USER'
+        assert self.__generate_pure_string(lambda x: current_user()) == 'currentUserId()'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
