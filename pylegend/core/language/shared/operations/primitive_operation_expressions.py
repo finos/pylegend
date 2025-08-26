@@ -20,12 +20,16 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpression,
     PyLegendExpressionBooleanReturn,
 )
+from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
+from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
     ComparisonExpression,
     ComparisonOperator,
+    IsNullPredicate,
+    IsNotNullPredicate,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -34,6 +38,8 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitiveEqualsExpression",
     "PyLegendPrimitiveNotEqualsExpression",
+    "PyLegendIsEmptyExpression",
+    "PyLegendIsNotEmptyExpression",
 ]
 
 
@@ -89,6 +95,60 @@ class PyLegendPrimitiveNotEqualsExpression(PyLegendBinaryExpression, PyLegendExp
             operand2,
             PyLegendPrimitiveNotEqualsExpression.__to_sql_func,
             PyLegendPrimitiveNotEqualsExpression.__to_pure_func
+        )
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
+class PyLegendIsEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return IsNullPredicate(expression)
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("isEmpty", [op_expr])
+
+    def __init__(self, operand: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendIsEmptyExpression.__to_sql_func,
+            PyLegendIsEmptyExpression.__to_pure_func
+        )
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
+class PyLegendIsNotEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return IsNotNullPredicate(expression)
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("isNotEmpty", [op_expr])
+
+    def __init__(self, operand: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendIsNotEmptyExpression.__to_sql_func,
+            PyLegendIsNotEmptyExpression.__to_pure_func
         )
 
     def is_non_nullable(self) -> bool:

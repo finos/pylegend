@@ -243,6 +243,16 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: current_user()) == 'CURRENT_USER'
         assert self.__generate_pure_string(lambda x: current_user()) == 'currentUserId()'
 
+    def test_string_null_not_null_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x["col2"].is_not_null()) == \
+               '("root".col2 IS NOT NULL)'
+        assert self.__generate_sql_string(lambda x: x["col2"].is_null()) == \
+               '("root".col2 IS NULL)'
+        assert self.__generate_pure_string(lambda x: x["col2"].is_not_null()) == \
+               '$t.col2->isNotEmpty()'
+        assert self.__generate_pure_string(lambda x: x["col2"].lower().is_null()) == \
+               '$t.col2->map(op | $op->toLower())->isEmpty()'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
