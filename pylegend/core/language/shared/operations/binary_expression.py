@@ -21,6 +21,7 @@ from pylegend._typing import (
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
 )
+from pylegend.core.language.shared.helpers import expr_has_matching_start_and_end_parentheses
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -75,4 +76,26 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         op1_expr = self.__operand1.to_pure_expression(config)
         op2_expr = self.__operand2.to_pure_expression(config)
+        return self.__to_pure_func(op1_expr, op2_expr, config)
+
+    def to_pure_expression_with_to_one_on_both_operands(self, config: FrameToPureConfig) -> str:
+        op1_expr = self.__operand1.to_pure_expression(config)
+        op1_expr = (
+            op1_expr if self.__operand1.is_non_nullable() else
+            f"toOne({op1_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op1_expr) else op1_expr})"
+        )
+        op2_expr = self.__operand2.to_pure_expression(config)
+        op2_expr = (
+            op2_expr if self.__operand2.is_non_nullable() else
+            f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
+        )
+        return self.__to_pure_func(op1_expr, op2_expr, config)
+
+    def to_pure_expression_with_to_one_on_second_operand(self, config: FrameToPureConfig) -> str:
+        op1_expr = self.__operand1.to_pure_expression(config)
+        op2_expr = self.__operand2.to_pure_expression(config)
+        op2_expr = (
+            op2_expr if self.__operand2.is_non_nullable() else
+            f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
+        )
         return self.__to_pure_func(op1_expr, op2_expr, config)

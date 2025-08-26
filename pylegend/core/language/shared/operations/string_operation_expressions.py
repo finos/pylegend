@@ -81,7 +81,7 @@ class PyLegendStringLengthExpression(PyLegendUnaryExpression, PyLegendExpression
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("length", [op_expr])
+        return generate_pure_functional_call("length", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -189,7 +189,7 @@ class PyLegendStringUpperExpression(PyLegendUnaryExpression, PyLegendExpressionS
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("toUpper", [op_expr])
+        return generate_pure_functional_call("toUpper", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
@@ -213,7 +213,7 @@ class PyLegendStringLowerExpression(PyLegendUnaryExpression, PyLegendExpressionS
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("toLower", [op_expr])
+        return generate_pure_functional_call("toLower", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
@@ -237,7 +237,7 @@ class PyLegendStringLTrimExpression(PyLegendUnaryExpression, PyLegendExpressionS
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("ltrim", [op_expr])
+        return generate_pure_functional_call("ltrim", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
@@ -261,7 +261,7 @@ class PyLegendStringRTrimExpression(PyLegendUnaryExpression, PyLegendExpressionS
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("rtrim", [op_expr])
+        return generate_pure_functional_call("rtrim", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
@@ -285,7 +285,7 @@ class PyLegendStringBTrimExpression(PyLegendUnaryExpression, PyLegendExpressionS
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("trim", [op_expr])
+        return generate_pure_functional_call("trim", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
@@ -310,7 +310,7 @@ class PyLegendStringPosExpression(PyLegendBinaryExpression, PyLegendExpressionIn
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("indexOf", [op1_expr, op2_expr])
+        return generate_pure_functional_call("indexOf", [op1_expr, op2_expr], auto_map=True)
 
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -321,6 +321,9 @@ class PyLegendStringPosExpression(PyLegendBinaryExpression, PyLegendExpressionIn
             PyLegendStringPosExpression.__to_sql_func,
             PyLegendStringPosExpression.__to_pure_func
         )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_second_operand(self, config)
 
 
 class PyLegendStringParseIntExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
@@ -335,7 +338,7 @@ class PyLegendStringParseIntExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("parseInteger", [op_expr])
+        return generate_pure_functional_call("parseInteger", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -359,7 +362,7 @@ class PyLegendStringParseFloatExpression(PyLegendUnaryExpression, PyLegendExpres
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("parseFloat", [op_expr])
+        return generate_pure_functional_call("parseFloat", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -395,6 +398,9 @@ class PyLegendStringConcatExpression(PyLegendBinaryExpression, PyLegendExpressio
             PyLegendStringConcatExpression.__to_sql_func,
             PyLegendStringConcatExpression.__to_pure_func
         )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendStringLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):

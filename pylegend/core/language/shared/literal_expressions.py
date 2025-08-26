@@ -69,6 +69,9 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return "true" if self.__value else "false"
 
+    def is_non_nullable(self) -> bool:
+        return True
+
 
 class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
     __value: str
@@ -87,6 +90,9 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
         escaped = self.__value.replace("'", "\\'")
         return f"'{escaped}'"
 
+    def is_non_nullable(self) -> bool:
+        return True
+
 
 class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     __value: int
@@ -104,6 +110,9 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return str(self.__value)
 
+    def is_non_nullable(self) -> bool:
+        return True
+
 
 class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
     __value: float
@@ -120,6 +129,9 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return str(self.__value)
+
+    def is_non_nullable(self) -> bool:
+        return True
 
 
 class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
@@ -141,6 +153,9 @@ class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"%{self.__value.isoformat()}"
 
+    def is_non_nullable(self) -> bool:
+        return True
+
 
 class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
     __value: date
@@ -160,6 +175,9 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"%{self.__value.isoformat()}"
+
+    def is_non_nullable(self) -> bool:
+        return True
 
 
 def convert_literal_to_literal_expression(

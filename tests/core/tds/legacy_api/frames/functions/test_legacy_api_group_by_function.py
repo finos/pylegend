@@ -466,11 +466,11 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~[Average:{r | $r.col1 + 20}:{c | $c->average()}]
+                ~[Average:{r | toOne($r.col1) + 20}:{c | $c->average()}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | $r.col1 + 20}:{c | $c->average()}])')
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | toOne($r.col1) + 20}:{c | $c->average()}])')
 
     def test_query_gen_group_by_average_agg_post_op(self) -> None:
         columns = [
@@ -499,11 +499,11 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~[Average:{r | $r.col1}:{c | $c->average() + 2}]
+                ~[Average:{r | $r.col1}:{c | toOne($c->average()) + 2}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | $r.col1}:{c | $c->average() + 2}])')
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Average:{r | $r.col1}:{c | toOne($c->average()) + 2}])')
 
     def test_query_gen_group_by_integer_max_agg(self) -> None:
         columns = [

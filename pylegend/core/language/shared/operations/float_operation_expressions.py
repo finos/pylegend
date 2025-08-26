@@ -70,6 +70,12 @@ class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFlo
             PyLegendFloatAddExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
+
 
 class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
 
@@ -95,6 +101,12 @@ class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressi
             PyLegendFloatSubtractExpression.__to_sql_func,
             PyLegendFloatSubtractExpression.__to_pure_func
         )
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
@@ -122,6 +134,12 @@ class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressi
             PyLegendFloatMultiplyExpression.__to_pure_func
         )
 
+    def is_non_nullable(self) -> bool:
+        return True
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
+
 
 class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
 
@@ -135,7 +153,7 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("abs", [op_expr])
+        return generate_pure_functional_call("abs", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -159,7 +177,7 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("minus", [op_expr])
+        return generate_pure_functional_call("minus", [op_expr], auto_map=True)
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
