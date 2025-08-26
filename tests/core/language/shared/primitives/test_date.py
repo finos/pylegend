@@ -285,6 +285,18 @@ class TestPyLegendDate:
             lambda x: now().first_minute_of_hour().day_of_week()) ==
                 'now()->map(op | $op->firstMinuteOfHour())->map(op | $op->dayOfWeekNumber())')
 
+    def test_date_part(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").date_part()) == \
+               'CAST("root".col2 AS DATE)'
+        assert (self.__generate_sql_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().date_part()) ==
+                'CAST(DATE_TRUNC(\'hour\', "root".col2) AS DATE)')
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").date_part()) == \
+               '$t.col2->map(op | $op->datePart())->cast(@StrictDate)'
+        assert (self.__generate_pure_string(
+            lambda x: x.get_date("col2").first_minute_of_hour().date_part()) ==
+               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->datePart())->cast(@StrictDate)')
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
