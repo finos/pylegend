@@ -34,6 +34,8 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel import (
     CurrentTime,
     CurrentTimeType,
+    Cast,
+    ColumnType,
 )
 from pylegend.core.sql.metamodel_extension import (
     FirstDayOfYearExpression,
@@ -80,6 +82,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendEpochExpression",
     "PyLegendTodayExpression",
     "PyLegendNowExpression",
+    "PyLegendDatePartExpression",
 ]
 
 
@@ -580,4 +583,34 @@ class PyLegendNowExpression(PyLegendNullaryExpression, PyLegendExpressionDateTim
             self,
             PyLegendNowExpression.__to_sql_func,
             PyLegendNowExpression.__to_pure_func
+        )
+
+
+class PyLegendDatePartExpression(PyLegendUnaryExpression, PyLegendExpressionStrictDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return Cast(expression, ColumnType(name="DATE", parameters=[]))
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call(
+            "cast",
+            [
+                generate_pure_functional_call("datePart", [op_expr], auto_map=True),
+                "@StrictDate",
+            ]
+        )
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionStrictDateReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDatePartExpression.__to_sql_func,
+            PyLegendDatePartExpression.__to_pure_func
         )

@@ -48,6 +48,7 @@ from pylegend.core.language.shared.operations.date_operation_expressions import 
     PyLegendMinuteExpression,
     PyLegendSecondExpression,
     PyLegendEpochExpression,
+    PyLegendDatePartExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -147,6 +148,10 @@ class PyLegendDate(PyLegendPrimitive):
 
     def day_of_week(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendDayOfWeekExpression(self.__value))
+
+    def date_part(self) -> "PyLegendStrictDate":
+        from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+        return PyLegendStrictDate(PyLegendDatePartExpression(self.__value))
 
     @staticmethod
     def __convert_to_date_expr(
