@@ -74,6 +74,7 @@ from pylegend.core.language.shared.primitive_collection import (
 from pylegend.core.language.shared.functions import (
     today,
     now,
+    current_user,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -132,4 +133,5 @@ __all__: PyLegendSequence[str] = [
 
     "today",
     "now",
+    "current_user",
 ]

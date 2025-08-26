@@ -18,15 +18,20 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
+from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.language.shared.operations.date_operation_expressions import (
     PyLegendTodayExpression,
     PyLegendNowExpression,
+)
+from pylegend.core.language.shared.operations.string_operation_expressions import (
+    PyLegendCurrentUserExpression,
 )
 
 
 __all__: PyLegendSequence[str] = [
     "today",
     "now",
+    "current_user",
 ]
 
 
@@ -36,3 +41,7 @@ def today() -> PyLegendStrictDate:
 
 def now() -> PyLegendDateTime:
     return PyLegendDateTime(PyLegendNowExpression())
+
+
+def current_user() -> PyLegendString:
+    return PyLegendString(PyLegendCurrentUserExpression())

@@ -131,6 +131,7 @@ from pylegend.core.sql.metamodel_extension import (
     SecondExpression,
     EpochExpression,
     WindowExpression,
+    ConstantExpression,
 )
 
 
@@ -451,6 +452,8 @@ def expression_processor(
         return extension.process_epoch_expression(expression, config)
     elif isinstance(expression, WindowExpression):
         return extension.process_window_expression(expression, config)
+    elif isinstance(expression, ConstantExpression):
+        return expression.name
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover

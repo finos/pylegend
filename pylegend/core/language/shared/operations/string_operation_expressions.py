@@ -23,6 +23,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
+from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.sql.metamodel import (
@@ -43,6 +44,7 @@ from pylegend.core.sql.metamodel_extension import (
     StringTrimExpression,
     StringPosExpression,
     StringConcatExpression,
+    ConstantExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -66,6 +68,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLessThanEqualExpression",
     "PyLegendStringGreaterThanExpression",
     "PyLegendStringGreaterThanEqualExpression",
+    "PyLegendCurrentUserExpression",
 ]
 
 
@@ -504,6 +507,28 @@ class PyLegendStringGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegen
             operand2,
             PyLegendStringGreaterThanEqualExpression.__to_sql_func,
             PyLegendStringGreaterThanEqualExpression.__to_pure_func
+        )
+
+
+class PyLegendCurrentUserExpression(PyLegendNullaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ConstantExpression('CURRENT_USER')
+
+    @staticmethod
+    def __to_pure_func(config: FrameToPureConfig) -> str:
+        return "currentUserId()"
+
+    def __init__(self) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendNullaryExpression.__init__(
+            self,
+            PyLegendCurrentUserExpression.__to_sql_func,
+            PyLegendCurrentUserExpression.__to_pure_func
         )
 
 

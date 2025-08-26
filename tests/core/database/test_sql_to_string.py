@@ -128,6 +128,7 @@ from pylegend.core.sql.metamodel_extension import (
     SecondExpression,
     EpochExpression,
     WindowExpression,
+    ConstantExpression,
 )
 
 
@@ -1687,3 +1688,8 @@ class TestSqlToStringDbExtensionProcessing:
         expr.window.orderBy = []
         assert (extension.process_expression(expr, config) ==
                 "rank() OVER (PARTITION BY partition_col1, partition_col2)")
+
+    def test_process_constant_expression(self) -> None:
+        extension = SqlToStringDbExtension()
+        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
+        assert (extension.process_expression(ConstantExpression('CURRENT_USER'), config) == "CURRENT_USER")

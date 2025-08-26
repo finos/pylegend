@@ -32,7 +32,12 @@ from pylegend.core.project_cooridnates import (
     PersonalWorkspaceProjectCoordinates,
     GroupWorkspaceProjectCoordinates,
 )
-from pylegend.core.language import agg
+from pylegend.core.language import (
+    agg,
+    now,
+    today,
+    current_user,
+)
 
 
 __all__: PyLegendSequence[str] = [
@@ -53,6 +58,9 @@ __all__: PyLegendSequence[str] = [
     "GroupWorkspaceProjectCoordinates",
 
     "agg",
+    "now",
+    "today",
+    "current_user",
 ]
 
 

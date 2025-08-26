@@ -80,6 +80,7 @@ __all__: PyLegendSequence[str] = [
     "SecondExpression",
     "EpochExpression",
     "WindowExpression",
+    "ConstantExpression",
 ]
 
 
@@ -733,3 +734,14 @@ class WindowExpression(Expression):
         super().__init__(_type="windowExpression")
         self.nested = nested
         self.window = window
+
+
+class ConstantExpression(Expression):
+    name: str
+
+    def __init__(
+        self,
+        name: str
+    ) -> None:
+        super().__init__(_type="constantExpression")
+        self.name = name
