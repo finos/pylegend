@@ -29,6 +29,7 @@ from pylegend.core.language.shared.expression import PyLegendExpression
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.operations.primitive_operation_expressions import (
     PyLegendPrimitiveEqualsExpression,
+    PyLegendPrimitiveNotEqualsExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -68,6 +69,20 @@ class PyLegendPrimitive(metaclass=ABCMeta):
 
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
         return PyLegendBoolean(PyLegendPrimitiveEqualsExpression(self.value(), other_op))
+
+    def __ne__(  # type: ignore
+            self,
+            other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]"
+    ) -> "PyLegendBoolean":
+        PyLegendPrimitive.__validate_param_to_be_primitive(other, "Not Equals (!=) parameter")
+
+        if isinstance(other, (int, float, bool, str, date, datetime)):
+            other_op = convert_literal_to_literal_expression(other)
+        else:
+            other_op = other.value()
+
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+        return PyLegendBoolean(PyLegendPrimitiveNotEqualsExpression(self.value(), other_op))
 
     @staticmethod
     def __validate_param_to_be_primitive(

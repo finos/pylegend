@@ -33,6 +33,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitiveEqualsExpression",
+    "PyLegendPrimitiveNotEqualsExpression",
 ]
 
 
@@ -59,6 +60,35 @@ class PyLegendPrimitiveEqualsExpression(PyLegendBinaryExpression, PyLegendExpres
             operand2,
             PyLegendPrimitiveEqualsExpression.__to_sql_func,
             PyLegendPrimitiveEqualsExpression.__to_pure_func
+        )
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
+class PyLegendPrimitiveNotEqualsExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.NOT_EQUAL)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} != {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendPrimitiveNotEqualsExpression.__to_sql_func,
+            PyLegendPrimitiveNotEqualsExpression.__to_pure_func
         )
 
     def is_non_nullable(self) -> bool:

@@ -421,6 +421,24 @@ class TestPyLegendNumber:
         assert self.__generate_pure_string(lambda x: 1 == (x["col2"] + x["col1"])) == \
                '((toOne($t.col2) + toOne($t.col1)) == 1)'
 
+    def test_number_not_equals_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x["col2"] != x["col1"]) == \
+               '("root".col2 <> "root".col1)'
+        assert self.__generate_sql_string(lambda x: x["col2"] != 1) == \
+               '("root".col2 <> 1)'
+        assert self.__generate_sql_string(lambda x: 1 != x["col2"]) == \
+               '("root".col2 <> 1)'
+        assert self.__generate_sql_string(lambda x: 1 != (x["col2"] + x["col1"])) == \
+               '(("root".col2 + "root".col1) <> 1)'
+        assert self.__generate_pure_string(lambda x: x["col2"] != x["col1"]) == \
+               '($t.col2 != $t.col1)'
+        assert self.__generate_pure_string(lambda x: x["col2"] != 1) == \
+               '($t.col2 != 1)'
+        assert self.__generate_pure_string(lambda x: 1 != x["col2"]) == \
+               '($t.col2 != 1)'
+        assert self.__generate_pure_string(lambda x: 1 != (x["col2"] + x["col1"])) == \
+               '((toOne($t.col2) + toOne($t.col1)) != 1)'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
