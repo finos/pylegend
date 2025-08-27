@@ -99,9 +99,9 @@ class TestPyLegendBoolean:
         assert self.__generate_sql_string(lambda x: ~x.get_boolean("col2")) == \
                'NOT("root".col2)'
         assert self.__generate_pure_string(lambda x: ~x.get_boolean("col2")) == \
-               '$t.col2->map(op | !$op)'
+               'toOne($t.col2)->not()'
         assert self.__generate_pure_string(lambda x: ~(x.get_boolean("col2") | x.get_boolean("col1"))) == \
-               '(toOne($t.col2) || toOne($t.col1))->map(op | !$op)'
+               '(toOne($t.col2) || toOne($t.col1))->not()'
 
     @typing.no_type_check
     def test_boolean_equals_expr(self) -> None:

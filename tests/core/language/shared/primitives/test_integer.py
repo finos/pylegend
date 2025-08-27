@@ -129,11 +129,11 @@ class TestPyLegendInteger:
         assert self.__generate_sql_string(lambda x: 10 % x.get_integer("col2")) == \
                'MOD(10, "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2") % x.get_integer("col1")) == \
-               '$t.col2->map(op | $op->mod(toOne($t.col1)))'
+               'toOne($t.col2)->mod(toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2") % 10) == \
-               '$t.col2->map(op | $op->mod(10))'
+               'toOne($t.col2)->mod(10)'
         assert self.__generate_pure_string(lambda x: 10 % x.get_integer("col2")) == \
-               '10->map(op | $op->mod(toOne($t.col2)))'
+               '10->mod(toOne($t.col2))'
 
     def test_integer_abs_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: abs(x.get_integer("col2"))) == \
@@ -141,9 +141,9 @@ class TestPyLegendInteger:
         assert self.__generate_sql_string(lambda x: abs(x.get_integer("col2") + x.get_integer("col1"))) == \
                'ABS(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: abs(x.get_integer("col2"))) == \
-               '$t.col2->map(op | $op->abs())'
+               'toOne($t.col2)->abs()'
         assert self.__generate_pure_string(lambda x: abs(x.get_integer("col2") + x.get_integer("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->abs())'
+               '(toOne($t.col2) + toOne($t.col1))->abs()'
 
     def test_integer_neg_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: -x.get_integer("col2")) == \
@@ -151,9 +151,9 @@ class TestPyLegendInteger:
         assert self.__generate_sql_string(lambda x: -(x.get_integer("col2") + x.get_integer("col1"))) == \
                '(0 - ("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: -x.get_integer("col2")) == \
-               '$t.col2->map(op | $op->minus())'
+               'toOne($t.col2)->minus()'
         assert self.__generate_pure_string(lambda x: -(x.get_integer("col2") + x.get_integer("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->minus())'
+               '(toOne($t.col2) + toOne($t.col1))->minus()'
 
     def test_integer_pos_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: + x.get_integer("col2")) == \

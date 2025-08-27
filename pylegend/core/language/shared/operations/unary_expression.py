@@ -21,6 +21,7 @@ from pylegend._typing import (
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
 )
+from pylegend.core.language.shared.helpers import expr_has_matching_start_and_end_parentheses
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -41,6 +42,8 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
         Expression
     ]
     __to_pure_func: PyLegendCallable[[str, FrameToPureConfig], str]
+    __non_nullable: bool
+    __operand_needs_to_be_non_nullable: bool
 
     def __init__(
             self,
@@ -49,11 +52,15 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
                 [Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
                 Expression
             ],
-            to_pure_func: PyLegendCallable[[str, FrameToPureConfig], str]
+            to_pure_func: PyLegendCallable[[str, FrameToPureConfig], str],
+            non_nullable: bool = False,
+            operand_needs_to_be_non_nullable: bool = False,
     ) -> None:
         self.__operand = operand
         self.__to_sql_func = to_sql_func
         self.__to_pure_func = to_pure_func
+        self.__non_nullable = non_nullable
+        self.__operand_needs_to_be_non_nullable = operand_needs_to_be_non_nullable
 
     def to_sql_expression(
             self,
@@ -69,4 +76,12 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         op_expr = self.__operand.to_pure_expression(config)
+        if self.__operand_needs_to_be_non_nullable:
+            op_expr = (
+                op_expr if self.__operand.is_non_nullable() else
+                f"toOne({op_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op_expr) else op_expr})"
+            )
         return self.__to_pure_func(op_expr, config)
+
+    def is_non_nullable(self) -> bool:
+        return self.__non_nullable

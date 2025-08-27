@@ -65,11 +65,9 @@ class PyLegendPrimitiveEqualsExpression(PyLegendBinaryExpression, PyLegendExpres
             operand1,
             operand2,
             PyLegendPrimitiveEqualsExpression.__to_sql_func,
-            PyLegendPrimitiveEqualsExpression.__to_pure_func
+            PyLegendPrimitiveEqualsExpression.__to_pure_func,
+            non_nullable=True,
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
 
 
 class PyLegendPrimitiveNotEqualsExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
@@ -94,11 +92,9 @@ class PyLegendPrimitiveNotEqualsExpression(PyLegendBinaryExpression, PyLegendExp
             operand1,
             operand2,
             PyLegendPrimitiveNotEqualsExpression.__to_sql_func,
-            PyLegendPrimitiveNotEqualsExpression.__to_pure_func
+            PyLegendPrimitiveNotEqualsExpression.__to_pure_func,
+            non_nullable=True,
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
 
 
 class PyLegendIsEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
@@ -121,11 +117,9 @@ class PyLegendIsEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBoole
             self,
             operand,
             PyLegendIsEmptyExpression.__to_sql_func,
-            PyLegendIsEmptyExpression.__to_pure_func
+            PyLegendIsEmptyExpression.__to_pure_func,
+            non_nullable=True,
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
 
 
 class PyLegendIsNotEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
@@ -148,8 +142,6 @@ class PyLegendIsNotEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBo
             self,
             operand,
             PyLegendIsNotEmptyExpression.__to_sql_func,
-            PyLegendIsNotEmptyExpression.__to_pure_func
+            PyLegendIsNotEmptyExpression.__to_pure_func,
+            non_nullable=True,
         )
-
-    def is_non_nullable(self) -> bool:
-        return True

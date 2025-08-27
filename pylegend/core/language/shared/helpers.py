@@ -24,8 +24,7 @@ __all__ = [
 def generate_pure_functional_call(
         func: str,
         params: PyLegendList[str],
-        force_prefix: bool = False,
-        auto_map: bool = False
+        force_prefix: bool = False
 ) -> str:
     should_prefix = force_prefix or (len(params) == 0)
 
@@ -38,13 +37,6 @@ def generate_pure_functional_call(
                 updated_params.append(param)
         else:
             updated_params.append(param)
-
-    if auto_map and len(updated_params) == 1:
-        return f"{params[0]}->map(op | {generate_pure_functional_call(func, ['$op'], force_prefix, False)})"
-
-    if auto_map and len(updated_params) == 2:
-        new_params = ['$op'] + [updated_params[1]]
-        return f"{params[0]}->map(op | {generate_pure_functional_call(func, new_params, force_prefix, False)})"
 
     if should_prefix:
         return f"{func}({', '.join(updated_params)})"

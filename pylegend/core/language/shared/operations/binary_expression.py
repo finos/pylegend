@@ -43,6 +43,9 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
         Expression
     ]
     __to_pure_func: PyLegendCallable[[str, str, FrameToPureConfig], str]
+    __non_nullable: bool
+    __first_operand_needs_to_be_non_nullable: bool
+    __second_operand_needs_to_be_non_nullable: bool
 
     def __init__(
             self,
@@ -52,12 +55,18 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
                 [Expression, Expression, PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
                 Expression
             ],
-            to_pure_func: PyLegendCallable[[str, str, FrameToPureConfig], str]
+            to_pure_func: PyLegendCallable[[str, str, FrameToPureConfig], str],
+            non_nullable: bool = False,
+            first_operand_needs_to_be_non_nullable: bool = False,
+            second_operand_needs_to_be_non_nullable: bool = False,
     ) -> None:
         self.__operand1 = operand1
         self.__operand2 = operand2
         self.__to_sql_func = to_sql_func
         self.__to_pure_func = to_pure_func
+        self.__non_nullable = non_nullable
+        self.__first_operand_needs_to_be_non_nullable = first_operand_needs_to_be_non_nullable
+        self.__second_operand_needs_to_be_non_nullable = second_operand_needs_to_be_non_nullable
 
     def to_sql_expression(
             self,
@@ -75,27 +84,18 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         op1_expr = self.__operand1.to_pure_expression(config)
+        if self.__first_operand_needs_to_be_non_nullable:
+            op1_expr = (
+                op1_expr if self.__operand1.is_non_nullable() else
+                f"toOne({op1_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op1_expr) else op1_expr})"
+            )
         op2_expr = self.__operand2.to_pure_expression(config)
+        if self.__second_operand_needs_to_be_non_nullable:
+            op2_expr = (
+                op2_expr if self.__operand2.is_non_nullable() else
+                f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
+            )
         return self.__to_pure_func(op1_expr, op2_expr, config)
 
-    def to_pure_expression_with_to_one_on_both_operands(self, config: FrameToPureConfig) -> str:
-        op1_expr = self.__operand1.to_pure_expression(config)
-        op1_expr = (
-            op1_expr if self.__operand1.is_non_nullable() else
-            f"toOne({op1_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op1_expr) else op1_expr})"
-        )
-        op2_expr = self.__operand2.to_pure_expression(config)
-        op2_expr = (
-            op2_expr if self.__operand2.is_non_nullable() else
-            f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
-        )
-        return self.__to_pure_func(op1_expr, op2_expr, config)
-
-    def to_pure_expression_with_to_one_on_second_operand(self, config: FrameToPureConfig) -> str:
-        op1_expr = self.__operand1.to_pure_expression(config)
-        op2_expr = self.__operand2.to_pure_expression(config)
-        op2_expr = (
-            op2_expr if self.__operand2.is_non_nullable() else
-            f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
-        )
-        return self.__to_pure_func(op1_expr, op2_expr, config)
+    def is_non_nullable(self) -> bool:
+        return self.__non_nullable

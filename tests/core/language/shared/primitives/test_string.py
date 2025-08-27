@@ -50,8 +50,8 @@ class TestPyLegendString:
     def test_string_length_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").len()) == 'CHAR_LENGTH("root".col2)'
         assert self.__generate_sql_string(lambda x: x.get_string("col2").length()) == 'CHAR_LENGTH("root".col2)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").len()) == '$t.col2->map(op | $op->length())'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").length()) == '$t.col2->map(op | $op->length())'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").len()) == 'toOne($t.col2)->length()'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").length()) == 'toOne($t.col2)->length()'
 
     def test_string_startswith_expr(self) -> None:
         with pytest.raises(TypeError) as t:
@@ -103,23 +103,23 @@ class TestPyLegendString:
 
     def test_string_upper_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").upper()) == 'UPPER("root".col2)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").upper()) == '$t.col2->map(op | $op->toUpper())'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").upper()) == 'toOne($t.col2)->toUpper()'
 
     def test_string_lower_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").lower()) == 'LOWER("root".col2)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").lower()) == '$t.col2->map(op | $op->toLower())'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").lower()) == 'toOne($t.col2)->toLower()'
 
     def test_string_lstrip_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").lstrip()) == 'LTRIM("root".col2)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").lstrip()) == '$t.col2->map(op | $op->ltrim())'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").lstrip()) == 'toOne($t.col2)->ltrim()'
 
     def test_string_rstrip_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").rstrip()) == 'RTRIM("root".col2)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").rstrip()) == '$t.col2->map(op | $op->rtrim())'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").rstrip()) == 'toOne($t.col2)->rtrim()'
 
     def test_string_strip_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").strip()) == 'BTRIM("root".col2)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").strip()) == '$t.col2->map(op | $op->trim())'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").strip()) == 'toOne($t.col2)->trim()'
 
     def test_string_index_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").index(x.get_string("col1"))) == \
@@ -129,11 +129,11 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").index_of("Abc")) == \
                'STRPOS("root".col2, \'Abc\')'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").index(x.get_string("col1"))) == \
-               '$t.col2->map(op | $op->indexOf(toOne($t.col1)))'
+               'toOne($t.col2)->indexOf(toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").index("Abc")) == \
-               '$t.col2->map(op | $op->indexOf(\'Abc\'))'
+               'toOne($t.col2)->indexOf(\'Abc\')'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").index_of("Abc")) == \
-               '$t.col2->map(op | $op->indexOf(\'Abc\'))'
+               'toOne($t.col2)->indexOf(\'Abc\')'
 
     def test_string_parse_int_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_int()) == \
@@ -141,15 +141,15 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_integer()) == \
                'CAST("root".col2 AS INTEGER)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_int()) == \
-               '$t.col2->map(op | $op->parseInteger())'
+               'toOne($t.col2)->parseInteger()'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_integer()) == \
-               '$t.col2->map(op | $op->parseInteger())'
+               'toOne($t.col2)->parseInteger()'
 
     def test_string_parse_float_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_float()) == \
                'CAST("root".col2 AS DOUBLE PRECISION)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_float()) == \
-               '$t.col2->map(op | $op->parseFloat())'
+               'toOne($t.col2)->parseFloat()'
 
     def test_string_add_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2") + x.get_string("col1")) == \
@@ -242,6 +242,7 @@ class TestPyLegendString:
     def test_string_current_user_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: current_user()) == 'CURRENT_USER'
         assert self.__generate_pure_string(lambda x: current_user()) == 'currentUserId()'
+        assert self.__generate_pure_string(lambda x: current_user().lower()) == 'currentUserId()->toLower()'
 
     def test_string_null_not_null_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x["col2"].is_not_null()) == \
@@ -251,7 +252,7 @@ class TestPyLegendString:
         assert self.__generate_pure_string(lambda x: x["col2"].is_not_null()) == \
                '$t.col2->isNotEmpty()'
         assert self.__generate_pure_string(lambda x: x["col2"].lower().is_null()) == \
-               '$t.col2->map(op | $op->toLower())->isEmpty()'
+               'toOne($t.col2)->toLower()->isEmpty()'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
