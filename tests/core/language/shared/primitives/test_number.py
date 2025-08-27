@@ -83,11 +83,11 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: 1.2 / x.get_number("col2")) == \
                '((1.0 * 1.2) / "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_number("col2") / x.get_number("col1")) == \
-               '$t.col2->map(op | $op / toOne($t.col1))'
+               '(toOne($t.col2) / toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2") / 10) == \
-               '$t.col2->map(op | $op / 10)'
+               '(toOne($t.col2) / 10)'
         assert self.__generate_pure_string(lambda x: 1.2 / x.get_number("col2")) == \
-               '1.2->map(op | $op / toOne($t.col2))'
+               '(1.2 / toOne($t.col2))'
 
     def test_number_subtract_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2") - x.get_number("col1")) == \
@@ -175,9 +175,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: -(x.get_number("col2") + x.get_number("col1"))) == \
                '(0 - ("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: -x.get_number("col2")) == \
-               '$t.col2->map(op | $op->minus())'
+               'toOne($t.col2)->minus()'
         assert self.__generate_pure_string(lambda x: -(x.get_number("col2") + x.get_number("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->minus())'
+               '(toOne($t.col2) + toOne($t.col1))->minus()'
 
     def test_number_abs_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: abs(x.get_number("col2"))) == \
@@ -185,9 +185,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: abs(x.get_number("col2") + x.get_number("col1"))) == \
                'ABS(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: abs(x.get_number("col2"))) == \
-               '$t.col2->map(op | $op->abs())'
+               'toOne($t.col2)->abs()'
         assert self.__generate_pure_string(lambda x: abs(x.get_number("col2") + x.get_number("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->abs())'
+               '(toOne($t.col2) + toOne($t.col1))->abs()'
 
     def test_number_power_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2") ** x.get_number("col1")) == \
@@ -197,11 +197,11 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: 1.2 ** x.get_number("col2")) == \
                'POWER(1.2, "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_number("col2") ** x.get_number("col1")) == \
-               '$t.col2->map(op | $op->pow(toOne($t.col1)))'
+               'toOne($t.col2)->pow(toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2") ** 10) == \
-               '$t.col2->map(op | $op->pow(10))'
+               'toOne($t.col2)->pow(10)'
         assert self.__generate_pure_string(lambda x: 1.2 ** x.get_number("col2")) == \
-               '1.2->map(op | $op->pow(toOne($t.col2)))'
+               '1.2->pow(toOne($t.col2))'
 
     def test_number_ceil_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").ceil()) == \
@@ -213,13 +213,13 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: math.ceil(x.get_number("col2") + x.get_number("col1"))) == \
                'CEIL(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").ceil()) == \
-               '$t.col2->map(op | $op->ceiling())'
+               'toOne($t.col2)->ceiling()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).ceil()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->ceiling())'
+               '(toOne($t.col2) + toOne($t.col1))->ceiling()'
         assert self.__generate_pure_string(lambda x: math.ceil(x.get_number("col2"))) == \
-               '$t.col2->map(op | $op->ceiling())'
+               'toOne($t.col2)->ceiling()'
         assert self.__generate_pure_string(lambda x: math.ceil(x.get_number("col2") + x.get_number("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->ceiling())'
+               '(toOne($t.col2) + toOne($t.col1))->ceiling()'
 
     def test_number_floor_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").floor()) == \
@@ -231,13 +231,13 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: math.floor(x.get_number("col2") + x.get_number("col1"))) == \
                'FLOOR(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").floor()) == \
-               '$t.col2->map(op | $op->floor())'
+               'toOne($t.col2)->floor()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).floor()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->floor())'
+               '(toOne($t.col2) + toOne($t.col1))->floor()'
         assert self.__generate_pure_string(lambda x: math.floor(x.get_number("col2"))) == \
-               '$t.col2->map(op | $op->floor())'
+               'toOne($t.col2)->floor()'
         assert self.__generate_pure_string(lambda x: math.floor(x.get_number("col2") + x.get_number("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->floor())'
+               '(toOne($t.col2) + toOne($t.col1))->floor()'
 
     def test_number_sqrt_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").sqrt()) == \
@@ -245,9 +245,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sqrt()) == \
                'SQRT(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").sqrt()) == \
-               '$t.col2->map(op | $op->sqrt())'
+               'toOne($t.col2)->sqrt()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sqrt()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->sqrt())'
+               '(toOne($t.col2) + toOne($t.col1))->sqrt()'
 
     def test_number_cbrt_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").cbrt()) == \
@@ -255,9 +255,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cbrt()) == \
                'CBRT(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").cbrt()) == \
-               '$t.col2->map(op | $op->cbrt())'
+               'toOne($t.col2)->cbrt()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cbrt()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->cbrt())'
+               '(toOne($t.col2) + toOne($t.col1))->cbrt()'
 
     def test_number_exp_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").exp()) == \
@@ -265,9 +265,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).exp()) == \
                'EXP(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").exp()) == \
-               '$t.col2->map(op | $op->exp())'
+               'toOne($t.col2)->exp()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).exp()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->exp())'
+               '(toOne($t.col2) + toOne($t.col1))->exp()'
 
     def test_number_log_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").log()) == \
@@ -275,9 +275,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).log()) == \
                'LN(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").log()) == \
-               '$t.col2->map(op | $op->log())'
+               'toOne($t.col2)->log()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).log()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->log())'
+               '(toOne($t.col2) + toOne($t.col1))->log()'
 
     def test_number_remainder_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").rem(x.get_number("col1"))) == \
@@ -285,9 +285,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").rem(10)) == \
                'MOD("root".col2, 10)'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").rem(x.get_number("col1"))) == \
-               '$t.col2->map(op | $op->rem(toOne($t.col1)))'
+               'toOne($t.col2)->rem(toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").rem(10)) == \
-               '$t.col2->map(op | $op->rem(10))'
+               'toOne($t.col2)->rem(10)'
 
     def test_number_round_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").round()) == \
@@ -303,17 +303,17 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: round(x.get_number("col2"), 2)) == \
                'ROUND("root".col2, 2)'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").round()) == \
-               '$t.col2->map(op | $op->round())'
+               'toOne($t.col2)->round()'
         assert self.__generate_pure_string(lambda x: round(x.get_number("col2"))) == \
-               '$t.col2->map(op | $op->round())'
+               'toOne($t.col2)->round()'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").round(0)) == \
-               '$t.col2->map(op | $op->round())'
+               'toOne($t.col2)->round()'
         assert self.__generate_pure_string(lambda x: round(x.get_number("col2"), 0)) == \
-               '$t.col2->map(op | $op->round())'
+               'toOne($t.col2)->round()'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").round(2)) == \
-               'cast($t.col2, @Float)->map(op | $op->round(2))'
+               'cast(toOne($t.col2), @Float)->round(2)'
         assert self.__generate_pure_string(lambda x: round(x.get_number("col2"), 2)) == \
-               'cast($t.col2, @Float)->map(op | $op->round(2))'
+               'cast(toOne($t.col2), @Float)->round(2)'
 
         with pytest.raises(TypeError) as t:
             self.__generate_sql_string(lambda x: round(x.get_number("col2"), 2.1))  # type: ignore
@@ -329,9 +329,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sin()) == \
                'SIN(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").sin()) == \
-               '$t.col2->map(op | $op->sin())'
+               'toOne($t.col2)->sin()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sin()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->sin())'
+               '(toOne($t.col2) + toOne($t.col1))->sin()'
 
     def test_number_arc_sine_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").asin()) == \
@@ -339,9 +339,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).asin()) == \
                'ASIN(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").asin()) == \
-               '$t.col2->map(op | $op->asin())'
+               'toOne($t.col2)->asin()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).asin()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->asin())'
+               '(toOne($t.col2) + toOne($t.col1))->asin()'
 
     def test_number_cosine_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").cos()) == \
@@ -349,9 +349,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cos()) == \
                'COS(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").cos()) == \
-               '$t.col2->map(op | $op->cos())'
+               'toOne($t.col2)->cos()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cos()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->cos())'
+               '(toOne($t.col2) + toOne($t.col1))->cos()'
 
     def test_number_arc_cosine_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").acos()) == \
@@ -359,9 +359,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).acos()) == \
                'ACOS(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").acos()) == \
-               '$t.col2->map(op | $op->acos())'
+               'toOne($t.col2)->acos()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).acos()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->acos())'
+               '(toOne($t.col2) + toOne($t.col1))->acos()'
 
     def test_number_tan_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").tan()) == \
@@ -369,9 +369,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).tan()) == \
                'TAN(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").tan()) == \
-               '$t.col2->map(op | $op->tan())'
+               'toOne($t.col2)->tan()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).tan()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->tan())'
+               '(toOne($t.col2) + toOne($t.col1))->tan()'
 
     def test_number_arc_tan_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").atan()) == \
@@ -379,9 +379,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).atan()) == \
                'ATAN(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").atan()) == \
-               '$t.col2->map(op | $op->atan())'
+               'toOne($t.col2)->atan()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).atan()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->atan())'
+               '(toOne($t.col2) + toOne($t.col1))->atan()'
 
     def test_number_arc_tan2_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").atan2(0.5)) == \
@@ -389,9 +389,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2")).atan2(x.get_number("col1"))) == \
                'ATAN2("root".col2, "root".col1)'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").atan2(0.5)) == \
-               '$t.col2->map(op | $op->atan2(0.5))'
+               'toOne($t.col2)->atan2(0.5)'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2")).atan2(x.get_number("col1"))) == \
-               '$t.col2->map(op | $op->atan2(toOne($t.col1)))'
+               'toOne($t.col2)->atan2(toOne($t.col1))'
 
     def test_number_cot_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").cot()) == \
@@ -399,9 +399,9 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cot()) == \
                'COT(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").cot()) == \
-               '$t.col2->map(op | $op->cot())'
+               'toOne($t.col2)->cot()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cot()) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->cot())'
+               '(toOne($t.col2) + toOne($t.col1))->cot()'
 
     def test_number_equals_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x["col2"] == x["col1"]) == \
@@ -447,7 +447,7 @@ class TestPyLegendNumber:
         assert self.__generate_pure_string(lambda x: x["col2"].is_not_empty()) == \
                '$t.col2->isNotEmpty()'
         assert self.__generate_pure_string(lambda x: abs(x["col2"]).is_empty()) == \
-               '$t.col2->map(op | $op->abs())->isEmpty()'
+               'toOne($t.col2)->abs()->isEmpty()'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

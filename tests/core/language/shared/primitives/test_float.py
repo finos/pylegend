@@ -127,9 +127,9 @@ class TestPyLegendFloat:
         assert self.__generate_sql_string(lambda x: abs(x.get_float("col2") + x.get_float("col1"))) == \
                'ABS(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: abs(x.get_float("col2"))) == \
-               '$t.col2->map(op | $op->abs())'
+               'toOne($t.col2)->abs()'
         assert self.__generate_pure_string(lambda x: abs(x.get_float("col2") + x.get_float("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->abs())'
+               '(toOne($t.col2) + toOne($t.col1))->abs()'
 
     def test_float_neg_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: -x.get_float("col2")) == \
@@ -137,9 +137,9 @@ class TestPyLegendFloat:
         assert self.__generate_sql_string(lambda x: -(x.get_float("col2") + x.get_float("col1"))) == \
                '(0 - ("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: -x.get_float("col2")) == \
-               '$t.col2->map(op | $op->minus())'
+               'toOne($t.col2)->minus()'
         assert self.__generate_pure_string(lambda x: -(x.get_float("col2") + x.get_float("col1"))) == \
-               '(toOne($t.col2) + toOne($t.col1))->map(op | $op->minus())'
+               '(toOne($t.col2) + toOne($t.col1))->minus()'
 
     def test_float_pos_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: + x.get_float("col2")) == \

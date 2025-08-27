@@ -67,14 +67,11 @@ class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFlo
             operand1,
             operand2,
             PyLegendFloatAddExpression.__to_sql_func,
-            PyLegendFloatAddExpression.__to_pure_func
+            PyLegendFloatAddExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
@@ -99,14 +96,11 @@ class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressi
             operand1,
             operand2,
             PyLegendFloatSubtractExpression.__to_sql_func,
-            PyLegendFloatSubtractExpression.__to_pure_func
+            PyLegendFloatSubtractExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
@@ -131,14 +125,11 @@ class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressi
             operand1,
             operand2,
             PyLegendFloatMultiplyExpression.__to_sql_func,
-            PyLegendFloatMultiplyExpression.__to_pure_func
+            PyLegendFloatMultiplyExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
@@ -153,7 +144,7 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("abs", [op_expr], auto_map=True)
+        return generate_pure_functional_call("abs", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -161,7 +152,9 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
             self,
             operand,
             PyLegendFloatAbsoluteExpression.__to_sql_func,
-            PyLegendFloatAbsoluteExpression.__to_pure_func
+            PyLegendFloatAbsoluteExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True
         )
 
 
@@ -177,7 +170,7 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("minus", [op_expr], auto_map=True)
+        return generate_pure_functional_call("minus", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
@@ -185,5 +178,7 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
             self,
             operand,
             PyLegendFloatNegativeExpression.__to_sql_func,
-            PyLegendFloatNegativeExpression.__to_pure_func
+            PyLegendFloatNegativeExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
         )

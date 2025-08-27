@@ -19,6 +19,7 @@ from pylegend._typing import (
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionBooleanReturn,
 )
+from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.sql.metamodel import (
@@ -61,14 +62,11 @@ class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBo
             operand1,
             operand2,
             PyLegendBooleanOrExpression.__to_sql_func,
-            PyLegendBooleanOrExpression.__to_pure_func
+            PyLegendBooleanOrExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
@@ -93,14 +91,11 @@ class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionB
             operand1,
             operand2,
             PyLegendBooleanAndExpression.__to_sql_func,
-            PyLegendBooleanAndExpression.__to_pure_func
+            PyLegendBooleanAndExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
@@ -115,7 +110,7 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return f"{op_expr}->map(op | !$op)"
+        return generate_pure_functional_call("not", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionBooleanReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
@@ -123,5 +118,7 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
             self,
             operand,
             PyLegendBooleanNotExpression.__to_sql_func,
-            PyLegendBooleanNotExpression.__to_pure_func
+            PyLegendBooleanNotExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
         )

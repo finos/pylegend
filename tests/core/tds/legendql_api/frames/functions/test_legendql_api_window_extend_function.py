@@ -445,7 +445,7 @@ class TestWindowExtendAppliedFunction:
                 col5:{p,w,r | $p->rank($w, $r)},
                 col6:{p,w,r | toOne($p->denseRank($w, $r)) + 1},
                 col7:{p,w,r | $p->percentRank($w, $r)},
-                col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->map(op | $op->round(2))},
+                col8:{p,w,r | cast(toOne($p->cumulativeDistribution($w, $r)), @Float)->round(2)},
                 col9:{p,w,r | $p->ntile($r, 10)},
                 col10:{p,w,r | $p->lead($r).col1},
                 col11:{p,w,r | toOne($p->lag($r).col1) + 1},
@@ -458,7 +458,7 @@ class TestWindowExtendAppliedFunction:
                ('#Table(test_schema.test_table)#->extend(over(~[col2], [ascending(~col3)]), '
                 '~[col4:{p,w,r | $p->rowNumber($r)}, col5:{p,w,r | $p->rank($w, $r)}, '
                 'col6:{p,w,r | toOne($p->denseRank($w, $r)) + 1}, col7:{p,w,r | $p->percentRank($w, $r)}, '
-                'col8:{p,w,r | cast($p->cumulativeDistribution($w, $r), @Float)->map(op | $op->round(2))}, '
+                'col8:{p,w,r | cast(toOne($p->cumulativeDistribution($w, $r)), @Float)->round(2)}, '
                 'col9:{p,w,r | $p->ntile($r, 10)}, col10:{p,w,r | $p->lead($r).col1}, '
                 'col11:{p,w,r | toOne($p->lag($r).col1) + 1}, col12:{p,w,r | $p->first($w, $r).col1}, '
                 'col13:{p,w,r | $p->last($w, $r).col1}, col14:{p,w,r | $p->nth($w, $r, 10).col1}])')

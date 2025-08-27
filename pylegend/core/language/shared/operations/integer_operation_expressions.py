@@ -68,14 +68,11 @@ class PyLegendIntegerAddExpression(PyLegendBinaryExpression, PyLegendExpressionI
             operand1,
             operand2,
             PyLegendIntegerAddExpression.__to_sql_func,
-            PyLegendIntegerAddExpression.__to_pure_func
+            PyLegendIntegerAddExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendIntegerSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionIntegerReturn):
@@ -100,14 +97,11 @@ class PyLegendIntegerSubtractExpression(PyLegendBinaryExpression, PyLegendExpres
             operand1,
             operand2,
             PyLegendIntegerSubtractExpression.__to_sql_func,
-            PyLegendIntegerSubtractExpression.__to_pure_func
+            PyLegendIntegerSubtractExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendIntegerMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionIntegerReturn):
@@ -132,14 +126,11 @@ class PyLegendIntegerMultiplyExpression(PyLegendBinaryExpression, PyLegendExpres
             operand1,
             operand2,
             PyLegendIntegerMultiplyExpression.__to_sql_func,
-            PyLegendIntegerMultiplyExpression.__to_pure_func
+            PyLegendIntegerMultiplyExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def is_non_nullable(self) -> bool:
-        return True
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_both_operands(self, config)
 
 
 class PyLegendIntegerModuloExpression(PyLegendBinaryExpression, PyLegendExpressionIntegerReturn):
@@ -155,7 +146,7 @@ class PyLegendIntegerModuloExpression(PyLegendBinaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("mod", [op1_expr, op2_expr], auto_map=True)
+        return generate_pure_functional_call("mod", [op1_expr, op2_expr])
 
     def __init__(self, operand1: PyLegendExpressionIntegerReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -164,11 +155,11 @@ class PyLegendIntegerModuloExpression(PyLegendBinaryExpression, PyLegendExpressi
             operand1,
             operand2,
             PyLegendIntegerModuloExpression.__to_sql_func,
-            PyLegendIntegerModuloExpression.__to_pure_func
+            PyLegendIntegerModuloExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return PyLegendBinaryExpression.to_pure_expression_with_to_one_on_second_operand(self, config)
 
 
 class PyLegendIntegerAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
@@ -183,7 +174,7 @@ class PyLegendIntegerAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpress
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("abs", [op_expr], auto_map=True)
+        return generate_pure_functional_call("abs", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -191,7 +182,9 @@ class PyLegendIntegerAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpress
             self,
             operand,
             PyLegendIntegerAbsoluteExpression.__to_sql_func,
-            PyLegendIntegerAbsoluteExpression.__to_pure_func
+            PyLegendIntegerAbsoluteExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
         )
 
 
@@ -207,7 +200,7 @@ class PyLegendIntegerNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("minus", [op_expr], auto_map=True)
+        return generate_pure_functional_call("minus", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
@@ -215,5 +208,7 @@ class PyLegendIntegerNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
             self,
             operand,
             PyLegendIntegerNegativeExpression.__to_sql_func,
-            PyLegendIntegerNegativeExpression.__to_pure_func
+            PyLegendIntegerNegativeExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
         )

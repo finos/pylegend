@@ -54,9 +54,9 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_quarter().first_day_of_year()) == \
                'DATE_TRUNC(\'year\', DATE_TRUNC(\'quarter\', "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year()) == \
-               '$t.col2->map(op | $op->firstDayOfYear())'
+               'toOne($t.col2)->firstDayOfYear()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_quarter().first_day_of_year()) == \
-               '$t.col2->map(op | $op->firstDayOfQuarter())->map(op | $op->firstDayOfYear())'
+               'toOne($t.col2)->firstDayOfQuarter()->firstDayOfYear()'
 
     def test_first_day_of_quarter(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_quarter()) == \
@@ -64,9 +64,9 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_quarter()) == \
                'DATE_TRUNC(\'quarter\', DATE_TRUNC(\'year\', "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_quarter()) == \
-               '$t.col2->map(op | $op->firstDayOfQuarter())'
+               'toOne($t.col2)->firstDayOfQuarter()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_quarter()) == \
-               '$t.col2->map(op | $op->firstDayOfYear())->map(op | $op->firstDayOfQuarter())'
+               'toOne($t.col2)->firstDayOfYear()->firstDayOfQuarter()'
 
     def test_first_day_of_month(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_month()) == \
@@ -74,9 +74,9 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_month()) == \
                'DATE_TRUNC(\'month\', DATE_TRUNC(\'year\', "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_month()) == \
-               '$t.col2->map(op | $op->firstDayOfMonth())'
+               'toOne($t.col2)->firstDayOfMonth()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_month()) == \
-               '$t.col2->map(op | $op->firstDayOfYear())->map(op | $op->firstDayOfMonth())'
+               'toOne($t.col2)->firstDayOfYear()->firstDayOfMonth()'
 
     def test_first_day_of_week(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_week()) == \
@@ -84,9 +84,9 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_week()) == \
                'DATE_TRUNC(\'week\', DATE_TRUNC(\'year\', "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_week()) == \
-               '$t.col2->map(op | $op->firstDayOfWeek())'
+               'toOne($t.col2)->firstDayOfWeek()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_week()) == \
-               '$t.col2->map(op | $op->firstDayOfYear())->map(op | $op->firstDayOfWeek())'
+               'toOne($t.col2)->firstDayOfYear()->firstDayOfWeek()'
 
     def test_first_hour_of_day(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_hour_of_day()) == \
@@ -94,9 +94,9 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_hour_of_day()) == \
                'DATE_TRUNC(\'day\', DATE_TRUNC(\'year\', "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_hour_of_day()) == \
-               '$t.col2->map(op | $op->firstHourOfDay())'
+               'toOne($t.col2)->firstHourOfDay()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_hour_of_day()) == \
-               '$t.col2->map(op | $op->firstDayOfYear())->map(op | $op->firstHourOfDay())'
+               'toOne($t.col2)->firstDayOfYear()->firstHourOfDay()'
 
     def test_first_minute_of_hour(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_minute_of_hour()) == \
@@ -104,9 +104,9 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_minute_of_hour()) == \
                'DATE_TRUNC(\'hour\', DATE_TRUNC(\'year\', "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_minute_of_hour()) == \
-               '$t.col2->map(op | $op->firstMinuteOfHour())'
+               'toOne($t.col2)->firstMinuteOfHour()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_minute_of_hour()) == \
-               '$t.col2->map(op | $op->firstDayOfYear())->map(op | $op->firstMinuteOfHour())'
+               'toOne($t.col2)->firstDayOfYear()->firstMinuteOfHour()'
 
     def test_first_second_of_minute(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_second_of_minute()) == \
@@ -114,9 +114,9 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_year().first_second_of_minute()) ==\
                'DATE_TRUNC(\'minute\', DATE_TRUNC(\'year\', "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_second_of_minute()) == \
-               '$t.col2->map(op | $op->firstSecondOfMinute())'
+               'toOne($t.col2)->firstSecondOfMinute()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_second_of_minute()) ==\
-               '$t.col2->map(op | $op->firstDayOfYear())->map(op | $op->firstSecondOfMinute())'
+               'toOne($t.col2)->firstDayOfYear()->firstSecondOfMinute()'
 
     def test_first_millisecond_of_second(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_millisecond_of_second()) == \
@@ -125,10 +125,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_day_of_year().first_millisecond_of_second()) ==
                 'DATE_TRUNC(\'second\', DATE_TRUNC(\'year\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_millisecond_of_second()) == \
-               '$t.col2->map(op | $op->firstMillisecondOfSecond())'
+               'toOne($t.col2)->firstMillisecondOfSecond()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_day_of_year().first_millisecond_of_second()) ==
-               '$t.col2->map(op | $op->firstDayOfYear())->map(op | $op->firstMillisecondOfSecond())')
+               'toOne($t.col2)->firstDayOfYear()->firstMillisecondOfSecond()')
 
     def test_year(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").year()) == \
@@ -137,10 +137,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().year()) ==
                 'DATE_PART(\'year\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").year()) == \
-               '$t.col2->map(op | $op->year())'
+               'toOne($t.col2)->year()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().year()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->year())')
+               'toOne($t.col2)->firstMinuteOfHour()->year()')
 
     def test_month(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").month()) == \
@@ -149,10 +149,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().month()) ==
                 'DATE_PART(\'month\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").month()) == \
-               '$t.col2->map(op | $op->month())'
+               'toOne($t.col2)->month()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().month()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->month())')
+               'toOne($t.col2)->firstMinuteOfHour()->month()')
 
     def test_day(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").day()) == \
@@ -161,10 +161,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().day()) ==
                 'DATE_PART(\'day\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").day()) == \
-               '$t.col2->map(op | $op->dayOfMonth())'
+               'toOne($t.col2)->dayOfMonth()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().day()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->dayOfMonth())')
+               'toOne($t.col2)->firstMinuteOfHour()->dayOfMonth()')
 
     def test_hour(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").hour()) == \
@@ -173,10 +173,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().hour()) ==
                 'DATE_PART(\'hour\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").hour()) == \
-               '$t.col2->map(op | $op->hour())'
+               'toOne($t.col2)->hour()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().hour()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->hour())')
+               'toOne($t.col2)->firstMinuteOfHour()->hour()')
 
     def test_minute(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").minute()) == \
@@ -185,10 +185,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().minute()) ==
                 'DATE_PART(\'minute\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").minute()) == \
-               '$t.col2->map(op | $op->minute())'
+               'toOne($t.col2)->minute()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().minute()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->minute())')
+               'toOne($t.col2)->firstMinuteOfHour()->minute()')
 
     def test_second(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").second()) == \
@@ -197,10 +197,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().second()) ==
                 'DATE_PART(\'second\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").second()) == \
-               '$t.col2->map(op | $op->second())'
+               'toOne($t.col2)->second()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().second()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->second())')
+               'toOne($t.col2)->firstMinuteOfHour()->second()')
 
     def test_epoch_value(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").epoch_value()) == \
@@ -209,10 +209,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().epoch_value()) ==
                 'DATE_PART(\'epoch\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").epoch_value()) == \
-               '$t.col2->map(op | $op->toEpochValue())'
+               'toOne($t.col2)->toEpochValue()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().epoch_value()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->toEpochValue())')
+               'toOne($t.col2)->firstMinuteOfHour()->toEpochValue()')
 
     def test_quarter(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").quarter()) == \
@@ -221,10 +221,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().quarter()) ==
                 'DATE_PART(\'quarter\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").quarter()) == \
-               '$t.col2->map(op | $op->quarter())'
+               'toOne($t.col2)->quarter()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().quarter()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->quarter())')
+               'toOne($t.col2)->firstMinuteOfHour()->quarter()')
 
     def test_week_of_year(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").week_of_year()) == \
@@ -233,10 +233,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().week_of_year()) ==
                 'DATE_PART(\'week\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").week_of_year()) == \
-               '$t.col2->map(op | $op->weekOfYear())'
+               'toOne($t.col2)->weekOfYear()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().week_of_year()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->weekOfYear())')
+               'toOne($t.col2)->firstMinuteOfHour()->weekOfYear()')
 
     def test_day_of_year(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").day_of_year()) == \
@@ -245,10 +245,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().day_of_year()) ==
                 'DATE_PART(\'doy\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").day_of_year()) == \
-               '$t.col2->map(op | $op->dayOfYear())'
+               'toOne($t.col2)->dayOfYear()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().day_of_year()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->dayOfYear())')
+               'toOne($t.col2)->firstMinuteOfHour()->dayOfYear()')
 
     def test_day_of_week(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").day_of_week()) == \
@@ -257,10 +257,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().day_of_week()) ==
                 'DATE_PART(\'dow\', DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").day_of_week()) == \
-               '$t.col2->map(op | $op->dayOfWeekNumber())'
+               'toOne($t.col2)->dayOfWeekNumber()'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().day_of_week()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->dayOfWeekNumber())')
+               'toOne($t.col2)->firstMinuteOfHour()->dayOfWeekNumber()')
 
     def test_today(self) -> None:
         assert self.__generate_sql_string(lambda x: today()) == \
@@ -272,7 +272,7 @@ class TestPyLegendDate:
                'today()'
         assert (self.__generate_pure_string(
             lambda x: today().first_minute_of_hour().day_of_week()) ==
-                'today()->map(op | $op->firstMinuteOfHour())->map(op | $op->dayOfWeekNumber())')
+                'today()->firstMinuteOfHour()->dayOfWeekNumber()')
 
     def test_now(self) -> None:
         assert self.__generate_sql_string(lambda x: now()) == \
@@ -284,7 +284,7 @@ class TestPyLegendDate:
                'now()'
         assert (self.__generate_pure_string(
             lambda x: now().first_minute_of_hour().day_of_week()) ==
-                'now()->map(op | $op->firstMinuteOfHour())->map(op | $op->dayOfWeekNumber())')
+                'now()->firstMinuteOfHour()->dayOfWeekNumber()')
 
     def test_date_part(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").date_part()) == \
@@ -293,10 +293,10 @@ class TestPyLegendDate:
             lambda x: x.get_date("col2").first_minute_of_hour().date_part()) ==
                 'CAST(DATE_TRUNC(\'hour\', "root".col2) AS DATE)')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").date_part()) == \
-               '$t.col2->map(op | $op->datePart())->cast(@StrictDate)'
+               'toOne($t.col2)->datePart()->cast(@StrictDate)'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().date_part()) ==
-               '$t.col2->map(op | $op->firstMinuteOfHour())->map(op | $op->datePart())->cast(@StrictDate)')
+               'toOne($t.col2)->firstMinuteOfHour()->datePart()->cast(@StrictDate)')
 
     def test_date_lt_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2") < x.get_date("col1")) == \
