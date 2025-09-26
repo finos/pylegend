@@ -34,6 +34,9 @@ __all__: PyLegendSequence[str] = [
     "simple_person_service_frame_pandas_api",
     "simple_person_service_frame_legendql_api",
     "simple_trade_service_frame_legendql_api",
+    "simple_product_service_frame_legendql_api",
+    "simple_relation_person_service_frame_legendql_api",
+    "simple_relation_trade_service_frame_legendql_api",
 ]
 
 
@@ -100,6 +103,42 @@ def simple_person_service_frame_legendql_api(engine_port: int) -> LegendQLApiLeg
 def simple_trade_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
     return LegendQLApiLegendServiceInputFrame(
         pattern="/simpleTradeService",
+        project_coordinates=VersionedProjectCoordinates(
+            group_id="org.finos.legend.pylegend",
+            artifact_id="pylegend-test-models",
+            version="0.0.1-SNAPSHOT"
+        ),
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+    )
+
+
+def simple_product_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+    return LegendQLApiLegendServiceInputFrame(
+        pattern="/simpleProductService",
+        project_coordinates=VersionedProjectCoordinates(
+            group_id="org.finos.legend.pylegend",
+            artifact_id="pylegend-test-models",
+            version="0.0.1-SNAPSHOT"
+        ),
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+    )
+
+
+def simple_relation_person_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+    return LegendQLApiLegendServiceInputFrame(
+        pattern="/simpleRelationPersonService",
+        project_coordinates=VersionedProjectCoordinates(
+            group_id="org.finos.legend.pylegend",
+            artifact_id="pylegend-test-models",
+            version="0.0.1-SNAPSHOT"
+        ),
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+    )
+
+
+def simple_relation_trade_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+    return LegendQLApiLegendServiceInputFrame(
+        pattern="/simpleRelationTradeService",
         project_coordinates=VersionedProjectCoordinates(
             group_id="org.finos.legend.pylegend",
             artifact_id="pylegend-test-models",

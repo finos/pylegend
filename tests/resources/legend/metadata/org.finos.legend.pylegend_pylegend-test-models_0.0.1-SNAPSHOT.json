@@ -15459,6 +15459,362 @@
         }
       ],
       "package": "pylegend::test::function"
+    },
+    {
+      "_type": "service",
+      "autoActivateUpdates": true,
+      "documentation": "",
+      "execution": {
+        "_type": "pureSingleExecution",
+        "func": {
+          "_type": "lambda",
+          "body": [
+            {
+              "_type": "func",
+              "function": "project",
+              "parameters": [
+                {
+                  "_type": "func",
+                  "function": "getAll",
+                  "parameters": [
+                    {
+                      "_type": "packageableElementPtr",
+                      "fullPath": "pylegend::test::model::simple::Trade"
+                    }
+                  ]
+                },
+                {
+                  "_type": "classInstance",
+                  "type": "colSpecArray",
+                  "value": {
+                    "colSpecs": [
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "name": "x"
+                                }
+                              ],
+                              "property": "id"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Id"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "name": "x"
+                                }
+                              ],
+                              "property": "date"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Date"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "name": "x"
+                                }
+                              ],
+                              "property": "quantity"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Quantity"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "name": "x"
+                                }
+                              ],
+                              "property": "settlementDateTime"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Settlement Date Time"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "property",
+                                  "parameters": [
+                                    {
+                                      "_type": "var",
+                                      "name": "x"
+                                    }
+                                  ],
+                                  "property": "product"
+                                }
+                              ],
+                              "property": "name"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Product/Name"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "property",
+                                  "parameters": [
+                                    {
+                                      "_type": "var",
+                                      "name": "x"
+                                    }
+                                  ],
+                                  "property": "account"
+                                }
+                              ],
+                              "property": "name"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Account/Name"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "parameters": []
+        },
+        "mapping": "pylegend::test::mapping::simpleRelationalMapping",
+        "runtime": {
+          "_type": "runtimePointer",
+          "runtime": "pylegend::test::runtime::LocalH2Runtime"
+        }
+      },
+      "name": "SimpleRelationTradeService",
+      "owners": [
+        ""
+      ],
+      "package": "pylegend::test",
+      "pattern": "/simpleRelationTradeService"
+    },
+    {
+      "_type": "service",
+      "autoActivateUpdates": true,
+      "documentation": "",
+      "execution": {
+        "_type": "pureSingleExecution",
+        "func": {
+          "_type": "lambda",
+          "body": [
+            {
+              "_type": "func",
+              "function": "project",
+              "parameters": [
+                {
+                  "_type": "func",
+                  "function": "getAll",
+                  "parameters": [
+                    {
+                      "_type": "packageableElementPtr",
+                      "fullPath": "pylegend::test::model::simple::Person"
+                    }
+                  ]
+                },
+                {
+                  "_type": "classInstance",
+                  "type": "colSpecArray",
+                  "value": {
+                    "colSpecs": [
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "name": "x"
+                                }
+                              ],
+                              "property": "firstName"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "First Name"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "name": "x"
+                                }
+                              ],
+                              "property": "lastName"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Last Name"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "var",
+                                  "name": "x"
+                                }
+                              ],
+                              "property": "age"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Age"
+                      },
+                      {
+                        "function1": {
+                          "_type": "lambda",
+                          "body": [
+                            {
+                              "_type": "property",
+                              "parameters": [
+                                {
+                                  "_type": "property",
+                                  "parameters": [
+                                    {
+                                      "_type": "var",
+                                      "name": "x"
+                                    }
+                                  ],
+                                  "property": "firm"
+                                }
+                              ],
+                              "property": "legalName"
+                            }
+                          ],
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        },
+                        "name": "Firm/Legal Name"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "parameters": []
+        },
+        "mapping": "pylegend::test::mapping::simpleRelationalMapping",
+        "runtime": {
+          "_type": "runtimePointer",
+          "runtime": "pylegend::test::runtime::LocalH2Runtime"
+        }
+      },
+      "name": "SimpleRelationPersonService",
+      "owners": [
+        ""
+      ],
+      "package": "pylegend::test",
+      "pattern": "/simpleRelationPersonService"
     }
   ]
 }
