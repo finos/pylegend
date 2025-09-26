@@ -186,7 +186,7 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = len(base_query.groupBy) > 0
+        should_create_sub_query = True
         db_extension = config.sql_to_string_generator().get_db_extension()
 
         new_query = (

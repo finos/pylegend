@@ -20,13 +20,13 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
 from tests.test_helpers import generate_pure_query_and_compile
+from tests.test_helpers.test_legend_service_frames import simple_relation_trade_service_frame_legendql_api
 
 
 class TestWindowExtendAppliedFunction:
@@ -164,12 +164,19 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                "root".col3 AS "col3",
-                ("root".col1 + 1) OVER (PARTITION BY "root".col2) AS "col4"
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                ("root"."col1" + 1) OVER (PARTITION BY "root"."col2") AS "col4"
             FROM
-                test_schema.test_table AS "root"'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2",
+                        "root".col3 AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -193,12 +200,19 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                "root".col3 AS "col3",
-                ("root".col1 + 1) OVER (ORDER BY "root".col3) AS "col4 with spaces"
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                ("root"."col1" + 1) OVER (ORDER BY "root"."col3") AS "col4 with spaces"
             FROM
-                test_schema.test_table AS "root"'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2",
+                        "root".col3 AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -225,13 +239,20 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
                     SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3",
-                        ("root".col1 + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4",
-                        ("root".col1 + 2) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col5"
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        "root"."col3" AS "col3",
+                        ("root"."col1" + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
+                        ("root"."col1" + 2) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5"
                     FROM
-                        test_schema.test_table AS "root"'''
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                "root".col3 AS "col3"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -260,14 +281,23 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                "root".col3 AS "col3",
-                "root".col4 AS "col4",
-                "root".col5 AS "col5",
-                ("root".col1 + 1) OVER (PARTITION BY "root".col2, "root".col3 ORDER BY "root".col4 DESC, "root".col5) AS "col6"
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                "root"."col4" AS "col4",
+                "root"."col5" AS "col5",
+                ("root"."col1" + 1) OVER (PARTITION BY "root"."col2", "root"."col3" ORDER BY "root"."col4" DESC, "root"."col5") AS "col6"
             FROM
-                test_schema.test_table AS "root"'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2",
+                        "root".col3 AS "col3",
+                        "root".col4 AS "col4",
+                        "root".col5 AS "col5"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''   # noqa: E501
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -291,12 +321,19 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
                     SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3",
-                        SUM("root".col1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4"
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        "root"."col3" AS "col3",
+                        SUM("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4"
                     FROM
-                        test_schema.test_table AS "root"'''
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                "root".col3 AS "col3"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -323,13 +360,20 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
                     SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3",
-                        SUM("root".col1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4",
-                        COUNT(1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col5"
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        "root"."col3" AS "col3",
+                        SUM("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
+                        COUNT(1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5"
                     FROM
-                        test_schema.test_table AS "root"'''
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                "root".col3 AS "col3"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -360,14 +404,21 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
                             SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                "root".col3 AS "col3",
-                                ("root".col1 + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4",
-                                COUNT(1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col5",
-                                ("root".col1 + 2) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col6"
+                                "root"."col1" AS "col1",
+                                "root"."col2" AS "col2",
+                                "root"."col3" AS "col3",
+                                ("root"."col1" + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
+                                COUNT(1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5",
+                                ("root"."col1" + 2) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col6"
                             FROM
-                                test_schema.test_table AS "root"'''
+                                (
+                                    SELECT
+                                        "root".col1 AS "col1",
+                                        "root".col2 AS "col2",
+                                        "root".col3 AS "col3"
+                                    FROM
+                                        test_schema.test_table AS "root"
+                                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -407,35 +458,42 @@ class TestWindowExtendAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                "root".col3 AS "col3",
-                row_number() OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col4",
-                rank() OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col5",
-                (dense_rank() + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col6",
-                percent_rank() OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col7",
-                ROUND(cume_dist(), 2) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col8",
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                row_number() OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
+                rank() OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5",
+                (dense_rank() + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col6",
+                percent_rank() OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col7",
+                ROUND(cume_dist(), 2) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col8",
                 ntile(
                     10
-                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col9",
+                ) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col9",
                 lead(
-                    "root".col1
-                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col10",
+                    "root"."col1"
+                ) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col10",
                 (lag(
-                    "root".col1
-                ) + 1) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col11",
+                    "root"."col1"
+                ) + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col11",
                 first_value(
-                    "root".col1
-                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col12",
+                    "root"."col1"
+                ) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col12",
                 last_value(
-                    "root".col1
-                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col13",
+                    "root"."col1"
+                ) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col13",
                 nth_value(
-                    "root".col1,
+                    "root"."col1",
                     10
-                ) OVER (PARTITION BY "root".col2 ORDER BY "root".col3) AS "col14"
+                ) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col14"
             FROM
-                test_schema.test_table AS "root"'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2",
+                        "root".col3 AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -463,29 +521,126 @@ class TestWindowExtendAppliedFunction:
                 'col11:{p,w,r | toOne($p->lag($r).col1) + 1}, col12:{p,w,r | $p->first($w, $r).col1}, '
                 'col13:{p,w,r | $p->last($w, $r).col1}, col14:{p,w,r | $p->nth($w, $r, 10).col1}])')
 
-    @pytest.mark.skip(reason="Server does not handle window functions of this form yet")
-    def test_e2e_window_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+    def test_e2e_window_extend_function_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select([
+            "Id",
+            "Date",
+            "Quantity",
+            "Product/Name",
+            "Account/Name",
+        ])
         frame = frame.window_extend(
-            frame.window(partition_by='Firm/Legal Name'),
+            frame.window(partition_by='Date'),
             [
-                ("Upper", lambda p, w, r: r.get_string("First Name").upper()),
-                ("Count", lambda p, w, r: r.get_string("First Name"), lambda c: c.count()),
-                ("Lower", lambda p, w, r: r.get_string("First Name").lower())
+                ("Cnt", lambda p, w, r: r['Id'], lambda c: c.count()),
+                ("Min", lambda p, w, r: r['Id'], lambda c: c.min()),  # type: ignore
+                ("Max", lambda p, w, r: r['Id'], lambda c: c.max()),  # type: ignore
+                ("Sum", lambda p, w, r: r['Quantity'], lambda c: c.sum()),  # type: ignore
             ]
         )
         assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
-                "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), "
-                "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String), "
-                "TdsColumn(Name: Upper, Type: String), TdsColumn(Name: Count, Type: Integer), "
-                "TdsColumn(Name: Lower, Type: String)]")
-        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name', 'Upper'],
-                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X', 'PETER']},
-                             {'values': ['John', 'Johnson', 22, 'Firm X', 'JOHN']},
-                             {'values': ['John', 'Hill', 12, 'Firm X', 'JOHN']},
-                             {'values': ['Anthony', 'Allen', 22, 'Firm X', 'ANTHONY']},
-                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A', 'FABRICE']},
-                             {'values': ['Oliver', 'Hill', 32, 'Firm B', 'OLIVER']},
-                             {'values': ['David', 'Harris', 35, 'Firm C', 'DAVID']}]}
+                "[TdsColumn(Name: Id, Type: Integer), TdsColumn(Name: Date, Type: StrictDate), "
+                "TdsColumn(Name: Quantity, Type: Float), TdsColumn(Name: Product/Name, Type: String), "
+                "TdsColumn(Name: Account/Name, Type: String), TdsColumn(Name: Cnt, Type: Integer), "
+                "TdsColumn(Name: Min, Type: Integer), TdsColumn(Name: Max, Type: Integer), "
+                "TdsColumn(Name: Sum, Type: Float)]")
+        expected = {'columns': ['Id', 'Date', 'Quantity', 'Product/Name', 'Account/Name', 'Cnt', 'Min', 'Max', 'Sum'],
+                    'rows': [{'values': [1, '2014-12-01', 25.0, 'Firm X', 'Account 1', 3, 1, 3, 356.0]},
+                             {'values': [2, '2014-12-01', 320.0, 'Firm X', 'Account 2', 3, 1, 3, 356.0]},
+                             {'values': [3, '2014-12-01', 11.0, 'Firm A', 'Account 1', 3, 1, 3, 356.0]},
+                             {'values': [4, '2014-12-02', 23.0, 'Firm A', 'Account 2', 2, 4, 5, 55.0]},
+                             {'values': [5, '2014-12-02', 32.0, 'Firm A', 'Account 1', 2, 4, 5, 55.0]},
+                             {'values': [6, '2014-12-03', 27.0, 'Firm C', 'Account 1', 2, 6, 7, 71.0]},
+                             {'values': [7, '2014-12-03', 44.0, 'Firm C', 'Account 1', 2, 6, 7, 71.0]},
+                             {'values': [8, '2014-12-04', 22.0, 'Firm C', 'Account 2', 3, 8, 10, 105.0]},
+                             {'values': [9, '2014-12-04', 45.0, 'Firm C', 'Account 2', 3, 8, 10, 105.0]},
+                             {'values': [10, '2014-12-04', 38.0, 'Firm C', 'Account 2', 3, 8, 10, 105.0]},
+                             {'values': [11, '2014-12-05', 5.0, None, None, 1, 11, 11, 5.0]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_window_extend_function_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select([
+            "Id",
+            "Date",
+            "Quantity",
+        ])
+        frame = frame.window_extend(
+            frame.window(partition_by=lambda r: [r.Date], order_by=lambda r: [r.Quantity.descending()]),
+            [
+                ("RN", lambda p, w, r: p.row_number(r)),
+            ]
+        )
+        # Workaround engine issue of needing a partition column
+        frame = frame.extend(("FirstDayOfYear", lambda r: r.Date.first_day_of_year()))
+        frame = frame.window_extend(
+            frame.window(partition_by=["FirstDayOfYear"], order_by=["Date"]),
+            [
+                ("R", lambda p, w, r: p.rank(w, r)),
+                ("DR", lambda p, w, r: p.dense_rank(w, r)),
+                ("PR", lambda p, w, r: p.percent_rank(w, r)),
+                ("CD", lambda p, w, r: round(p.cume_dist(w, r), 2)),
+                ("T", lambda p, w, r: p.ntile(r, 3)),
+            ]
+        )
+        frame = frame.select(["Id", "Date", "Quantity", "RN", "R", "DR", "PR", "CD", "T"])
+        assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
+                "[TdsColumn(Name: Id, Type: Integer), TdsColumn(Name: Date, Type: StrictDate), "
+                "TdsColumn(Name: Quantity, Type: Float), TdsColumn(Name: RN, Type: Integer), "
+                "TdsColumn(Name: R, Type: Integer), TdsColumn(Name: DR, Type: Integer), "
+                "TdsColumn(Name: PR, Type: Float), TdsColumn(Name: CD, Type: Number), "
+                "TdsColumn(Name: T, Type: Integer)]")
+        expected = {'columns': ['Id', 'Date', 'Quantity', 'RN', 'R', 'DR', 'PR', 'CD', 'T'],
+                    'rows': [{'values': [1, '2014-12-01', 25.0, 2, 1, 1, 0.0, 0.27, 1]},
+                             {'values': [2, '2014-12-01', 320.0, 1, 1, 1, 0.0, 0.27, 1]},
+                             {'values': [3, '2014-12-01', 11.0, 3, 1, 1, 0.0, 0.27, 1]},
+                             {'values': [4, '2014-12-02', 23.0, 2, 4, 2, 0.3, 0.45, 1]},
+                             {'values': [5, '2014-12-02', 32.0, 1, 4, 2, 0.3, 0.45, 2]},
+                             {'values': [6, '2014-12-03', 27.0, 2, 6, 3, 0.5, 0.64, 2]},
+                             {'values': [7, '2014-12-03', 44.0, 1, 6, 3, 0.5, 0.64, 2]},
+                             {'values': [8, '2014-12-04', 22.0, 3, 8, 4, 0.7, 0.91, 2]},
+                             {'values': [9, '2014-12-04', 45.0, 1, 8, 4, 0.7, 0.91, 3]},
+                             {'values': [10, '2014-12-04', 38.0, 2, 8, 4, 0.7, 0.91, 3]},
+                             {'values': [11, '2014-12-05', 5.0, 1, 11, 5, 1.0, 1.0, 3]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_window_extend_function_rows(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select([
+            "Id",
+            "Date",
+        ])
+        # Workaround engine issue of needing a partition column
+        frame = frame.extend(("FirstDayOfYear", lambda r: r.Date.first_day_of_year()))
+        frame = frame.window_extend(
+            frame.window(partition_by=["FirstDayOfYear"], order_by=["Id"]),
+            [
+                ("Lead", lambda p, w, r: p.lead(r).Id),
+                ("Lag", lambda p, w, r: p.lag(r).Id),
+                ("First", lambda p, w, r: p.first(w, r).Id),
+                ("Last", lambda p, w, r: p.last(w, r).Id),
+                # ("Nth", lambda p, w, r: p.nth(w, r, 3).Id), # Nth value not supported in engine
+            ]
+        )
+        frame = frame.select(["Id", "Date", "Lead", "Lag", "First", "Last"])
+        assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
+                "[TdsColumn(Name: Id, Type: Integer), TdsColumn(Name: Date, Type: StrictDate), "
+                "TdsColumn(Name: Lead, Type: Integer), TdsColumn(Name: Lag, Type: Integer), "
+                "TdsColumn(Name: First, Type: Integer), TdsColumn(Name: Last, Type: Integer)]")
+        expected = {'columns': ['Id', 'Date', 'Lead', 'Lag', 'First', 'Last'],
+                    'rows': [{'values': [1, '2014-12-01', 2, None, 1, 1]},
+                             {'values': [2, '2014-12-01', 3, 1, 1, 2]},
+                             {'values': [3, '2014-12-01', 4, 2, 1, 3]},
+                             {'values': [4, '2014-12-02', 5, 3, 1, 4]},
+                             {'values': [5, '2014-12-02', 6, 4, 1, 5]},
+                             {'values': [6, '2014-12-03', 7, 5, 1, 6]},
+                             {'values': [7, '2014-12-03', 8, 6, 1, 7]},
+                             {'values': [8, '2014-12-04', 9, 7, 1, 8]},
+                             {'values': [9, '2014-12-04', 10, 8, 1, 9]},
+                             {'values': [10, '2014-12-04', 11, 9, 1, 10]},
+                             {'values': [11, '2014-12-05', None, 10, 1, 11]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
