@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import pytest
 from pylegend.utils.class_utils import find_sub_classes
 
 
@@ -45,3 +45,14 @@ class TestClassUtils:
         assert {D} == set(find_sub_classes(C))
         assert {C, D} == set(find_sub_classes(B))
         assert {C, D} == set(find_sub_classes(A))
+
+def test_find_subclasses_raises_type_error_on_non_class() -> None:
+    with pytest.raises(TypeError):
+        find_sub_classes(123)  # type: ignore[arg-type]
+
+
+def test_find_subclasses_returns_empty_list_for_class_without_subclasses() -> None:
+    class Solo:
+        pass
+
+    assert find_sub_classes(Solo, recursive=True) == []
