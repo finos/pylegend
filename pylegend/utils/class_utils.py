@@ -23,6 +23,8 @@ T = PyLegendTypeVar("T")
 
 
 def find_sub_classes(clazz: PyLegendType[T], recursive: bool = True) -> PyLegendList[PyLegendType[T]]:
+    if not isinstance(clazz, type):
+        raise TypeError(f"find_sub_classes expects a class/type, got {type(clazz)!r}")
     subclasses = clazz.__subclasses__()
     if recursive:
         subclasses = subclasses + [c for s in subclasses for c in find_sub_classes(s, True)]
