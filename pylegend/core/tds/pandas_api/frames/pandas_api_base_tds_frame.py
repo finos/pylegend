@@ -28,7 +28,7 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow
+from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendInteger
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -74,6 +74,36 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+
+    def shape(
+            self
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shape import PandasApiShapeFunction
+        return PandasApiAppliedFunctionTdsFrame(PandasApiShapeFunction(self))
+
+    def filter(
+            self,
+            items: PyLegendOptional[PyLegendUnion[list, PyLegendList]] = None,
+            like: PyLegendOptional[str] = None,
+            regex: PyLegendOptional[str] = None,
+            axis: PyLegendUnion[str, int, PyLegendInteger] = 1
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiFilterFunction(
+                self,
+                items=items,
+                like=like,
+                regex=regex,
+                axis=axis
+            )
+        )
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

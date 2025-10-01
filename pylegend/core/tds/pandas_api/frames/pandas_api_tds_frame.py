@@ -14,6 +14,9 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
+
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+
 from pylegend._typing import (
     PyLegendCallable,
     PyLegendSequence,
@@ -24,6 +27,7 @@ from pylegend.core.language import (
     LegacyApiTdsRow,
     PyLegendPrimitive,
 )
+from pylegend._typing import *
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
@@ -39,5 +43,20 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
                 [LegacyApiTdsRow],
                 PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def shape(
+            self,
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    def filter(
+            self,
+            items: PyLegendOptional[PyLegendUnion[list, PyLegendList]] = None,
+            like: PyLegendOptional[str] = None,
+            regex: PyLegendOptional[str] = None,
+            axis: PyLegendUnion[str, int, PyLegendInteger] = 1
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
