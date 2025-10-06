@@ -1,4 +1,4 @@
-# Copyright 2023 Goldman Sachs
+# Copyright 2025 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             desired_columns = [
                 SingleColumn(
                     alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                    expression=QualifiedNameReference(QualifiedName(["root", col]))
+                    expression=QualifiedNameReference(QualifiedName(['"root"', col]))
                 )
                 for col in self.__items
             ]
@@ -95,7 +95,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             desired_columns = [
                 SingleColumn(
                     alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                    expression=QualifiedNameReference(QualifiedName(["root", col]))
+                    expression=QualifiedNameReference(QualifiedName(['"root"', col]))
                 )
                 for col in col_names if self.__like in col
             ]
@@ -104,7 +104,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             desired_columns = [
                 SingleColumn(
                     alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                    expression=QualifiedNameReference(QualifiedName(["root", col]))
+                    expression=QualifiedNameReference(QualifiedName(['"root"', col]))
                 )
                 for col in col_names if regex_pattern.search(col)
             ]
@@ -171,7 +171,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
         if self.__regex is not None:
             if not isinstance(self.__regex, str):
-                raise TypeError("`regex` must be a string or compiled pattern")
+                raise TypeError(f"'regex' must be a string, got {type(self.__regex)}")
             try:
                 regex_pattern = re.compile(self.__regex)
             except re.error as e:
