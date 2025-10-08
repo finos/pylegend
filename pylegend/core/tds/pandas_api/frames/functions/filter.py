@@ -74,57 +74,41 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
         self.__items = items
         self.__like = like
         self.__regex = regex
-        self.__axis = axis
+        self.__axis = 1 if axis is None else axis
+
+    def __get_desired_columns(self, col_names: PyLegendSequence[str]) -> PyLegendSequence[str]:
+        if self.__items is not None:
+            return self.__items
+        elif self.__like is not None:
+            return [col for col in col_names if self.__like in col]
+        elif self.__regex is not None:
+            regex_pattern = re.compile(self.__regex)
+            return [col for col in col_names if regex_pattern.search(col)]
+
+        return []
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
         should_create_sub_query = base_query.select.distinct or (len(base_query.orderBy) > 0) or (
-                    len(base_query.groupBy) > 0) or (base_query.where is not None)
-        base_query = create_sub_query(base_query, config, "root") if should_create_sub_query else copy_query(base_query)
+                len(base_query.groupBy) > 0) or (base_query.where is not None)
+        base_query = create_sub_query(base_query, config, "root") if should_create_sub_query \
+            else copy_query(base_query)
 
         col_names = [c.get_name() for c in self.__base_frame.columns()]
-        if self.__items is not None:
-            desired_columns = [
-                SingleColumn(
-                    alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                    expression=QualifiedNameReference(QualifiedName(['"root"', col]))
-                )
-                for col in self.__items
-            ]
-        elif self.__like is not None:
-            desired_columns = [
-                SingleColumn(
-                    alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                    expression=QualifiedNameReference(QualifiedName(['"root"', col]))
-                )
-                for col in col_names if self.__like in col
-            ]
-        elif self.__regex is not None:
-            regex_pattern = re.compile(self.__regex)
-            desired_columns = [
-                SingleColumn(
-                    alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                    expression=QualifiedNameReference(QualifiedName(['"root"', col]))
-                )
-                for col in col_names if regex_pattern.search(col)
-            ]
-        else:
-            desired_columns = []
+        desired_columns = [
+            SingleColumn(
+                alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
+                expression=QualifiedNameReference(QualifiedName(['"root"', col]))
+            )
+            for col in self.__get_desired_columns(col_names)
+        ]
 
         base_query.select = Select(distinct=False, selectItems=desired_columns)
         return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         col_names = [c.get_name() for c in self.__base_frame.columns()]
-        if self.__items is not None:
-            desired_columns = self.__items
-        elif self.__like is not None:
-            desired_columns = [col for col in col_names if self.__like in col]
-        elif self.__regex is not None:
-            regex_pattern = re.compile(self.__regex)
-            desired_columns = [col for col in col_names if regex_pattern.search(col)]
-        else:
-            desired_columns = []
+        desired_columns = self.__get_desired_columns(col_names)
 
         selected_columns = [
             col if col.isidentifier() else f"'{col.replace('\'', '\\\'')}'"
@@ -181,6 +165,6 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
         if not isinstance(self.__axis, PyLegendUnion[str, int, PyLegendInteger]) or \
                 self.__axis not in [1, "columns"]:
-            raise ValueError(f"Invalid axis value: {self.__axis}. Expected 1 or 'columns'")
+            raise ValueError(f"Unsupported axis value: {self.__axis}. Expected 1 or 'columns'")
 
         return True

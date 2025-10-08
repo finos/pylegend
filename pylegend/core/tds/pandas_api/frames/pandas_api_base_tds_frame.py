@@ -89,7 +89,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
             items: PyLegendOptional[PyLegendUnion[list, PyLegendList]] = None,
             like: PyLegendOptional[str] = None,
             regex: PyLegendOptional[str] = None,
-            axis: PyLegendUnion[str, int, PyLegendInteger] = 1
+            axis: PyLegendUnion[str, int, PyLegendInteger] = None
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame

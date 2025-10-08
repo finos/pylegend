@@ -54,9 +54,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
     def filter(
             self,
-            items: PyLegendOptional[PyLegendUnion[list, PyLegendList]] = None,
+            items: PyLegendOptional[PyLegendList] = None,
             like: PyLegendOptional[str] = None,
             regex: PyLegendOptional[str] = None,
-            axis: PyLegendUnion[str, int, PyLegendInteger] = 1
+            axis: PyLegendUnion[str, int, PyLegendInteger] = None
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
