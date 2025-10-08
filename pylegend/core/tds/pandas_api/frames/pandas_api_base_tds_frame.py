@@ -75,15 +75,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
 
-    def shape(
-            self
-    ) -> "PandasApiTdsFrame":
-        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
-            PandasApiAppliedFunctionTdsFrame
-        )
-        from pylegend.core.tds.pandas_api.frames.functions.shape import PandasApiShapeFunction
-        return PandasApiAppliedFunctionTdsFrame(PandasApiShapeFunction(self))
-
     def filter(
             self,
             items: PyLegendOptional[PyLegendUnion[list, PyLegendList]] = None,

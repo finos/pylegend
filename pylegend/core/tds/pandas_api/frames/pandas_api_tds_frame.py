@@ -46,12 +46,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
-    @abstractmethod
-    def shape(
-            self,
-    ) -> "PandasApiTdsFrame":
-        pass  # pragma: no cover
-
     def filter(
             self,
             items: PyLegendOptional[PyLegendList] = None,
