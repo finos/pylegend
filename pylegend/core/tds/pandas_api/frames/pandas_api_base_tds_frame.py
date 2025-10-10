@@ -15,6 +15,8 @@
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 import pandas as pd
+from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -23,14 +25,14 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.sql.metamodel import QuerySpecification, ComparisonOperator
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
 from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendInteger
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_column import TdsColumn, PandasApiTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.result_handler import (
@@ -61,6 +63,24 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
         return [c.copy() for c in self.__columns]
+
+    def __getitem__(self, key):
+        if isinstance(key, PyLegendExpressionBooleanReturn):
+            from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
+                PandasApiAppliedFunctionTdsFrame
+            from pylegend.core.tds.pandas_api.frames.functions.boolean_filtering import \
+                PandasApiBooleanFilteringFunction
+            return PandasApiAppliedFunctionTdsFrame(
+                PandasApiBooleanFilteringFunction(self, filter_expr=key)
+            )
+        elif isinstance(key, str):
+            # Use .filter for single column access
+            return self.filter(items=[key])
+        elif isinstance(key, list):
+            # Use .filter for multiple columns access
+            return self.filter(items=key)
+        else:
+            raise TypeError(f"Invalid key type: {type(key)}. Expected str, list, or boolean expression.")
 
     def assign(
             self,
@@ -102,6 +122,27 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
                 like=like,
                 regex=regex,
                 axis=axis
+            )
+        )
+
+    def comparator_filtering(
+            self,
+            column: PandasApiTdsColumn,
+            operator: ComparisonOperator,
+            value: PyLegendPrimitive
+
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import \
+            PandasApiComparatorFiltering
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiComparatorFiltering(
+                self,
+                column=column,
+                operator=operator,
+                value=value
             )
         )
 

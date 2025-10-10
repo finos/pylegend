@@ -1,0 +1,124 @@
+# Copyright 2025 Goldman Sachs
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from datetime import date, datetime
+
+from pylegend.core.language.shared.operations.primitive_operation_expressions import PyLegendPrimitiveEqualsExpression, \
+    PyLegendPrimitiveNotEqualsExpression
+
+from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
+
+from pylegend.core.language.shared.primitive_collection import create_primitive_collection
+
+from pylegend._typing import (
+    PyLegendList,
+    PyLegendSequence,
+    PyLegendDict,
+    PyLegendCallable,
+    PyLegendUnion,
+)
+
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
+from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
+from pylegend.core.sql.metamodel import (
+    QuerySpecification,
+    SingleColumn, Select, QualifiedNameReference, QualifiedName, ComparisonExpression, LogicalBinaryExpression,
+    LogicalBinaryType, ComparisonOperator,
+)
+from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, PandasApiTdsColumn
+from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.core.language import (
+    LegacyApiTdsRow,
+    PyLegendPrimitive,
+    PyLegendInteger,
+    PyLegendFloat,
+    PyLegendNumber,
+    PyLegendBoolean,
+    PyLegendString,
+)
+from pylegend._typing import *
+
+class PandasApiComparatorFiltering(PandasApiAppliedFunction):
+    __base_frame: PandasApiBaseTdsFrame
+    __column: PrimitiveTdsColumn
+    __operator: ComparisonOperator
+    __value: PyLegendPrimitive
+
+    @classmethod
+    def name(cls) -> str:
+        return "comparator_filter"
+
+    def __init__(
+            self,
+            base_frame: PandasApiBaseTdsFrame,
+            column: PandasApiTdsColumn,
+            operator: ComparisonOperator,
+            value: PyLegendPrimitive
+    ) -> None:
+        self.__base_frame = base_frame
+        self.__column = column
+        self.__operator = operator
+        self.__value = value
+
+    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        if self.__operator == ComparisonOperator.EQUAL:
+            return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_sql_func(
+                self.__column.to_qualified_name_reference(),
+                convert_literal_to_literal_expression(self.__value),
+                {},  # frame_name_to_base_query_map
+                config
+            )
+        elif self.__operator == ComparisonOperator.NOT_EQUAL:
+            return PyLegendPrimitiveNotEqualsExpression._PyLegendPrimitiveNotEqualsExpression__to_sql_func(
+                self.__column.to_qualified_name_reference(),
+                convert_literal_to_literal_expression(self.__value),
+                {},  # frame_name_to_base_query_map
+                config
+            )
+        else:
+            raise NotImplementedError(f"Operator {self.__operator} is not supported.")
+
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        if self.__operator == ComparisonOperator.EQUAL:
+            return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_pure_func(
+                self.__column.to_qualified_name_reference().to_pure_expression(),
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(),
+                config
+            )
+        elif self.__operator == ComparisonOperator.NOT_EQUAL:
+            return PyLegendPrimitiveNotEqualsExpression._PyLegendPrimitiveNotEqualsExpression__to_pure_func(
+                self.__column.to_qualified_name_reference().to_pure_expression(),
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(),
+                config
+            )
+        else:
+            raise NotImplementedError(f"Operator {self.__operator} is not supported.")
+
+    def base_frame(self) -> PandasApiBaseTdsFrame:
+        return self.__base_frame
+
+    def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
+        return []
+
+    def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
+        new_cols = [c.copy() for c in self.__base_frame.columns()]
+        return new_cols
+
+    def validate(self) -> bool:
+        # tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
+        # for col, f in self.__col_definitions.items():
+        #     f(tds_row)
+        return True
+

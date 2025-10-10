@@ -15,6 +15,8 @@
 from abc import abstractmethod
 from datetime import date, datetime
 
+from pylegend.core.sql.metamodel import ComparisonOperator
+
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 
 from pylegend._typing import (
@@ -22,6 +24,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendUnion,
 )
+from pylegend.core.tds.tds_column import PandasApiTdsColumn
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.language import (
     LegacyApiTdsRow,
@@ -35,6 +38,10 @@ __all__: PyLegendSequence[str] = [
 
 
 class PandasApiTdsFrame(PyLegendTdsFrame):
+
+    @abstractmethod
+    def __getitem__(self, key):
+        pass  # pragma: no cover
 
     @abstractmethod
     def assign(
@@ -52,11 +59,22 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
+    @abstractmethod
     def filter(
             self,
             items: PyLegendOptional[PyLegendList] = None,
             like: PyLegendOptional[str] = None,
             regex: PyLegendOptional[str] = None,
             axis: PyLegendUnion[str, int, PyLegendInteger] = None
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def comparator_filtering(
+            self,
+            column: PandasApiTdsColumn,
+            operator: ComparisonOperator,
+            value: PyLegendPrimitive
+
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

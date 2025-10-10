@@ -15,6 +15,9 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 import json
+
+from pylegend.core.sql.metamodel import ComparisonOperator
+
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
@@ -27,6 +30,8 @@ __all__: PyLegendSequence[str] = [
     "EnumTdsColumn",
     "tds_columns_from_json",
 ]
+
+from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
 
 
 class TdsColumn(metaclass=ABCMeta):
@@ -136,6 +141,29 @@ class EnumTdsColumn(TdsColumn):
 
     def get_enum_values(self) -> PyLegendList[str]:
         return self.__enum_values
+
+class PandasApiTdsColumn(PrimitiveTdsColumn):
+    def __init__(self, name: str, _type: "PrimitiveType", base_frame: "PandasApiBaseTdsFrame") -> None:
+        super().__init__(name, _type)
+        self.__base_frame = base_frame
+
+    def __eq__(self, other):
+            return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.EQUAL, value=other)
+
+    def __ne__(self, other):
+            return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.NOT_EQUAL, value=other)
+
+    def __lt__(self, other):
+        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.LESS_THAN, value=other)
+
+    def __le__(self, other):
+        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.LESS_THAN_OR_EQUAL, value=other)
+
+    def __gt__(self, other):
+        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.GREATER_THAN, value=other)
+
+    def __ge__(self, other):
+        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.GREATER_THAN_OR_EQUAL, value=other)
 
 
 def tds_columns_from_json(s: str) -> PyLegendSequence[TdsColumn]:
