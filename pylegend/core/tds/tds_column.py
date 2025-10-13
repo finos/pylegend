@@ -28,11 +28,9 @@ __all__: PyLegendSequence[str] = [
     "PrimitiveTdsColumn",
     "PrimitiveType",
     "EnumTdsColumn",
+    "PandasApiTdsColumn",
     "tds_columns_from_json",
 ]
-
-from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-
 
 class TdsColumn(metaclass=ABCMeta):
     __name: str
@@ -148,21 +146,39 @@ class PandasApiTdsColumn(PrimitiveTdsColumn):
         self.__base_frame = base_frame
 
     def __eq__(self, other):
-            return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.EQUAL, value=other)
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
+            import PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
+        return PandasApiAppliedFunctionTdsFrame(PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.EQUAL, value=other))
 
     def __ne__(self, other):
-            return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.NOT_EQUAL, value=other)
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
+            import PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
+        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.NOT_EQUAL, value=other)
 
     def __lt__(self, other):
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
+            import PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
         return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.LESS_THAN, value=other)
 
     def __le__(self, other):
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
+            import PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
         return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.LESS_THAN_OR_EQUAL, value=other)
 
     def __gt__(self, other):
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
+            import PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
         return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.GREATER_THAN, value=other)
 
     def __ge__(self, other):
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
+            import PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
         return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.GREATER_THAN_OR_EQUAL, value=other)
 
 
