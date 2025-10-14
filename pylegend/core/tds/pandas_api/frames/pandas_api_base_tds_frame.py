@@ -15,6 +15,8 @@
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 import pandas as pd
+
+from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiLogicalExpression
 from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
 
 from pylegend._typing import (
@@ -52,30 +54,34 @@ R = PyLegendTypeVar('R')
 
 
 class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
-    __columns: PyLegendSequence[TdsColumn]
+    __columns: PyLegendSequence[PandasApiTdsColumn]
 
-    def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
+    def __init__(self, columns: PyLegendSequence[PandasApiTdsColumn]) -> None:
         col_names = [c.get_name() for c in columns]
         if len(col_names) != len(set(col_names)):
             cols = "[" + ", ".join([str(c) for c in columns]) + "]"
             raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
         self.__columns = [c.copy() for c in columns]
 
-    def columns(self) -> PyLegendSequence[TdsColumn]:
+    def columns(self) -> PyLegendSequence[PandasApiTdsColumn]:
         return [c.copy() for c in self.__columns]
 
     def __getitem__(self, key):
-        if isinstance(key, PyLegendExpressionBooleanReturn):
-            from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
-                PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
+            PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
+        if isinstance(key, (PandasApiComparatorFiltering, PandasApiLogicalExpression)):
             from pylegend.core.tds.pandas_api.frames.functions.boolean_filtering import \
                 PandasApiBooleanFilteringFunction
             return PandasApiAppliedFunctionTdsFrame(
                 PandasApiBooleanFilteringFunction(self, filter_expr=key)
             )
         elif isinstance(key, str):
-            # Use .filter for single column access
-            return self.filter(items=[key])
+            # Return PandasApiTdsColumn for single column access
+            for col in self.__columns:
+                if col.get_name() == key:
+                    return col.copy_with_base_frame(self)
+            raise KeyError(f"Column '{key}' not found")
         elif isinstance(key, list):
             # Use .filter for multiple columns access
             return self.filter(items=key)
@@ -125,26 +131,26 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
             )
         )
 
-    def comparator_filtering(
-            self,
-            column: PandasApiTdsColumn,
-            operator: ComparisonOperator,
-            value: PyLegendPrimitive
-
-    ) -> "PandasApiTdsFrame":
-        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
-            PandasApiAppliedFunctionTdsFrame
-        )
-        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import \
-            PandasApiComparatorFiltering
-        return PandasApiAppliedFunctionTdsFrame(
-            PandasApiComparatorFiltering(
-                self,
-                column=column,
-                operator=operator,
-                value=value
-            )
-        )
+    # def comparator_filtering(
+    #         self,
+    #         column: PandasApiTdsColumn,
+    #         operator: ComparisonOperator,
+    #         value: PyLegendPrimitive
+    #
+    # ) -> "PandasApiTdsFrame":
+    #     from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+    #         PandasApiAppliedFunctionTdsFrame
+    #     )
+    #     from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import \
+    #         PandasApiComparatorFiltering
+    #     return PandasApiAppliedFunctionTdsFrame(
+    #         PandasApiComparatorFiltering(
+    #             self,
+    #             column=column,
+    #             operator=operator,
+    #             value=value
+    #         )
+    #     )
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

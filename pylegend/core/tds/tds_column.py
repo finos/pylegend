@@ -140,46 +140,96 @@ class EnumTdsColumn(TdsColumn):
     def get_enum_values(self) -> PyLegendList[str]:
         return self.__enum_values
 
-class PandasApiTdsColumn(PrimitiveTdsColumn):
-    def __init__(self, name: str, _type: "PrimitiveType", base_frame: "PandasApiBaseTdsFrame") -> None:
-        super().__init__(name, _type)
-        self.__base_frame = base_frame
+class PandasApiTdsColumn(TdsColumn):
+    __type: "PrimitiveType"
+
+    def __init__(self, name: str, _type: "PrimitiveType", _base: any = None) -> None:
+        super().__init__(name)
+        self.__type = _type
+        self.__base_frame = _base
+
+    def get_type(self) -> "str":
+        return self.__type.name
+
+    def copy(self) -> "TdsColumn":
+        return PandasApiTdsColumn(self.get_name(), self.__type)
+
+    def copy_with_changed_name(self, new_name: str) -> "TdsColumn":
+        return PandasApiTdsColumn(new_name, self.__type)
+
+    def copy_with_base_frame(self, base_frame: "PandasApiBaseTdsFrame") -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(self.get_name(), self.get_type(), base_frame)
+
+    def to_pure_expression(self) -> str:
+        return f"$c.{self.get_name()}"
+
+    @classmethod
+    def integer_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.Integer)
+
+    @classmethod
+    def float_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.Float)
+
+    @classmethod
+    def string_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.String)
+
+    @classmethod
+    def boolean_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.Boolean)
+
+    @classmethod
+    def number_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.Number)
+
+    @classmethod
+    def date_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.Date)
+
+    @classmethod
+    def datetime_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.DateTime)
+
+    @classmethod
+    def strictdate_column(cls, name: str) -> "PandasApiTdsColumn":
+        return PandasApiTdsColumn(name, PrimitiveType.StrictDate)
 
     def __eq__(self, other):
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
             import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-        return PandasApiAppliedFunctionTdsFrame(PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.EQUAL, value=other))
+        return PandasApiComparatorFiltering(self.__base_frame, column=self, operator=ComparisonOperator.EQUAL, value=other)
 
     def __ne__(self, other):
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
             import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.NOT_EQUAL, value=other)
+        return PandasApiAppliedFunctionTdsFrame(PandasApiComparatorFiltering(self.__base_frame, column=self, operator=ComparisonOperator.NOT_EQUAL, value=other))
 
     def __lt__(self, other):
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
             import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.LESS_THAN, value=other)
+        return PandasApiAppliedFunctionTdsFrame(PandasApiComparatorFiltering(self.__base_frame, column=self, operator=ComparisonOperator.LESS_THAN, value=other))
 
     def __le__(self, other):
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
             import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.LESS_THAN_OR_EQUAL, value=other)
+        return PandasApiAppliedFunctionTdsFrame(PandasApiComparatorFiltering(self.__base_frame, column=self, operator=ComparisonOperator.LESS_THAN_OR_EQUAL, value=other))
 
     def __gt__(self, other):
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
             import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.GREATER_THAN, value=other)
+        return PandasApiAppliedFunctionTdsFrame(PandasApiComparatorFiltering(self.__base_frame, column=self, operator=ComparisonOperator.GREATER_THAN, value=other))
 
     def __ge__(self, other):
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame \
             import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-        return PandasApiComparatorFiltering(operand1=self, operator=ComparisonOperator.GREATER_THAN_OR_EQUAL, value=other)
+        return PandasApiAppliedFunctionTdsFrame(PandasApiComparatorFiltering(self.__base_frame, column=self, operator=ComparisonOperator.GREATER_THAN_OR_EQUAL, value=other))
 
 
 def tds_columns_from_json(s: str) -> PyLegendSequence[TdsColumn]:

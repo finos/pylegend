@@ -14,6 +14,7 @@
 
 from datetime import date, datetime
 
+from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiLogicalExpression
 from pylegend.core.language.shared.operations.primitive_operation_expressions import PyLegendPrimitiveEqualsExpression, \
     PyLegendPrimitiveNotEqualsExpression
 
@@ -72,6 +73,16 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
         self.__operator = operator
         self.__value = value
 
+    def __and__(self, other):
+        if not isinstance(other, (PandasApiComparatorFiltering, PandasApiLogicalExpression)):
+            raise TypeError(f"Unsupported operand type(s) for &: '{type(self)}' and '{type(other)}'")
+        return PandasApiLogicalExpression(self, LogicalBinaryType.AND, other)
+
+    def __or__(self, other):
+        if not isinstance(other, (PandasApiComparatorFiltering, PandasApiLogicalExpression)):
+            raise TypeError(f"Unsupported operand type(s) for |: '{type(self)}' and '{type(other)}'")
+        return PandasApiLogicalExpression(self, LogicalBinaryType.OR, other)
+
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_sql_func(
@@ -91,15 +102,16 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
             raise NotImplementedError(f"Operator {self.__operator} is not supported.")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
+        column_pure_expr = f"$c.{self.__column.get_name()}"
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_pure_func(
-                self.__column.to_qualified_name_reference().to_pure_expression(),
-                convert_literal_to_literal_expression(self.__value).to_pure_expression(),
+                self.__column.to_pure_expression(),
+                self.__value,
                 config
             )
         elif self.__operator == ComparisonOperator.NOT_EQUAL:
             return PyLegendPrimitiveNotEqualsExpression._PyLegendPrimitiveNotEqualsExpression__to_pure_func(
-                self.__column.to_qualified_name_reference().to_pure_expression(),
+                self.__column.to_pure_expression(),
                 convert_literal_to_literal_expression(self.__value).to_pure_expression(),
                 config
             )

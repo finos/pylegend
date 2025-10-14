@@ -14,6 +14,7 @@
 
 from datetime import date, datetime
 
+from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiLogicalExpression
 from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
 
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
@@ -27,6 +28,7 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
+from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
 
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -52,7 +54,7 @@ from pylegend._typing import *
 
 class PandasApiBooleanFilteringFunction:
     __base_frame: PandasApiBaseTdsFrame
-    __filter_expr: PyLegendExpressionBooleanReturn
+    __filter_expr: PyLegendUnion[PandasApiComparatorFiltering, PandasApiLogicalExpression]
 
     @classmethod
     def name(cls) -> str:
@@ -61,7 +63,7 @@ class PandasApiBooleanFilteringFunction:
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            filter_expr: PyLegendExpressionBooleanReturn
+            filter_expr: PyLegendUnion[PandasApiComparatorFiltering, PandasApiLogicalExpression]
     ) -> None:
         self.__base_frame = base_frame
         self.__filter_expr = filter_expr
@@ -70,11 +72,7 @@ class PandasApiBooleanFilteringFunction:
         base_query = self.__base_frame.to_sql_query_object(config)
         new_query = copy_query(base_query)
 
-        # Generate SQL expression based on the type of filter_expr
-        if isinstance(self.__filter_expr, PyLegendExpressionBooleanReturn):
-            sql_expr = self.__filter_expr.to_sql(config)
-        else:
-            raise TypeError("Invalid filter expression type for SQL generation")
+        sql_expr = self.__filter_expr.to_sql(config)
 
         if new_query.where is None:
             new_query.where = sql_expr
@@ -87,12 +85,7 @@ class PandasApiBooleanFilteringFunction:
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        # Generate Pure expression based on the type of filter_expr
-        if isinstance(self.__filter_expr, PyLegendExpressionBooleanReturn):
-            pure_expr = self.__filter_expr.to_pure(config)
-        else:
-            raise TypeError("Invalid filter expression type for Pure generation")
-
+        pure_expr = self.__filter_expr.to_pure(config)
         return f"{self.__base_frame.to_pure(config)}->filter(c|{pure_expr})"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:

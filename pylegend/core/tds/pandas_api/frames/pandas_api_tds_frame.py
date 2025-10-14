@@ -69,12 +69,12 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
-    @abstractmethod
-    def comparator_filtering(
-            self,
-            column: PandasApiTdsColumn,
-            operator: ComparisonOperator,
-            value: PyLegendPrimitive
-
-    ) -> "PandasApiTdsFrame":
-        pass  # pragma: no cover
+    # @abstractmethod
+    # def comparator_filtering(
+    #         self,
+    #         column: PandasApiTdsColumn,
+    #         operator: ComparisonOperator,
+    #         value: PyLegendPrimitive
+    #
+    # ) -> "PandasApiTdsFrame":
+    #     pass  # pragma: no cover
