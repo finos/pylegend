@@ -22,6 +22,18 @@ class PandasApiLogicalExpression:
         self.operator = operator  # LogicalBinaryType.AND or LogicalBinaryType.OR
         self.right = right
 
+    def __and__(self, other):
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
+        if not isinstance(other, (PandasApiComparatorFiltering, PandasApiLogicalExpression)):
+            raise TypeError(f"Unsupported operand type(s) for &: '{type(self)}' and '{type(other)}'")
+        return PandasApiLogicalExpression(self, LogicalBinaryType.AND, other)
+    def __or__(self, other):
+        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
+        if isinstance(other, (PandasApiLogicalExpression, PandasApiComparatorFiltering)):
+            return PandasApiLogicalExpression(self, LogicalBinaryType.OR, other)
+        else:
+            raise TypeError(f"Unsupported operand type(s) for |: '{type(self)}' and '{type(other)}'")
+
     def to_sql(self, config: FrameToSqlConfig) -> LogicalBinaryExpression:
         return LogicalBinaryExpression(
             self.operator,
