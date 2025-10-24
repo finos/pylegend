@@ -38,6 +38,10 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitiveEqualsExpression",
     "PyLegendPrimitiveNotEqualsExpression",
+    "PyLegendPrimitiveLessThanExpression",
+    "PyLegendPrimitiveLessThanOrEqualExpression",
+    "PyLegendPrimitiveGreaterThanExpression",
+    "PyLegendPrimitiveGreaterThanOrEqualExpression",
     "PyLegendIsEmptyExpression",
     "PyLegendIsNotEmptyExpression",
 ]
@@ -96,6 +100,112 @@ class PyLegendPrimitiveNotEqualsExpression(PyLegendBinaryExpression, PyLegendExp
             non_nullable=True,
         )
 
+class PyLegendPrimitiveLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} < {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendPrimitiveLessThanExpression.__to_sql_func,
+            PyLegendPrimitiveLessThanExpression.__to_pure_func,
+            non_nullable=True,
+        )
+
+
+class PyLegendPrimitiveLessThanOrEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN_OR_EQUAL)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} <= {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendPrimitiveLessThanOrEqualExpression.__to_sql_func,
+            PyLegendPrimitiveLessThanOrEqualExpression.__to_pure_func,
+            non_nullable=True,
+        )
+
+
+class PyLegendPrimitiveGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} > {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendPrimitiveGreaterThanExpression.__to_sql_func,
+            PyLegendPrimitiveGreaterThanExpression.__to_pure_func,
+            non_nullable=True,
+        )
+
+
+class PyLegendPrimitiveGreaterThanOrEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN_OR_EQUAL)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return f"({op1_expr} >= {op2_expr})"
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendPrimitiveGreaterThanOrEqualExpression.__to_sql_func,
+            PyLegendPrimitiveGreaterThanOrEqualExpression.__to_pure_func,
+            non_nullable=True,
+        )
 
 class PyLegendIsEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
 
