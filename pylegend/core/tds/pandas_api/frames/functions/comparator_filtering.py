@@ -86,8 +86,8 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_sql_func(
-                self.__column.to_qualified_name_reference(),
-                convert_literal_to_literal_expression(self.__value),
+                QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
+                convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
                 {},  # frame_name_to_base_query_map
                 config
             )
@@ -102,7 +102,7 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
             raise NotImplementedError(f"Operator {self.__operator} is not supported.")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        column_pure_expr = f"$c.{self.__column.get_name()}"
+        # column_pure_expr = f"$c.{self.__column.get_name()}"
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_pure_func(
                 self.__column.to_pure_expression(),

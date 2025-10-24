@@ -70,19 +70,21 @@ class PandasApiBooleanFilteringFunction:
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        new_query = copy_query(base_query)
+        should_create_sub_query = (len(base_query.groupBy) > 0)
+        base_query = create_sub_query(base_query, config, "root") if should_create_sub_query \
+            else copy_query(base_query)
 
         sql_expr = self.__filter_expr.to_sql(config)
 
-        if new_query.where is None:
-            new_query.where = sql_expr
+        if base_query.where is None:
+            base_query.where = sql_expr
         else:
-            new_query.where = LogicalBinaryExpression(
+            base_query.where = LogicalBinaryExpression(
                 type_=LogicalBinaryType.AND,  # Combine with AND
-                left=new_query.where,
+                left=base_query.where,
                 right=sql_expr
             )
-        return new_query
+        return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         pure_expr = self.__filter_expr.to_pure(config)
