@@ -101,7 +101,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
         desired_columns = [
             SingleColumn(
                 alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                expression=QualifiedNameReference(QualifiedName(["root", f'"{col}"']))
+                expression=QualifiedNameReference(QualifiedName(['"root"', f'"{col}"']))
             )
             for col in self.__get_desired_columns(col_names)
         ]
@@ -114,7 +114,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
         desired_columns = self.__get_desired_columns(col_names)
 
         selected_columns = [
-            col if col.isidentifier() else f"'{col.replace('\'', '\\\'')}'"
+            f'"col"' if col.isidentifier() else f"'{col.replace('\'', '\\\'')}'"
             for col in desired_columns
         ]
         return f"{self.__base_frame.to_pure(config)}{config.separator(1)}->select(~[{', '.join(selected_columns)}])"

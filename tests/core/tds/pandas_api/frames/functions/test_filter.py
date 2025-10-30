@@ -167,18 +167,18 @@ class TestFilterFunction:
         frame = frame.filter(items=["col2", "gold", "col1"]).filter(items=['col1'])
         expected = '''\
             SELECT
-                "root".col1 AS "col1"
+                "root"."col1" AS "col1"
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col2, gold, col1])
-              ->select(~[col1])'''
+              ->select(~["col2", "gold", "col1"])
+              ->select(~["col1"])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               '#Table(test_schema.test_table)#->select(~[col2, gold, col1])->select(~[col1])'
+               '#Table(test_schema.test_table)#->select(~["col2", "gold", "col1"])->select(~["col1"])'
 
     def test_filter_function_on_like_parameter_match(self) -> None:
         columns = [
@@ -193,54 +193,54 @@ class TestFilterFunction:
         newframe = frame.filter(like="ol")
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                "root".col3 AS "col3",
-                "root".gold AS "gold"
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                "root"."gold" AS "gold"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, col2, col3, gold])'''
+              ->select(~["col1", "col2", "col3", "gold"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[col1, col2, col3, gold])')
+               ('#Table(test_schema.test_table)#->select(~["col1", "col2", "col3", "gold"])')
 
         # Start Match
         newframe = frame.filter(like="co")
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                "root".col3 AS "col3"
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, col2, col3])'''
+              ->select(~["col1", "col2", "col3"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[col1, col2, col3])')
+               ('#Table(test_schema.test_table)#->select(~["col1", "col2", "col3"])')
 
         # End Match
         newframe = frame.filter(like="hs")
         expected = '''\
             SELECT
-                "root".sick AS "sick"
+                "root"."sick" AS "sick"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[sick])'''
+              ->select(~["sick"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[sick])')
+               ('#Table(test_schema.test_table)#->select(~["sick"])')
 
     def test_filter_function_on_regex_parameter_match(self) -> None:
         columns = [
@@ -257,33 +257,33 @@ class TestFilterFunction:
         newframe = frame.filter(regex="an$")
         expected = '''\
             SELECT
-                "root".gold AS "gold"
+                "root"."gold" AS "gold"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[gold])'''
+              ->select(~["gold"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[gold])')
+               ('#Table(test_schema.test_table)#->select(~["gold"])')
 
         newframe = frame.filter(regex="sa.*s")
         expected = '''\
             SELECT
-                "root".sick AS "sick",
-                "root".saints AS "saints"
+                "root"."sick" AS "sick",
+                "root"."saints" AS "saints"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[sick, saints])'''
+              ->select(~["sick", "saints"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[sick, saints])')
+               ('#Table(test_schema.test_table)#->select(~["sick", "saints"])')
 
     def test_filter_function_on_axis_paramter_match(self) -> None:
         columns = [
@@ -298,49 +298,49 @@ class TestFilterFunction:
         newframe = frame.filter(items=["col1", "gold"], axis=1)
         expected = '''\
                 SELECT
-                    "root".col1 AS "col1",
-                    "root".gold AS "gold"
+                    "root"."col1" AS "col1",
+                    "root"."gold" AS "gold"
                 FROM
                     test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, gold])'''
+              ->select(~["col1", "gold"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[col1, gold])')
+               ('#Table(test_schema.test_table)#->select(~["col1", "gold"])')
 
         # Axis as str
         newframe = frame.filter(like="old", axis='columns')
         expected = '''\
                 SELECT
-                    "root".gold AS "gold"
+                    "root"."gold" AS "gold"
                 FROM
                     test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[gold])'''
+              ->select(~["gold"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[gold])')
+               ('#Table(test_schema.test_table)#->select(~["gold"])')
 
         newframe = frame.filter(regex="old", axis='columns')
         expected = '''\
                         SELECT
-                            "root".gold AS "gold"
+                            "root"."gold" AS "gold"
                         FROM
                             test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[gold])'''
+              ->select(~["gold"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[gold])')
+               ('#Table(test_schema.test_table)#->select(~["gold"])')
 
     def test_filter_function_nested(self) -> None:
         columns = [
@@ -355,19 +355,19 @@ class TestFilterFunction:
         newframe = frame.filter(items=["col1", "sick", "col2"]).filter(like="ol").filter(regex="1$")
         expected = '''\
             SELECT
-                "root".col1 AS "col1"
+                "root"."col1" AS "col1"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, sick, col2])
-              ->select(~[col1, col2])
-              ->select(~[col1])'''
+              ->select(~["col1", "sick", "col2"])
+              ->select(~["col1", "col2"])
+              ->select(~["col1"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-                ('#Table(test_schema.test_table)#->select(~[col1, sick, col2])->select(~[col1, col2])->select(~[col1])')
+                ('#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])->select(~["col1", "col2"])->select(~["col1"])')
 
         # Multi line nest
         newframe = frame.filter(items=["col1", "sick", "col2"])
@@ -383,12 +383,12 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, sick, col2])
-              ->select(~[col1, col2])
-              ->select(~[col1])'''
+              ->select(~["col1", "sick", "col2"])
+              ->select(~["col1", "col2"])
+              ->select(~["col1"])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~[col1, sick, col2])->select(~[col1, col2])->select(~[col1])')
+               ('#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])->select(~["col1", "col2"])->select(~["col1"])')
 
     def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) \
             -> None:
