@@ -32,9 +32,9 @@ from tests.test_helpers import generate_pure_query_and_compile
 
 class TestFilterFunction:
 
-    @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    # @pytest.fixture(autouse=True)
+    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_filter_function_error_on_mutual_exclusion(self) -> None:
         columns = [
@@ -200,12 +200,12 @@ class TestFilterFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[col1, col2, col3, gold])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[col1, col2, col3, gold])')
 
         # Start Match
@@ -218,12 +218,12 @@ class TestFilterFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[col1, col2, col3])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[col1, col2, col3])')
 
         # End Match
@@ -234,12 +234,12 @@ class TestFilterFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[sick])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[sick])')
 
     def test_filter_function_on_regex_parameter_match(self) -> None:
@@ -261,12 +261,12 @@ class TestFilterFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[gold])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[gold])')
 
         newframe = frame.filter(regex="sa.*s")
@@ -277,12 +277,12 @@ class TestFilterFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[sick, saints])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[sick, saints])')
 
     def test_filter_function_on_axis_paramter_match(self) -> None:
@@ -303,12 +303,12 @@ class TestFilterFunction:
                 FROM
                     test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[col1, gold])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[col1, gold])')
 
         # Axis as str
@@ -319,12 +319,12 @@ class TestFilterFunction:
                 FROM
                     test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[gold])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[gold])')
 
         newframe = frame.filter(regex="old", axis='columns')
@@ -334,10 +334,137 @@ class TestFilterFunction:
                         FROM
                             test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert newframe.to_pure_query() == dedent(
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->select(~[gold])'''
         )
-        assert newframe.to_pure_query(FrameToPureConfig(pretty=False)) == \
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->select(~[gold])')
+
+    def test_filter_function_nested(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("gold"),
+            PrimitiveTdsColumn.float_column("sick")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        # Single line nest
+        newframe = frame.filter(items=["col1", "sick", "col2"]).filter(like="ol").filter(regex="1$")
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->select(~[col1, sick, col2])
+              ->select(~[col1, col2])
+              ->select(~[col1])'''
+        )
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
+                ('#Table(test_schema.test_table)#->select(~[col1, sick, col2])->select(~[col1, col2])->select(~[col1])')
+
+        # Multi line nest
+        newframe = frame.filter(items=["col1", "sick", "col2"])
+        newframe = newframe.filter(like="ol")
+        newframe = newframe.filter(regex="1$")
+
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->select(~[col1, sick, col2])
+              ->select(~[col1, col2])
+              ->select(~[col1])'''
+        )
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table)#->select(~[col1, sick, col2])->select(~[col1, col2])->select(~[col1])')
+
+    def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) \
+            -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        # Items filter
+        newframe = frame.filter(items=["First Name", "Age"])
+        expected_items = {
+            "columns": ["First Name", "Age"],
+            "rows": [
+                {"values": ["Peter", 23]},
+                {"values": ["John", 22]},
+                {"values": ["John", 12]},
+                {"values": ["Anthony", 22]},
+                {"values": ["Fabrice", 34]},
+                {"values": ["Oliver", 32]},
+                {"values": ["David", 35]},
+            ],
+        }
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_items
+
+        # Like filter
+        frame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        newframe = frame.filter(like="Name")
+        expected_like = {
+            "columns": ["First Name", "Last Name", "Firm/Legal Name"],
+            "rows": [
+                {"values": ["Peter", "Smith", "Firm X"]},
+                {"values": ["John", "Johnson", "Firm X"]},
+                {"values": ["John", "Hill", "Firm X"]},
+                {"values": ["Anthony", "Allen", "Firm X"]},
+                {"values": ["Fabrice", "Roberts", "Firm A"]},
+                {"values": ["Oliver", "Hill", "Firm B"]},
+                {"values": ["David", "Harris", "Firm C"]},
+            ],
+        }
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_like
+
+        # Regex filter
+        frame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        newframe = frame.filter(regex="^F.*Name$")
+        expected_regex = {
+            "columns": ["First Name", "Firm/Legal Name"],
+            "rows": [
+                {"values": ["Peter", "Firm X"]},
+                {"values": ["John", "Firm X"]},
+                {"values": ["John", "Firm X"]},
+                {"values": ["Anthony", "Firm X"]},
+                {"values": ["Fabrice", "Firm A"]},
+                {"values": ["Oliver", "Firm B"]},
+                {"values": ["David", "Firm C"]},
+            ],
+        }
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_regex
+
+    def test_e2e_filter_function_nested(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        newframe = (
+            frame
+            .filter(items=["First Name", "Age", "Firm/Legal Name"])
+            .filter(like="Name")
+            .filter(regex="^F.*Name$")
+        )
+        expected_nested = {
+            "columns": ["First Name", "Firm/Legal Name"],
+            "rows": [
+                {"values": ["Peter", "Firm X"]},
+                {"values": ["John", "Firm X"]},
+                {"values": ["John", "Firm X"]},
+                {"values": ["Anthony", "Firm X"]},
+                {"values": ["Fabrice", "Firm A"]},
+                {"values": ["Oliver", "Firm B"]},
+                {"values": ["David", "Firm C"]},
+            ],
+        }
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_nested

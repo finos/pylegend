@@ -28,7 +28,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language import (
     LegacyApiTdsRow,
     PyLegendPrimitive,
