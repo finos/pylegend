@@ -89,16 +89,19 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = base_query.select.distinct or (len(base_query.orderBy) > 0) or (
-                len(base_query.groupBy) > 0) or (base_query.where is not None)
-        base_query = create_sub_query(base_query, config, "root") if should_create_sub_query \
-            else copy_query(base_query)
+        should_create_sub_query = (
+                base_query.select.distinct
+                or (len(base_query.orderBy) > 0)
+                or (len(base_query.groupBy) > 0)
+                or (base_query.where is not None)
+        )
+        base_query = create_sub_query(base_query, config, "root") if should_create_sub_query else copy_query(base_query)
 
         col_names = [c.get_name() for c in self.__base_frame.columns()]
         desired_columns = [
             SingleColumn(
                 alias=config.sql_to_string_generator().get_db_extension().quote_identifier(col),
-                expression=QualifiedNameReference(QualifiedName(['"root"', col]))
+                expression=QualifiedNameReference(QualifiedName(["root", f'"{col}"']))
             )
             for col in self.__get_desired_columns(col_names)
         ]
