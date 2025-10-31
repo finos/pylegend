@@ -13,22 +13,21 @@
 # limitations under the License.
 
 import json
-import re
 from textwrap import dedent
 
 import pytest
 
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
-from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
+from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
+
 
 class TestFilterFunction:
 
@@ -86,15 +85,15 @@ class TestFilterFunction:
         # Parameter Mismatch
         with pytest.raises(ValueError) as v:
             frame = frame.filter(items=["col1", "gold"], axis=0)
-        assert v.value.args[0] == f"Invalid axis value: 0. Expected 1 or 'columns'"
+        assert v.value.args[0] == "Invalid axis value: 0. Expected 1 or 'columns'"
         with pytest.raises(ValueError) as v:
             frame = frame.filter(items=["col1", "gold"], axis='index')
-        assert v.value.args[0] == f"Invalid axis value: index. Expected 1 or 'columns'"
+        assert v.value.args[0] == "Invalid axis value: index. Expected 1 or 'columns'"
 
         # Type mismatch
         with pytest.raises(ValueError) as v:
             frame = frame.filter(items=["col1", "gold"], axis=2.5)
-        assert v.value.args[0] == f"Invalid axis value: 2.5. Expected 1 or 'columns'"
+        assert v.value.args[0] == "Invalid axis value: 2.5. Expected 1 or 'columns'"
 
     def test_filter_function_error_on_items_parameter(self) -> None:
         columns = [
@@ -108,7 +107,10 @@ class TestFilterFunction:
         # Parameter mismatch
         with pytest.raises(ValueError) as v:
             frame.filter(items=["gs", "sick", "col1", "saints"])
-        assert v.value.args[0] == "Columns ['gs', 'saints'] in `filter` items list do not exist. Available: ['col1', 'col2', 'col3', 'gold', 'sick']"
+        assert v.value.args[0] == (
+            "Columns ['gs', 'saints'] in `filter` items list do not exist. "
+            "Available: ['col1', 'col2', 'col3', 'gold', 'sick']"
+        )
 
         # Type mismatch
         with pytest.raises(TypeError) as v:
@@ -361,13 +363,15 @@ class TestFilterFunction:
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
-            #Table(test_schema.test_table)#
-              ->select(~["col1", "sick", "col2"])
-              ->select(~["col1", "col2"])
-              ->select(~["col1"])'''
+        #Table(test_schema.test_table)#
+          ->select(~["col1", "sick", "col2"])
+          ->select(~["col1", "col2"])
+          ->select(~["col1"])'''
         )
-        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-                ('#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])->select(~["col1", "col2"])->select(~["col1"])')
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == (
+            '#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])'
+            '->select(~["col1", "col2"])->select(~["col1"])'
+        )
 
         # Multi line nest
         newframe = frame.filter(items=["col1", "sick", "col2"])
@@ -387,8 +391,10 @@ class TestFilterFunction:
               ->select(~["col1", "col2"])
               ->select(~["col1"])'''
         )
-        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])->select(~["col1", "col2"])->select(~["col1"])')
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == (
+            '#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])'
+            '->select(~["col1", "col2"])->select(~["col1"])'
+        )
 
     def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) \
             -> None:

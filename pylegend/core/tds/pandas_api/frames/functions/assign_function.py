@@ -86,9 +86,6 @@ class AssignFunction(PandasApiAppliedFunction):
             )
         return new_query
 
-    def to_pure(self, config: FrameToPureConfig) -> str:
-        pass
-
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
 
