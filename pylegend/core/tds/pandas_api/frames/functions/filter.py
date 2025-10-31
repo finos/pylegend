@@ -102,7 +102,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
                 .get_db_extension()
                 .quote_identifier(col),
                 expression=QualifiedNameReference(
-                    QualifiedName(['"root"', f'"{col}"'])
+                    QualifiedName(['"root"', col])
                 ),
             )
             for col in self.__get_desired_columns(col_names)
