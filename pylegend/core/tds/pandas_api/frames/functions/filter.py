@@ -14,6 +14,8 @@
 
 import re
 
+from typing import Any
+
 from pylegend._typing import (
     PyLegendUnion,
     PyLegendOptional,
@@ -45,7 +47,7 @@ __all__: PyLegendSequence[str] = ["PandasApiFilterFunction"]
 
 class PandasApiFilterFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __items: PyLegendUnion[list, PyLegendList]
+    __items: PyLegendUnion[list[Any], PyLegendList[Any]]
     __like: str
     __regex: str
     __axis: PyLegendUnion[str, int, PyLegendInteger]
@@ -55,12 +57,12 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
         return "filter"
 
     def __init__(
-        self,
-        base_frame: PandasApiBaseTdsFrame,
-        items: PyLegendOptional[PyLegendUnion[list, PyLegendList]],
-        like: PyLegendOptional[str],
-        regex: PyLegendOptional[str],
-        axis: PyLegendUnion[str, int, PyLegendInteger],
+            self,
+            base_frame: PandasApiBaseTdsFrame,
+            items: PyLegendOptional[PyLegendUnion[list[Any], PyLegendList[Any]]],
+            like: PyLegendOptional[str],
+            regex: PyLegendOptional[str],
+            axis: PyLegendUnion[str, int, PyLegendInteger],
     ) -> None:
         self.__base_frame = base_frame
         self.__items = items
@@ -69,7 +71,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
         self.__axis = 1 if axis is None else axis
 
     def __get_desired_columns(
-        self, col_names: PyLegendSequence[str]
+            self, col_names: PyLegendSequence[str]
     ) -> PyLegendSequence[str]:
         if self.__items is not None:
             return self.__items
@@ -83,11 +85,12 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
+        db_extension = config.sql_to_string_generator().get_db_extension()
         should_create_sub_query = (
-            base_query.select.distinct
-            or (len(base_query.orderBy) > 0)
-            or (len(base_query.groupBy) > 0)
-            or (base_query.where is not None)
+                base_query.select.distinct
+                or (len(base_query.orderBy) > 0)
+                or (len(base_query.groupBy) > 0)
+                or (base_query.where is not None)
         )
         base_query = (
             create_sub_query(base_query, config, "root")
@@ -96,13 +99,21 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
         )
 
         col_names = [c.get_name() for c in self.__base_frame.columns()]
+        quotes = db_extension.quote_character()
+
+        def _is_already_quoted(identifier: str) -> bool:
+            return identifier.startswith(quotes) and identifier.endswith(quotes)
+
         desired_columns = [
             SingleColumn(
                 alias=config.sql_to_string_generator()
                 .get_db_extension()
                 .quote_identifier(col),
                 expression=QualifiedNameReference(
-                    QualifiedName(['"root"', col])
+                    QualifiedName([
+                        f"{quotes}root{quotes}",
+                        col if _is_already_quoted(col) else f"{quotes}{col}{quotes}"
+                    ])
                 ),
             )
             for col in self.__get_desired_columns(col_names)
@@ -117,13 +128,8 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
         selected_columns = []
         for col in desired_columns:
-            if col.isidentifier():
-                # Unquoted identifier
-                selected_columns.append(f'"{col}"')
-            else:
-                # Quote and escape single quotes
-                escaped = col.replace("\\", "\\\\").replace("'", "\\'")
-                selected_columns.append(f"'{escaped}'")
+            escaped = col.replace("\\", "\\\\").replace("'", "\\'")
+            selected_columns.append(f"'{escaped}'")
         return f"{self.__base_frame.to_pure(config)}{config.separator(1)}->select(~[{', '.join(selected_columns)}])"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
@@ -199,7 +205,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
                 )
 
         if not isinstance(
-            self.__axis, PyLegendUnion[str, int, PyLegendInteger]
+                self.__axis, PyLegendUnion[str, int, PyLegendInteger]
         ) or self.__axis not in [1, "columns"]:
             raise ValueError(
                 f"Unsupported axis value: {self.__axis}. Expected 1 or 'columns'"

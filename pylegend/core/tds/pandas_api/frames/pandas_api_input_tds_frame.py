@@ -17,6 +17,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendList
 )
+from pylegend.core.tds.abstract.frames.input_tds_frame import InputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.request.legend_client import LegendClient
@@ -29,7 +30,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class PandasApiInputTdsFrame(PandasApiBaseTdsFrame, metaclass=ABCMeta):
+class PandasApiInputTdsFrame(PandasApiBaseTdsFrame, InputTdsFrame, metaclass=ABCMeta):
 
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         super().__init__(columns=columns)

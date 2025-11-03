@@ -27,13 +27,14 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
+from pylegend.core.request.legend_client import LegendClient
 
 
 class TestFilterFunction:
 
-    # @pytest.fixture(autouse=True)
-    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_filter_function_error_on_mutual_exclusion(self) -> None:
         columns = [
@@ -85,15 +86,15 @@ class TestFilterFunction:
         # Parameter Mismatch
         with pytest.raises(ValueError) as v:
             frame = frame.filter(items=["col1", "gold"], axis=0)
-        assert v.value.args[0] == "Invalid axis value: 0. Expected 1 or 'columns'"
+        assert v.value.args[0] == "Unsupported axis value: 0. Expected 1 or 'columns'"
         with pytest.raises(ValueError) as v:
             frame = frame.filter(items=["col1", "gold"], axis='index')
-        assert v.value.args[0] == "Invalid axis value: index. Expected 1 or 'columns'"
+        assert v.value.args[0] == "Unsupported axis value: index. Expected 1 or 'columns'"
 
         # Type mismatch
         with pytest.raises(ValueError) as v:
             frame = frame.filter(items=["col1", "gold"], axis=2.5)
-        assert v.value.args[0] == "Invalid axis value: 2.5. Expected 1 or 'columns'"
+        assert v.value.args[0] == "Unsupported axis value: 2.5. Expected 1 or 'columns'"
 
     def test_filter_function_error_on_items_parameter(self) -> None:
         columns = [
@@ -162,8 +163,8 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.date_column("gold"),
+            PrimitiveTdsColumn.datetime_column("sick")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.filter(items=["col2", "gold", "col1"]).filter(items=['col1'])
@@ -173,14 +174,15 @@ class TestFilterFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        print("PURE = ", frame.to_pure_query())
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["col2", "gold", "col1"])
-              ->select(~["col1"])'''
+              ->select(~['col2', 'gold', 'col1'])
+              ->select(~['col1'])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               '#Table(test_schema.test_table)#->select(~["col2", "gold", "col1"])->select(~["col1"])'
+               "#Table(test_schema.test_table)#->select(~['col2', 'gold', 'col1'])->select(~['col1'])"
 
     def test_filter_function_on_like_parameter_match(self) -> None:
         columns = [
@@ -205,10 +207,10 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["col1", "col2", "col3", "gold"])'''
+              ->select(~['col1', 'col2', 'col3', 'gold'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["col1", "col2", "col3", "gold"])')
+               ("#Table(test_schema.test_table)#->select(~['col1', 'col2', 'col3', 'gold'])")
 
         # Start Match
         newframe = frame.filter(like="co")
@@ -223,13 +225,13 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["col1", "col2", "col3"])'''
+              ->select(~['col1', 'col2', 'col3'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["col1", "col2", "col3"])')
+               ("#Table(test_schema.test_table)#->select(~['col1', 'col2', 'col3'])")
 
         # End Match
-        newframe = frame.filter(like="hs")
+        newframe = frame.filter(like="ck")
         expected = '''\
             SELECT
                 "root"."sick" AS "sick"
@@ -239,10 +241,10 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["sick"])'''
+              ->select(~['sick'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["sick"])')
+               ("#Table(test_schema.test_table)#->select(~['sick'])")
 
     def test_filter_function_on_regex_parameter_match(self) -> None:
         columns = [
@@ -256,7 +258,7 @@ class TestFilterFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # string input
-        newframe = frame.filter(regex="an$")
+        newframe = frame.filter(regex="ld$")
         expected = '''\
             SELECT
                 "root"."gold" AS "gold"
@@ -266,15 +268,14 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["gold"])'''
+              ->select(~['gold'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["gold"])')
+               ("#Table(test_schema.test_table)#->select(~['gold'])")
 
         newframe = frame.filter(regex="sa.*s")
         expected = '''\
             SELECT
-                "root"."sick" AS "sick",
                 "root"."saints" AS "saints"
             FROM
                 test_schema.test_table AS "root"'''
@@ -282,10 +283,10 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["sick", "saints"])'''
+              ->select(~['saints'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["sick", "saints"])')
+               ("#Table(test_schema.test_table)#->select(~['saints'])")
 
     def test_filter_function_on_axis_paramter_match(self) -> None:
         columns = [
@@ -308,10 +309,10 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["col1", "gold"])'''
+              ->select(~['col1', 'gold'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["col1", "gold"])')
+               ("#Table(test_schema.test_table)#->select(~['col1', 'gold'])")
 
         # Axis as str
         newframe = frame.filter(like="old", axis='columns')
@@ -324,10 +325,10 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["gold"])'''
+              ->select(~['gold'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["gold"])')
+               ("#Table(test_schema.test_table)#->select(~['gold'])")
 
         newframe = frame.filter(regex="old", axis='columns')
         expected = '''\
@@ -339,10 +340,10 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~["gold"])'''
+              ->select(~['gold'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->select(~["gold"])')
+               ("#Table(test_schema.test_table)#->select(~['gold'])")
 
     def test_filter_function_nested(self) -> None:
         columns = [
@@ -356,21 +357,21 @@ class TestFilterFunction:
         # Single line nest
         newframe = frame.filter(items=["col1", "sick", "col2"]).filter(like="ol").filter(regex="1$")
         expected = '''\
-            SELECT
-                "root"."col1" AS "col1"
-            FROM
-                test_schema.test_table AS "root"'''
+                         SELECT
+                             "root"."col1" AS "col1"
+                         FROM
+                             test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
         #Table(test_schema.test_table)#
-          ->select(~["col1", "sick", "col2"])
-          ->select(~["col1", "col2"])
-          ->select(~["col1"])'''
+          ->select(~['col1', 'sick', 'col2'])
+          ->select(~['col1', 'col2'])
+          ->select(~['col1'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == (
-            '#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])'
-            '->select(~["col1", "col2"])->select(~["col1"])'
+            "#Table(test_schema.test_table)#->select(~['col1', 'sick', 'col2'])"
+            "->select(~['col1', 'col2'])->select(~['col1'])"
         )
 
         # Multi line nest
@@ -379,21 +380,21 @@ class TestFilterFunction:
         newframe = newframe.filter(regex="1$")
 
         expected = '''\
-            SELECT
-                "root".col1 AS "col1"
-            FROM
-                test_schema.test_table AS "root"'''
+                         SELECT
+                             "root"."col1" AS "col1"
+                         FROM
+                             test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
-            #Table(test_schema.test_table)#
-              ->select(~["col1", "sick", "col2"])
-              ->select(~["col1", "col2"])
-              ->select(~["col1"])'''
+        #Table(test_schema.test_table)#
+          ->select(~['col1', 'sick', 'col2'])
+          ->select(~['col1', 'col2'])
+          ->select(~['col1'])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == (
-            '#Table(test_schema.test_table)#->select(~["col1", "sick", "col2"])'
-            '->select(~["col1", "col2"])->select(~["col1"])'
+            "#Table(test_schema.test_table)#->select(~['col1', 'sick', 'col2'])"
+            "->select(~['col1', 'col2'])->select(~['col1'])"
         )
 
     def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) \
@@ -417,7 +418,6 @@ class TestFilterFunction:
         assert json.loads(res)["result"] == expected_items
 
         # Like filter
-        frame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         newframe = frame.filter(like="Name")
         expected_like = {
             "columns": ["First Name", "Last Name", "Firm/Legal Name"],
@@ -435,7 +435,6 @@ class TestFilterFunction:
         assert json.loads(res)["result"] == expected_like
 
         # Regex filter
-        frame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         newframe = frame.filter(regex="^F.*Name$")
         expected_regex = {
             "columns": ["First Name", "Firm/Legal Name"],

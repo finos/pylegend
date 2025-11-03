@@ -703,8 +703,7 @@ def qualified_name_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    return ".".join([extension.process_identifier(p, config, False) for p in qualified_name.parts[:-1]]) \
-        + "." + extension.process_identifier(qualified_name.parts[-1], config, True)
+    return ".".join([extension.process_identifier(p, config, False) for p in qualified_name.parts])
 
 
 def qualified_name_reference_processor(
