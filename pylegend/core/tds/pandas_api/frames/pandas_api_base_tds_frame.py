@@ -15,6 +15,7 @@
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 import pandas as pd
+from typing import Any
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -28,7 +29,8 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow
+from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendInteger
+from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -49,7 +51,7 @@ __all__: PyLegendSequence[str] = [
 R = PyLegendTypeVar('R')
 
 
-class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
+class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     __columns: PyLegendSequence[TdsColumn]
 
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
@@ -74,6 +76,27 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+
+    def filter(
+            self,
+            items: PyLegendOptional[PyLegendUnion[list[Any], PyLegendList[Any]]] = None,
+            like: PyLegendOptional[str] = None,
+            regex: PyLegendOptional[str] = None,
+            axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiFilterFunction(
+                self,
+                items=items,
+                like=like,
+                regex=regex,
+                axis=axis
+            )
+        )
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
