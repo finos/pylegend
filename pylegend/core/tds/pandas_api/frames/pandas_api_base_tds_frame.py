@@ -30,6 +30,8 @@ from pylegend.core.database.sql_to_string import (
 )
 from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -49,7 +51,7 @@ __all__: PyLegendSequence[str] = [
 R = PyLegendTypeVar('R')
 
 
-class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
+class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     __columns: PyLegendSequence[TdsColumn]
 
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
@@ -74,6 +76,33 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+
+    def sort_values(
+            self,
+            by: PyLegendUnion[str, PyLegendList[str]],
+            axis: PyLegendUnion[str, int] = 0,
+            ascending: PyLegendUnion[bool, PyLegendList[bool]] = True,
+            inplace: bool = False,
+            kind: PyLegendOptional[str] = None,
+            na_position: str = 'last',
+            ignore_index: bool = True,
+            key: PyLegendOptional[PyLegendCallable[[AbstractTdsRow], AbstractTdsRow]] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.sort_values_function import SortValuesFunction
+        return PandasApiAppliedFunctionTdsFrame(SortValuesFunction(
+            base_frame=self,
+            by=by,
+            axis=axis,
+            ascending=ascending,
+            inplace=inplace,
+            kind=kind,
+            na_position=na_position,
+            ignore_index=ignore_index,
+            key=key
+        ))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
