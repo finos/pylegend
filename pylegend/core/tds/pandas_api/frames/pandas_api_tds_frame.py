@@ -54,6 +54,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             items: PyLegendOptional[PyLegendList[Any]] = None,
             like: PyLegendOptional[str] = None,
             regex: PyLegendOptional[str] = None,
-            axis: PyLegendUnion[str, int, PyLegendInteger] = None
+            axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]] = None
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

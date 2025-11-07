@@ -1,4 +1,4 @@
-# Copyright 2025 gold sick
+# Copyright 2025 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ class TestFilterFunction:
 
         # Type mismatch
         with pytest.raises(ValueError) as v:
-            frame = frame.filter(items=["col1", "gold"], axis=2.5)
+            frame = frame.filter(items=["col1", "gold"], axis=2.5)   # type: ignore
         assert v.value.args[0] == "Unsupported axis value: 2.5. Expected 1 or 'columns'"
 
     def test_filter_function_error_on_items_parameter(self) -> None:
@@ -114,8 +114,8 @@ class TestFilterFunction:
         )
 
         # Type mismatch
-        with pytest.raises(TypeError) as v:
-            frame = frame.filter(items="pope")
+        with pytest.raises(TypeError) as v:   # type: ignore
+            frame = frame.filter(items="pope")   # type: ignore
         assert v.value.args[0] == "Index(...) must be called with a collection, got 'pope'"
 
     def test_filter_function_error_on_like_parameter(self) -> None:
@@ -133,9 +133,9 @@ class TestFilterFunction:
         assert v.value.args[0] == "No columns match the pattern 'zz'. Available: ['col1', 'col2', 'col3', 'gold', 'sick']"
 
         # Type mismatch
-        with pytest.raises(TypeError) as v:
+        with pytest.raises(TypeError) as v:   # type: ignore
             t1 = ["21", "step", 99]
-            frame = frame.filter(like=t1)
+            frame = frame.filter(like=t1)   # type: ignore
         assert v.value.args[0] == f"'like' must be a string, got {type(t1)}"
 
     def test_filter_function_error_on_regex_parameter(self) -> None:
@@ -153,9 +153,9 @@ class TestFilterFunction:
         assert v.value.args[0] == "No columns match the regex '$z'. Available: ['col1', 'col2', 'col3', 'gold', 'sick']"
 
         # Type mismatch
-        with pytest.raises(TypeError) as v:
+        with pytest.raises(TypeError) as v:   # type: ignore
             t1 = ["21", "step", 99]
-            frame = frame.filter(regex=t1)
+            frame = frame.filter(regex=t1)   # type: ignore
         assert v.value.args[0] == f"'regex' must be a string, got {type(t1)}"
 
     def test_filter_function_on_items_parameter_match(self) -> None:

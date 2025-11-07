@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import re
-
-from typing import Any
+from typing import Any, cast, List
 
 from pylegend._typing import (
     PyLegendUnion,
@@ -28,6 +27,7 @@ from pylegend.core.language import (
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
+    SelectItem,
     Select,
     QualifiedNameReference,
     QualifiedName,
@@ -47,10 +47,10 @@ __all__: PyLegendSequence[str] = ["PandasApiFilterFunction"]
 
 class PandasApiFilterFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __items: PyLegendUnion[list[Any], PyLegendList[Any]]
-    __like: str
-    __regex: str
-    __axis: PyLegendUnion[str, int, PyLegendInteger]
+    __items: PyLegendOptional[PyLegendUnion[list[Any], PyLegendList[Any]]]
+    __like: PyLegendOptional[str]
+    __regex: PyLegendOptional[str]
+    __axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]]
 
     @classmethod
     def name(cls) -> str:
@@ -62,7 +62,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             items: PyLegendOptional[PyLegendUnion[list[Any], PyLegendList[Any]]],
             like: PyLegendOptional[str],
             regex: PyLegendOptional[str],
-            axis: PyLegendUnion[str, int, PyLegendInteger],
+            axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]],
     ) -> None:
         self.__base_frame = base_frame
         self.__items = items
@@ -119,7 +119,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             for col in self.__get_desired_columns(col_names)
         ]
 
-        base_query.select = Select(distinct=False, selectItems=desired_columns)
+        base_query.select = Select(distinct=False, selectItems=cast(List[SelectItem], desired_columns))
         return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -174,7 +174,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
         if self.__items is not None:
-            if not isinstance(self.__items, PyLegendUnion[list, PyLegendList]):
+            if not isinstance(self.__items, (list, PyLegendList)):
                 raise TypeError(
                     f"Index(...) must be called with a collection, got '{self.__items}'"
                 )
@@ -205,7 +205,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
                 )
 
         if not isinstance(
-                self.__axis, PyLegendUnion[str, int, PyLegendInteger]
+                self.__axis, (str, int, PyLegendInteger)
         ) or self.__axis not in [1, "columns"]:
             raise ValueError(
                 f"Unsupported axis value: {self.__axis}. Expected 1 or 'columns'"
