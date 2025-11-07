@@ -14,10 +14,20 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
+
+from typing import Any
+
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+
 from pylegend._typing import (
     PyLegendCallable,
     PyLegendSequence,
     PyLegendUnion,
+    PyLegendOptional,
+    PyLegendList,
+    PyLegendTuple
 )
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.language import (
@@ -39,5 +49,18 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
                 [LegacyApiTdsRow],
                 PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def drop(
+            self,
+            labels: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            axis: PyLegendUnion[str, int, PyLegendInteger] = 1,
+            index: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            columns: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
+            inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
+            errors: str = "raise",
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

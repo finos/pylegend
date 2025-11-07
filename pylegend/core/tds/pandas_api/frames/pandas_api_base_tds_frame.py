@@ -14,29 +14,34 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
+
+from typing import Any
+
 import pandas as pd
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
     PyLegendList,
+    PyLegendTuple,
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow
+from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendInteger, PyLegendBoolean
+from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
 )
+from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import (
     ToPandasDfResultHandler,
     PandasDfReadConfig,
@@ -74,6 +79,33 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+
+    def drop(
+            self,
+            labels: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            axis: PyLegendUnion[str, int, PyLegendInteger] = 1,
+            index: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            columns: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
+            inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
+            errors: str = "raise",
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
+            PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.drop import PandasApiDropFunction
+
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiDropFunction(
+                base_frame=self,
+                labels=labels,
+                axis=axis,
+                index=index,
+                columns=columns,
+                level=level,
+                inplace=inplace,
+                error=errors
+            )
+        )
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

@@ -13,16 +13,16 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.abstract.frames.applied_function_tds_frame import AppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-
+from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "PandasApiAppliedFunctionTdsFrame",
@@ -30,30 +30,9 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class PandasApiAppliedFunction(metaclass=ABCMeta):
-    @classmethod
+class PandasApiAppliedFunction(AppliedFunction, metaclass=ABCMeta):
     @abstractmethod
-    def name(cls) -> str:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def base_frame(self) -> PandasApiBaseTdsFrame:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def validate(self) -> bool:
+    def tds_frame_parameters(self) -> PyLegendSequence["PandasApiBaseTdsFrame"]:
         pass  # pragma: no cover
 
 
@@ -69,7 +48,7 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
         return self.__applied_function.to_sql(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        raise RuntimeError("to_pure is not supported for PandasApiAppliedFunctionTdsFrame")
+        return self.__applied_function.to_pure(config)
 
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return [
