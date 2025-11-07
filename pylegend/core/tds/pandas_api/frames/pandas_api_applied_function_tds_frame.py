@@ -41,6 +41,10 @@ class PandasApiAppliedFunction(metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        pass  # pragma: no cover
+
+    @abstractmethod
     def base_frame(self) -> PandasApiBaseTdsFrame:
         pass  # pragma: no cover
 
@@ -69,7 +73,7 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
         return self.__applied_function.to_sql(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        raise RuntimeError("to_pure is not supported for PandasApiAppliedFunctionTdsFrame")
+        return self.__applied_function.to_pure(config)
 
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return [

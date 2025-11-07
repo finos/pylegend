@@ -18,7 +18,10 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendSequence,
     PyLegendUnion,
+    PyLegendList,
+    PyLegendOptional,
 )
+from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.language import (
     LegacyApiTdsRow,
@@ -39,5 +42,19 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
                 [LegacyApiTdsRow],
                 PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def sort_values(
+            self,
+            by: PyLegendUnion[str, PyLegendList[str]],
+            axis: PyLegendUnion[str, int] = 0,
+            ascending: PyLegendUnion[bool, PyLegendList[bool]] = True,
+            inplace: bool = False,
+            kind: PyLegendOptional[str] = None,
+            na_position: str = 'last',
+            ignore_index: bool = True,
+            key: PyLegendOptional[PyLegendCallable[[AbstractTdsRow], AbstractTdsRow]] = None
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
