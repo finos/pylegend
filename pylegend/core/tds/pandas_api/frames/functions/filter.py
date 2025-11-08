@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import re
-from typing import Any, cast, List
+from typing import cast, List
 
 from pylegend._typing import (
     PyLegendUnion,
     PyLegendOptional,
     PyLegendSequence,
-    PyLegendList,
+    PyLegendList
 )
 from pylegend.core.language import (
     PyLegendInteger,
@@ -47,7 +47,7 @@ __all__: PyLegendSequence[str] = ["PandasApiFilterFunction"]
 
 class PandasApiFilterFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __items: PyLegendOptional[PyLegendUnion[list[Any], PyLegendList[Any]]]
+    __items: PyLegendOptional[PyLegendList[str]]
     __like: PyLegendOptional[str]
     __regex: PyLegendOptional[str]
     __axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]]
@@ -59,7 +59,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            items: PyLegendOptional[PyLegendUnion[list[Any], PyLegendList[Any]]],
+            items: PyLegendOptional[PyLegendList[str]],
             like: PyLegendOptional[str],
             regex: PyLegendOptional[str],
             axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]],
