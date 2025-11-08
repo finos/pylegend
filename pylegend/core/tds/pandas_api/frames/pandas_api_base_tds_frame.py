@@ -15,7 +15,6 @@
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 import pandas as pd
-from typing import Any
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -79,7 +78,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def filter(
             self,
-            items: PyLegendOptional[PyLegendUnion[list[Any], PyLegendList[Any]]] = None,
+            items: PyLegendOptional[PyLegendList[str]] = None,
             like: PyLegendOptional[str] = None,
             regex: PyLegendOptional[str] = None,
             axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]] = None
