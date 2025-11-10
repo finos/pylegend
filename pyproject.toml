@@ -37,6 +37,9 @@ pg8000 = ">=1.0.0"
 pymysql = ">=1.0.0"
 cryptography = ">=40.0.0"
 wrapt = "<2.0.0"
+exceptiongroup = [
+    { python = "<3.11" }
+]
 
 [build-system]
 requires = ["poetry-core"]
