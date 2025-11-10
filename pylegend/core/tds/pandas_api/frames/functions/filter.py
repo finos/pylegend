@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import re
-from typing import cast, List
 
 from pylegend._typing import (
     PyLegendUnion,
     PyLegendOptional,
     PyLegendSequence,
-    PyLegendList
+    PyLegendList,
+    PyLegendTuple
 )
 from pylegend.core.language import (
     PyLegendInteger,
@@ -27,10 +27,7 @@ from pylegend.core.language import (
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
-    SelectItem,
-    Select,
-    QualifiedNameReference,
-    QualifiedName,
+    SelectItem
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
     PandasApiAppliedFunction,
@@ -54,7 +51,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "filter"
+        return "filter"   # pragma: no cover
 
     def __init__(
             self,
@@ -81,56 +78,46 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             regex_pattern = re.compile(self.__regex)
             return [col for col in col_names if regex_pattern.search(col)]
 
-        return []
+        return []   # pragma: no cover
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
-        should_create_sub_query = (
+        columns_to_retain = [db_extension.quote_identifier(x) for x in
+                             self.__get_desired_columns([c.get_name() for c in self.__base_frame.columns()])]
+
+        sub_query_required = (
+                len(base_query.groupBy) > 0 or
+                len(base_query.orderBy) > 0 or
+                base_query.having is not None or
                 base_query.select.distinct
-                or (len(base_query.orderBy) > 0)
-                or (len(base_query.groupBy) > 0)
-                or (base_query.where is not None)
-        )
-        base_query = (
-            create_sub_query(base_query, config, "root")
-            if should_create_sub_query
-            else copy_query(base_query)
         )
 
-        col_names = [c.get_name() for c in self.__base_frame.columns()]
-        quotes = db_extension.quote_character()
+        if sub_query_required:
+            new_query = create_sub_query(base_query, config, "root", columns_to_retain=columns_to_retain)
+            return new_query
+        else:
+            new_cols_with_index: PyLegendList[PyLegendTuple[int, SelectItem]] = []
+            for col in base_query.select.selectItems:
+                if not isinstance(col, SingleColumn):
+                    raise ValueError("Select operation not supported for queries with columns other than SingleColumn")
+                if col.alias is None:
+                    raise ValueError("Select operation not supported for queries with SingleColumns with missing alias")
+                if col.alias in columns_to_retain:
+                    new_cols_with_index.append((columns_to_retain.index(col.alias), col))
 
-        def _is_already_quoted(identifier: str) -> bool:
-            return identifier.startswith(quotes) and identifier.endswith(quotes)
-
-        desired_columns = [
-            SingleColumn(
-                alias=config.sql_to_string_generator()
-                .get_db_extension()
-                .quote_identifier(col),
-                expression=QualifiedNameReference(
-                    QualifiedName([
-                        f"{quotes}root{quotes}",
-                        col if _is_already_quoted(col) else f"{quotes}{col}{quotes}"
-                    ])
-                ),
-            )
-            for col in self.__get_desired_columns(col_names)
-        ]
-
-        base_query.select = Select(distinct=False, selectItems=cast(List[SelectItem], desired_columns))
-        return base_query
+            new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
+            new_query = copy_query(base_query)
+            new_query.select.selectItems = new_select_items
+            return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         col_names = [c.get_name() for c in self.__base_frame.columns()]
         desired_columns = self.__get_desired_columns(col_names)
-
-        selected_columns = []
-        for col in desired_columns:
-            escaped = col.replace("\\", "\\\\").replace("'", "\\'")
-            selected_columns.append(f"'{escaped}'")
-        return f"{self.__base_frame.to_pure(config)}{config.separator(1)}->select(~[{', '.join(selected_columns)}])"
+        return (
+            f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+            f"->select(~[{', '.join(desired_columns)}])"
+        )
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
@@ -140,22 +127,12 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         base_cols = [c.copy() for c in self.__base_frame.columns()]
-        if self.__items is not None:
-            return [
-                base_col.copy()
-                for c in self.__items
-                for base_col in base_cols
-                if c == base_col.get_name()
-            ]
-        elif self.__like is not None:
-            return [col.copy() for col in base_cols if self.__like in col.get_name()]
-        elif self.__regex is not None:
-            return [
-                col.copy()
-                for col in base_cols
-                if re.search(self.__regex, col.get_name())
-            ]
-        return []
+        desired_col_names = self.__get_desired_columns([c.get_name() for c in base_cols])
+        return [
+            base_col.copy()
+            for base_col in base_cols
+            if base_col.get_name() in desired_col_names
+        ]
 
     def validate(self) -> bool:
         mutual_exclusion = sum(
