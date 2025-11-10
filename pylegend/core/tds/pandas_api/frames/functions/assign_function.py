@@ -87,7 +87,7 @@ class AssignFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        raise NotImplementedError("to_pure is not implemented yet")
+        raise NotImplementedError("to_pure is not implemented yet")  # pragma: no cover
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
