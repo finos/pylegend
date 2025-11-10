@@ -201,8 +201,8 @@ class TestSortValuesFunction:
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [
                         {'values': ['John', 'Hill', 12, 'Firm X']},
-                        {'values': ['John', 'Johnson', 22, 'Firm X']},
                         {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                        {'values': ['John', 'Johnson', 22, 'Firm X']},
                         {'values': ['Peter', 'Smith', 23, 'Firm X']},
                         {'values': ['Oliver', 'Hill', 32, 'Firm B']},
                         {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
