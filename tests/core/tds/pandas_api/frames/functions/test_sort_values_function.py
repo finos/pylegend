@@ -122,11 +122,11 @@ class TestSortValuesFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->sort([~'col2'->ascending(), ~'col1'->ascending()])'''
+              ->sort([~col2->ascending(), ~col1->ascending()])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
                                                self.legend_client) == ("#Table(test_schema.test_table)#->sort(["
-                                                                       "~'col2'->ascending(), ~'col1'->ascending()])")
+                                                                       "~col2->ascending(), ~col1->ascending()])")
 
     def test_ascending_descending(self) -> None:
         columns = [
@@ -148,11 +148,11 @@ class TestSortValuesFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->sort([~'col1'->ascending(), ~'col2'->descending()])'''
+              ->sort([~col1->ascending(), ~col2->descending()])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
                                                self.legend_client) == ("#Table(test_schema.test_table)#->sort(["
-                                                                       "~'col1'->ascending(), ~'col2'->descending()])")
+                                                                       "~col1->ascending(), ~col2->descending()])")
 
     def test_single_column(self) -> None:
         columns = [
@@ -173,11 +173,11 @@ class TestSortValuesFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
                 #Table(test_schema.test_table)#
-                  ->sort([~'col1'->ascending()])'''
+                  ->sort([~col1->ascending()])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
                                                self.legend_client) == ("#Table(test_schema.test_table)#->sort(["
-                                                                       "~'col1'->ascending()])")
+                                                                       "~col1->ascending()])")
 
     def test_e2e_single_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
@@ -194,6 +194,23 @@ class TestSortValuesFunction:
                     ]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+    def test_e2e_column_order_preservation(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.sort_values(by=["Age", "First Name"])
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [
+                        {'values': ['John', 'Hill', 12, 'Firm X']},
+                        {'values': ['John', 'Johnson', 22, 'Firm X']},
+                        {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                        {'values': ['Peter', 'Smith', 23, 'Firm X']},
+                        {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                        {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                        {'values': ['David', 'Harris', 35, 'Firm C']}
+                    ]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        
 
     def test_e2e_date_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])

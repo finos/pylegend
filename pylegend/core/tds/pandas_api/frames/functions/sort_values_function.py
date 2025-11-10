@@ -76,23 +76,16 @@ class SortValuesFunction(PandasApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query: QuerySpecification = self.__base_frame.to_sql_query_object(config)
-
-        should_create_sub_query = (
-            (base_query.offset is not None) or (base_query.limit is not None)
-        )
-
+        should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
         new_query = (
-            create_sub_query(base_query, config, "root")
-            if should_create_sub_query
+            create_sub_query(base_query, config, "root") if should_create_sub_query
             else copy_query(base_query)
         )
-
         new_query.orderBy = [
             SortItem(
                 sortKey=self.get_expression_from_column_name(new_query, column_name, config),
                 ordering=(
-                    SortItemOrdering.ASCENDING
-                    if ascending
+                    SortItemOrdering.ASCENDING if ascending
                     else SortItemOrdering.DESCENDING
                 ),
                 nullOrdering=SortItemNullOrdering.UNDEFINED,
@@ -115,7 +108,7 @@ class SortValuesFunction(PandasApiAppliedFunction):
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         sort_items = [
-            f"~'{column_name}'->ascending()" if ascending else f"~'{column_name}'->descending()"
+            f"~{column_name}->ascending()" if ascending else f"~{column_name}->descending()"
             for column_name, ascending in zip(self.__by, self.__ascending)
         ]
         return (
