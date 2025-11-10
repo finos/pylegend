@@ -41,8 +41,8 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # With axis
@@ -60,8 +60,8 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # With axis
@@ -79,21 +79,21 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Parameter Mismatch
         with pytest.raises(ValueError) as v:
-            frame = frame.filter(items=["col1", "gold"], axis=0)
+            frame = frame.filter(items=["col1", "col4"], axis=0)
         assert v.value.args[0] == "Unsupported axis value: 0. Expected 1 or 'columns'"
         with pytest.raises(ValueError) as v:
-            frame = frame.filter(items=["col1", "gold"], axis='index')
+            frame = frame.filter(items=["col1", "col4"], axis='index')
         assert v.value.args[0] == "Unsupported axis value: index. Expected 1 or 'columns'"
 
         # Type mismatch
         with pytest.raises(ValueError) as v:
-            frame = frame.filter(items=["col1", "gold"], axis=2.5)   # type: ignore
+            frame = frame.filter(items=["col1", "col4"], axis=2.5)   # type: ignore
         assert v.value.args[0] == "Unsupported axis value: 2.5. Expected 1 or 'columns'"
 
     def test_filter_function_error_on_items_parameter(self) -> None:
@@ -101,16 +101,16 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Parameter mismatch
         with pytest.raises(ValueError) as v:
-            frame.filter(items=["gs", "sick", "col1", "saints"])
+            frame.filter(items=["esc", "col5", "col1", "col6"])
         assert v.value.args[0] == (
-            "Columns ['gs', 'saints'] in `filter` items list do not exist. "
-            "Available: ['col1', 'col2', 'col3', 'gold', 'sick']"
+            "Columns ['esc', 'col6'] in `filter` items list do not exist. "
+            "Available: ['col1', 'col2', 'col3', 'col4', 'col5']"
         )
 
         # Type mismatch
@@ -123,14 +123,14 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Parameter mismatch
         with pytest.raises(ValueError) as v:
             frame = frame.filter(like="zz")
-        assert v.value.args[0] == "No columns match the pattern 'zz'. Available: ['col1', 'col2', 'col3', 'gold', 'sick']"
+        assert v.value.args[0] == "No columns match the pattern 'zz'. Available: ['col1', 'col2', 'col3', 'col4', 'col5']"
 
         # Type mismatch
         with pytest.raises(TypeError) as v:   # type: ignore
@@ -143,14 +143,14 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Parameter Mismatch
         with pytest.raises(ValueError) as v:
             frame = frame.filter(regex="$z")
-        assert v.value.args[0] == "No columns match the regex '$z'. Available: ['col1', 'col2', 'col3', 'gold', 'sick']"
+        assert v.value.args[0] == "No columns match the regex '$z'. Available: ['col1', 'col2', 'col3', 'col4', 'col5']"
 
         # Type mismatch
         with pytest.raises(TypeError) as v:   # type: ignore
@@ -168,11 +168,11 @@ class TestFilterFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.date_column("gold"),
-            PrimitiveTdsColumn.datetime_column("sick")
+            PrimitiveTdsColumn.date_column("col4"),
+            PrimitiveTdsColumn.datetime_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.filter(items=["col2", "gold", "col1"]).filter(items=['col1'])
+        frame = frame.filter(items=["col2", "col4", "col1"]).filter(items=['col1'])
         expected = '''\
             SELECT
                 "root".col1 AS "col1"
@@ -183,19 +183,19 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col2, gold, col1])
+              ->select(~[col2, col4, col1])
               ->select(~[col1])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->select(~[col2, gold, col1])->select(~[col1])"
+               "#Table(test_schema.test_table)#->select(~[col2, col4, col1])->select(~[col1])"
 
     def test_filter_function_on_like_parameter_match(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("ppl5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Middle match
@@ -205,17 +205,17 @@ class TestFilterFunction:
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
                 "root".col3 AS "col3",
-                "root".gold AS "gold"
+                "root".col4 AS "col4"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, col2, col3, gold])'''
+              ->select(~[col1, col2, col3, col4])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[col1, col2, col3, gold])")
+               ("#Table(test_schema.test_table)#->select(~[col1, col2, col3, col4])")
 
         # Start Match
         newframe = frame.filter(like="co")
@@ -223,144 +223,145 @@ class TestFilterFunction:
             SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
-                "root".col3 AS "col3"
+                "root".col3 AS "col3",
+                "root".col4 AS "col4"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, col2, col3])'''
+              ->select(~[col1, col2, col3, col4])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[col1, col2, col3])")
+               ("#Table(test_schema.test_table)#->select(~[col1, col2, col3, col4])")
 
         # End Match
-        newframe = frame.filter(like="ck")
+        newframe = frame.filter(like="l5")
         expected = '''\
             SELECT
-                "root".sick AS "sick"
+                "root".ppl5 AS "ppl5"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[sick])'''
+              ->select(~[ppl5])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[sick])")
+               ("#Table(test_schema.test_table)#->select(~[ppl5])")
 
     def test_filter_function_on_regex_parameter_match(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick"),
-            PrimitiveTdsColumn.float_column("saints"),
-            PrimitiveTdsColumn.float_column("sao")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5"),
+            PrimitiveTdsColumn.float_column("same"),
+            PrimitiveTdsColumn.float_column("liquid")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # string input
-        newframe = frame.filter(regex="ld$")
+        newframe = frame.filter(regex="id$")
         expected = '''\
             SELECT
-                "root".gold AS "gold"
+                "root".liquid AS "liquid"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[gold])'''
+              ->select(~[liquid])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[gold])")
+               ("#Table(test_schema.test_table)#->select(~[liquid])")
 
-        newframe = frame.filter(regex="sa.*s")
+        newframe = frame.filter(regex="sa.*e")
         expected = '''\
             SELECT
-                "root".saints AS "saints"
+                "root".same AS "same"
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[saints])'''
+              ->select(~[same])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[saints])")
+               ("#Table(test_schema.test_table)#->select(~[same])")
 
     def test_filter_function_on_axis_paramter_match(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Axis as int
-        newframe = frame.filter(items=["col1", "gold"], axis=1)
+        newframe = frame.filter(items=["col1", "col4"], axis=1)
         expected = '''\
                 SELECT
                     "root".col1 AS "col1",
-                    "root".gold AS "gold"
+                    "root".col4 AS "col4"
                 FROM
                     test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1, gold])'''
+              ->select(~[col1, col4])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[col1, gold])")
+               ("#Table(test_schema.test_table)#->select(~[col1, col4])")
 
         # Axis as str
-        newframe = frame.filter(like="old", axis='columns')
+        newframe = frame.filter(like="ol4", axis='columns')
         expected = '''\
                 SELECT
-                    "root".gold AS "gold"
+                    "root".col4 AS "col4"
                 FROM
                     test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[gold])'''
+              ->select(~[col4])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[gold])")
+               ("#Table(test_schema.test_table)#->select(~[col4])")
 
-        newframe = frame.filter(regex="old", axis='columns')
+        newframe = frame.filter(regex="ol4", axis='columns')
         expected = '''\
                         SELECT
-                            "root".gold AS "gold"
+                            "root".col4 AS "col4"
                         FROM
                             test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[gold])'''
+              ->select(~[col4])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ("#Table(test_schema.test_table)#->select(~[gold])")
+               ("#Table(test_schema.test_table)#->select(~[col4])")
 
     def test_filter_function_nested(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("gold"),
-            PrimitiveTdsColumn.float_column("sick")
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("pol5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Single line nest
-        newframe = frame.filter(items=["col1", "sick", "col2"]).filter(like="ol").filter(regex="1$")
+        newframe = frame.filter(items=["col1", "pol5", "col2"]).filter(like="co").filter(regex="1$")
         expected = '''\
                          SELECT
                              "root".col1 AS "col1"
@@ -370,18 +371,18 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
         #Table(test_schema.test_table)#
-          ->select(~[col1, sick, col2])
+          ->select(~[col1, pol5, col2])
           ->select(~[col1, col2])
           ->select(~[col1])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->select(~[col1, sick, col2])"
+            "#Table(test_schema.test_table)#->select(~[col1, pol5, col2])"
             "->select(~[col1, col2])->select(~[col1])"
         )
 
         # Multi line nest
-        newframe = frame.filter(items=["col1", "sick", "col2"])
-        newframe = newframe.filter(like="ol")
+        newframe = frame.filter(items=["col1", "pol5", "col2"])
+        newframe = newframe.filter(like="co")
         newframe = newframe.filter(regex="1$")
 
         expected = '''\
@@ -393,12 +394,12 @@ class TestFilterFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
         #Table(test_schema.test_table)#
-          ->select(~[col1, sick, col2])
+          ->select(~[col1, pol5, col2])
           ->select(~[col1, col2])
           ->select(~[col1])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->select(~[col1, sick, col2])"
+            "#Table(test_schema.test_table)#->select(~[col1, pol5, col2])"
             "->select(~[col1, col2])->select(~[col1])"
         )
 
