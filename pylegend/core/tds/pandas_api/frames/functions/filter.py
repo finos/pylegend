@@ -24,6 +24,7 @@ from pylegend._typing import (
 from pylegend.core.language import (
     PyLegendInteger,
 )
+from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
@@ -51,7 +52,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "filter"   # pragma: no cover
+        return "filter"  # pragma: no cover
 
     def __init__(
             self,
@@ -78,7 +79,7 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             regex_pattern = re.compile(self.__regex)
             return [col for col in col_names if regex_pattern.search(col)]
 
-        return []   # pragma: no cover
+        return []  # pragma: no cover
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
@@ -114,9 +115,10 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         col_names = [c.get_name() for c in self.__base_frame.columns()]
         desired_columns = self.__get_desired_columns(col_names)
+        escaped_columns = [escape_column_name(col_name) for col_name in desired_columns]
         return (
             f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-            f"->select(~[{', '.join(desired_columns)}])"
+            f"->select(~[{', '.join(escaped_columns)}])"
         )
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
