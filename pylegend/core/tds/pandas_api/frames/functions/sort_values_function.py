@@ -39,9 +39,9 @@ from pylegend.core.tds.tds_column import TdsColumn
 
 class SortValuesFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __by: PyLegendUnion[str, PyLegendList[str]]
+    __by: PyLegendList[str]
     __axis: PyLegendUnion[str, int]
-    __ascending: PyLegendUnion[bool, PyLegendList[bool]]
+    __ascending: PyLegendList[bool]
     __inplace: bool
     __kind: PyLegendOptional[str]
     __na_position: str
@@ -65,9 +65,9 @@ class SortValuesFunction(PandasApiAppliedFunction):
             key: PyLegendOptional[PyLegendCallable[[AbstractTdsRow], AbstractTdsRow]] = None
     ) -> None:
         self.__base_frame = base_frame
-        self.__by = by
+        self.__by_input = by
         self.__axis = axis
-        self.__ascending = ascending
+        self.__ascending_input = ascending
         self.__inplace = inplace
         self.__kind = kind
         self.__na_position = na_position
@@ -160,11 +160,8 @@ class SortValuesFunction(PandasApiAppliedFunction):
             column.get_name() for column in self.__base_frame.columns()
         ]
 
-        if isinstance(self.__by, str):
-            self.__by = [self.__by]
-
-        if isinstance(self.__ascending, bool):
-            self.__ascending = self._build_ascending_list()
+        self.__by = self._build_by_list()
+        self.__ascending = self._build_ascending_list()
 
         if len(self.__by) != len(self.__ascending):
             raise ValueError(
@@ -180,10 +177,16 @@ class SortValuesFunction(PandasApiAppliedFunction):
 
         return True
 
+    def _build_by_list(self) -> PyLegendList[str]:
+        if isinstance(self.__by_input, str):
+            return [self.__by_input]
+        else:
+            return self.__by_input
+        
     def _build_ascending_list(self) -> PyLegendList[bool]:
-        if self.__ascending is True:
+        if self.__ascending_input is True:
             return [True for _ in self.__by]
-        elif self.__ascending is False:
+        elif self.__ascending_input is False:
             return [False for _ in self.__by]
         else:
-            return self.__ascending
+            return self.__ascending_input
