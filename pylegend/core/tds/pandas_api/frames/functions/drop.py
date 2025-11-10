@@ -84,27 +84,22 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
             if not_found:
                 raise KeyError(f"{not_found} not found in axis")
 
-        quotes = db_extension.quote_character()
+        columns_to_retain = [col for col in base_cols if col not in self.__columns]
+        new_cols_with_index = []
+        for col in base_query.select.selectItems:
+            if not isinstance(col, SingleColumn):
+                raise ValueError(
+                    "Drop operation not supported for queries with columns other than SingleColumn")  # pragma: no cover
+            if col.alias is None:
+                raise ValueError(
+                    "Drop operation not supported for queries with SingleColumns with missing alias")  # pragma: no cover
+            if col.alias in columns_to_retain:
+                new_cols_with_index.append((columns_to_retain.index(col.alias), col))
 
-        def _is_already_quoted(identifier: str) -> bool:
-            return identifier.startswith(quotes) and identifier.endswith(quotes)
-
-        new_cols = [col for col in base_cols if col not in self.__columns]
-        desired_columns = [
-            SingleColumn(
-                alias=db_extension.quote_identifier(col),
-                expression=QualifiedNameReference(
-                    QualifiedName([
-                        f"{quotes}root{quotes}",
-                        col if _is_already_quoted(col) else f"{quotes}{col}{quotes}"
-                    ])
-                ),
-            )
-            for col in new_cols
-        ]
-
-        base_query.select = Select(distinct=False, selectItems=desired_columns)
-        return base_query
+        new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
+        new_query = copy_query(base_query)
+        new_query.select.selectItems = new_select_items
+        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
