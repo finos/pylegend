@@ -175,7 +175,7 @@ class SortValuesFunction(PandasApiAppliedFunction):
             return [self.__by_input]
         else:
             return self.__by_input
-        
+
     def _build_ascending_list(self) -> PyLegendList[bool]:
         if self.__ascending_input is True:
             return [True for _ in self.__by]

@@ -210,7 +210,6 @@ class TestSortValuesFunction:
                     ]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
-        
 
     def test_e2e_date_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
