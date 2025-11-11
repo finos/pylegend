@@ -76,7 +76,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     def truncate(
             self,
             before: PyLegendUnion[str, int] = 0,
-            after: PyLegendUnion[str, int] = int('inf'),
+            after: PyLegendUnion[str, int] = None,
             axis: PyLegendUnion[str, int] = 0,
             copy: bool = True
     ) -> "PandasApiTdsFrame":

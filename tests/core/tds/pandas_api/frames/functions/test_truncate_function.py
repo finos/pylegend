@@ -36,7 +36,6 @@ class TestTruncateFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as v:
-            frame.truncate(["col3"])
-        assert v.value.args[0] == "Column - 'col3' in sort_values columns list doesn't exist in the current frame. " \
-                                  "Current frame columns: ['col1', 'col2']"
+            frame.truncate(axis=1)
+        assert v.value.args[0] == "The 'axis' parameter of the truncate function must be 0 or 'index', but got: 1"
     

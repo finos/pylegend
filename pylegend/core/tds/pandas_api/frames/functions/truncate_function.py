@@ -59,7 +59,8 @@ class TruncateFunction(PandasApiAppliedFunction):
             else copy_query(base_query)
         )
         new_query.offset = self.__before
-        new_query.limit = self.__after - self.__before + 1
+        if self.__after is not None:
+            new_query.limit = self.__after - self.__before + 1
         return new_query
     
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -93,24 +94,25 @@ class TruncateFunction(PandasApiAppliedFunction):
             raise ValueError(
                 f"The 'before' parameter of the truncate function must be an integer, "
                 f"but got: {self.__before} (type: {type(self.__before).__name__})"
-            ) 
-    
-        if type(self.__after) not in [int]:
-            raise ValueError(
-                f"The 'after' parameter of the truncate function must be an integer, "
-                f"but got: {self.__after} (type: {type(self.__after).__name__})"
             )
 
         if self.__before < 0:
             self.__before = 0
 
-        if self.__after < 0:
-            self.__after = 0
-        
-        if self.__before > self.__after:
-            raise ValueError(
-                f"The 'before' parameter of the truncate function must be less than or equal to the 'after' parameter, "
-                f"but got: before={self.__before}, after={self.__after}"
-            )
+        if self.__after is not None:
+            if type(self.__after) not in [int]:
+                raise ValueError(
+                    f"The 'after' parameter of the truncate function must be an integer, "
+                    f"but got: {self.__after} (type: {type(self.__after).__name__})"
+                )
+
+            if self.__after < 0:
+                self.__after = 0
+            
+            if self.__before > self.__after:
+                raise ValueError(
+                    f"The 'before' parameter of the truncate function must be less than or equal to the 'after' parameter, "
+                    f"but got: before={self.__before}, after={self.__after}"
+                )
 
         return True
