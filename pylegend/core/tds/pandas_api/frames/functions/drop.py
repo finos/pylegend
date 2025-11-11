@@ -13,6 +13,7 @@
 # limitations under the License.
 from typing import Any
 
+from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
@@ -25,15 +26,15 @@ from pylegend._typing import (
     PyLegendOptional
 )
 from pylegend.core.sql.metamodel import (
-    QualifiedName,
-    QualifiedNameReference,
     QuerySpecification,
-    Select,
-    SingleColumn
+    SingleColumn,
+    SelectItem
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.sql_query_helpers import copy_query
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_column import TdsColumn
 
 __all__: PyLegendSequence[str] = [
     "PandasApiDropFunction"
@@ -84,15 +85,18 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
             if not_found:
                 raise KeyError(f"{not_found} not found in axis")
 
-        columns_to_retain = [col for col in base_cols if col not in self.__columns]
-        new_cols_with_index = []
+        columns_to_retain = [
+            db_extension.quote_identifier(col)
+            for col in base_cols if col not in self.__columns
+        ]
+        new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
         for col in base_query.select.selectItems:
             if not isinstance(col, SingleColumn):
-                raise ValueError(
-                    "Drop operation not supported for queries with columns other than SingleColumn")  # pragma: no cover
+                raise ValueError("Drop operation not supported for queries "
+                                 "with columns other than SingleColumn")  # pragma: no cover
             if col.alias is None:
-                raise ValueError(
-                    "Drop operation not supported for queries with SingleColumns with missing alias")  # pragma: no cover
+                raise ValueError("Drop operation not supported for queries "
+                                 "with SingleColumns with missing alias")  # pragma: no cover
             if col.alias in columns_to_retain:
                 new_cols_with_index.append((columns_to_retain.index(col.alias), col))
 
@@ -112,10 +116,10 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
         for col_name in self.__base_frame.columns():
             col_name = col_name.get_name()
             if col_name not in self.__columns:
-                escaped = col_name.replace("\\", "\\\\").replace("'", "\\'")
-                new_cols.append(f"'{escaped}'")
+                new_cols.append(escape_column_name(col_name))
 
-        return f"{self.__base_frame.to_pure(config)}{config.separator(1)}->select(~[{', '.join(new_cols)}])"
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
+                f"->select(~[{', '.join(new_cols)}])")
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
@@ -123,7 +127,7 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []
 
-    def calculate_columns(self) -> PyLegendSequence["PandasApiTdsColumn"]:
+    def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         base_cols = [c.copy() for c in self.__base_frame.columns()]
         if self.__columns is not None:
             new_cols = []

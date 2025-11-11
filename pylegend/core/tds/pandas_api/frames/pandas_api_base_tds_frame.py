@@ -34,6 +34,7 @@ from pylegend.core.database.sql_to_string import (
 )
 from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendInteger, PyLegendBoolean
 from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.result_handler import (
     ResultHandler,
@@ -54,7 +55,7 @@ __all__: PyLegendSequence[str] = [
 R = PyLegendTypeVar('R')
 
 
-class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
+class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     __columns: PyLegendSequence[TdsColumn]
 
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
