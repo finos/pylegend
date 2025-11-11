@@ -102,6 +102,16 @@ class TestSortValuesFunction:
             frame.sort_values(by=["col1"], key=lambda x: x)
         assert v.value.args[0] == "Key parameter of sort_values function is not supported"
 
+    def test_invalid_ignore_index_parameter(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        with pytest.raises(ValueError) as v:
+            frame.sort_values(by=["col1"], ignore_index=False)
+        assert v.value.args[0] == "Ignore_index parameter of sort_values function must be True"
+
     def test_simple_query_generation(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -181,16 +191,16 @@ class TestSortValuesFunction:
 
     def test_e2e_single_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.sort_values("Age")
+        frame = frame.sort_values("Age", ascending=False)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [
-                        {'values': ['John', 'Hill', 12, 'Firm X']},
+                        {'values': ['David', 'Harris', 35, 'Firm C']},
+                        {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                        {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                        {'values': ['Peter', 'Smith', 23, 'Firm X']},
                         {'values': ['John', 'Johnson', 22, 'Firm X']},
                         {'values': ['Anthony', 'Allen', 22, 'Firm X']},
-                        {'values': ['Peter', 'Smith', 23, 'Firm X']},
-                        {'values': ['Oliver', 'Hill', 32, 'Firm B']},
-                        {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
-                        {'values': ['David', 'Harris', 35, 'Firm C']}
+                        {'values': ['John', 'Hill', 12, 'Firm X']}
                     ]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected

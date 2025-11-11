@@ -35,6 +35,7 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import (
 from pylegend.core.tds.sql_query_helpers import create_sub_query, copy_query
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.language.shared.helpers import escape_column_name
 
 
 class SortValuesFunction(PandasApiAppliedFunction):
@@ -50,7 +51,7 @@ class SortValuesFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "sort_values"
+        return "sort_values"  # pragma: no cover
 
     def __init__(
             self,
@@ -107,9 +108,12 @@ class SortValuesFunction(PandasApiAppliedFunction):
         return filtered[0].expression
 
     def to_pure(self, config: FrameToPureConfig) -> str:
+        escaped_columns = []
+        for col_name in self.__by:
+            escaped_columns.append(escape_column_name(col_name))
         sort_items = [
             f"~{column_name}->ascending()" if ascending else f"~{column_name}->descending()"
-            for column_name, ascending in zip(self.__by, self.__ascending)
+            for column_name, ascending in zip(escaped_columns, self.__ascending)
         ]
         return (
                 f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
