@@ -29,7 +29,6 @@ from pylegend.core.language import (
     PyLegendPrimitive,
 )
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
