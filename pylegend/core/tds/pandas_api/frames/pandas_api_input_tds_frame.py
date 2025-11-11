@@ -21,6 +21,7 @@ from pylegend.core.tds.abstract.frames.input_tds_frame import InputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.abstract.frames.input_tds_frame import InputTdsFrame
 
 
 __all__: PyLegendSequence[str] = [
