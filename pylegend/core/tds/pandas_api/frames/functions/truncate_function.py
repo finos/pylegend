@@ -105,13 +105,15 @@ class TruncateFunction(PandasApiAppliedFunction):
 
         return True
 
-    def get_positive_integer_or_raise_exception(self, variable: PyLegendUnion[date, str, int, None], variable_name: str) -> int:
-            if type(variable) is not int:
-                raise NotImplementedError(
-                    f"The '{variable_name}' parameter of the truncate function must be an integer, "
-                    f"but got: {variable} (type: {type(variable).__name__})"
-                )
-            
-            if variable < 0:
-                return 0
-            return variable
+    def get_positive_integer_or_raise_exception(
+        self, variable: PyLegendUnion[date, str, int, None], variable_name: str
+    ) -> int:
+        if type(variable) is not int:
+            raise NotImplementedError(
+                f"The '{variable_name}' parameter of the truncate function must be an integer, "
+                f"but got: {variable} (type: {type(variable).__name__})"
+            )
+
+        if variable < 0:
+            return 0
+        return variable
