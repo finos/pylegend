@@ -29,8 +29,8 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 class TruncateFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __before: PyLegendUnion[str, int]
-    __after: PyLegendUnion[str, int]
+    __before: int
+    __after: PyLegendUnion[int, None]
     __axis: PyLegendUnion[str, int]
     __copy: bool
 
@@ -41,14 +41,14 @@ class TruncateFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            before: PyLegendUnion[date, str, int],
-            after: PyLegendUnion[date, str, int],
+            before: PyLegendUnion[date, str, int, None],
+            after: PyLegendUnion[date, str, int, None],
             axis: PyLegendUnion[str, int],
             copy: bool,
     ) -> None:
         self.__base_frame = base_frame
-        self.__before = before
-        self.__after = after
+        self.__before_input = before
+        self.__after_input = after
         self.__axis = axis
         self.__copy = copy
 
@@ -87,24 +87,15 @@ class TruncateFunction(PandasApiAppliedFunction):
         if self.__copy not in [True]:
             raise NotImplementedError(f"The 'copy' parameter of the truncate function must be True, but got: {self.__copy}")
 
-        if type(self.__before) not in [int]:
-            raise NotImplementedError(
-                f"The 'before' parameter of the truncate function must be an integer, "
-                f"but got: {self.__before} (type: {type(self.__before).__name__})"
-            )
-
-        if self.__before < 0:
+        if self.__before_input is None:
             self.__before = 0
+        else:
+            self.__before = self.get_positive_integer_or_raise_exception(self.__before_input, variable_name="before")
 
-        if self.__after is not None:
-            if type(self.__after) not in [int]:
-                raise NotImplementedError(
-                    f"The 'after' parameter of the truncate function must be an integer, "
-                    f"but got: {self.__after} (type: {type(self.__after).__name__})"
-                )
-
-            if self.__after < 0:
-                self.__after = 0
+        if self.__after is None:
+            return True
+        else:
+            self.__after = self.get_positive_integer_or_raise_exception(self.__after_input, variable_name="after")
 
             if self.__before > self.__after:
                 raise ValueError(
@@ -113,3 +104,14 @@ class TruncateFunction(PandasApiAppliedFunction):
                 )
 
         return True
+
+    def get_positive_integer_or_raise_exception(self, variable: PyLegendUnion[date, str, int, None], variable_name: str) -> int:
+            if type(variable) is not int:
+                raise NotImplementedError(
+                    f"The '{variable_name}' parameter of the truncate function must be an integer, "
+                    f"but got: {variable} (type: {type(variable).__name__})"
+                )
+            
+            if variable < 0:
+                return 0
+            return variable
