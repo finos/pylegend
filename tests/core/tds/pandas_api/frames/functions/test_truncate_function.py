@@ -94,7 +94,7 @@ class TestTruncateFunction:
             "#Table(test_schema.test_table)#->slice(0, 4)"
         )
 
-    def test_to_sql_uses_create_sub_query_when_base_has_offset_and_sets_offset_only(self) -> None:
+    def test_truncate_after_is_none(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.truncate(before=2, after=None)
@@ -115,7 +115,7 @@ class TestTruncateFunction:
             "#Table(test_schema.test_table)#->drop(2)"
         )
 
-    def test_to_sql_uses_copy_query_and_sets_limit_when_after_provided(self) -> None:
+    def test_truncate_before_is_not_none(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.truncate(before=1, after=3)
@@ -137,7 +137,7 @@ class TestTruncateFunction:
             "#Table(test_schema.test_table)#->slice(1, 4)"
         )
 
-    def test_validate_resets_negative_before_and_after_and_accepts_axis_string(self) -> None:
+    def test_validate_resets_negative_before_and_after(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
         frame1: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame1 = frame1.truncate(before=-3, after=None)
