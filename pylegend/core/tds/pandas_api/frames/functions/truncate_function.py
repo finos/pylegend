@@ -44,7 +44,7 @@ class TruncateFunction(PandasApiAppliedFunction):
             before: PyLegendUnion[date, str, int],
             after: PyLegendUnion[date, str, int],
             axis: PyLegendUnion[str, int],
-            copy: bool
+            copy: bool,
     ) -> None:
         self.__base_frame = base_frame
         self.__before = before
@@ -55,10 +55,7 @@ class TruncateFunction(PandasApiAppliedFunction):
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query: QuerySpecification = self.__base_frame.to_sql_query_object(config)
         should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
-        new_query = (
-            create_sub_query(base_query, config, "root") if should_create_sub_query
-            else copy_query(base_query)
-        )
+        new_query = create_sub_query(base_query, config, "root") if should_create_sub_query else copy_query(base_query)
         new_query.offset = LongLiteral(self.__before)
         if self.__after is not None:
             new_query.limit = LongLiteral(self.__after - self.__before + 1)
@@ -66,13 +63,11 @@ class TruncateFunction(PandasApiAppliedFunction):
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         if self.__after is None:
-            return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                    f"->drop({self.__before})")
+            return f"{self.__base_frame.to_pure(config)}{config.separator(1)}" f"->drop({self.__before})"
 
         start_row = self.__before
         end_row = self.__after + 1
-        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                f"->slice({start_row}, {end_row})")
+        return f"{self.__base_frame.to_pure(config)}{config.separator(1)}" f"->slice({start_row}, {end_row})"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
