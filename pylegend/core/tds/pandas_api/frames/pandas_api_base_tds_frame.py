@@ -36,6 +36,7 @@ from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendI
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
@@ -80,6 +81,54 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+
+    def filter(
+            self,
+            items: PyLegendOptional[PyLegendList[str]] = None,
+            like: PyLegendOptional[str] = None,
+            regex: PyLegendOptional[str] = None,
+            axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiFilterFunction(
+                self,
+                items=items,
+                like=like,
+                regex=regex,
+                axis=axis
+            )
+        )
+
+    def sort_values(
+            self,
+            by: PyLegendUnion[str, PyLegendList[str]],
+            axis: PyLegendUnion[str, int] = 0,
+            ascending: PyLegendUnion[bool, PyLegendList[bool]] = True,
+            inplace: bool = False,
+            kind: PyLegendOptional[str] = None,
+            na_position: str = 'last',
+            ignore_index: bool = True,
+            key: PyLegendOptional[PyLegendCallable[[AbstractTdsRow], AbstractTdsRow]] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.sort_values_function import SortValuesFunction
+        return PandasApiAppliedFunctionTdsFrame(SortValuesFunction(
+            base_frame=self,
+            by=by,
+            axis=axis,
+            ascending=ascending,
+            inplace=inplace,
+            kind=kind,
+            na_position=na_position,
+            ignore_index=ignore_index,
+            key=key
+        ))
 
     def drop(
             self,
