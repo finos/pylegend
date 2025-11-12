@@ -124,6 +124,25 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ignore_index=ignore_index,
             key=key
         ))
+    
+    def truncate(
+            self,
+            before: PyLegendUnion[date, str, int] = 0,
+            after: PyLegendUnion[date, str, int] = None,
+            axis: PyLegendUnion[str, int] = 0,
+            copy: bool = True
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.truncate_function import TruncateFunction
+        return PandasApiAppliedFunctionTdsFrame(TruncateFunction(
+            base_frame=self,
+            before=before,
+            after=after,
+            axis=axis,
+            copy=copy
+        ))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
