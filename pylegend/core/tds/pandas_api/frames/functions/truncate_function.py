@@ -20,7 +20,7 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language.shared.helpers import escape_column_name
-from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.sql.metamodel import LongLiteral, QuerySpecification
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import create_sub_query, copy_query
@@ -60,16 +60,12 @@ class TruncateFunction(PandasApiAppliedFunction):
             create_sub_query(base_query, config, "root") if should_create_sub_query
             else copy_query(base_query)
         )
-        new_query.offset = self.__before
+        new_query.offset = LongLiteral(self.__before)
         if self.__after is not None:
-            new_query.limit = self.__after - self.__before + 1
+            new_query.limit = LongLiteral(self.__after - self.__before + 1)
         return new_query
     
     def to_pure(self, config: FrameToPureConfig) -> str:
-        escaped_columns = []
-        for col_name in self.__by:
-            escaped_columns.append(escape_column_name(col_name))
-
         if self.__after is None:
             return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
                     f"->drop({self.__before})")
