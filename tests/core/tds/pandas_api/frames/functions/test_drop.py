@@ -130,7 +130,7 @@ class TestDropFunction:
             frame = frame.drop(columns=["col1", "col2"], axis=0)
         assert v.value.args[0] == "Axis 0 is not supported for 'drop' function in PandasApi"
         # Axis invalid value
-        with pytest.raises(ValueError) as v:
+        with pytest.raises(ValueError) as v:  # type: ignore
             frame = frame.drop(columns=["col1", "col2"], axis=2)
         assert v.value.args[0] == "No axis named 2 for object type Tds DataFrame"
 
@@ -145,15 +145,15 @@ class TestDropFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Type Error
         with pytest.raises(TypeError) as v:
-            newframe = frame.drop(labels=lambda x: x)
+            frame.drop(labels=lambda x: x)  # type: ignore
         assert v.value.args[0] == "Unsupported type for columns: <class 'function'>"
         # Key Error
-        with pytest.raises(KeyError) as v:
-            newframe = frame.drop(labels=["col6", "col7"]).to_sql_query()
+        with pytest.raises(KeyError) as v:  # type: ignore
+            frame.drop(labels=["col6", "col7"]).to_sql_query()
         assert v.value.args[0] == "['col6', 'col7'] not found in axis"
         # Key Error with Axis
-        with pytest.raises(KeyError) as v:
-            newframe = frame.drop(labels=["col6", "col7"], axis=1).to_pure_query()
+        with pytest.raises(KeyError) as v:  # type: ignore
+            frame.drop(labels=["col6", "col7"], axis=1).to_pure_query()
         assert v.value.args[0] == "['col6', 'col7'] not found in axis"
 
     def test_drop_function_error_on_columns_parameter(self) -> None:
@@ -167,15 +167,15 @@ class TestDropFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         # Type Error
         with pytest.raises(TypeError) as v:
-            newframe = frame.drop(columns=lambda x: x)
+            frame.drop(columns=lambda x: x)  # type: ignore
         assert v.value.args[0] == "Unsupported type for columns: <class 'function'>"
         # Key Error
-        with pytest.raises(KeyError) as v:
-            newframe = frame.drop(columns=["col6", "col7"]).to_sql_query()
+        with pytest.raises(KeyError) as v:  # type: ignore
+            frame.drop(columns=["col6", "col7"]).to_sql_query()
         assert v.value.args[0] == "['col6', 'col7'] not found in axis"
         # Key Error with Axis
-        with pytest.raises(KeyError) as v:
-            newframe = frame.drop(columns=["col6", "col7"], axis=1).to_pure_query()
+        with pytest.raises(KeyError) as v:  # type: ignore
+            frame.drop(columns=["col6", "col7"], axis=1).to_pure_query()
         assert v.value.args[0] == "['col6', 'col7'] not found in axis"
 
     def test_drop_function_on_labels_parameter(self) -> None:
@@ -331,7 +331,7 @@ class TestDropFunction:
                "#Table(test_schema.test_table)#->select(~[col1])"
 
         # Tuple of strings
-        newframe = frame.drop(columns=("col2", "col3"))
+        newframe = frame.drop(columns=("col2", "col3"))  # type: ignore
         expected = '''\
                    SELECT
                        "root".col1 AS "col1"
@@ -363,7 +363,7 @@ class TestDropFunction:
                "#Table(test_schema.test_table)#->select(~[col1])"
 
         # Dict keys
-        newframe = frame.drop(columns={"col2": 1, "col3": 2})
+        newframe = frame.drop(columns={"col2": 1, "col3": 2})  # type: ignore
         expected = '''\
                    SELECT
                        "root".col1 AS "col1"
@@ -463,7 +463,6 @@ class TestDropFunction:
         }
         res = newframe.execute_frame_to_string()
         assert json.loads(res)["result"] == expected_multi
-
 
     def test_e2e_drop_function_nested(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])

@@ -15,8 +15,6 @@
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 
-from typing import Any
-
 import pandas as pd
 
 from pylegend._typing import (
@@ -24,6 +22,8 @@ from pylegend._typing import (
     PyLegendTypeVar,
     PyLegendList,
     PyLegendTuple,
+    PyLegendSet,
+    PyLegendDict,
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
@@ -83,10 +83,34 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def drop(
             self,
-            labels: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            labels: PyLegendOptional[
+                PyLegendUnion[
+                    R,
+                    PyLegendList[R],
+                    PyLegendTuple[R],
+                    PyLegendDict[R, R],
+                    PyLegendSet[R]
+                ]
+            ] = None,
             axis: PyLegendUnion[str, int, PyLegendInteger] = 1,
-            index: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
-            columns: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            index: PyLegendOptional[
+                PyLegendUnion[
+                    R,
+                    PyLegendList[R],
+                    PyLegendTuple[R],
+                    PyLegendDict[R, R],
+                    PyLegendSet[R]
+                ]
+            ] = None,
+            columns: PyLegendOptional[
+                PyLegendUnion[
+                    R,
+                    PyLegendList[R],
+                    PyLegendTuple[R],
+                    PyLegendDict[R, R],
+                    PyLegendSet[R]
+                ]
+            ] = None,
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
             inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
             errors: str = "raise",

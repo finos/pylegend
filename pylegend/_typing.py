@@ -16,6 +16,7 @@ from typing import Callable as PyLegendCallable
 from typing import Dict as PyLegendDict
 from typing import Iterator as PyLegendIterator
 from typing import List as PyLegendList
+from typing import Set as PyLegendSet
 from typing import Optional as PyLegendOptional
 from typing import Sequence as PyLegendSequence
 from typing import Type as PyLegendType
@@ -26,12 +27,18 @@ from typing import Union as PyLegendUnion
 from typing import Generic as PyLegendGeneric
 from typing import TYPE_CHECKING
 
+# if TYPE_CHECKING:
+#     from numpy.typing import NDArray as PyLegendNdArray
+# else:
+#     PyLegendNdArray = object  # Fallback for runtime
+
 
 __all__: PyLegendSequence[str] = [
     "PyLegendCallable",
     "PyLegendDict",
     "PyLegendIterator",
     "PyLegendList",
+    "PyLegendSet",
     "PyLegendSequence",
     "PyLegendType",
     "PyLegendTypeVar",
@@ -40,5 +47,5 @@ __all__: PyLegendSequence[str] = [
     "PyLegendGenerator",
     "PyLegendUnion",
     "PyLegendGeneric",
-    "TYPE_CHECKING",
+    "TYPE_CHECKING"
 ]

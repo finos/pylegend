@@ -15,8 +15,6 @@
 from abc import abstractmethod
 from datetime import date, datetime
 
-from typing import Any
-
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
@@ -27,7 +25,10 @@ from pylegend._typing import (
     PyLegendUnion,
     PyLegendOptional,
     PyLegendList,
-    PyLegendTuple
+    PyLegendTuple,
+    PyLegendSet,
+    PyLegendDict,
+    PyLegendTypeVar
 )
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.language import (
@@ -38,6 +39,8 @@ from pylegend.core.language import (
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
 ]
+
+R = PyLegendTypeVar('R', str, int, float)
 
 
 class PandasApiTdsFrame(PyLegendTdsFrame):
@@ -55,10 +58,34 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def drop(
             self,
-            labels: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            labels: PyLegendOptional[
+                PyLegendUnion[
+                    R,
+                    PyLegendList[R],
+                    PyLegendTuple[R],
+                    PyLegendDict[R, R],
+                    PyLegendSet[R]
+                ]
+            ] = None,
             axis: PyLegendUnion[str, int, PyLegendInteger] = 1,
-            index: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
-            columns: PyLegendOptional[PyLegendUnion[Any, PyLegendList[Any], PyLegendTuple[Any]]] = None,
+            index: PyLegendOptional[
+                PyLegendUnion[
+                    R,
+                    PyLegendList[R],
+                    PyLegendTuple[R],
+                    PyLegendDict[R, R],
+                    PyLegendSet[R]
+                ]
+            ] = None,
+            columns: PyLegendOptional[
+                PyLegendUnion[
+                    R,
+                    PyLegendList[R],
+                    PyLegendTuple[R],
+                    PyLegendDict[R, R],
+                    PyLegendSet[R]
+                ]
+            ] = None,
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
             inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
             errors: str = "raise",
