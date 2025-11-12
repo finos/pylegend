@@ -124,7 +124,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ignore_index=ignore_index,
             key=key
         ))
-    
+
     def truncate(
             self,
             before: PyLegendUnion[date, str, int] = 0,

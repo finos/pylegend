@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from textwrap import dedent
 from pylegend._typing import (
     PyLegendDict,
@@ -24,67 +25,69 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
-from types import SimpleNamespace
-from unittest.mock import patch
-from pylegend.core.tds.pandas_api.frames.functions.truncate_function import TruncateFunction
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
 
 
 class TestTruncateFunction:
-    
+
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        self.legend_client = LegendClient(
+            "localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_truncate_invalid_axis(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         with pytest.raises(NotImplementedError) as v:
             frame.truncate(axis=1)
         assert v.value.args[0] == "The 'axis' parameter of the truncate function must be 0 or 'index', but got: 1"
-    
 
     def test_truncate_invalid_copy(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         with pytest.raises(NotImplementedError) as v:
             frame.truncate(before=0, after=1, axis=0, copy=False)
         assert v.value.args[0] == "The 'copy' parameter of the truncate function must be True, but got: False"
-
 
     def test_truncate_before_not_int(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         with pytest.raises(NotImplementedError) as v:
             frame.truncate(before='a', after=1, axis=0, copy=True)
-        assert v.value.args[0] == "The 'before' parameter of the truncate function must be an integer, but got: a (type: str)"
-
+        assert v.value.args[
+            0] == "The 'before' parameter of the truncate function must be an integer, but got: a (type: str)"
 
     def test_truncate_after_not_int(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         with pytest.raises(NotImplementedError) as v:
             frame.truncate(before=0, after='b', axis=0, copy=True)
-        assert v.value.args[0] == "The 'after' parameter of the truncate function must be an integer, but got: b (type: str)"
-
+        assert v.value.args[
+            0] == "The 'after' parameter of the truncate function must be an integer, but got: b (type: str)"
 
     def test_truncate_before_greater_than_after(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         with pytest.raises(ValueError) as v:
             frame.truncate(before=5, after=3, axis=0, copy=True)
         assert v.value.args[0] == (
@@ -97,7 +100,8 @@ class TestTruncateFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.truncate(before=0, after=3)
         expected = '''\
                     SELECT
@@ -115,13 +119,14 @@ class TestTruncateFunction:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
                                                self.legend_client) == ("#Table(test_schema.test_table)#->slice(0, 4)")
-        
+
     def test_to_sql_uses_create_sub_query_when_base_has_offset_and_sets_offset_only(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.truncate(before=2, after=None)
         expected = '''\
                     SELECT
@@ -144,7 +149,8 @@ class TestTruncateFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.truncate(before=1, after=3)
         expected = '''\
                     SELECT
@@ -168,7 +174,8 @@ class TestTruncateFunction:
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.string_column("col2")
         ]
-        frame1: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame1: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame1 = frame1.truncate(before=-3, after=None)
         expected1 = '''\
                     SELECT
@@ -186,7 +193,8 @@ class TestTruncateFunction:
         assert generate_pure_query_and_compile(frame1, FrameToPureConfig(pretty=False),
                                                self.legend_client) == ("#Table(test_schema.test_table)#->drop(0)")
 
-        frame2: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame2: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame2 = frame2.truncate(before=0, after=-2)
         expected2 = '''\
                     SELECT
@@ -197,7 +205,7 @@ class TestTruncateFunction:
                     LIMIT 1
                     OFFSET 0'''
         assert frame2.to_sql_query(FrameToSqlConfig()) == dedent(expected2)
-        
+
         assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -205,3 +213,65 @@ class TestTruncateFunction:
         )
         assert generate_pure_query_and_compile(frame2, FrameToPureConfig(pretty=False),
                                                self.legend_client) == ("#Table(test_schema.test_table)#->slice(0, 1)")
+
+    def test_e2e_truncate_no_arguments(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(
+            legend_test_server["engine_port"])
+        frame = frame.truncate()
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
+                             {'values': ['John', 'Johnson', 22, 'Firm X']},
+                             {'values': ['John', 'Hill', 12, 'Firm X']},
+                             {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_truncate_normal_arguments(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(
+            legend_test_server["engine_port"])
+        frame = frame.truncate(2, 5)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['John', 'Hill', 12, 'Firm X']},
+                             {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_truncate_only_before_argument_passed(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(
+            legend_test_server["engine_port"])
+        frame = frame.truncate(2)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['John', 'Hill', 12, 'Firm X']},
+                             {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_truncate_before_more_than_total_rows(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(
+            legend_test_server["engine_port"])
+        frame = frame.truncate(10)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': []}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_truncate_after_more_than_total_rows(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(
+            legend_test_server["engine_port"])
+        frame = frame.truncate(2, 10)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['John', 'Hill', 12, 'Firm X']},
+                             {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B']},
+                             {'values': ['David', 'Harris', 35, 'Firm C']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected

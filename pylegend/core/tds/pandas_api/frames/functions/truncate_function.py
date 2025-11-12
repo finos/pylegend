@@ -19,7 +19,6 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendUnion,
 )
-from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import LongLiteral, QuerySpecification
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -38,7 +37,7 @@ class TruncateFunction(PandasApiAppliedFunction):
     @classmethod
     def name(cls) -> str:
         return "truncate"  # pragma: no cover
-    
+
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
@@ -47,7 +46,7 @@ class TruncateFunction(PandasApiAppliedFunction):
             axis: PyLegendUnion[str, int],
             copy: bool
     ) -> None:
-        self.__base_frame = base_frame 
+        self.__base_frame = base_frame
         self.__before = before
         self.__after = after
         self.__axis = axis
@@ -64,7 +63,7 @@ class TruncateFunction(PandasApiAppliedFunction):
         if self.__after is not None:
             new_query.limit = LongLiteral(self.__after - self.__before + 1)
         return new_query
-    
+
     def to_pure(self, config: FrameToPureConfig) -> str:
         if self.__after is None:
             return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
@@ -74,7 +73,7 @@ class TruncateFunction(PandasApiAppliedFunction):
         end_row = self.__after + 1
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
                 f"->slice({start_row}, {end_row})")
-    
+
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
 
@@ -83,7 +82,7 @@ class TruncateFunction(PandasApiAppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         return [c.copy() for c in self.__base_frame.columns()]
-    
+
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:
             raise NotImplementedError(
@@ -92,7 +91,7 @@ class TruncateFunction(PandasApiAppliedFunction):
 
         if self.__copy not in [True]:
             raise NotImplementedError(f"The 'copy' parameter of the truncate function must be True, but got: {self.__copy}")
-        
+
         if type(self.__before) not in [int]:
             raise NotImplementedError(
                 f"The 'before' parameter of the truncate function must be an integer, "
@@ -111,7 +110,7 @@ class TruncateFunction(PandasApiAppliedFunction):
 
             if self.__after < 0:
                 self.__after = 0
-            
+
             if self.__before > self.__after:
                 raise ValueError(
                     f"The 'before' parameter of the truncate function must be less than or equal to the 'after' parameter, "
