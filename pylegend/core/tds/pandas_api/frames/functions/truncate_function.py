@@ -92,7 +92,7 @@ class TruncateFunction(PandasApiAppliedFunction):
         else:
             self.__before = self.get_positive_integer_or_raise_exception(self.__before_input, variable_name="before")
 
-        if self.__after is None:
+        if self.__after_input is None:
             return True
         else:
             self.__after = self.get_positive_integer_or_raise_exception(self.__after_input, variable_name="after")
