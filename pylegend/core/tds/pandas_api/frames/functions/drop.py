@@ -11,22 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF R KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from pylegend.core.language.shared.helpers import escape_column_name
-from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
-
-from pylegend.core.language.shared.primitives.integer import PyLegendInteger
-
 from pylegend._typing import (
     PyLegendList,
     PyLegendTuple,
-    PyLegendDict,
     PyLegendSet,
     PyLegendSequence,
     PyLegendUnion,
-    PyLegendOptional,
-    PyLegendTypeVar,
-    PyLegendGeneric
+    PyLegendOptional
 )
+from pylegend.core.language.shared.helpers import escape_column_name
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
@@ -35,49 +30,25 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "PandasApiDropFunction"
 ]
 
-R = PyLegendTypeVar('R')
+DropArg = PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
 
 
-class PandasApiDropFunction(PandasApiAppliedFunction, PyLegendGeneric[R]):
+class PandasApiDropFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __labels: PyLegendOptional[
-        PyLegendUnion[
-            R,
-            PyLegendList[R],
-            PyLegendTuple[R],
-            PyLegendDict[R, R],
-            PyLegendSet[R]
-        ]
-    ]
+    __labels: DropArg
     __axis: PyLegendUnion[str, int, PyLegendInteger]
-    __index: PyLegendOptional[
-        PyLegendUnion[
-            R,
-            PyLegendList[R],
-            PyLegendTuple[R],
-            PyLegendDict[R, R],
-            PyLegendSet[R]
-        ]
-    ]
-    __columns: PyLegendOptional[
-        PyLegendUnion[
-            R,
-            PyLegendList[R],
-            PyLegendTuple[R],
-            PyLegendDict[R, R],
-            PyLegendSet[R]
-        ]
-    ]
+    __index: DropArg
+    __columns: DropArg
     __level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]]
     __inplace: PyLegendUnion[bool, PyLegendBoolean]
-    __error: str
+    __errors: str
 
     @classmethod
     def name(cls) -> str:
@@ -86,37 +57,13 @@ class PandasApiDropFunction(PandasApiAppliedFunction, PyLegendGeneric[R]):
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            labels: PyLegendOptional[
-                PyLegendUnion[
-                    R,
-                    PyLegendList[R],
-                    PyLegendTuple[R],
-                    PyLegendDict[R, R],
-                    PyLegendSet[R]
-                ]
-            ],
+            labels: DropArg,
             axis: PyLegendUnion[str, int, PyLegendInteger],
-            index: PyLegendOptional[
-                PyLegendUnion[
-                    R,
-                    PyLegendList[R],
-                    PyLegendTuple[R],
-                    PyLegendDict[R, R],
-                    PyLegendSet[R]
-                ]
-            ],
-            columns: PyLegendOptional[
-                PyLegendUnion[
-                    R,
-                    PyLegendList[R],
-                    PyLegendTuple[R],
-                    PyLegendDict[R, R],
-                    PyLegendSet[R]
-                ]
-            ],
+            index: DropArg,
+            columns: DropArg,
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]],
             inplace: PyLegendUnion[bool, PyLegendBoolean],
-            error: str
+            errors: str
     ) -> None:
         self.__base_frame = base_frame
         self.__labels = labels
@@ -125,14 +72,14 @@ class PandasApiDropFunction(PandasApiAppliedFunction, PyLegendGeneric[R]):
         self.__columns = columns
         self.__level = level
         self.__inplace = inplace
-        self.__error = error
+        self.__errors = errors
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
 
-        if self.__error == "raise":
+        if self.__errors == "raise":
             not_found = [col for col in self.__columns if col not in base_cols]  # type: ignore
             if not_found:
                 raise KeyError(f"{not_found} not found in axis")
@@ -159,7 +106,7 @@ class PandasApiDropFunction(PandasApiAppliedFunction, PyLegendGeneric[R]):
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
-        if self.__error == "raise":
+        if self.__errors == "raise":
             not_found = [col for col in self.__columns if col not in base_cols]  # type: ignore
             if not_found:
                 raise KeyError(f"{not_found} not found in axis")
@@ -183,7 +130,7 @@ class PandasApiDropFunction(PandasApiAppliedFunction, PyLegendGeneric[R]):
         if self.__columns is not None:
             new_cols = []
             for col in base_cols:
-                if col.get_name() not in self.__columns:  # type: ignore
+                if col.get_name() not in self.__columns:
                     new_cols.append(col.copy())
             return new_cols
         return base_cols  # pragma: no cover
@@ -194,7 +141,8 @@ class PandasApiDropFunction(PandasApiAppliedFunction, PyLegendGeneric[R]):
             if isinstance(self.__axis, (str, int, PyLegendInteger)):
                 if self.__axis != 1 and self.__axis != "columns":
                     if self.__axis == 0 or self.__axis == "index":
-                        raise NotImplementedError(f"Axis {self.__axis} is not supported for 'drop' function in PandasApi")
+                        raise NotImplementedError(
+                            f"Axis {self.__axis} is not supported for 'drop' function in PandasApi")
                     else:
                         raise ValueError(f"No axis named {self.__axis} for object type Tds DataFrame")
             else:
@@ -216,20 +164,13 @@ class PandasApiDropFunction(PandasApiAppliedFunction, PyLegendGeneric[R]):
         if self.__columns is not None:
             def _normalize_columns(columns):  # type: ignore
                 if columns is None:
-                    return []  # pragma: no cover
-                if isinstance(columns, (str, int, float)):
+                    return []
+                if isinstance(columns, str):
                     return [columns]
-                if isinstance(columns, dict):
-                    return list(columns.keys())
-                if isinstance(columns, (set, tuple, list)):
+                if isinstance(columns, (PyLegendSequence, PyLegendSet)):
                     return list(columns)
-                try:
-                    import numpy as np
-                    if isinstance(columns, np.ndarray):
-                        return list(columns)  # pragma: no cover
-                except ImportError:  # pragma: no cover
-                    pass  # pragma: no cover
                 raise TypeError(f"Unsupported type for columns: {type(columns)}")
+
             valid_paramters += 1
             self.__columns = _normalize_columns(self.__columns)  # type: ignore
 

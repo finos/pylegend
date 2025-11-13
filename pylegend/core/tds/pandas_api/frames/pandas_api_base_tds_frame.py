@@ -21,9 +21,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
     PyLegendList,
-    PyLegendTuple,
     PyLegendSet,
-    PyLegendDict,
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
@@ -32,11 +30,12 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendInteger, PyLegendBoolean
+from pylegend.core.language import PyLegendPrimitive, PyLegendInteger, PyLegendBoolean
+from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
@@ -53,7 +52,8 @@ __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
 ]
 
-R = PyLegendTypeVar('R')
+R = PyLegendTypeVar("R")
+DropArg = PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
 
 
 class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
@@ -72,7 +72,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def assign(
             self,
             **kwargs: PyLegendCallable[
-                [LegacyApiTdsRow],
+                [PandasApiTdsRow],
                 PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
@@ -132,34 +132,10 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def drop(
             self,
-            labels: PyLegendOptional[
-                PyLegendUnion[
-                    R,
-                    PyLegendList[R],
-                    PyLegendTuple[R],
-                    PyLegendDict[R, R],
-                    PyLegendSet[R]
-                ]
-            ] = None,
+            labels: DropArg = None,
             axis: PyLegendUnion[str, int, PyLegendInteger] = 1,
-            index: PyLegendOptional[
-                PyLegendUnion[
-                    R,
-                    PyLegendList[R],
-                    PyLegendTuple[R],
-                    PyLegendDict[R, R],
-                    PyLegendSet[R]
-                ]
-            ] = None,
-            columns: PyLegendOptional[
-                PyLegendUnion[
-                    R,
-                    PyLegendList[R],
-                    PyLegendTuple[R],
-                    PyLegendDict[R, R],
-                    PyLegendSet[R]
-                ]
-            ] = None,
+            index: DropArg = None,
+            columns: DropArg = None,
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
             inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
             errors: str = "raise",
@@ -177,7 +153,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 columns=columns,
                 level=level,
                 inplace=inplace,
-                error=errors
+                errors=errors
             )
         )
 

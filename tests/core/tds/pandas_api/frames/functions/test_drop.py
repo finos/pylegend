@@ -99,7 +99,7 @@ class TestDropFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         with pytest.raises(NotImplementedError) as v:
-            frame = frame.drop(index=[0, 1])
+            frame = frame.drop(index=[0, 1])  # type: ignore
         assert v.value.args[0] == "'index' parameter is not supported for 'drop' function in PandasApi"
 
     def test_drop_function_error_on_inplace_parameter(self) -> None:
@@ -177,6 +177,35 @@ class TestDropFunction:
         with pytest.raises(KeyError) as v:  # type: ignore
             frame.drop(columns=["col6", "col7"], axis=1).to_pure_query()
         assert v.value.args[0] == "['col6', 'col7'] not found in axis"
+
+    def test_drop_function_on_errors_parameter(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        # Ignore errors
+        newframe = frame.drop(columns=["col3", "col5"], errors="ignore")
+        expected = '''\
+                   SELECT
+                       "root".col1 AS "col1",
+                       "root".col2 AS "col2"
+                   FROM
+                       test_schema.test_table AS "root"'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->select(~[col1, col2])'''
+        )
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
+               "#Table(test_schema.test_table)#->select(~[col1, col2])"
+
+        # Raise errors
+        with pytest.raises(KeyError) as v:
+            frame.drop(columns=["col3", "col5"], errors="raise").to_sql_query()
+        assert v.value.args[0] == "['col5'] not found in axis"
 
     def test_drop_function_on_labels_parameter(self) -> None:
         columns = [
@@ -331,7 +360,7 @@ class TestDropFunction:
                "#Table(test_schema.test_table)#->select(~[col1])"
 
         # Tuple of strings
-        newframe = frame.drop(columns=("col2", "col3"))  # type: ignore
+        newframe = frame.drop(columns=("col2", "col3"))
         expected = '''\
                    SELECT
                        "root".col1 AS "col1"
@@ -353,22 +382,6 @@ class TestDropFunction:
                          "root".col1 AS "col1"
                      FROM
                          test_schema.test_table AS "root"'''
-        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
-            '''\
-            #Table(test_schema.test_table)#
-              ->select(~[col1])'''
-        )
-        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->select(~[col1])"
-
-        # Dict keys
-        newframe = frame.drop(columns={"col2": 1, "col3": 2})  # type: ignore
-        expected = '''\
-                   SELECT
-                       "root".col1 AS "col1"
-                   FROM
-                       test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
