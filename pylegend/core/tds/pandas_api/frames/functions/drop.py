@@ -14,23 +14,19 @@
 
 from pylegend._typing import (
     PyLegendList,
-    PyLegendTuple,
     PyLegendSet,
     PyLegendSequence,
     PyLegendUnion,
     PyLegendOptional
 )
-from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-    SelectItem
+    QuerySpecification
 )
+from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.sql_query_helpers import copy_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
@@ -38,15 +34,13 @@ __all__: PyLegendSequence[str] = [
     "PandasApiDropFunction"
 ]
 
-DropArg = PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
-
 
 class PandasApiDropFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __labels: DropArg
+    __labels: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
     __axis: PyLegendUnion[str, int, PyLegendInteger]
-    __index: DropArg
-    __columns: DropArg
+    __index: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
+    __columns: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
     __level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]]
     __inplace: PyLegendUnion[bool, PyLegendBoolean]
     __errors: str
@@ -58,10 +52,10 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            labels: DropArg,
+            labels: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]],
             axis: PyLegendUnion[str, int, PyLegendInteger],
-            index: DropArg,
-            columns: DropArg,
+            index: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]],
+            columns: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]],
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]],
             inplace: PyLegendUnion[bool, PyLegendBoolean],
             errors: str
@@ -76,8 +70,6 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
         self.__errors = errors
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-        db_extension = config.sql_to_string_generator().get_db_extension()
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
 
         if self.__errors == "raise":
@@ -85,25 +77,15 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
             if not_found:
                 raise KeyError(f"{not_found} not found in axis")
 
-        columns_to_retain = [
-            db_extension.quote_identifier(col)
-            for col in base_cols if col not in self.__columns  # type: ignore
-        ]
-        new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
-        for col in base_query.select.selectItems:
-            if not isinstance(col, SingleColumn):
-                raise ValueError("Drop operation not supported for queries "
-                                 "with columns other than SingleColumn")  # pragma: no cover
-            if col.alias is None:
-                raise ValueError("Drop operation not supported for queries "
-                                 "with SingleColumns with missing alias")  # pragma: no cover
-            if col.alias in columns_to_retain:
-                new_cols_with_index.append((columns_to_retain.index(col.alias), col))
-
-        new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
-        new_query = copy_query(base_query)
-        new_query.select.selectItems = new_select_items
-        return new_query
+        columns_to_retain = [col for col in base_cols if col not in self.__columns]  # type: ignore
+        filter_func = PandasApiFilterFunction(
+            base_frame=self.__base_frame,
+            items=columns_to_retain,
+            like=None,
+            regex=None,
+            axis=1
+        )
+        return filter_func.to_sql(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
@@ -112,13 +94,15 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
             if not_found:
                 raise KeyError(f"{not_found} not found in axis")
 
-        new_cols = []
-        for col_name in base_cols:
-            if col_name not in self.__columns:  # type: ignore
-                new_cols.append(escape_column_name(col_name))
-
-        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +
-                f"->select(~[{', '.join(new_cols)}])")
+        columns_to_retain = [col for col in base_cols if col not in self.__columns]  # type: ignore
+        filter_func = PandasApiFilterFunction(
+            base_frame=self.__base_frame,
+            items=columns_to_retain,
+            like=None,
+            regex=None,
+            axis=1
+        )
+        return filter_func.to_pure(config)
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
