@@ -16,6 +16,7 @@ from typing import Callable as PyLegendCallable
 from typing import Dict as PyLegendDict
 from typing import Iterator as PyLegendIterator
 from typing import List as PyLegendList
+from typing import Set as PyLegendSet
 from typing import Optional as PyLegendOptional
 from typing import Sequence as PyLegendSequence
 from typing import Type as PyLegendType
@@ -32,6 +33,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDict",
     "PyLegendIterator",
     "PyLegendList",
+    "PyLegendSet",
     "PyLegendSequence",
     "PyLegendType",
     "PyLegendTypeVar",
