@@ -164,7 +164,7 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
         if self.__columns is not None:
             def _normalize_columns(columns):  # type: ignore
                 if columns is None:
-                    return []
+                    return []  # pragma: no cover
                 if isinstance(columns, str):
                     return [columns]
                 if isinstance(columns, (PyLegendSequence, PyLegendSet)):
