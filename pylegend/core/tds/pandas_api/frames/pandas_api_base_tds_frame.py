@@ -52,7 +52,7 @@ __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
 ]
 
-R = PyLegendTypeVar("R")
+R = PyLegendTypeVar('R')
 DropArg = PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
 
 
@@ -128,6 +128,25 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             na_position=na_position,
             ignore_index=ignore_index,
             key=key
+        ))
+
+    def truncate(
+            self,
+            before: PyLegendUnion[date, str, int, None] = None,
+            after: PyLegendUnion[date, str, int, None] = None,
+            axis: PyLegendUnion[str, int] = 0,
+            copy: bool = True
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.truncate_function import TruncateFunction
+        return PandasApiAppliedFunctionTdsFrame(TruncateFunction(
+            base_frame=self,
+            before=before,
+            after=after,
+            axis=axis,
+            copy=copy
         ))
 
     def drop(
