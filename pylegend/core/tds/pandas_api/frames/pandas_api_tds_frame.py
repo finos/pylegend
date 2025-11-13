@@ -13,7 +13,10 @@
 # limitations under the License.
 
 from abc import abstractmethod
+from collections.abc import Hashable, Mapping
 from datetime import date, datetime
+
+import numpy as np
 
 from pylegend._typing import (
     PyLegendCallable,
@@ -23,6 +26,7 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSet
 )
+from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.language import (
     PyLegendPrimitive,
 )
@@ -93,5 +97,42 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
             inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
             errors: str = "raise",
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def aggregate(
+        self,
+        func: PyLegendUnion[
+            None,
+            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+            str,
+            np.ufunc,
+            PyLegendList[
+                PyLegendUnion[
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+                    str,
+                    np.ufunc
+                ]
+            ],
+            Mapping[
+                Hashable,
+                PyLegendUnion[
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+                    str,
+                    np.ufunc,
+                    PyLegendList[
+                        PyLegendUnion[
+                            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+                            str,
+                            np.ufunc
+                        ]
+                    ],
+                ]
+            ]
+        ] = None,
+        axis: PyLegendUnion[int, str] = 0,
+        *args: PyLegendSequence[PyLegendPrimitive],
+        **kwargs: Mapping[str, PyLegendPrimitive]
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

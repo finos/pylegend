@@ -13,8 +13,10 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
+from collections.abc import Mapping
 from datetime import date, datetime
-
+from typing import Hashable
+import numpy as np
 import pandas as pd
 
 from pylegend._typing import (
@@ -26,6 +28,8 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
+from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
+from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
@@ -174,6 +178,42 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 errors=errors
             )
         )
+    
+    def aggregate(
+        self,
+        func: PyLegendUnion[
+            None,
+            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+            str,
+            np.ufunc,
+            PyLegendList[
+                PyLegendUnion[
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+                    str,
+                    np.ufunc
+                ]
+            ],
+            Mapping[
+                Hashable,
+                PyLegendUnion[
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+                    str,
+                    np.ufunc,
+                    PyLegendList[
+                        PyLegendUnion[
+                            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+                            str,
+                            np.ufunc
+                        ]
+                    ],
+                ]
+            ]
+        ] = None,
+        axis: PyLegendUnion[int, str] = 0,
+        *args: PyLegendSequence[PyLegendPrimitive],
+        **kwargs: Mapping[str, PyLegendPrimitive]
+    ) -> "PandasApiTdsFrame":
+        pass
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
