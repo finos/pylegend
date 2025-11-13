@@ -70,3 +70,13 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             key: PyLegendOptional[PyLegendCallable[[AbstractTdsRow], AbstractTdsRow]] = None
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
+
+    @abstractmethod
+    def truncate(
+            self,
+            before: PyLegendUnion[date, str, int, None] = 0,
+            after: PyLegendUnion[date, str, int, None] = None,
+            axis: PyLegendUnion[str, int] = 0,
+            copy: bool = True
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
