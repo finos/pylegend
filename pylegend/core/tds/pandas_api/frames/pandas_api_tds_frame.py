@@ -16,23 +16,27 @@ from abc import abstractmethod
 from datetime import date, datetime
 
 from pylegend._typing import (
+    PyLegendCallable,
     PyLegendSequence,
     PyLegendUnion,
     PyLegendOptional,
     PyLegendList,
-    PyLegendCallable,
+    PyLegendSet
 )
-from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.language import (
-    LegacyApiTdsRow,
     PyLegendPrimitive,
 )
+from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+from pylegend.core.language.shared.tds_row import AbstractTdsRow
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
 ]
+
+DropArg = PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
 
 
 class PandasApiTdsFrame(PyLegendTdsFrame):
@@ -41,7 +45,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     def assign(
             self,
             **kwargs: PyLegendCallable[
-                [LegacyApiTdsRow],
+                [PandasApiTdsRow],
                 PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
@@ -78,5 +82,18 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             after: PyLegendUnion[date, str, int, None] = None,
             axis: PyLegendUnion[str, int] = 0,
             copy: bool = True
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def drop(
+            self,
+            labels: DropArg = None,
+            axis: PyLegendUnion[str, int, PyLegendInteger] = 1,
+            index: DropArg = None,
+            columns: DropArg = None,
+            level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
+            inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
+            errors: str = "raise",
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
