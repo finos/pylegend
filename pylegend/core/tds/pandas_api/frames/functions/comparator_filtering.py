@@ -55,13 +55,13 @@ from pylegend._typing import *
 
 class PandasApiComparatorFiltering(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __column: PrimitiveTdsColumn
+    __column: PandasApiTdsColumn
     __operator: ComparisonOperator
     __value: PyLegendPrimitive
 
     @classmethod
     def name(cls) -> str:
-        return "comparator_filter"
+        return "comparator_filter"  # pragma : no cover
 
     def __init__(
             self,
@@ -85,92 +85,95 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
             raise TypeError(f"Unsupported operand type(s) for |: '{type(self)}' and '{type(other)}'")
         return PandasApiLogicalExpression(self, LogicalBinaryType.OR, other)
 
+    def __invert__(self):
+        return PandasApiLogicalExpression(self, LogicalBinaryType.NOT)
+
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_sql_func(
                 QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
                 convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},  # frame_name_to_base_query_map
+                {},
                 config
             )
         elif self.__operator == ComparisonOperator.NOT_EQUAL:
             return PyLegendPrimitiveNotEqualsExpression._PyLegendPrimitiveNotEqualsExpression__to_sql_func(
                 QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
                 convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},  # frame_name_to_base_query_map
+                {},
                 config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN:
             return PyLegendPrimitiveLessThanExpression._PyLegendPrimitiveLessThanExpression__to_sql_func(
                 QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
                 convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},  # frame_name_to_base_query_map
+                {},
                 config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
             return PyLegendPrimitiveLessThanOrEqualExpression._PyLegendPrimitiveLessThanOrEqualExpression__to_sql_func(
                 QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
                 convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},  # frame_name_to_base_query_map
+                {},
                 config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN:
             return PyLegendPrimitiveGreaterThanExpression._PyLegendPrimitiveGreaterThanExpression__to_sql_func(
                 QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
                 convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},  # frame_name_to_base_query_map
+                {},
                 config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
             return PyLegendPrimitiveGreaterThanOrEqualExpression._PyLegendPrimitiveGreaterThanOrEqualExpression__to_sql_func(
                 QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
                 convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},  # frame_name_to_base_query_map
+                {},
                 config
             )
         else:
-            raise NotImplementedError(f"Operator {self.__operator} is not supported.")
+            raise NotImplementedError(f"Operator {self.__operator} is not supported for Pandas API")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         # column_pure_expr = f"$c.{self.__column.get_name()}"
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_pure_func(
                 self.__column.to_pure_expression(),
-                self.__value,
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
                 config
             )
         elif self.__operator == ComparisonOperator.NOT_EQUAL:
             return PyLegendPrimitiveNotEqualsExpression._PyLegendPrimitiveNotEqualsExpression__to_pure_func(
                 self.__column.to_pure_expression(),
-                self.__value,
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
                 config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN:
             return PyLegendPrimitiveLessThanExpression._PyLegendPrimitiveLessThanExpression__to_pure_func(
                 self.__column.to_pure_expression(),
-                self.__value,
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
                 config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
             return PyLegendPrimitiveLessThanOrEqualExpression._PyLegendPrimitiveLessThanOrEqualExpression__to_pure_func(
                 self.__column.to_pure_expression(),
-                self.__value,
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
                 config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN:
             return PyLegendPrimitiveGreaterThanExpression._PyLegendPrimitiveGreaterThanExpression__to_pure_func(
                 self.__column.to_pure_expression(),
-                self.__value,
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
                 config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
             return PyLegendPrimitiveGreaterThanOrEqualExpression._PyLegendPrimitiveGreaterThanOrEqualExpression__to_pure_func(
                 self.__column.to_pure_expression(),
-                self.__value,
+                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
                 config
             )
         else:
-            raise NotImplementedError(f"Operator {self.__operator} is not supported.")
+            raise NotImplementedError(f"Operator {self.__operator} is not supported for Pandas API")
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame

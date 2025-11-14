@@ -120,7 +120,8 @@ class JoinType(Enum):
 
 class LogicalBinaryType(Enum):
     AND = 1,
-    OR = 2
+    OR = 2,
+    NOT = 3,
 
 
 class ArithmeticType(Enum):

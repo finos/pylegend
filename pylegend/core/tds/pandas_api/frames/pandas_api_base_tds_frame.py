@@ -77,16 +77,14 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
                 PandasApiBooleanFilteringFunction(self, filter_expr=key)
             )
         elif isinstance(key, str):
-            # Return PandasApiTdsColumn for single column access
             for col in self.__columns:
                 if col.get_name() == key:
                     return col.copy_with_base_frame(self)
             raise KeyError(f"Column '{key}' not found")
         elif isinstance(key, list):
-            # Use .filter for multiple columns access
             return self.filter(items=key)
         else:
-            raise TypeError(f"Invalid key type: {type(key)}. Expected str, list, or boolean expression.")
+            raise TypeError(f"Invalid key type: {type(key)}. Expected str, list, or boolean expression")
 
     def assign(
             self,

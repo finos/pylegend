@@ -58,7 +58,7 @@ class PandasApiBooleanFilteringFunction:
 
     @classmethod
     def name(cls) -> str:
-        return "boolean_filter"
+        return "boolean_filter"  # pragma : no cover
 
     def __init__(
             self,
@@ -70,21 +70,24 @@ class PandasApiBooleanFilteringFunction:
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = (len(base_query.groupBy) > 0)
-        base_query = create_sub_query(base_query, config, "root") if should_create_sub_query \
-            else copy_query(base_query)
+        should_create_sub_query = (len(base_query.groupBy) > 0) or \
+                                  (base_query.offset is not None) or (base_query.limit is not None)
+        new_query = (
+            create_sub_query(base_query, config, "root") if should_create_sub_query else
+            copy_query(base_query)
+        )
 
         sql_expr = self.__filter_expr.to_sql(config)
 
-        if base_query.where is None:
-            base_query.where = sql_expr
+        if new_query.where is None:
+            new_query.where = sql_expr
         else:
-            base_query.where = LogicalBinaryExpression(
-                type_=LogicalBinaryType.AND,  # Combine with AND
-                left=base_query.where,
+            new_query.where = LogicalBinaryExpression(
+                type_=LogicalBinaryType.AND,
+                left=new_query.where,
                 right=sql_expr
             )
-        return base_query
+        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         pure_expr = self.__filter_expr.to_pure(config)
@@ -97,13 +100,7 @@ class PandasApiBooleanFilteringFunction:
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        new_cols = [c.copy() for c in self.__base_frame.columns()]
-        return new_cols
+        return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
-        # tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
-        # for col, f in self.__col_definitions.items():
-        #     f(tds_row)
         return True
-
-
