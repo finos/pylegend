@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
 import collections.abc
 from pylegend._typing import (
@@ -78,16 +77,16 @@ class AggregateFunction(PandasApiAppliedFunction):
             raise NotImplementedError(
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
             )
-        
+
         self.__func = self.normalize_input_func_to_standard_func(self.__func_input)
-        
+
         return True
 
     def normalize_input_func_to_standard_func(
             self,
             func_input: PyLegendAggInput
     ) -> dict[str, PyLegendAggList]:
-        
+
         column_names = {col.get_name() for col in self.calculate_columns()}
 
         if isinstance(func_input, collections.abc.Mapping):
@@ -115,7 +114,8 @@ class AggregateFunction(PandasApiAppliedFunction):
                                 f"Invalid `func` argument for the aggregate function.\n"
                                 f"When a dictionary is provided with a key whose value is a list, "
                                 f"all elements of the list must be of type callable, str, or np.ufunc.\n"
-                                f"But got element {i+1} of key {key!r}: {f!r} (type: {type(f).__name__})\n"
+                                f"But got element at index {i} (0-indexed) of key "
+                                f"{key!r}: {f!r} (type: {type(f).__name__})\n"
                             )
                     normalized[key] = value
                 else:
@@ -136,7 +136,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                     raise TypeError(
                         f"Invalid `func` argument for the aggregate function.\n"
                         f"When a list is provided, all elements must be of type callable, str, or np.ufunc.\n"
-                        f"But got element {i+1}: {f!r} (type: {type(f).__name__})\n"
+                        f"But got element at index {i} (0-indexed): {f!r} (type: {type(f).__name__})\n"
                     )
             return {col: PyLegendAggList(func_input.copy())
                     for col in column_names}
