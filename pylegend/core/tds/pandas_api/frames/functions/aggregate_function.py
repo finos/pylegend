@@ -19,8 +19,15 @@ from pylegend._typing import (
     PyLegendUnion,
     PyLegendList,
     PyLegendCallable,
+    PyLegendMapping,
+    PyLegendHashable,
 )
-from typing import Hashable, Mapping
+from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
+    PyLegendAggFunc,
+    PyLegendAggList,
+    PyLegendAggDict,
+    PyLegendAggInput
+)
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
@@ -30,19 +37,10 @@ from pylegend.core.tds.tds_column import TdsColumn
 
 class AggregateFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __func: Mapping[
-        str,
-        PyLegendList[
-            PyLegendUnion[
-                PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                str,
-                np.ufunc
-            ]
-        ]
-    ]
+    __func: PyLegendAggDict
     __axis: PyLegendUnion[int, str]
     __args: PyLegendSequence[PyLegendPrimitive]
-    __kwargs: Mapping[str, PyLegendPrimitive]
+    __kwargs: PyLegendMapping[str, PyLegendPrimitive]
 
 
     @classmethod
@@ -52,37 +50,10 @@ class AggregateFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            func: PyLegendUnion[
-                None,
-                PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                str,
-                np.ufunc,
-                PyLegendList[
-                    PyLegendUnion[
-                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                        str,
-                        np.ufunc
-                    ]
-                ],
-                Mapping[
-                    Hashable,
-                    PyLegendUnion[
-                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                        str,
-                        np.ufunc,
-                        PyLegendList[
-                            PyLegendUnion[
-                                PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                                str,
-                                np.ufunc
-                            ]
-                        ],
-                    ]
-                ]
-            ],
+            func: PyLegendAggInput,
             axis: PyLegendUnion[int, str],
             *args: PyLegendSequence[PyLegendPrimitive],
-            **kwargs: Mapping[str, PyLegendPrimitive]
+            **kwargs: PyLegendMapping[str, PyLegendPrimitive]
     ) -> None:
         self.__base_frame = base_frame
         self.__func_input = func
@@ -99,58 +70,80 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
             )
         
-        self.__func = self.map_input_func_to_standard_func(self.__func_input)
+        self.__func = self.normalize_input_func_to_standard_func(self.__func_input)
         
         return True
     
-    def map_input_func_to_standard_func(
-            self,
-            func_input: PyLegendUnion[
-                None,
-                PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                str,
-                np.ufunc,
-                PyLegendList[
-                    PyLegendUnion[
-                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                        str,
-                        np.ufunc
-                    ]
-                ],
-                Mapping[
-                    Hashable,
-                    PyLegendUnion[
-                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                        str,
-                        np.ufunc,
-                        PyLegendList[
-                            PyLegendUnion[
-                                PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                                str,
-                                np.ufunc
-                            ]
-                        ],
-                    ]
-                ]
-            ],
-    ) -> Mapping[
-            str,
-            PyLegendList[
-                PyLegendUnion[
-                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                    str,
-                    np.ufunc
-                ]
-            ]
-        ]:
-
-        if type(func_input) is None:
-            raise ValueError("The 'func' parameter of the aggregate function must be a function, or a list of functions, or a mapping of column names to functions. Got: None")
+    def normalize_input_func_to_standard_func(
+        self,
+        func_input: PyLegendAggInput
+    ) -> PyLegendAggDict:
         
-        if isinstance(func_input, (PyLegendCallable, str, np.ufunc)):
-            return {
-                col.get_name(): [func_input]
-                for col in self.__base_frame.columns()
-            }
+        column_names = {col.get_name() for col in self.calculate_columns()}
+
+        if isinstance(func_input, PyLegendMapping):
+            normalized: PyLegendAggDict = {}
+
+            for key, value in func_input.items():
+                if not isinstance(key, str):
+                    raise TypeError(
+                        f"Invalid `func` argument for the aggregate function.\n"
+                        f"When a dictionary is provided, all keys must be strings.\n"
+                        f"But got key: {key!r} (type: {type(key).__name__})\n"
+                    )
+                if key not in column_names:
+                    raise ValueError(
+                        f"Invalid `func` argument for the aggregate function.\n"
+                        f"When a dictionary is provided, all keys must be column names.\n"
+                        f"Available columns are: {sorted(column_names)}\n"
+                        f"But got key: {key!r} (type: {type(key).__name__})\n"
+                    )
+
+                if isinstance(value, PyLegendList):
+                    for i, f in enumerate(value):
+                        if not (callable(f) or isinstance(f, PyLegendAggFunc)):
+                            raise TypeError(
+                                f"Invalid `func` argument for the aggregate function.\n"
+                                f"When a dictionary is provided with a key whose value is a list, "
+                                f"all elements of the list must be of type callable, str, or np.ufunc.\n"
+                                f"But got element {i+1} of key {key!r}: {f!r} (type: {type(f).__name__})\n"
+                            )
+                    normalized[key] = value
+                else:
+                    if not (callable(value) or isinstance(value, PyLegendAggFunc)):
+                        raise TypeError(
+                            f"Invalid `func` argument for the aggregate function.\n"
+                            f"When a dictionary is provided, a key can have its value as a "
+                            f"callable, str, np.ufunc, or a list of those.\n"
+                            f"But got value of the key {key!r}: {value!r} (type: {type(value).__name__})\n"
+                        )
+                    normalized[key] = PyLegendAggList([value])
+
+            return normalized
+
+        elif isinstance(func_input, PyLegendList):
+            for i, f in enumerate(func_input):
+                if not (callable(f) or isinstance(f, PyLegendAggFunc)):
+                    raise TypeError(
+                        f"Invalid `func` argument for the aggregate function.\n"
+                        f"When a list is provided, all elements must be of type callable, str, or np.ufunc.\n"
+                        f"But got element {i+1}: {f!r} (type: {type(f).__name__})\n"
+                    )
+            return {col: PyLegendAggList(func_input.copy())
+                    for col in column_names}
+
+        elif callable(func_input) or isinstance(func_input, PyLegendAggFunc):
+            return {col: PyLegendAggList([func_input])
+                    for col in column_names}
+
+        else:
+            raise TypeError(
+                "Invalid `func` argument for aggregate function. "
+                "Expected a callable, str, np.ufunc, or a list of those, "
+                "or a mapping[str -> those or a list of those]. "
+                f"But got: {func_input!r} (type: {type(func_input).__name__})"
+            )
+        
+
 
 
