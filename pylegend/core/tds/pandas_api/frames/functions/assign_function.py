@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import date, datetime
+
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
@@ -20,17 +21,7 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-)
-from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.language import (
-    LegacyApiTdsRow,
     PyLegendPrimitive,
     PyLegendInteger,
     PyLegendFloat,
@@ -38,13 +29,23 @@ from pylegend.core.language import (
     PyLegendBoolean,
     PyLegendString,
 )
+from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.sql.metamodel import (
+    QuerySpecification,
+    SingleColumn,
+)
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
+from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
+from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 
 
 class AssignFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
     __col_definitions: PyLegendDict[
         str,
-        PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+        PyLegendCallable[[PandasApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
     ]
 
     @classmethod
@@ -56,7 +57,8 @@ class AssignFunction(PandasApiAppliedFunction):
             base_frame: PandasApiBaseTdsFrame,
             col_definitions: PyLegendDict[
                 str,
-                PyLegendCallable[[LegacyApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+                PyLegendCallable[
+                    [PandasApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
             ]
     ) -> None:
         self.__base_frame = base_frame
@@ -72,7 +74,7 @@ class AssignFunction(PandasApiAppliedFunction):
             copy_query(base_query)
         )
 
-        tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             if not isinstance(res, PyLegendPrimitive):
@@ -87,7 +89,7 @@ class AssignFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        pass
+        raise NotImplementedError("to_pure is not implemented yet")  # pragma: no cover
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
@@ -97,7 +99,7 @@ class AssignFunction(PandasApiAppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         new_cols = [c.copy() for c in self.__base_frame.columns()]
-        tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             if isinstance(res, (int, PyLegendInteger)):
@@ -115,7 +117,7 @@ class AssignFunction(PandasApiAppliedFunction):
         return new_cols
 
     def validate(self) -> bool:
-        tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
+        tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, f in self.__col_definitions.items():
             f(tds_row)
         return True

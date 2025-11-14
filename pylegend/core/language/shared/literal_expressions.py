@@ -108,7 +108,7 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
         return IntegerLiteral(value=self.__value)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return str(self.__value)
+        return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
 
     def is_non_nullable(self) -> bool:
         return True
@@ -128,7 +128,7 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
         return DoubleLiteral(value=self.__value)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return str(self.__value)
+        return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
 
     def is_non_nullable(self) -> bool:
         return True

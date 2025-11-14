@@ -36,7 +36,7 @@ runs:
       uses: ./.github/workflows/actions/poetry_install_dependencies
 
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: "zulu"
         java-version: "11"

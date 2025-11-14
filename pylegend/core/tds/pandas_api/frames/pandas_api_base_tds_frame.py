@@ -14,6 +14,7 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
+
 import pandas as pd
 
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiLogicalExpression
@@ -23,6 +24,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
     PyLegendList,
+    PyLegendSet,
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
@@ -32,15 +34,19 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import PyLegendPrimitive, LegacyApiTdsRow, PyLegendInteger
+from pylegend.core.language import PyLegendPrimitive, PyLegendInteger, PyLegendBoolean
+from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.tds_row import AbstractTdsRow
+from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PandasApiTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
 )
+from pylegend.core.tds.tds_column import TdsColumn, PandasApiTdsColumn
+from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import (
     ToPandasDfResultHandler,
     PandasDfReadConfig,
@@ -53,7 +59,7 @@ __all__: PyLegendSequence[str] = [
 R = PyLegendTypeVar('R')
 
 
-class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
+class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     __columns: PyLegendSequence[PandasApiTdsColumn]
 
     def __init__(self, columns: PyLegendSequence[PandasApiTdsColumn]) -> None:
@@ -89,7 +95,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
     def assign(
             self,
             **kwargs: PyLegendCallable[
-                [LegacyApiTdsRow],
+                [PandasApiTdsRow],
                 PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
@@ -99,21 +105,12 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
 
-    def shape(
-            self
-    ) -> "PandasApiTdsFrame":
-        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
-            PandasApiAppliedFunctionTdsFrame
-        )
-        from pylegend.core.tds.pandas_api.frames.functions.shape import PandasApiShapeFunction
-        return PandasApiAppliedFunctionTdsFrame(PandasApiShapeFunction(self))
-
     def filter(
             self,
-            items: PyLegendOptional[PyLegendUnion[list, PyLegendList]] = None,
+            items: PyLegendOptional[PyLegendList[str]] = None,
             like: PyLegendOptional[str] = None,
             regex: PyLegendOptional[str] = None,
-            axis: PyLegendUnion[str, int, PyLegendInteger] = None
+            axis: PyLegendOptional[PyLegendUnion[str, int, PyLegendInteger]] = None
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame
@@ -129,26 +126,78 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, metaclass=ABCMeta):
             )
         )
 
-    # def comparator_filtering(
-    #         self,
-    #         column: PandasApiTdsColumn,
-    #         operator: ComparisonOperator,
-    #         value: PyLegendPrimitive
-    #
-    # ) -> "PandasApiTdsFrame":
-    #     from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
-    #         PandasApiAppliedFunctionTdsFrame
-    #     )
-    #     from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import \
-    #         PandasApiComparatorFiltering
-    #     return PandasApiAppliedFunctionTdsFrame(
-    #         PandasApiComparatorFiltering(
-    #             self,
-    #             column=column,
-    #             operator=operator,
-    #             value=value
-    #         )
-    #     )
+    def sort_values(
+            self,
+            by: PyLegendUnion[str, PyLegendList[str]],
+            axis: PyLegendUnion[str, int] = 0,
+            ascending: PyLegendUnion[bool, PyLegendList[bool]] = True,
+            inplace: bool = False,
+            kind: PyLegendOptional[str] = None,
+            na_position: str = 'last',
+            ignore_index: bool = True,
+            key: PyLegendOptional[PyLegendCallable[[AbstractTdsRow], AbstractTdsRow]] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.sort_values_function import SortValuesFunction
+        return PandasApiAppliedFunctionTdsFrame(SortValuesFunction(
+            base_frame=self,
+            by=by,
+            axis=axis,
+            ascending=ascending,
+            inplace=inplace,
+            kind=kind,
+            na_position=na_position,
+            ignore_index=ignore_index,
+            key=key
+        ))
+
+    def truncate(
+            self,
+            before: PyLegendUnion[date, str, int, None] = None,
+            after: PyLegendUnion[date, str, int, None] = None,
+            axis: PyLegendUnion[str, int] = 0,
+            copy: bool = True
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.truncate_function import TruncateFunction
+        return PandasApiAppliedFunctionTdsFrame(TruncateFunction(
+            base_frame=self,
+            before=before,
+            after=after,
+            axis=axis,
+            copy=copy
+        ))
+
+    def drop(
+            self,
+            labels: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
+            axis: PyLegendUnion[str, int, PyLegendInteger] = 1,
+            index: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
+            columns: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
+            level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
+            inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
+            errors: str = "raise",
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
+            PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.drop import PandasApiDropFunction
+
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiDropFunction(
+                base_frame=self,
+                labels=labels,
+                axis=axis,
+                index=index,
+                columns=columns,
+                level=level,
+                inplace=inplace,
+                errors=errors
+            )
+        )
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
