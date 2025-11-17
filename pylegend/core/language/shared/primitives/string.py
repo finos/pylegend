@@ -17,10 +17,11 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.language.shared.literal_expressions import PyLegendIntegerLiteralExpression
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.shared.primitives.datetime import PyLegendDate
 from pylegend.core.language.shared.expression import PyLegendExpressionStringReturn
 from pylegend.core.language.shared.literal_expressions import PyLegendStringLiteralExpression
 from pylegend.core.sql.metamodel import (
@@ -47,8 +48,23 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringLessThanEqualExpression,
     PyLegendStringGreaterThanExpression,
     PyLegendStringGreaterThanEqualExpression,
+    PyLegendStringParseBooleanExpression,
+    PyLegendStringParseDateTimeExpression,
+    PyLegendStringOrdExpression,
+    PyLegendStringDecodeBase64Expression,
+    PyLegendStringEncodeBase64Expression,
+    PyLegendStringReverseExpression,
+    PyLegendStringToLowerFirstCharacterExpression,
+    PyLegendStringToUpperFirstCharacterExpression,
+    PyLegendStringLeftExpression,
+    PyLegendStringRightExpression,
+    PyLegendStringSubStringExpression,
+    PyLegendStringJaroWinklerSimilarityExpression,
+    PyLegendStringLevenshteinDistanceExpression,
+    PyLegendStringReplaceExpression
 )
 
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 
 __all__: PyLegendSequence[str] = [
     "PyLegendString"
@@ -103,13 +119,19 @@ class PyLegendString(PyLegendPrimitive):
     def strip(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringBTrimExpression(self.__value))
 
-    def index_of(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
-        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "Index_of parameter")
-        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
-        return PyLegendInteger(PyLegendStringPosExpression(self.__value, other_op))
+    # def index_of(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
+    #     PyLegendString.__validate_param_to_be_str_or_str_expr(other, "Index_of parameter")
+    #     other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+    #     return PyLegendInteger(PyLegendStringPosExpression(self.__value, other_op))
 
     def index(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
         return self.index_of(other)
+
+    def index_of(self, other: PyLegendUnion[str, "PyLegendString"], index_from: PyLegendUnion[int, "PyLegendInteger"] = 0) -> "PyLegendInteger":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "Index_of parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        index_from = PyLegendIntegerLiteralExpression(index_from) if isinstance(index_from, int) else index_from.value()
+        return PyLegendInteger(PyLegendStringPosExpression([self.__value, other_op, index_from]))
 
     def parse_int(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendStringParseIntExpression(self.__value))
@@ -119,6 +141,62 @@ class PyLegendString(PyLegendPrimitive):
 
     def parse_float(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendStringParseFloatExpression(self.__value))
+
+    def parse_boolean(self) -> "PyLegendBoolean":
+        return PyLegendBoolean(PyLegendStringParseBooleanExpression(self.__value))
+
+    def parse_date(self) -> "PyLegendDate":
+        return PyLegendDate(PyLegendStringParseDateTimeExpression(self.__value))
+
+    def ord(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendStringOrdExpression(self.__value))
+
+    def decode_base64(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringDecodeBase64Expression(self.__value))
+
+    def encode_base64(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringEncodeBase64Expression(self.__value))
+
+    def reverse(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringReverseExpression(self.__value))
+
+    def to_lower_first_character(self) -> "PyLegendString":
+        return PyLegendString(PyLegendStringToLowerFirstCharacterExpression(self.__value))
+
+    def to_upper_first_character(self) -> "PyLegendString":
+         return PyLegendString(PyLegendStringToUpperFirstCharacterExpression(self.__value))
+
+    def left(self, count: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
+        PyLegendString.__validate_param_to_be_integer(count, "left parameter")
+        cnt = PyLegendIntegerLiteralExpression(count) if isinstance(count, int) else count.value()
+        return PyLegendString(PyLegendStringLeftExpression(self.__value, cnt))
+
+    def right(self, count: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
+        PyLegendString.__validate_param_to_be_integer(count, "right parameter")
+        cnt = PyLegendIntegerLiteralExpression(count) if isinstance(count, int) else count.value()
+        return PyLegendString(PyLegendStringRightExpression(self.__value, cnt))
+
+    def substring(self, start: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
+        PyLegendString.__validate_param_to_be_integer(start, "substring parameter")
+        strt = PyLegendIntegerLiteralExpression(start) if isinstance(start, int) else start.value()
+        return PyLegendString(PyLegendStringSubStringExpression(self.__value, strt))
+
+    def jaro_winkler_similarity(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendFloat":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "JaroWinkler similarity parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendFloat(PyLegendStringJaroWinklerSimilarityExpression(self.__value, other_op))
+
+    def levenshtein_distance(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(other, "JaroWinkler similarity parameter")
+        other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
+        return PyLegendInteger(PyLegendStringLevenshteinDistanceExpression(self.__value, other_op))
+
+    def replace(self,to_replace: PyLegendUnion[str, "PyLegendString"], replacement: PyLegendUnion[str , "PyLegendString"]) -> "PyLegendString":
+        PyLegendString.__validate_param_to_be_str_or_str_expr(to_replace, "replace parameter")
+        to_replace_op = PyLegendStringLiteralExpression(to_replace) if isinstance(to_replace, str) else to_replace.__value
+        PyLegendString.__validate_param_to_be_str_or_str_expr(replacement, "replace parameter")
+        replacement_op = PyLegendStringLiteralExpression(replacement) if isinstance(replacement,str) else replacement.__value
+        return PyLegendString(PyLegendStringReplaceExpression([self.__value, to_replace_op,replacement_op]))
 
     def __add__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String plus (+) parameter")
@@ -167,10 +245,17 @@ class PyLegendString(PyLegendPrimitive):
     def __validate_param_to_be_str_or_str_expr(param: PyLegendUnion[str, "PyLegendString"], desc: str) -> None:
         if not isinstance(param, (str, PyLegendString)):
             raise TypeError(desc + " should be a str or a string expression (PyLegendString)."
+                                   
                                    " Got value " + str(param) + " of type: " + str(type(param)))
 
     @staticmethod
     def __validate_param_to_be_str(param: str, desc: str) -> None:
         if not isinstance(param, str):
             raise TypeError(desc + " should be a str."
+                                   " Got value " + str(param) + " of type: " + str(type(param)))
+
+    @staticmethod
+    def __validate_param_to_be_integer(param: int, desc: str) -> None:
+        if not isinstance(param, int):
+            raise TypeError(desc + " should be a int."
                                    " Got value " + str(param) + " of type: " + str(type(param)))

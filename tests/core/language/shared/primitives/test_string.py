@@ -239,6 +239,11 @@ class TestPyLegendString:
         assert self.__generate_pure_string(lambda x: 'Hello' == (x["col2"] + x["col1"])) == \
                '((toOne($t.col2) + toOne($t.col1)) == \'Hello\')'
 
+    def test_string_replace_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").replace("ab","ba")) == 'REPLACE("root".col2 , "ab", "ba")'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").replace("ab","ba")) == 'toOne($t.col2)->replace("ab", "ba")'
+
+
     def test_string_current_user_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: current_user()) == 'CURRENT_USER'
         assert self.__generate_pure_string(lambda x: current_user()) == 'currentUserId()'

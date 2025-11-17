@@ -27,6 +27,7 @@ __all__: PyLegendSequence[str] = [
     "StringLikeExpression",
     "StringUpperExpression",
     "StringLowerExpression",
+    "StringAsciiExpression",
     "TrimType",
     "StringTrimExpression",
     "StringPosExpression",
@@ -81,6 +82,17 @@ __all__: PyLegendSequence[str] = [
     "EpochExpression",
     "WindowExpression",
     "ConstantExpression",
+    "StringBase64Expression",
+    "Base64OperationType",
+    "StringReverseExpression",
+    "StringToLowerFirstCharacterExpression",
+    "StringToUpperFirstCharacterExpression",
+    "StringSliceType",
+    "StringSliceExpression",
+    "StringSubstringExpression",
+    "StringSimilarityExpression",
+    "StringSimilarityType",
+    "StringReplaceExpression"
 ]
 
 
@@ -108,6 +120,30 @@ class StringLikeExpression(Expression):
         self.value = value
         self.other = other
 
+class StringReverseExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+            self,
+            value: "Expression"
+    ) -> None:
+        super().__init__(_type="stringReverseExpression")
+        self.value = value
+
+class StringToLowerFirstCharacterExpression(Expression):
+    value: "Expression"
+
+    def __init__(self, value: "Expression") -> None:
+        super().__init__(_type="stringToLowerFirstCharacterExpression")
+        self.value = value
+
+class StringToUpperFirstCharacterExpression(Expression):
+    value: "Expression"
+
+    def __init__(self, value: "Expression") -> None:
+        super().__init__(_type="stringToUpperFirstCharacterExpression")
+        self.value = value
+
 
 class StringUpperExpression(Expression):
     value: "Expression"
@@ -130,6 +166,15 @@ class StringLowerExpression(Expression):
         super().__init__(_type="stringLowerExpression")
         self.value = value
 
+class StringAsciiExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+            self,
+            value: "Expression"
+    ) -> None:
+        super().__init__(_type="stringAsciiExpression")
+        self.value = value
 
 class TrimType(Enum):
     Left = 1,
@@ -152,18 +197,97 @@ class StringTrimExpression(Expression):
 
 
 class StringPosExpression(Expression):
-    value: "Expression"
-    other: "Expression"
+    values: list["Expression"]
 
     def __init__(
         self,
-        value: "Expression",
-        other: "Expression"
+        values: list["Expression"],
     ) -> None:
         super().__init__(_type="stringPosExpression")
+        self.values = values
+
+class Base64OperationType(Enum):
+    Encode = 1
+    Decode = 2
+
+class StringBase64Expression(Expression):
+    value: "Expression"
+    operation_type: Base64OperationType
+
+    def __init__(
+            self,
+            value: "Expression",
+            operation_type: Base64OperationType,
+    ) -> None:
+        super().__init__(_type="stringBase64Expression")
+        self.value = value
+        self.operation_type = operation_type
+
+class StringSliceType(Enum):
+    Left = 1
+    Right = 2
+
+class StringSliceExpression(Expression):
+    value: "Expression"
+    slice_type: StringSliceType
+    count: "Expression"
+
+    def __init__(
+            self,
+            value: Expression,
+            slice_type: StringSliceType,
+            count: Expression
+    ) -> None:
+        super().__init__(_type="stringSliceExpression")
+        self.value = value
+        self.slice_type = slice_type
+        self.count = count
+
+class StringSubstringExpression(Expression):
+    value: "Expression"
+    start: "Expression"
+    end: "Expression | None"
+
+    def __init__(
+            self,
+            value: "Expression",
+            start: "Expression",
+            end: "Expression | None" = None
+    ) -> None:
+        super().__init__(_type="stringSubstringExpression")
+        self.value = value
+        self.start = start
+        self.end = end
+
+class StringSimilarityType(Enum):
+    JaroWinkler = 1
+    LevenshteinDistance = 2
+
+class StringSimilarityExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+    type : StringSimilarityType
+
+    def __init__(
+            self,
+            value: "Expression",
+            other: "Expression",
+            type: StringSimilarityType
+    ) -> None:
+        super().__init__(_type="stringSimilarityExpression")
         self.value = value
         self.other = other
+        self.type = type
 
+class StringReplaceExpression(Expression):
+    values: list[Expression]
+
+    def __init__(
+            self,
+            values: list[Expression],
+    ) -> None:
+        super().__init__(_type="stringReplaceExpression")
+        self.values = values
 
 class StringConcatExpression(Expression):
     first: "Expression"

@@ -631,6 +631,15 @@ class NegativeExpression(Expression):
         super().__init__(_type="negativeExpression")
         self.value = value
 
+# class CharExpression(Expression):
+#     value: "Expression"
+#
+#     def __init__(
+#             self,
+#             value: "Expression"
+#     ) -> None:
+#         super().__init__(_type="charExpression")
+#         self.value = value
 
 class IsNullPredicate(Expression):
     value: "Expression"
