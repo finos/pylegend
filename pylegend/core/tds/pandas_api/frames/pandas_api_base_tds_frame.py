@@ -86,8 +86,12 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             for col in self.__columns:
                 if col.get_name() == key:
                     return col.copy_with_base_frame(self)
-            raise KeyError(f"Column '{key}' not found")
+            raise KeyError(f"['{key}'] not in index")
         elif isinstance(key, list):
+            valid_col_names = {col.get_name() for col in self.__columns}
+            invalid_cols = [k for k in key if k not in valid_col_names]
+            if invalid_cols:
+                raise KeyError(f"{invalid_cols} not in index")
             return self.filter(items=key)
         else:
             raise TypeError(f"Invalid key type: {type(key)}. Expected str, list, or boolean expression")

@@ -135,7 +135,6 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
             raise NotImplementedError(f"Operator {self.__operator} is not supported for Pandas API")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        # column_pure_expr = f"$c.{self.__column.get_name()}"
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_pure_func(
                 self.__column.to_pure_expression(),
@@ -186,8 +185,5 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
         return new_cols
 
     def validate(self) -> bool:
-        # tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
-        # for col, f in self.__col_definitions.items():
-        #     f(tds_row)
         return True
 

@@ -163,6 +163,26 @@ class PandasApiTdsColumn(TdsColumn):
     def to_pure_expression(self) -> str:
         return f"$c.{self.get_name()}"
 
+    def to_pure_query(self):
+        if self.__base_frame is None:
+            raise RuntimeError("Base frame not set for column")
+        from pylegend.core.tds.tds_frame import FrameToPureConfig
+        config = FrameToPureConfig()
+        return self.__base_frame.filter(items=[self.get_name()]).to_pure(config)
+
+    def to_sql_query(self):
+        if self.__base_frame is None:
+            raise RuntimeError("Base frame not set for column")
+        from pylegend.core.tds.tds_frame import FrameToSqlConfig
+        from pylegend.core.database.sql_to_string.config import SqlToStringConfig, SqlToStringFormat
+        config = FrameToSqlConfig()
+        frame = self.__base_frame.filter(items=[self.get_name()])
+        query_spec = frame.to_sql_query_object(config)
+        sql_to_string_config = SqlToStringConfig(
+            format_=SqlToStringFormat(pretty=config.pretty)
+        )
+        return config.sql_to_string_generator().generate_sql_string(query_spec, sql_to_string_config)
+
     @classmethod
     def integer_column(cls, name: str) -> "PandasApiTdsColumn":
         return PandasApiTdsColumn(name, PrimitiveType.Integer)
