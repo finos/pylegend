@@ -131,7 +131,7 @@ from pylegend.core.sql.metamodel_extension import (
     SecondExpression,
     EpochExpression,
     WindowExpression,
-    ConstantExpression,
+    ConstantExpression, StringReplaceExpression,
 )
 
 
@@ -454,6 +454,8 @@ def expression_processor(
         return extension.process_window_expression(expression, config)
     elif isinstance(expression, ConstantExpression):
         return expression.name
+    elif isinstance(expression, StringReplaceExpression):
+        return extension.process
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -1170,6 +1172,13 @@ class SqlToStringDbExtension:
 
     def process_window_expression(self, expr: WindowExpression, config: SqlToStringConfig) -> str:
         return f"{self.process_expression(expr.nested, config)} {self.process_window(expr.window, config)}"
+
+    def process_replace_expression(self,expr: StringReplaceExpression, config: SqlToStringConfig,) -> str:
+        value = self.process_expression(expr.values[0], config)
+        search = self.process_expression(expr.values[1], config)
+        replace = self.process_expression(expr.values[2], config)
+
+        return f"REPLACE({value}, {search}, {replace})"
 
     def process_qualified_name(self, qualified_name: QualifiedName, config: SqlToStringConfig) -> str:
         return qualified_name_processor(qualified_name, self, config)
