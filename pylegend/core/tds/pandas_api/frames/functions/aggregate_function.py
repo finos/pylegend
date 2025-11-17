@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import ast
+import inspect
 import numpy as np
 import collections.abc
 from pylegend._typing import (
@@ -21,6 +24,7 @@ from pylegend._typing import (
     PyLegendMapping,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
+    PyLegendAggFunc,
     PyLegendAggList,
     PyLegendAggInput
 )
@@ -152,3 +156,119 @@ class AggregateFunction(PandasApiAppliedFunction):
                 "or a mapping[str -> those or a list of those]. "
                 f"But got: {func_input!r} (type: {type(func_input).__name__})"
             )
+
+    def validate_lambda_function(lambda_func: PyLegendAggFunc) -> bool:
+
+        if isinstance(lambda_func, str):
+            raise NotImplementedError(
+                "WIP"
+            )
+        
+        if isinstance(lambda_func, np.ufunc):
+            raise NotImplementedError(
+                "WIP"
+            )
+        
+        ALLOWED_METHODS = {
+            'sum',
+            'mean',
+            'min',
+            'max',
+            'count',
+            'std',
+            'var',
+            'median',
+        }
+
+        ALLOWED_NODE_TYPES = {
+            ast.Lambda,
+            ast.Name,
+            ast.Attribute,
+            ast.Call,
+            ast.BinOp,
+            ast.UnaryOp,
+            ast.Constant,
+            ast.Load,
+            ast.Store,
+        }
+
+        ALLOWED_BINARY_OPERATORS = {
+            ast.Add,
+            ast.Sub,
+            ast.Mult,
+            ast.Div,
+            ast.FloorDiv,
+            ast.Mod,
+            ast.Pow,
+        }
+
+        ALLOWED_UNARY_OPERATORS = {
+            ast.UAdd,
+            ast.USub,
+        }
+
+        try:
+            source = inspect.getsource(lambda_func).strip()
+            tree = ast.parse(source)
+
+            lambda_node = None
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Lambda):
+                    lambda_node = node
+                    break
+
+            if lambda_node is None:
+                return False
+            
+            if len(lambda_node.args.args) != 1:
+                return False
+            
+            param_name = lambda_node.args.args[0].arg
+
+            for node in ast.walk(lambda_node):
+                node_type = type(node)
+
+                if node_type not in ALLOWED_NODE_TYPES:
+                    return False
+                
+                if isinstance(node, ast.BinOp):
+                    if type(node.op) not in ALLOWED_BINARY_OPERATORS:
+                        return False
+                    
+                elif isinstance(node, ast.UnaryOp):
+                    if type(node.op) not in ALLOWED_UNARY_OPERATORS:
+                        return False
+                    
+                elif isinstance(node, ast.Name):
+                    if node.id != param_name:
+                        return False
+                    
+                elif isinstance(node, ast.Call):
+                    if not isinstance(node.func, ast.Attribute):
+                        return False
+                    
+                    if not isinstance(node.func.value, ast.Name):
+                        return False
+                    
+                    if node.func.value.id != param_name:
+                        return False
+                    
+                    method_name = node.func.attr
+                    if method_name not in ALLOWED_METHODS:
+                        return False
+                    
+                    if method_name in ['std', 'var']:
+                        for keyword in node.keywords:
+                            if keyword.arg not in ['ddof']:
+                                return False
+                            
+                    elif len(node.args) > 0 or len(node.keywords) > 0:
+                        return False
+                    
+            return True
+            
+        except Exception:
+            return False
+
+
+        return True
