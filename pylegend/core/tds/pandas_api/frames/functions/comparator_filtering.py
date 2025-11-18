@@ -132,7 +132,7 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
                 config
             )
         else:
-            raise NotImplementedError(f"Operator {self.__operator} is not supported for Pandas API")
+            raise ValueError(f"Unsupported operator: {self.__operator} for Pandas API")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         if self.__operator == ComparisonOperator.EQUAL:
@@ -172,7 +172,7 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
                 config
             )
         else:
-            raise NotImplementedError(f"Operator {self.__operator} is not supported for Pandas API")
+            raise ValueError(f"Unsupported operator: {self.__operator} for Pandas API")
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame

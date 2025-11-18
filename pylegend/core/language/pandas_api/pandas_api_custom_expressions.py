@@ -28,7 +28,7 @@ class PandasApiLogicalExpression:
     def __and__(self, other):
         from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
         if not isinstance(other, (PandasApiComparatorFiltering, PandasApiLogicalExpression)):
-            raise TypeError(f"Unsupported operand type(s) for &: '{type(self)}' and '{type(other)}'")
+            raise TypeError(f"unsupported operand type(s) for &: '{type(self)}' and '{type(other)}'")
         return PandasApiLogicalExpression(self, LogicalBinaryType.AND, other)
 
     def __or__(self, other):
@@ -36,7 +36,7 @@ class PandasApiLogicalExpression:
         if isinstance(other, (PandasApiLogicalExpression, PandasApiComparatorFiltering)):
             return PandasApiLogicalExpression(self, LogicalBinaryType.OR, other)
         else:
-            raise TypeError(f"Unsupported operand type(s) for |: '{type(self)}' and '{type(other)}'")
+            raise TypeError(f"unsupported operand type(s) for |: '{type(self)}' and '{type(other)}'")
 
     def __invert__(self):
         return PandasApiLogicalExpression(self, LogicalBinaryType.NOT)

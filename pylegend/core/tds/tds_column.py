@@ -32,6 +32,7 @@ __all__: PyLegendSequence[str] = [
     "tds_columns_from_json",
 ]
 
+
 class TdsColumn(metaclass=ABCMeta):
     __name: str
 
@@ -163,19 +164,19 @@ class PandasApiTdsColumn(TdsColumn):
     def to_pure_expression(self) -> str:
         return f"$c.{self.get_name()}"
 
-    def to_pure_query(self):
+    def to_pure_query(self, config: "FrameToPureConfig" = None) -> str:
         if self.__base_frame is None:
             raise RuntimeError("Base frame not set for column")
         from pylegend.core.tds.tds_frame import FrameToPureConfig
-        config = FrameToPureConfig()
+        config = config if config is not None else FrameToPureConfig()
         return self.__base_frame.filter(items=[self.get_name()]).to_pure(config)
 
-    def to_sql_query(self):
+    def to_sql_query(self, config: "FrameToSqlConfig" = None) -> str:
         if self.__base_frame is None:
             raise RuntimeError("Base frame not set for column")
         from pylegend.core.tds.tds_frame import FrameToSqlConfig
         from pylegend.core.database.sql_to_string.config import SqlToStringConfig, SqlToStringFormat
-        config = FrameToSqlConfig()
+        config = config if config is not None else FrameToSqlConfig()
         frame = self.__base_frame.filter(items=[self.get_name()])
         query_spec = frame.to_sql_query_object(config)
         sql_to_string_config = SqlToStringConfig(
