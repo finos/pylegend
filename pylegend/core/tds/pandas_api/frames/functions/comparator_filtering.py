@@ -89,87 +89,69 @@ class PandasApiComparatorFiltering(PandasApiAppliedFunction):
         return PandasApiLogicalExpression(self, LogicalBinaryType.NOT)
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        left_expr = QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()]))
+        if isinstance(self.__value, PandasApiTdsColumn):
+            right_expr = QualifiedNameReference(QualifiedName(['"root"', self.__value.get_name()]))
+        else:
+            right_expr = convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config)
+
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_sql_func(
-                QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
-                convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},
-                config
+                left_expr, right_expr, {}, config
             )
         elif self.__operator == ComparisonOperator.NOT_EQUAL:
             return PyLegendPrimitiveNotEqualsExpression._PyLegendPrimitiveNotEqualsExpression__to_sql_func(
-                QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
-                convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},
-                config
+                left_expr, right_expr, {}, config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN:
             return PyLegendPrimitiveLessThanExpression._PyLegendPrimitiveLessThanExpression__to_sql_func(
-                QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
-                convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},
-                config
+                left_expr, right_expr, {}, config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
             return PyLegendPrimitiveLessThanOrEqualExpression._PyLegendPrimitiveLessThanOrEqualExpression__to_sql_func(
-                QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
-                convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},
-                config
+                left_expr, right_expr, {}, config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN:
             return PyLegendPrimitiveGreaterThanExpression._PyLegendPrimitiveGreaterThanExpression__to_sql_func(
-                QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
-                convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},
-                config
+                left_expr, right_expr, {}, config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
             return PyLegendPrimitiveGreaterThanOrEqualExpression._PyLegendPrimitiveGreaterThanOrEqualExpression__to_sql_func(
-                QualifiedNameReference(QualifiedName(['"root"', self.__column.get_name()])),
-                convert_literal_to_literal_expression(self.__value).to_sql_expression({}, config),
-                {},
-                config
+                left_expr, right_expr, {}, config
             )
         else:
             raise ValueError(f"Unsupported operator: {self.__operator} for Pandas API")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
+        left_expr = self.__column.to_pure_expression()
+        if isinstance(self.__value, PandasApiTdsColumn):
+            right_expr = self.__value.to_pure_expression()
+        else:
+            right_expr = convert_literal_to_literal_expression(self.__value).to_pure_expression(config)
+
         if self.__operator == ComparisonOperator.EQUAL:
             return PyLegendPrimitiveEqualsExpression._PyLegendPrimitiveEqualsExpression__to_pure_func(
-                self.__column.to_pure_expression(),
-                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
-                config
+                left_expr, right_expr, config
             )
         elif self.__operator == ComparisonOperator.NOT_EQUAL:
             return PyLegendPrimitiveNotEqualsExpression._PyLegendPrimitiveNotEqualsExpression__to_pure_func(
-                self.__column.to_pure_expression(),
-                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
-                config
+                left_expr, right_expr, config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN:
             return PyLegendPrimitiveLessThanExpression._PyLegendPrimitiveLessThanExpression__to_pure_func(
-                self.__column.to_pure_expression(),
-                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
-                config
+                left_expr, right_expr, config
             )
         elif self.__operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
             return PyLegendPrimitiveLessThanOrEqualExpression._PyLegendPrimitiveLessThanOrEqualExpression__to_pure_func(
-                self.__column.to_pure_expression(),
-                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
-                config
+                left_expr, right_expr, config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN:
             return PyLegendPrimitiveGreaterThanExpression._PyLegendPrimitiveGreaterThanExpression__to_pure_func(
-                self.__column.to_pure_expression(),
-                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
-                config
+                left_expr, right_expr, config
             )
         elif self.__operator == ComparisonOperator.GREATER_THAN_OR_EQUAL:
             return PyLegendPrimitiveGreaterThanOrEqualExpression._PyLegendPrimitiveGreaterThanOrEqualExpression__to_pure_func(
-                self.__column.to_pure_expression(),
-                convert_literal_to_literal_expression(self.__value).to_pure_expression(config),
-                config
+                left_expr, right_expr, config
             )
         else:
             raise ValueError(f"Unsupported operator: {self.__operator} for Pandas API")

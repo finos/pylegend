@@ -52,7 +52,7 @@ from pylegend.core.language import (
 from pylegend._typing import *
 
 
-class PandasApiBooleanFilteringFunction:
+class PandasApiBooleanFilteringFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
     __filter_expr: PyLegendUnion[PandasApiComparatorFiltering, PandasApiLogicalExpression]
 
