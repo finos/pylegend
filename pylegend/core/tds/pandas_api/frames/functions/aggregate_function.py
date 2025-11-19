@@ -31,6 +31,7 @@ from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import
     PyLegendAggList,
     PyLegendAggInput
 )
+from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection, create_primitive_collection
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.primitives.string import PyLegendString
@@ -89,7 +90,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         else:
             new_query = copy_query(base_query)
 
-        tds_row = AbstractTdsRow("r", self.__base_frame)
+        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame)
         aggregates_list: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]] = []
 
         for column_name, func_list in self.__func.items():
