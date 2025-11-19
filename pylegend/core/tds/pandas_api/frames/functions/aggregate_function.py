@@ -15,9 +15,11 @@
 
 import ast
 import inspect
+import textwrap
 import numpy as np
 import collections.abc
 from pylegend._typing import (
+    PyLegendCallable,
     PyLegendSequence,
     PyLegendUnion,
     PyLegendList,
@@ -28,6 +30,7 @@ from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import
     PyLegendAggList,
     PyLegendAggInput
 )
+from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
@@ -38,7 +41,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 class AggregateFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __func: dict[str, PyLegendAggList]
+    __func: dict[str, PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]]
     __axis: PyLegendUnion[int, str]
     __args: PyLegendSequence[PyLegendPrimitive]
     __kwargs: PyLegendMapping[str, PyLegendPrimitive]
@@ -82,11 +85,16 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
             )
 
-        self.__func = self.normalize_input_func_to_standard_func(self.__func_input)
+        normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_func(self.__func_input)
+        self.__func = dict()
+        for col, func_list in normalized_func.items():
+            self.__func[col] = [self.__normalize_to_lambda_function(func) for func in func_list]
+
+        print(self.__func)
 
         return True
 
-    def normalize_input_func_to_standard_func(
+    def __normalize_input_func_to_standard_func(
             self,
             func_input: PyLegendAggInput
     ) -> dict[str, PyLegendAggList]:
@@ -157,118 +165,87 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"But got: {func_input!r} (type: {type(func_input).__name__})"
             )
 
-    def validate_lambda_function(lambda_func: PyLegendAggFunc) -> bool:
-
-        if isinstance(lambda_func, str):
-            raise NotImplementedError(
-                "WIP"
-            )
+    def __normalize_to_lambda_function(
+            self,
+            func: PyLegendAggFunc
+    ) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
         
-        if isinstance(lambda_func, np.ufunc):
-            raise NotImplementedError(
-                "WIP"
-            )
+        if isinstance(func, str):
+            raise NotImplementedError("WIP")
         
-        ALLOWED_METHODS = {
-            'sum',
-            'mean',
-            'min',
-            'max',
-            'count',
-            'std',
-            'var',
-            'median',
-        }
+        if isinstance(func, np.ufunc):
+            raise NotImplementedError("WIP")
+        
+        return func
+        
+        # ALLOWED_METHODS = {
+        #     'sum', 'count',
+        #     'min', 'max',
+        #     'mean', 'median',
+        #     'std', 'var'
+        # }
 
-        ALLOWED_NODE_TYPES = {
-            ast.Lambda,
-            ast.Name,
-            ast.Attribute,
-            ast.Call,
-            ast.BinOp,
-            ast.UnaryOp,
-            ast.Constant,
-            ast.Load,
-            ast.Store,
-        }
+        # ALLOWED_NODE_TYPES = {
+        #     ast.Lambda, ast.Name, ast.Attribute, ast.Call, 
+        #     ast.BinOp, ast.UnaryOp, ast.Constant, 
+        #     ast.Load, ast.Store, ast.arguments, ast.arg
+        # }
 
-        ALLOWED_BINARY_OPERATORS = {
-            ast.Add,
-            ast.Sub,
-            ast.Mult,
-            ast.Div,
-            ast.FloorDiv,
-            ast.Mod,
-            ast.Pow,
-        }
+        # ALLOWED_BINARY_OPERATORS = {
+        #     ast.Add, ast.Sub, ast.Mult, ast.Div, 
+        #     ast.FloorDiv, ast.Mod, ast.Pow,
+        # }
 
-        ALLOWED_UNARY_OPERATORS = {
-            ast.UAdd,
-            ast.USub,
-        }
+        # ALLOWED_UNARY_OPERATORS = {
+        #     ast.UAdd, ast.USub,
+        # }
 
-        try:
-            source = inspect.getsource(lambda_func).strip()
-            tree = ast.parse(source)
+        # try:
+        #     source = inspect.getsource(lambda_func)
+        # except OSError:
+        #     raise ValueError("Could not retrieve source code for the provided lambda function.")
 
-            lambda_node = None
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Lambda):
-                    lambda_node = node
-                    break
+        # source = textwrap.dedent(source).strip()
+        
+        # try:
+        #     tree = ast.parse(source)
+        # except SyntaxError:
+        #     raise ValueError("Could not parse the provided lambda function.")
 
-            if lambda_node is None:
-                return False
-            
-            if len(lambda_node.args.args) != 1:
-                return False
-            
-            param_name = lambda_node.args.args[0].arg
+        # lambda_node = None
+        # for node in ast.walk(tree):
+        #     if isinstance(node, ast.Lambda):
+        #         lambda_node = node
+        #         break
+        
+        # if lambda_node is None:
+        #     raise ValueError("No lambda function found in the provided source code.")
 
-            for node in ast.walk(lambda_node):
-                node_type = type(node)
+        # for node in ast.walk(lambda_node):
+        #     if type(node) not in ALLOWED_NODE_TYPES:
+        #         raise ValueError(f"Security violation: AST node '{type(node).__name__}' is not allowed.")
 
-                if node_type not in ALLOWED_NODE_TYPES:
-                    return False
+        #     # B. Validate Binary Operators (if applicable)
+        #     if isinstance(node, ast.BinOp):
+        #         if type(node.op) not in ALLOWED_BINARY_OPERATORS:
+        #             raise ValueError(f"Security violation: Binary operator '{type(node.op).__name__}' is not allowed.")
+
+        #     # C. Validate Unary Operators (if applicable)
+        #     if isinstance(node, ast.UnaryOp):
+        #         if type(node.op) not in ALLOWED_UNARY_OPERATORS:
+        #             raise ValueError(f"Security violation: Unary operator '{type(node.op).__name__}' is not allowed.")
+
+        #     # D. Validate Function/Method Calls
+        #     if isinstance(node, ast.Call):
+        #         # Case 1: Method call (e.g., x.sum())
+        #         if isinstance(node.func, ast.Attribute):
+        #             if node.func.attr not in ALLOWED_METHODS:
+        #                 raise ValueError(f"Security violation: Method '{node.func.attr}' is not allowed.")
                 
-                if isinstance(node, ast.BinOp):
-                    if type(node.op) not in ALLOWED_BINARY_OPERATORS:
-                        return False
-                    
-                elif isinstance(node, ast.UnaryOp):
-                    if type(node.op) not in ALLOWED_UNARY_OPERATORS:
-                        return False
-                    
-                elif isinstance(node, ast.Name):
-                    if node.id != param_name:
-                        return False
-                    
-                elif isinstance(node, ast.Call):
-                    if not isinstance(node.func, ast.Attribute):
-                        return False
-                    
-                    if not isinstance(node.func.value, ast.Name):
-                        return False
-                    
-                    if node.func.value.id != param_name:
-                        return False
-                    
-                    method_name = node.func.attr
-                    if method_name not in ALLOWED_METHODS:
-                        return False
-                    
-                    if method_name in ['std', 'var']:
-                        for keyword in node.keywords:
-                            if keyword.arg not in ['ddof']:
-                                return False
-                            
-                    elif len(node.args) > 0 or len(node.keywords) > 0:
-                        return False
-                    
-            return True
-            
-        except Exception:
-            return False
+        #         # Case 2: Direct function call (e.g., sum(x)) - Optional, depending on your needs.
+        #         # If you only want to allow x.sum(), you might reject ast.Name here.
+        #         elif isinstance(node.func, ast.Name):
+        #             if node.func.id not in ALLOWED_METHODS:
+        #                 raise ValueError(f"Security violation: Function '{node.func.id}' is not allowed.")
 
-
-        return True
+        # return lambda_func

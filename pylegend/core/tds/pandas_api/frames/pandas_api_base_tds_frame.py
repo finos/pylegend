@@ -28,6 +28,7 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
+from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.database.sql_to_string import (
@@ -181,39 +182,22 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     
     def aggregate(
         self,
-        func: PyLegendUnion[
-            None,
-            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-            str,
-            np.ufunc,
-            PyLegendList[
-                PyLegendUnion[
-                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                    str,
-                    np.ufunc
-                ]
-            ],
-            Mapping[
-                Hashable,
-                PyLegendUnion[
-                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                    str,
-                    np.ufunc,
-                    PyLegendList[
-                        PyLegendUnion[
-                            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                            str,
-                            np.ufunc
-                        ]
-                    ],
-                ]
-            ]
-        ] = None,
+        func: PyLegendAggInput = None,
         axis: PyLegendUnion[int, str] = 0,
         *args: PyLegendSequence[PyLegendPrimitive],
         **kwargs: Mapping[str, PyLegendPrimitive]
     ) -> "PandasApiTdsFrame":
-        pass
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
+        return PandasApiAppliedFunctionTdsFrame(AggregateFunction(
+            base_frame=self,
+            func=func,
+            axis=axis,
+            args=args,
+            kwargs=kwargs
+        ))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

@@ -26,6 +26,7 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSet
 )
+from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.language import (
     PyLegendPrimitive,
@@ -103,34 +104,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def aggregate(
         self,
-        func: PyLegendUnion[
-            None,
-            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-            str,
-            np.ufunc,
-            PyLegendList[
-                PyLegendUnion[
-                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                    str,
-                    np.ufunc
-                ]
-            ],
-            Mapping[
-                Hashable,
-                PyLegendUnion[
-                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                    str,
-                    np.ufunc,
-                    PyLegendList[
-                        PyLegendUnion[
-                            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
-                            str,
-                            np.ufunc
-                        ]
-                    ],
-                ]
-            ]
-        ] = None,
+        func: PyLegendAggInput = None,
         axis: PyLegendUnion[int, str] = 0,
         *args: PyLegendSequence[PyLegendPrimitive],
         **kwargs: Mapping[str, PyLegendPrimitive]
