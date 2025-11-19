@@ -18,6 +18,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionIntegerReturn,
+    PyLegendExpressionStringReturn
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
@@ -28,6 +29,10 @@ from pylegend.core.sql.metamodel import (
     ArithmeticType,
     ArithmeticExpression,
     NegativeExpression,
+    Cast,
+    ColumnType,
+    FunctionCall,
+    QualifiedName
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
@@ -43,6 +48,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendIntegerSubtractExpression",
     "PyLegendIntegerMultiplyExpression",
     "PyLegendIntegerModuloExpression",
+    "PyLegendIntegerCharExpression",
+    "PyLegendIntegerToStringExpression"
 ]
 
 
@@ -209,6 +216,61 @@ class PyLegendIntegerNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
             operand,
             PyLegendIntegerNegativeExpression.__to_sql_func,
             PyLegendIntegerNegativeExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+class PyLegendIntegerCharExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["CHR"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None, window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("char", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendIntegerCharExpression.__to_sql_func,
+            PyLegendIntegerCharExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+class PyLegendIntegerToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return Cast(expression, ColumnType(name="TEXT", parameters=[]))
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("toString", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendIntegerToStringExpression.__to_sql_func,
+            PyLegendIntegerToStringExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )

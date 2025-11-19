@@ -132,6 +132,11 @@ from pylegend.core.sql.metamodel_extension import (
     EpochExpression,
     WindowExpression,
     ConstantExpression,
+    StringMatchesExpression,
+    StringBase64Expression,
+    Base64OperationType,
+    StringFirstCharCaseExpression,
+    FirstCharCaseType
 )
 
 
@@ -454,6 +459,12 @@ def expression_processor(
         return extension.process_window_expression(expression, config)
     elif isinstance(expression, ConstantExpression):
         return expression.name
+    elif isinstance(expression, StringBase64Expression):
+        return extension.process_string_base64_expression(expression, config)
+    elif isinstance(expression, StringFirstCharCaseExpression):
+        return extension.process_string_first_char_case_expression(expression, config)
+    elif isinstance(expression, StringMatchesExpression):
+        return extension.process_matches_expression(expression,config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -1231,3 +1242,28 @@ class SqlToStringDbExtension:
 
     def process_union(self, union: Union, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
         return union_processor(union, self, config, nested_subquery)
+
+    def process_matches_expression(self, expr: StringMatchesExpression, config: SqlToStringConfig) -> str:
+        value = f"({self.process_expression(expr.value, config)})"
+        pattern = self.process_expression(expr.pattern, config)
+
+        if expr.match_exact:
+            return f"{value} ~ '^' || {pattern} || '$'"
+        else:
+            return f"{value} ~ {pattern}"
+
+    def process_string_base64_expression(self, expr: StringBase64Expression, config: "SqlToStringConfig") -> str:
+        op = self.process_expression(expr.value, config)
+        return (
+            f"ENCODE(CONVERT_TO({op}, 'UTF8'), 'BASE64')"
+            if expr.operation_type == Base64OperationType.Encode
+            else f"CONVERT_FROM(DECODE({op}, 'BASE64'), 'UTF8')"
+        )
+
+    def process_string_first_char_case_expression(self, expr: StringFirstCharCaseExpression, config: "SqlToStringConfig") -> str:
+        op = self.process_expression(expr.value, config)
+        return (
+            f"UPPER(LEFT({op}, 1)) || SUBSTR({op}, 2)"
+            if expr.case_type == FirstCharCaseType.UPPER
+            else f"LOWER(LEFT({op}, 1)) || SUBSTR({op}, 2)"
+        )

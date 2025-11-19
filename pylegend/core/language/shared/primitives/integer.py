@@ -25,7 +25,10 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import (
+    FrameToSqlConfig,
+    FrameToPureConfig,
+)
 from pylegend.core.language.shared.operations.integer_operation_expressions import (
     PyLegendIntegerAddExpression,
     PyLegendIntegerAbsoluteExpression,
@@ -33,9 +36,12 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
     PyLegendIntegerSubtractExpression,
     PyLegendIntegerMultiplyExpression,
     PyLegendIntegerModuloExpression,
+    PyLegendIntegerCharExpression,
+    PyLegendIntegerToStringExpression
 )
 if TYPE_CHECKING:
-    from pylegend.core.language.shared.primitives import PyLegendFloat
+    from pylegend.core.language.shared.primitives import (PyLegendFloat)
+    from pylegend.core.language.shared.primitives.string import  PyLegendString
 
 __all__: PyLegendSequence[str] = [
     "PyLegendInteger"
@@ -52,12 +58,23 @@ class PyLegendInteger(PyLegendNumber):
         self.__value_copy = value
         super().__init__(value)
 
+    def char(self) -> "PyLegendString":
+        from pylegend.core.language.shared.primitives.string import PyLegendString
+        return PyLegendString(PyLegendIntegerCharExpression(self.__value_copy))
+
+    def to_string(self) -> "PyLegendString":
+        from pylegend.core.language.shared.primitives import PyLegendString
+        return PyLegendString(PyLegendIntegerToStringExpression(self.__value_copy))
+
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return self.__value_copy.to_pure_expression(config)
 
     def value(self) -> PyLegendExpressionIntegerReturn:
         return self.__value_copy

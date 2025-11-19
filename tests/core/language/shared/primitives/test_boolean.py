@@ -118,6 +118,12 @@ class TestPyLegendBoolean:
         assert self.__generate_pure_string(lambda x: True == (x["col2"] & x["col1"])) == \
                '((toOne($t.col2) && toOne($t.col1)) == true)'
 
+    def test_boolean_to_string_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_boolean("col2").to_string()) == \
+               'CAST("root".col2 AS TEXT)'
+        assert self.__generate_pure_string(lambda x: x.get_boolean("col2").to_string()) == \
+               'toOne($t.col2)->toString()'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

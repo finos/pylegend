@@ -18,6 +18,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionStringReturn
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
@@ -27,7 +28,7 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     ArithmeticType,
     ArithmeticExpression,
-    NegativeExpression,
+    NegativeExpression, Cast, ColumnType,
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
@@ -42,6 +43,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendFloatNegativeExpression",
     "PyLegendFloatSubtractExpression",
     "PyLegendFloatMultiplyExpression",
+    "PyLegendFloatToStringExpression"
 ]
 
 
@@ -179,6 +181,31 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
             operand,
             PyLegendFloatNegativeExpression.__to_sql_func,
             PyLegendFloatNegativeExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+class PyLegendFloatToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return Cast(expression, ColumnType(name="TEXT", parameters=[]))
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("toString", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendFloatToStringExpression.__to_sql_func,
+            PyLegendFloatToStringExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )
