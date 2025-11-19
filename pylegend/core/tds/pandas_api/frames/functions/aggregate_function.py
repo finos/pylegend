@@ -21,6 +21,7 @@ import collections.abc
 from pylegend._typing import (
     PyLegendCallable,
     PyLegendSequence,
+    PyLegendTuple,
     PyLegendUnion,
     PyLegendList,
     PyLegendMapping,
@@ -30,18 +31,26 @@ from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import
     PyLegendAggList,
     PyLegendAggInput
 )
-from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
-from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
-from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection, create_primitive_collection
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.language.shared.primitives.string import PyLegendString
+from pylegend.core.language.shared.tds_row import AbstractTdsRow
+from pylegend.core.sql.metamodel import QuerySpecification, SingleColumn
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 
 class AggregateFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __func: dict[str, PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]]
+    __func: dict[
+        str,
+        PyLegendList[
+            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+        ]
+    ]
     __axis: PyLegendUnion[int, str]
     __args: PyLegendSequence[PyLegendPrimitive]
     __kwargs: PyLegendMapping[str, PyLegendPrimitive]
@@ -65,7 +74,48 @@ class AggregateFunction(PandasApiAppliedFunction):
         self.__kwargs = kwargs
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass
+        base_query: QuerySpecification = self.__base_frame.to_sql_query_object(config)
+
+        should_create_sub_query = (
+            len(base_query.groupBy) > 0 or
+            base_query.select.distinct or
+            base_query.offset is not None or
+            base_query.limit is not None
+        )
+        
+        new_query: QuerySpecification
+        if should_create_sub_query:
+            new_query = create_sub_query(base_query, config, "root")
+        else:
+            new_query = copy_query(base_query)
+
+        tds_row = AbstractTdsRow("r", self.__base_frame)
+        aggregates_list: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]] = []
+
+        for column_name, func_list in self.__func.items():
+            mapper_function: PyLegendCallable[[AbstractTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
+                f"lambda r: r.{column_name}")
+            map_result: PyLegendPrimitiveOrPythonPrimitive = mapper_function(tds_row)
+            collection: PyLegendPrimitiveCollection = create_primitive_collection(map_result)
+
+            for func in func_list:
+                agg_result: PyLegendPrimitive = func(collection)
+                aggregates_list.append(("lambda_applied", map_result, agg_result))
+
+        new_select_items: PyLegendList[str] = []
+
+        for agg in aggregates_list:
+            agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
+
+            new_select_items.append(
+                SingleColumn(alias=agg[0], expression=agg_sql_expr)
+            )
+
+        new_query.select.selectItems = new_select_items
+
+        return new_query
+
+        
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         pass
@@ -85,16 +135,14 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
             )
 
-        normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_func(self.__func_input)
+        normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_dict(self.__func_input)
         self.__func = dict()
         for col, func_list in normalized_func.items():
-            self.__func[col] = [self.__normalize_to_lambda_function(func) for func in func_list]
-
-        print(self.__func)
+            self.__func[col] = [self.__normalize_agg_func_to_lambda_function(func) for func in func_list]
 
         return True
 
-    def __normalize_input_func_to_standard_func(
+    def __normalize_input_func_to_standard_dict(
             self,
             func_input: PyLegendAggInput
     ) -> dict[str, PyLegendAggList]:
@@ -165,7 +213,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"But got: {func_input!r} (type: {type(func_input).__name__})"
             )
 
-    def __normalize_to_lambda_function(
+    def __normalize_agg_func_to_lambda_function(
             self,
             func: PyLegendAggFunc
     ) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
