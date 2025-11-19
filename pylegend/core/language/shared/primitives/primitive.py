@@ -86,6 +86,54 @@ class PyLegendPrimitive(metaclass=ABCMeta):
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
         return PyLegendBoolean(PyLegendPrimitiveNotEqualsExpression(self.value(), other_op))
 
+    def __lt__(self,
+               other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]") -> "PyLegendBoolean":
+        PyLegendPrimitive.__validate_param_to_be_primitive(other, "Less Than (<) parameter")
+        if isinstance(other, (int, float, bool, str, date, datetime)):
+            other_op = convert_literal_to_literal_expression(other)
+        else:
+            other_op = other.value()
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+        from pylegend.core.language.shared.operations.primitive_operation_expressions import \
+            PyLegendPrimitiveLessThanExpression
+        return PyLegendBoolean(PyLegendPrimitiveLessThanExpression(self.value(), other_op))
+
+    def __le__(self,
+               other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]") -> "PyLegendBoolean":
+        PyLegendPrimitive.__validate_param_to_be_primitive(other, "Less Than or Equal (<=) parameter")
+        if isinstance(other, (int, float, bool, str, date, datetime)):
+            other_op = convert_literal_to_literal_expression(other)
+        else:
+            other_op = other.value()
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+        from pylegend.core.language.shared.operations.primitive_operation_expressions import \
+            PyLegendPrimitiveLessThanOrEqualExpression
+        return PyLegendBoolean(PyLegendPrimitiveLessThanOrEqualExpression(self.value(), other_op))
+
+    def __gt__(self,
+               other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]") -> "PyLegendBoolean":
+        PyLegendPrimitive.__validate_param_to_be_primitive(other, "Greater Than (>) parameter")
+        if isinstance(other, (int, float, bool, str, date, datetime)):
+            other_op = convert_literal_to_literal_expression(other)
+        else:
+            other_op = other.value()
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+        from pylegend.core.language.shared.operations.primitive_operation_expressions import \
+            PyLegendPrimitiveGreaterThanExpression
+        return PyLegendBoolean(PyLegendPrimitiveGreaterThanExpression(self.value(), other_op))
+
+    def __ge__(self,
+               other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]") -> "PyLegendBoolean":
+        PyLegendPrimitive.__validate_param_to_be_primitive(other, "Greater Than or Equal (>=) parameter")
+        if isinstance(other, (int, float, bool, str, date, datetime)):
+            other_op = convert_literal_to_literal_expression(other)
+        else:
+            other_op = other.value()
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+        from pylegend.core.language.shared.operations.primitive_operation_expressions import \
+            PyLegendPrimitiveGreaterThanOrEqualExpression
+        return PyLegendBoolean(PyLegendPrimitiveGreaterThanOrEqualExpression(self.value(), other_op))
+
     def is_empty(self) -> "PyLegendBoolean":
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
         return PyLegendBoolean(PyLegendIsEmptyExpression(self.value()))

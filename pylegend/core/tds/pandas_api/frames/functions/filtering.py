@@ -12,49 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import date, datetime
-
-from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiLogicalExpression
-from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
-
-from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
-
-from pylegend.core.language.shared.primitive_collection import create_primitive_collection
-
 from pylegend._typing import (
-    PyLegendList,
     PyLegendSequence,
-    PyLegendDict,
-    PyLegendCallable,
-    PyLegendUnion,
+    PyLegendList
 )
-from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-
-from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
+from pylegend.core.language import PyLegendBoolean
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    SingleColumn, Select, QualifiedNameReference, QualifiedName, ComparisonExpression, LogicalBinaryExpression,
+    LogicalBinaryExpression,
     LogicalBinaryType,
 )
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
+from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
-from pylegend.core.language import (
-    LegacyApiTdsRow,
-    PyLegendPrimitive,
-    PyLegendInteger,
-    PyLegendFloat,
-    PyLegendNumber,
-    PyLegendBoolean,
-    PyLegendString,
-)
-from pylegend._typing import *
+
+__all__: PyLegendSequence[str] = ["PandasApiFilteringFunction"]
 
 
-class PandasApiBooleanFilteringFunction(PandasApiAppliedFunction):
+class PandasApiFilteringFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __filter_expr: PyLegendUnion[PandasApiComparatorFiltering, PandasApiLogicalExpression]
+    __filter_expr: PyLegendBoolean
 
     @classmethod
     def name(cls) -> str:
@@ -63,7 +42,7 @@ class PandasApiBooleanFilteringFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            filter_expr: PyLegendUnion[PandasApiComparatorFiltering, PandasApiLogicalExpression]
+            filter_expr: PyLegendBoolean
     ) -> None:
         self.__base_frame = base_frame
         self.__filter_expr = filter_expr
@@ -77,7 +56,7 @@ class PandasApiBooleanFilteringFunction(PandasApiAppliedFunction):
             copy_query(base_query)
         )
 
-        sql_expr = self.__filter_expr.to_sql(config)
+        sql_expr = self.__filter_expr.to_sql_expression({"c": new_query}, config)
 
         if new_query.where is None:
             new_query.where = sql_expr
@@ -90,7 +69,7 @@ class PandasApiBooleanFilteringFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        pure_expr = self.__filter_expr.to_pure(config)
+        pure_expr = self.__filter_expr.to_pure_expression(config)
         return f"{self.__base_frame.to_pure(config)}->filter(c|{pure_expr})"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:

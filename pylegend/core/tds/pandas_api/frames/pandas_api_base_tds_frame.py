@@ -17,9 +17,6 @@ from datetime import date, datetime
 
 import pandas as pd
 
-from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiLogicalExpression
-from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
-
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -29,7 +26,6 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
 )
-from pylegend.core.sql.metamodel import QuerySpecification, ComparisonOperator
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
@@ -44,7 +40,7 @@ from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
 )
-from pylegend.core.tds.tds_column import TdsColumn, PandasApiTdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import (
@@ -60,33 +56,37 @@ R = PyLegendTypeVar('R')
 
 
 class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
-    __columns: PyLegendSequence[PandasApiTdsColumn]
+    __columns: PyLegendSequence[PrimitiveTdsColumn]
 
-    def __init__(self, columns: PyLegendSequence[PandasApiTdsColumn]) -> None:
+    def __init__(self, columns: PyLegendSequence[PrimitiveTdsColumn]) -> None:
         col_names = [c.get_name() for c in columns]
         if len(col_names) != len(set(col_names)):
             cols = "[" + ", ".join([str(c) for c in columns]) + "]"
             raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
         self.__columns = [c.copy() for c in columns]
 
-    def columns(self) -> PyLegendSequence[PandasApiTdsColumn]:
+    def columns(self) -> PyLegendSequence[PrimitiveTdsColumn]:
         return [c.copy() for c in self.__columns]
 
     def __getitem__(self, key):
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
             PandasApiAppliedFunctionTdsFrame
-        from pylegend.core.tds.pandas_api.frames.functions.comparator_filtering import PandasApiComparatorFiltering
-        if isinstance(key, (PandasApiComparatorFiltering, PandasApiLogicalExpression)):
-            from pylegend.core.tds.pandas_api.frames.functions.boolean_filtering import \
-                PandasApiBooleanFilteringFunction
+        from pylegend.core.tds.pandas_api.frames.functions.filtering import \
+            PandasApiFilteringFunction
+        from pylegend.core.language.pandas_api.pandas_api_series import Series
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+
+        if isinstance(key, PyLegendBoolean):
             return PandasApiAppliedFunctionTdsFrame(
-                PandasApiBooleanFilteringFunction(self, filter_expr=key)
+                PandasApiFilteringFunction(self, filter_expr=key)
             )
+
         elif isinstance(key, str):
             for col in self.__columns:
                 if col.get_name() == key:
-                    return col.copy_with_base_frame(self)
+                    return Series(self, key)
             raise KeyError(f"['{key}'] not in index")
+
         elif isinstance(key, list):
             valid_col_names = {col.get_name() for col in self.__columns}
             invalid_cols = [k for k in key if k not in valid_col_names]

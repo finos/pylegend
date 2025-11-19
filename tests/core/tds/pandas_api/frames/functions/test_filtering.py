@@ -22,7 +22,7 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.tds.tds_column import PandasApiTdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
@@ -38,11 +38,11 @@ class TestFilteringFunction:
 
     def test_filtering_function_syntax_error(self) -> None:
         columns = [
-            PandasApiTdsColumn.integer_column("col1"),
-            PandasApiTdsColumn.string_column("col2"),
-            PandasApiTdsColumn.float_column("col3"),
-            PandasApiTdsColumn.float_column("col4"),
-            PandasApiTdsColumn.float_column("col5")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
@@ -74,39 +74,39 @@ class TestFilteringFunction:
 
     def test_filtering_function_invalid_operator_error(self) -> None:
         columns = [
-            PandasApiTdsColumn.integer_column("col1"),
-            PandasApiTdsColumn.string_column("col2"),
-            PandasApiTdsColumn.float_column("col3"),
-            PandasApiTdsColumn.float_column("col4"),
-            PandasApiTdsColumn.float_column("col5")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         # Logical expression
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] > 10) + (frame['col2'] == 2)]")
-        assert v.value.args[0] == "unsupported operand type(s) for +: 'PandasApiComparatorFiltering' and 'PandasApiComparatorFiltering'"
+        assert v.value.args[0] == "unsupported operand type(s) for +: 'PyLegendBoolean' and 'PyLegendBoolean'"
 
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] > 10) ^ (frame['col2'] == 2)]")
-        assert v.value.args[0] == "unsupported operand type(s) for ^: 'PandasApiComparatorFiltering' and 'PandasApiComparatorFiltering'"
+        assert v.value.args[0] == "unsupported operand type(s) for ^: 'PyLegendBoolean' and 'PyLegendBoolean'"
 
         # Comparator expression
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] >> 10)]")
-        assert v.value.args[0] == "unsupported operand type(s) for >>: 'PandasApiTdsColumn' and 'int'"
+        assert v.value.args[0] == "unsupported operand type(s) for >>: 'Series' and 'int'"
 
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] + 10) & (frame['col2'] == 2)]")
-        assert v.value.args[0] == "unsupported operand type(s) for +: 'PandasApiTdsColumn' and 'int'"
+        assert v.value.args[0] == "unsupported operand type(s) for +: 'Series' and 'int'"
 
     def test_filtering_function_error_on_invalid_column(self) -> None:
         columns = [
-            PandasApiTdsColumn.integer_column("col1"),
-            PandasApiTdsColumn.string_column("col2"),
-            PandasApiTdsColumn.float_column("col3"),
-            PandasApiTdsColumn.float_column("col4"),
-            PandasApiTdsColumn.float_column("col5")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
@@ -132,11 +132,11 @@ class TestFilteringFunction:
     @pytest.mark.skip(reason="Column type frame not supported yet")
     def test_filtering_function_on_str_input(self) -> None:
         columns = [
-            PandasApiTdsColumn.integer_column("col1"),
-            PandasApiTdsColumn.string_column("col2"),
-            PandasApiTdsColumn.float_column("col3"),
-            PandasApiTdsColumn.float_column("col4"),
-            PandasApiTdsColumn.float_column("col5")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
@@ -157,11 +157,11 @@ class TestFilteringFunction:
 
     def test_filtering_function_on_list_input(self) -> None:
         columns = [
-            PandasApiTdsColumn.integer_column("col1"),
-            PandasApiTdsColumn.string_column("col2"),
-            PandasApiTdsColumn.float_column("col3"),
-            PandasApiTdsColumn.float_column("col4"),
-            PandasApiTdsColumn.float_column("col5")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
@@ -201,11 +201,11 @@ class TestFilteringFunction:
 
     def test_filtering_function_on_expression_input(self) -> None:
         columns = [
-            PandasApiTdsColumn.integer_column("col1"),
-            PandasApiTdsColumn.string_column("col2"),
-            PandasApiTdsColumn.float_column("col3"),
-            PandasApiTdsColumn.float_column("col4"),
-            PandasApiTdsColumn.string_column("col5")
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.string_column("col5")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
@@ -230,6 +230,27 @@ class TestFilteringFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                "#Table(test_schema.test_table)#->filter(c|($c.col1 > 10))"
 
+        # Simple expression with column comparison
+        newframe = frame[(frame['col1'] > frame['col2'])]
+        expected = '''\
+                   SELECT
+                       "root".col1 AS "col1",
+                       "root".col2 AS "col2",
+                       "root".col3 AS "col3",
+                       "root".col4 AS "col4",
+                       "root".col5 AS "col5"
+                   FROM
+                       test_schema.test_table AS "root"
+                   WHERE
+                       ("root".col1 > "root".col2)'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#->filter(c|($c.col1 > $c.col2))'''
+        )
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
+               "#Table(test_schema.test_table)#->filter(c|($c.col1 > $c.col2))"
+
         # Complex expression
         newframe = frame[(frame['col1'] > 10) & (frame['col3'] < 5.5) | (frame['col5'] >= '10/11/2025')]
         expected = '''\
@@ -252,7 +273,7 @@ class TestFilteringFunction:
                "#Table(test_schema.test_table)#->filter(c|((($c.col1 > 10) && ($c.col3 < 5.5)) || ($c.col5 >= '10/11/2025')))"
 
         # Complex expression with negation
-        newframe = frame[~(((frame['col1'] == 2) & (frame['col2'] != 'test')) | (frame['col1'] > 9) | (frame['col5'] >= '10/11/2003'))]
+        newframe = frame[~(((frame['col1'] == 2) & (frame['col2'] != frame['col3'])) | (frame['col1'] > 9) | (frame['col5'] >= '10/11/2003'))]
         expected = '''\
                    SELECT
                        "root".col1 AS "col1",
@@ -263,14 +284,61 @@ class TestFilteringFunction:
                    FROM
                        test_schema.test_table AS "root"
                    WHERE
-                       NOT(((("root".col1 = 2) AND ("root".col2 <> 'test')) OR ("root".col1 > 9)) OR ("root".col5 >= '10/11/2003'))'''
+                       NOT(((("root".col1 = 2) AND ("root".col2 <> "root".col3)) OR ("root".col1 > 9)) OR ("root".col5 >= '10/11/2003'))'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
-            #Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != 'test')) || ($c.col1 > 9)) || ($c.col5 >= '10/11/2003'))->not())'''
+            #Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= '10/11/2003'))->not())'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != 'test')) || ($c.col1 > 9)) || ($c.col5 >= '10/11/2003'))->not())"
+               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= '10/11/2003'))->not())"
+
+    def test_filtering_function_chained(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.string_column("col5")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        # Truncate
+        newframe = frame.truncate(before=1,after=3)
+        newframe = newframe[newframe['col1'] > newframe['col2']]
+        expected = '''\
+                   SELECT
+                       "root"."col1" AS "col1",
+                       "root"."col2" AS "col2",
+                       "root"."col3" AS "col3",
+                       "root"."col4" AS "col4",
+                       "root"."col5" AS "col5"
+                   FROM
+                       (
+                           SELECT
+                               "root".col1 AS "col1",
+                               "root".col2 AS "col2",
+                               "root".col3 AS "col3",
+                               "root".col4 AS "col4",
+                               "root".col5 AS "col5"
+                           FROM
+                               test_schema.test_table AS "root"
+                           LIMIT 3
+                           OFFSET 1
+                       ) AS "root"
+                   WHERE
+                       ("root"."col1" > "root"."col2")'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#->filter(c|((($c.col1 > 10) && ($c.col3 < 5.5)) && ($c.col5 >= '10/11/2025')))'''
+        )
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
+               "#Table(test_schema.test_table)#->filter(c|((($c.col1 > 10) && ($c.col3 < 5.5)) && ($c.col5 >= '10/11/2025')))"
+
+        # Filter
+        newframe = frame[~(((frame['col1'] == 2) & (frame['col2'] != frame['col3'])) | (frame['col1'] > 9) | (frame['col5'] >= '10/11/2003'))]
+        newframe = newframe.filter(items=['col1', 'col5'])
 
     @pytest.mark.skip(reason="Column type frame not supported yet")
     def test_e2e_filtering_function_str_input(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
