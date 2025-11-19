@@ -164,7 +164,7 @@ class PyLegendString(PyLegendPrimitive):
         return PyLegendString(PyLegendStringToLowerFirstCharacterExpression(self.__value))
 
     def to_upper_first_character(self) -> "PyLegendString":
-         return PyLegendString(PyLegendStringToUpperFirstCharacterExpression(self.__value))
+        return PyLegendString(PyLegendStringToUpperFirstCharacterExpression(self.__value))
 
     def left(self, count: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(count, "left parameter")
@@ -176,7 +176,8 @@ class PyLegendString(PyLegendPrimitive):
         count_op = PyLegendIntegerLiteralExpression(count) if isinstance(count, int) else count.value()
         return PyLegendString(PyLegendStringRightExpression([self.__value, count_op]))
 
-    def substring(self, start: PyLegendUnion[int, "PyLegendInteger"], end: PyLegendUnion[int, "PyLegendInteger"] | None = None) -> "PyLegendString":
+    def substring(self, start: PyLegendUnion[int, "PyLegendInteger"],
+                  end: PyLegendUnion[int, "PyLegendInteger"] | None = None) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(start, "substring start parameter")
         start_op = PyLegendIntegerLiteralExpression(start) if isinstance(start, int) else start.value()
         if end is None:
@@ -185,40 +186,46 @@ class PyLegendString(PyLegendPrimitive):
         end_op = PyLegendIntegerLiteralExpression(end) if isinstance(end, int) else end.value()
         return PyLegendString(PyLegendStringSubStringExpression([self.__value, start_op, end_op]))
 
-    def replace(self, to_replace: PyLegendUnion[str, "PyLegendString"], replacement: PyLegendUnion[str , "PyLegendString"]) -> "PyLegendString":
+    def replace(self, to_replace: PyLegendUnion[str, "PyLegendString"],
+                replacement: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_str_or_str_expr(to_replace, "replace to_replace parameter")
-        to_replace_op = PyLegendStringLiteralExpression(to_replace) if isinstance(to_replace, str) else to_replace.__value
+        to_replace_op = PyLegendStringLiteralExpression(to_replace) if isinstance(to_replace,
+                                                                                  str) else to_replace.__value
         PyLegendString.__validate_param_to_be_str_or_str_expr(replacement, "replace replacement parameter")
-        replacement_op = PyLegendStringLiteralExpression(replacement) if isinstance(replacement,str) else replacement.__value
-        return PyLegendString(PyLegendStringReplaceExpression([self.__value, to_replace_op,replacement_op]))
+        replacement_op = PyLegendStringLiteralExpression(replacement) if isinstance(replacement,
+                                                                                    str) else replacement.__value
+        return PyLegendString(PyLegendStringReplaceExpression([self.__value, to_replace_op, replacement_op]))
 
-    def lpad(self, length: PyLegendUnion[int,"PyLegendInteger"], fill_char: PyLegendUnion[str, "PyLegendString"] = ' ') -> "PyLegendString":
+    def lpad(self, length: PyLegendUnion[int, "PyLegendInteger"],
+             fill_char: PyLegendUnion[str, "PyLegendString"] = ' ') -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(length, "lpad length parameter")
         length_op = PyLegendIntegerLiteralExpression(length) if isinstance(length, int) else length.value()
-        fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char,str) else fill_char.__value
-        return PyLegendString(PyLegendStringLpadExpression([self.__value, length_op,fill_char_op]))
+        fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char, str) else fill_char.__value
+        return PyLegendString(PyLegendStringLpadExpression([self.__value, length_op, fill_char_op]))
 
-    def rpad(self, length: PyLegendUnion[int,"PyLegendInteger"], fill_char: PyLegendUnion[str, "PyLegendString"] = ' ') -> "PyLegendString":
+    def rpad(self, length: PyLegendUnion[int, "PyLegendInteger"],
+             fill_char: PyLegendUnion[str, "PyLegendString"] = ' ') -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(length, "rpad length parameter")
         length_op = PyLegendIntegerLiteralExpression(length) if isinstance(length, int) else length.value()
-        fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char,str) else fill_char.__value
-        return PyLegendString(PyLegendStringRpadExpression([self.__value, length_op,fill_char_op]))
+        fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char, str) else fill_char.__value
+        return PyLegendString(PyLegendStringRpadExpression([self.__value, length_op, fill_char_op]))
 
-    def split_part(self, sep: PyLegendUnion[str, "PyLegendString"] , part: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString | None":
+    def split_part(self, sep: PyLegendUnion[str, "PyLegendString"],
+                   part: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString | None":
         PyLegendString.__validate_param_to_be_str_or_str_expr(sep, "split_part sep parameter")
         sep_op = PyLegendStringLiteralExpression(sep) if isinstance(sep, str) else sep.value()
         PyLegendString.__validate_param_to_be_int_or_int_expr(part, "split_part part parameter")
-        part_op = PyLegendIntegerLiteralExpression(part) if isinstance(part,int) else part.value()
-        return PyLegendString(PyLegendStringSplitPartExpression([self.__value, sep_op,part_op]))
+        part_op = PyLegendIntegerLiteralExpression(part) if isinstance(part, int) else part.value()
+        return PyLegendString(PyLegendStringSplitPartExpression([self.__value, sep_op, part_op]))
 
     def matches(self, pattern: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
         PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "matches parameter")
-        pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(pattern,str) else pattern.__value
+        pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(pattern, str) else pattern.__value
         return PyLegendBoolean(PyLegendStringMatchesExpression(self.__value, pattern_op))
 
     def repeat_string(self, times: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(times, "repeatString parameter")
-        times_op = PyLegendIntegerLiteralExpression(times) if isinstance(times,int) else times.value()
+        times_op = PyLegendIntegerLiteralExpression(times) if isinstance(times, int) else times.value()
         return PyLegendString(PyLegendStringRepeatStringExpression(self.__value, times_op))
 
     def __add__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":

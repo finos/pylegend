@@ -752,6 +752,7 @@ class ConstantExpression(Expression):
         super().__init__(_type="constantExpression")
         self.name = name
 
+
 class FirstCharCaseType(Enum):
     LOWER = 1
     UPPER = 2
@@ -766,9 +767,11 @@ class StringFirstCharCaseExpression(Expression):
         self.value = value
         self.case_type = case_type
 
+
 class Base64OperationType(Enum):
     Encode = 1
     Decode = 2
+
 
 class StringBase64Expression(Expression):
     value: "Expression"
@@ -783,12 +786,14 @@ class StringBase64Expression(Expression):
         self.value = value
         self.operation_type = operation_type
 
+
 class StringSubstringExpression(Expression):
     values: list["Expression"]
 
     def __init__(self, values: list["Expression"]) -> None:
         super().__init__(_type="stringSubstringExpression")
         self.values = values
+
 
 class StringMatchesExpression(Expression):
     value: "Expression"

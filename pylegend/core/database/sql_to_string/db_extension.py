@@ -464,7 +464,7 @@ def expression_processor(
     elif isinstance(expression, StringFirstCharCaseExpression):
         return extension.process_string_first_char_case_expression(expression, config)
     elif isinstance(expression, StringMatchesExpression):
-        return extension.process_matches_expression(expression,config)
+        return extension.process_matches_expression(expression, config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -1260,7 +1260,10 @@ class SqlToStringDbExtension:
             else f"CONVERT_FROM(DECODE({op}, 'BASE64'), 'UTF8')"
         )
 
-    def process_string_first_char_case_expression(self, expr: StringFirstCharCaseExpression, config: "SqlToStringConfig") -> str:
+    def process_string_first_char_case_expression(
+            self, expr: StringFirstCharCaseExpression,
+            config: "SqlToStringConfig"
+    ) -> str:
         op = self.process_expression(expr.value, config)
         return (
             f"UPPER(LEFT({op}, 1)) || SUBSTR({op}, 2)"

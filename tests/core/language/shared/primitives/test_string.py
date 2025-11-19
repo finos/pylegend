@@ -40,7 +40,7 @@ class TestPyLegendString:
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_string_col_access(self) -> None:
@@ -325,33 +325,33 @@ class TestPyLegendString:
                'SUBSTR(\n    "root".col2,\n    1\n)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1)) == \
                'toOne($t.col2)->substring(1)'
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").substring(1,3)) == \
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").substring(1, 3)) == \
                'SUBSTR(\n    "root".col2,\n    1,\n    3\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1,3)) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1, 3)) == \
                'toOne($t.col2)->substring(1, 3)'
 
     def test_string_replace_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").replace("ab","ba")) == \
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").replace("ab", "ba")) == \
                'REPLACE(\n    "root".col2,\n    \'ab\',\n    \'ba\'\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").replace("ab","ba")) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").replace("ab", "ba")) == \
                'toOne($t.col2)->replace(\'ab\', \'ba\')'
 
     def test_string_lpad_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").lpad(3,"_")) == \
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").lpad(3, "_")) == \
                'LPAD(\n    "root".col2,\n    3,\n    \'_\'\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").lpad(3,"_")) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").lpad(3, "_")) == \
                'toOne($t.col2)->lpad(3, \'_\')'
 
     def test_string_rpad_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").rpad(3,"_")) == \
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").rpad(3, "_")) == \
                'RPAD(\n    "root".col2,\n    3,\n    \'_\'\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").rpad(3,"_")) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").rpad(3, "_")) == \
                'toOne($t.col2)->rpad(3, \'_\')'
 
     def test_string_split_part_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").split_part("_",3)) == \
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").split_part("_", 3)) == \
                'SPLIT_PART(\n    "root".col2,\n    \'_\',\n    3\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").split_part("_",3)) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").split_part("_", 3)) == \
                'toOne($t.col2)->splitPart(\'_\', 3)'
 
     def test_string_matches_expr(self) -> None:

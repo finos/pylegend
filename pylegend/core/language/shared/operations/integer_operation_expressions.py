@@ -220,6 +220,7 @@ class PyLegendIntegerNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
             operand_needs_to_be_non_nullable=True,
         )
 
+
 class PyLegendIntegerCharExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
@@ -249,6 +250,7 @@ class PyLegendIntegerCharExpression(PyLegendUnaryExpression, PyLegendExpressionS
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )
+
 
 class PyLegendIntegerToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
 

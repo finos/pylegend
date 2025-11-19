@@ -35,7 +35,6 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
-
 __all__: PyLegendSequence[str] = [
     "PyLegendBooleanOrExpression",
     "PyLegendBooleanAndExpression",
@@ -126,6 +125,7 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )
+
 
 class PyLegendBooleanToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
 

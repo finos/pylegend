@@ -28,7 +28,9 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     ArithmeticType,
     ArithmeticExpression,
-    NegativeExpression, Cast, ColumnType,
+    NegativeExpression,
+    Cast,
+    ColumnType,
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
@@ -184,6 +186,7 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )
+
 
 class PyLegendFloatToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
 

@@ -33,6 +33,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
+
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives.string import PyLegendString
 
@@ -63,7 +64,7 @@ class PyLegendBoolean(PyLegendPrimitive):
     def value(self) -> PyLegendExpressionBooleanReturn:
         return self.__value
 
-    def to_string(self) ->"PyLegendString":
+    def to_string(self) -> "PyLegendString":
         from pylegend.core.language.shared.primitives.string import PyLegendString
         return PyLegendString(PyLegendBooleanToStringExpression(self.__value))
 

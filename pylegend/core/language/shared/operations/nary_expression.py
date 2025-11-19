@@ -34,6 +34,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNaryExpression"
 ]
 
+
 class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
     __operands: PyLegendList[PyLegendExpression]
     __to_sql_func: PyLegendCallable[
@@ -83,11 +84,7 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
             operand.to_sql_expression(frame_name_to_base_query_map, config)
             for operand in self.__operands
         ]
-        return self.__to_sql_func(
-            sql_operands,
-            frame_name_to_base_query_map,
-            config
-        )
+        return self.__to_sql_func(sql_operands, frame_name_to_base_query_map, config)
 
     # ----------------------------------------------------
     # PURE
