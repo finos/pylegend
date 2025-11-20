@@ -38,15 +38,6 @@ class TestFilteringFunction:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_filtering_function_syntax_error(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
-            PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("col4"),
-            PrimitiveTdsColumn.float_column("col5")
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
         # Brackets
         with pytest.raises(SyntaxError) as v:
             eval("frame[]")
@@ -74,15 +65,6 @@ class TestFilteringFunction:
         assert v.value.args[0] == "invalid syntax"
 
     def test_filtering_function_invalid_operator_error(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
-            PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("col4"),
-            PrimitiveTdsColumn.float_column("col5")
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
         # Logical expression
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] > 10) + (frame['col2'] == 2)]")
@@ -99,18 +81,11 @@ class TestFilteringFunction:
 
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] + 10) & (frame['col2'] == 2)]")
-        assert v.value.args[0].startswith("Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value")
+        assert v.value.args[0].startswith(
+            "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value"
+        )
 
     def test_filtering_function_error_on_invalid_column(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
-            PrimitiveTdsColumn.float_column("col3"),
-            PrimitiveTdsColumn.float_column("col4"),
-            PrimitiveTdsColumn.float_column("col5")
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
         # str input
         with pytest.raises(KeyError) as v:
             eval("frame['col6']")
@@ -210,7 +185,7 @@ class TestFilteringFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         # Simple expression
-        newframe = frame[(frame['col1'] > 10)]
+        newframe = frame[(frame['col1'] > 10)]  # type: ignore
         expected = '''\
                    SELECT
                        "root".col1 AS "col1",
@@ -232,7 +207,7 @@ class TestFilteringFunction:
                "#Table(test_schema.test_table)#->filter(c|($c.col1 > 10))"
 
         # Simple expression with column comparison
-        newframe = frame[(frame['col1'] > frame['col2'])]
+        newframe = frame[(frame['col1'] > frame['col2'])]  # type: ignore
         expected = '''\
                    SELECT
                        "root".col1 AS "col1",
@@ -254,7 +229,7 @@ class TestFilteringFunction:
                "#Table(test_schema.test_table)#->filter(c|($c.col1 > $c.col2))"
 
         # Complex expression
-        newframe = frame[(frame['col1'] > 10) & (frame['col3'] < 5.5) | (frame['col5'] >= datetime.date(2003, 11, 10))]
+        newframe = frame[(frame['col1'] > 10) & (frame['col3'] < 5.5) | (frame['col5'] >= datetime.date(2003, 11, 10))]  # type: ignore  # noqa: E501
         expected = '''\
                    SELECT
                        "root".col1 AS "col1",
@@ -276,7 +251,16 @@ class TestFilteringFunction:
                "#Table(test_schema.test_table)#->filter(c|((($c.col1 > 10) && ($c.col3 < 5.5)) || ($c.col5 >= %2003-11-10)))"
 
         # Complex expression with negation
-        newframe = frame[~(((frame['col1'] == 2) & (frame['col2'] != frame['col3'])) | (frame['col1'] > 9) | (frame['col5'] >= datetime.date(2003, 11, 10)))]
+        newframe = frame[
+            ~(  # type: ignore
+                    (
+                            (frame['col1'] == 2) &
+                            (frame['col2'] != frame['col3'])
+                    ) |
+                    (frame['col1'] > 9) |  # type: ignore
+                    (frame['col5'] >= datetime.date(2003, 11, 10))  # type: ignore
+            )
+        ]
         expected = '''\
                    SELECT
                        "root".col1 AS "col1",
@@ -287,7 +271,7 @@ class TestFilteringFunction:
                    FROM
                        test_schema.test_table AS "root"
                    WHERE
-                       NOT(((("root".col1 = 2) AND ("root".col2 <> "root".col3)) OR ("root".col1 > 9)) OR ("root".col5 >= CAST('2003-11-10' AS DATE)))'''
+                       NOT(((("root".col1 = 2) AND ("root".col2 <> "root".col3)) OR ("root".col1 > 9)) OR ("root".col5 >= CAST('2003-11-10' AS DATE)))'''  # noqa: E501
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -295,7 +279,7 @@ class TestFilteringFunction:
               ->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())"
+               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())"  # noqa: E501
 
     def test_filtering_function_chained(self) -> None:
         columns = [
@@ -308,8 +292,8 @@ class TestFilteringFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         # Truncate
-        newframe = frame.truncate(before=1,after=3)
-        newframe = newframe[newframe['col1'] > newframe['col2']]
+        newframe = frame.truncate(before=1, after=3)
+        newframe = newframe[newframe['col1'] > newframe['col2']]  # type: ignore
         expected = '''\
                    SELECT
                        "root"."col1" AS "col1",
@@ -343,7 +327,16 @@ class TestFilteringFunction:
                "#Table(test_schema.test_table)#->slice(1, 4)->filter(c|($c.col1 > $c.col2))"
 
         # Filter
-        newframe = frame[~(((frame['col1'] == 2) & (frame['col2'] != frame['col3'])) | (frame['col1'] > 9) | (frame['col5'] >= datetime.date(2003, 11, 10)))]
+        newframe = frame[  # type: ignore
+            ~(  # type: ignore
+                    (
+                            (frame['col1'] == 2) &
+                            (frame['col2'] != frame['col3'])
+                    ) |
+                    (frame['col1'] > 9) |  # type: ignore
+                    (frame['col5'] >= datetime.date(2003, 11, 10))  # type: ignore
+            )
+        ]
         newframe = newframe.filter(items=['col1', 'col5'])
         expected = '''\
                    SELECT
@@ -352,7 +345,7 @@ class TestFilteringFunction:
                    FROM
                        test_schema.test_table AS "root"
                    WHERE
-                       NOT(((("root".col1 = 2) AND ("root".col2 <> "root".col3)) OR ("root".col1 > 9)) OR ("root".col5 >= CAST('2003-11-10' AS DATE)))'''
+                       NOT(((("root".col1 = 2) AND ("root".col2 <> "root".col3)) OR ("root".col1 > 9)) OR ("root".col5 >= CAST('2003-11-10' AS DATE)))'''  # noqa: E501
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -361,7 +354,7 @@ class TestFilteringFunction:
               ->select(~[col1, col5])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())->select(~[col1, col5])"
+               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())->select(~[col1, col5])"  # noqa: E501
 
     def test_e2e_filtering_function_str_input(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
@@ -423,7 +416,7 @@ class TestFilteringFunction:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
         # Simple expression
-        newframe = frame[(frame['Age'] > 22)]
+        newframe = frame[(frame['Age'] > 22)]  # type: ignore
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -437,7 +430,7 @@ class TestFilteringFunction:
         assert json.loads(res)["result"] == expected
 
         # Complex expression
-        newframe = frame[(frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John')]
+        newframe = frame[(frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John')]  # type: ignore  # noqa: E501
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -451,7 +444,7 @@ class TestFilteringFunction:
         assert json.loads(res)["result"] == expected
 
         # Complex expression with negation
-        newframe = frame[~((frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John'))]
+        newframe = frame[~((frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John'))]  # type: ignore  # noqa: E501
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -467,8 +460,8 @@ class TestFilteringFunction:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
         # Truncate
-        newframe = frame.truncate(before=2,after=5)
-        newframe = newframe[newframe['Age'] > 22]
+        newframe = frame.truncate(before=2, after=5)
+        newframe = newframe[newframe['Age'] > 22]  # type: ignore
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -480,8 +473,8 @@ class TestFilteringFunction:
         assert json.loads(res)["result"] == expected
 
         # Filter
-        newframe = frame[
-            ~((frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John'))]
+        newframe = frame[  # type: ignore
+            ~((frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John'))]  # type: ignore
         newframe = newframe.filter(items=['First Name', 'Age'])
         expected = {
             "columns": ["First Name", "Age"],
@@ -489,6 +482,25 @@ class TestFilteringFunction:
                 {"values": ["Fabrice", 34]},
                 {"values": ["Oliver", 32]},
                 {"values": ["David", 35]}
+            ],
+        }
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_filtering_function_integer_operations(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:  # noqa: E501
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        newframe = frame['Age'] + 2  # type: ignore
+        expected = {
+            "columns": ["Age_plus_2"],
+            "rows": [
+                {"values": [25]},
+                {"values": [24]},
+                {"values": [14]},
+                {"values": [24]},
+                {"values": [36]},
+                {"values": [34]},
+                {"values": [37]},
             ],
         }
         res = newframe.execute_frame_to_string()

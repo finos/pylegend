@@ -14,6 +14,7 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -48,6 +49,9 @@ from pylegend.extensions.tds.result_handler import (
     PandasDfReadConfig,
 )
 
+if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
 ]
@@ -68,7 +72,10 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def columns(self) -> PyLegendSequence[TdsColumn]:
         return [c.copy() for c in self.__columns]
 
-    def __getitem__(self, key):
+    def __getitem__(
+            self,
+            key: PyLegendUnion[str, PyLegendList[str], PyLegendBoolean]
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
             PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.filtering import \

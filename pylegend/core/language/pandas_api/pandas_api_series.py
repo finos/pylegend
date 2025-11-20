@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import TYPE_CHECKING
+
 import pandas as pd
 
 from pylegend._typing import (
@@ -20,6 +22,7 @@ from pylegend._typing import (
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
+    PyLegendTypeVar
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
@@ -53,13 +56,18 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig
 
+if TYPE_CHECKING:
+    from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+
 __all__: PyLegendSequence[str] = [
     "Series"
 ]
 
+R = PyLegendTypeVar('R')
+
 
 class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
-    def __init__(self, base_frame, column: str):
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         row = PandasApiTdsRow.from_tds_frame("c", base_frame)
         PyLegendColumnExpression.__init__(self, row=row, column=column)
 
@@ -90,9 +98,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def execute_frame(
             self,
-            result_handler: ResultHandler,
+            result_handler: ResultHandler[R],
             chunk_size: PyLegendOptional[int] = None
-    ):
+    ) -> R:
         return self._filtered_frame.execute_frame(result_handler, chunk_size)
 
     def execute_frame_to_string(
@@ -109,58 +117,58 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self._filtered_frame.to_sql_query_object(config)
+        return self._filtered_frame.to_sql_query_object(config)  # type: ignore
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        return self._filtered_frame.to_pure(config)
+        return self._filtered_frame.to_pure(config)  # type: ignore
 
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
-        return self._filtered_frame.get_all_tds_frames()
+        return self._filtered_frame.get_all_tds_frames()  # type: ignore
 
 
-class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):
-    def __init__(self, base_frame, column: str):
+class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendBoolean.__init__(self, self)
 
 
-class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):
-    def __init__(self, base_frame, column: str):
+class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendString.__init__(self, self)
 
 
-class NumberSeries(Series, PyLegendNumber, PyLegendExpressionNumberReturn):
-    def __init__(self, base_frame, column: str):
+class NumberSeries(Series, PyLegendNumber, PyLegendExpressionNumberReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendNumber.__init__(self, self)
 
 
-class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerReturn):
-    def __init__(self, base_frame, column: str):
+class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendInteger.__init__(self, self)
 
 
-class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):
-    def __init__(self, base_frame, column: str):
+class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendFloat.__init__(self, self)
 
 
-class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):
-    def __init__(self, base_frame, column: str):
+class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendDate.__init__(self, self)
 
 
-class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeReturn):
-    def __init__(self, base_frame, column: str):
+class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendDateTime.__init__(self, self)
 
 
-class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):
-    def __init__(self, base_frame, column: str):
+class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):  # type: ignore
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
         super().__init__(base_frame, column)
         PyLegendStrictDate.__init__(self, self)
