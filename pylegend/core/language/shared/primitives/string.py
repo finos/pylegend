@@ -16,6 +16,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    PyLegendOptional
 )
 from pylegend.core.language.shared.literal_expressions import PyLegendIntegerLiteralExpression
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
@@ -177,7 +178,7 @@ class PyLegendString(PyLegendPrimitive):
         return PyLegendString(PyLegendStringRightExpression([self.__value, count_op]))
 
     def substring(self, start: PyLegendUnion[int, "PyLegendInteger"],
-                  end: PyLegendUnion[int, "PyLegendInteger"] | None = None) -> "PyLegendString":
+                  end: PyLegendOptional[PyLegendUnion[int, "PyLegendInteger"]] = None) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(start, "substring start parameter")
         start_op = PyLegendIntegerLiteralExpression(start) if isinstance(start, int) else start.value()
         if end is None:
