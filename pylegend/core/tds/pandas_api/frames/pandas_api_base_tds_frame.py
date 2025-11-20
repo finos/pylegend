@@ -73,7 +73,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.filtering import \
             PandasApiFilteringFunction
-        from pylegend.core.language.pandas_api.pandas_api_series import Series
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 
         if isinstance(key, PyLegendBoolean):
@@ -84,7 +83,31 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         elif isinstance(key, str):
             for col in self.__columns:
                 if col.get_name() == key:
-                    return Series(self, key)
+                    col_type = col.get_type()
+                    if col_type == "Boolean":
+                        from pylegend.core.language.pandas_api.pandas_api_series import BooleanSeries
+                        return BooleanSeries(self, key)
+                    elif col_type == "String":
+                        from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
+                        return StringSeries(self, key)
+                    elif col_type == "Integer":
+                        from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
+                        return IntegerSeries(self, key)
+                    elif col_type == "Float":
+                        from pylegend.core.language.pandas_api.pandas_api_series import FloatSeries
+                        return FloatSeries(self, key)
+                    elif col_type == "Date":
+                        from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
+                        return DateSeries(self, key)
+                    elif col_type == "DateTime":
+                        from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
+                        return DateTimeSeries(self, key)
+                    elif col_type == "StrictDate":
+                        from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
+                        return StrictDateSeries(self, key)
+                    else:
+                        from pylegend.core.language.pandas_api.pandas_api_series import Series
+                        return Series(self, key)
             raise KeyError(f"['{key}'] not in index")
 
         elif isinstance(key, list):

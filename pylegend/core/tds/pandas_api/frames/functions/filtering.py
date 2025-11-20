@@ -70,7 +70,7 @@ class PandasApiFilteringFunction(PandasApiAppliedFunction):
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         pure_expr = self.__filter_expr.to_pure_expression(config)
-        return f"{self.__base_frame.to_pure(config)}->filter(c|{pure_expr})"
+        return f"{self.__base_frame.to_pure(config)}{config.separator(1)}->filter(c|{pure_expr})"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
