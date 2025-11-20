@@ -38,7 +38,8 @@ from pylegend.core.sql.metamodel import (
     ComparisonExpression,
     StringLiteral,
     FunctionCall,
-    QualifiedName
+    QualifiedName,
+    IntegerLiteral
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -50,10 +51,6 @@ from pylegend.core.sql.metamodel_extension import (
     StringPosExpression,
     StringConcatExpression,
     ConstantExpression,
-    Base64OperationType,
-    StringBase64Expression,
-    StringFirstCharCaseExpression,
-    FirstCharCaseType,
     StringMatchesExpression,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -480,7 +477,19 @@ class PyLegendStringDecodeBase64Expression(PyLegendUnaryExpression, PyLegendExpr
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return StringBase64Expression(expression, Base64OperationType.Decode)
+        return FunctionCall(
+            name=QualifiedName(parts=["CONVERT_FROM"]),
+            distinct=False,
+            arguments=[
+                FunctionCall(
+                    name=QualifiedName(parts=["DECODE"]),
+                    distinct=False,
+                    arguments=[expression, StringLiteral("BASE64", quoted=False)],
+                    filter_=None, window=None
+                ), StringLiteral("UTF8", quoted=False)
+            ],
+            filter_=None, window=None
+        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -506,7 +515,19 @@ class PyLegendStringEncodeBase64Expression(PyLegendUnaryExpression, PyLegendExpr
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return StringBase64Expression(expression, Base64OperationType.Encode)
+        return FunctionCall(
+            name=QualifiedName(parts=["ENCODE"]),
+            distinct=False,
+            arguments=[
+                FunctionCall(
+                    name=QualifiedName(parts=["CONVERT_TO"]),
+                    distinct=False,
+                    arguments=[expression, StringLiteral("UTF8", quoted=False)],
+                    filter_=None, window=None
+                ), StringLiteral("BASE64", quoted=False)
+            ],
+            filter_=None, window=None
+        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -594,7 +615,29 @@ class PyLegendStringToLowerFirstCharacterExpression(PyLegendUnaryExpression, PyL
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return StringFirstCharCaseExpression(expression, FirstCharCaseType.LOWER)
+        return FunctionCall(
+            name=QualifiedName(parts=["CONCAT"]),
+            distinct=False,
+            arguments=[
+                FunctionCall(
+                    name=QualifiedName(parts=["LOWER"]),
+                    distinct=False,
+                    arguments=[FunctionCall(
+                        name=QualifiedName(parts=["LEFT"]),
+                        distinct=False,
+                        arguments=[expression, IntegerLiteral(1)],
+                        filter_=None, window=None
+                    )],
+                    filter_=None, window=None
+                ),
+                FunctionCall(
+                    name=QualifiedName(parts=["SUBSTR"]),
+                    distinct=False,
+                    arguments=[expression, IntegerLiteral(2)],
+                    filter_=None, window=None
+                )],
+            filter_=None, window=None
+        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -620,7 +663,29 @@ class PyLegendStringToUpperFirstCharacterExpression(PyLegendUnaryExpression, PyL
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return StringFirstCharCaseExpression(expression, FirstCharCaseType.UPPER)
+        return FunctionCall(
+            name=QualifiedName(parts=["CONCAT"]),
+            distinct=False,
+            arguments=[
+                FunctionCall(
+                    name=QualifiedName(parts=["UPPER"]),
+                    distinct=False,
+                    arguments=[FunctionCall(
+                        name=QualifiedName(parts=["LEFT"]),
+                        distinct=False,
+                        arguments=[expression, IntegerLiteral(1)],
+                        filter_=None, window=None
+                    )],
+                    filter_=None, window=None
+                ),
+                FunctionCall(
+                    name=QualifiedName(parts=["SUBSTR"]),
+                    distinct=False,
+                    arguments=[expression, IntegerLiteral(2)],
+                    filter_=None, window=None
+                )],
+            filter_=None, window=None
+        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:

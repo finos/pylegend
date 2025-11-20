@@ -81,10 +81,6 @@ __all__: PyLegendSequence[str] = [
     "EpochExpression",
     "WindowExpression",
     "ConstantExpression",
-    "StringBase64Expression",
-    "Base64OperationType",
-    "StringFirstCharCaseExpression",
-    "FirstCharCaseType",
     "StringMatchesExpression",
 ]
 
@@ -750,40 +746,6 @@ class ConstantExpression(Expression):
     ) -> None:
         super().__init__(_type="constantExpression")
         self.name = name
-
-
-class FirstCharCaseType(Enum):
-    LOWER = 1
-    UPPER = 2
-
-
-class StringFirstCharCaseExpression(Expression):
-    value: "Expression"
-    case_type: FirstCharCaseType
-
-    def __init__(self, value: "Expression", case_type: FirstCharCaseType) -> None:
-        super().__init__(_type="stringFirstCharCaseExpression")
-        self.value = value
-        self.case_type = case_type
-
-
-class Base64OperationType(Enum):
-    Encode = 1
-    Decode = 2
-
-
-class StringBase64Expression(Expression):
-    value: "Expression"
-    operation_type: Base64OperationType
-
-    def __init__(
-            self,
-            value: "Expression",
-            operation_type: Base64OperationType,
-    ) -> None:
-        super().__init__(_type="stringBase64Expression")
-        self.value = value
-        self.operation_type = operation_type
 
 
 class StringMatchesExpression(Expression):

@@ -132,11 +132,7 @@ from pylegend.core.sql.metamodel_extension import (
     EpochExpression,
     WindowExpression,
     ConstantExpression,
-    StringMatchesExpression,
-    StringBase64Expression,
-    Base64OperationType,
-    StringFirstCharCaseExpression,
-    FirstCharCaseType
+    StringMatchesExpression
 )
 
 
@@ -459,10 +455,6 @@ def expression_processor(
         return extension.process_window_expression(expression, config)
     elif isinstance(expression, ConstantExpression):
         return expression.name
-    elif isinstance(expression, StringBase64Expression):
-        return extension.process_string_base64_expression(expression, config)
-    elif isinstance(expression, StringFirstCharCaseExpression):
-        return extension.process_string_first_char_case_expression(expression, config)
     elif isinstance(expression, StringMatchesExpression):
         return extension.process_matches_expression(expression, config)
 
@@ -1251,22 +1243,3 @@ class SqlToStringDbExtension:
             return f"{value} ~ '^' || {pattern} || '$'"
         else:
             return f"{value} ~ {pattern}"
-
-    def process_string_base64_expression(self, expr: StringBase64Expression, config: "SqlToStringConfig") -> str:
-        op = self.process_expression(expr.value, config)
-        return (
-            f"ENCODE(CONVERT_TO({op}, 'UTF8'), 'BASE64')"
-            if expr.operation_type == Base64OperationType.Encode
-            else f"CONVERT_FROM(DECODE({op}, 'BASE64'), 'UTF8')"
-        )
-
-    def process_string_first_char_case_expression(
-            self, expr: StringFirstCharCaseExpression,
-            config: "SqlToStringConfig"
-    ) -> str:
-        op = self.process_expression(expr.value, config)
-        return (
-            f"UPPER(LEFT({op}, 1)) || SUBSTR({op}, 2)"
-            if expr.case_type == FirstCharCaseType.UPPER
-            else f"LOWER(LEFT({op}, 1)) || SUBSTR({op}, 2)"
-        )

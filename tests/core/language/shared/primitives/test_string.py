@@ -280,13 +280,13 @@ class TestPyLegendString:
 
     def test_string_decode_base64_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").decode_base64()) == \
-               'CONVERT_FROM(DECODE("root".col2, \'BASE64\'), \'UTF8\')'
+               'CONVERT_FROM(\n    DECODE(\n        "root".col2,\n        \'BASE64\'\n    ),\n    \'UTF8\'\n)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").decode_base64()) == \
                'toOne($t.col2)->decodeBase64()'
 
     def test_string_encode_base64_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").encode_base64()) == \
-               'ENCODE(CONVERT_TO("root".col2, \'UTF8\'), \'BASE64\')'
+               'ENCODE(\n    CONVERT_TO(\n        "root".col2,\n        \'UTF8\'\n    ),\n    \'BASE64\'\n)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").encode_base64()) == \
                'toOne($t.col2)->encodeBase64()'
 
@@ -297,14 +297,16 @@ class TestPyLegendString:
                'toOne($t.col2)->reverseString()'
 
     def test_string_to_lower_first_character_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").to_lower_first_character()) == \
-               'LOWER(LEFT("root".col2, 1)) || SUBSTR("root".col2, 2)'
+        assert (self.__generate_sql_string(lambda x: x.get_string("col2").to_lower_first_character()) ==
+                'CONCAT(\n    LOWER(\n        LEFT(\n            ' +
+                '"root".col2,\n            1\n        )\n    ),\n    SUBSTR(\n        "root".col2,\n        2\n    )\n)')
         assert self.__generate_pure_string(lambda x: x.get_string("col2").to_lower_first_character()) == \
                'toOne($t.col2)->toLowerFirstCharacter()'
 
     def test_string_to_upper_first_character_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").to_upper_first_character()) == \
-               'UPPER(LEFT("root".col2, 1)) || SUBSTR("root".col2, 2)'
+        assert (self.__generate_sql_string(lambda x: x.get_string("col2").to_upper_first_character()) ==
+               'CONCAT(\n    UPPER(\n        LEFT(\n            ' +
+                '"root".col2,\n            1\n        )\n    ),\n    SUBSTR(\n        "root".col2,\n        2\n    )\n)')
         assert self.__generate_pure_string(lambda x: x.get_string("col2").to_upper_first_character()) == \
                'toOne($t.col2)->toUpperFirstCharacter()'
 
