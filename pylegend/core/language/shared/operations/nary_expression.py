@@ -60,7 +60,7 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
                 str
             ],
             non_nullable: bool = False,
-            operands_non_nullable_flags: PyLegendList[bool] = None
+            operands_non_nullable_flags: PyLegendList[bool] | None = None
     ) -> None:
         self.__operands = operands
         self.__to_sql_func = to_sql_func
