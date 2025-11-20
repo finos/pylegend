@@ -99,7 +99,7 @@ class TestFilteringFunction:
 
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] + 10) & (frame['col2'] == 2)]")
-        assert v.value.args[0] == "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value <pylegend.core.language.shared.primitives.integer.PyLegendInteger object at 0x000001E23A8C47A0> of type: <class 'pylegend.core.language.shared.primitives.integer.PyLegendInteger'>"
+        assert v.value.args[0].startswith("Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value")
 
     def test_filtering_function_error_on_invalid_column(self) -> None:
         columns = [

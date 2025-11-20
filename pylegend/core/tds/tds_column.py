@@ -15,9 +15,6 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 import json
-
-from pylegend.core.sql.metamodel import ComparisonOperator
-
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence
@@ -28,7 +25,6 @@ __all__: PyLegendSequence[str] = [
     "PrimitiveTdsColumn",
     "PrimitiveType",
     "EnumTdsColumn",
-    "PandasApiTdsColumn",
     "tds_columns_from_json",
 ]
 
@@ -145,15 +141,12 @@ class EnumTdsColumn(TdsColumn):
 def tds_columns_from_json(s: str) -> PyLegendSequence[TdsColumn]:
     try:
         parsed = json.loads(s)
-        print("Parsed: ", parsed)
 
         enums = parsed["enums"] if "enums" in parsed else []
         enums = [enums] if isinstance(enums, dict) else enums
 
         columns = parsed["columns"]
         columns = [columns] if isinstance(columns, dict) else columns
-
-        print("Columns: ", columns)
 
         result_columns: PyLegendList[TdsColumn] = []
         for col in columns:
@@ -163,7 +156,6 @@ def tds_columns_from_json(s: str) -> PyLegendSequence[TdsColumn]:
                 result_columns.append(
                     EnumTdsColumn(col["name"], col["type"], _enum_values_for_type(col["type"], enums))
                 )
-        print("Result: ", result_columns)
         return result_columns
 
     except Exception as e:

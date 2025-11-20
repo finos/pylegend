@@ -38,10 +38,6 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitiveEqualsExpression",
     "PyLegendPrimitiveNotEqualsExpression",
-    "PyLegendPrimitiveLessThanExpression",
-    "PyLegendPrimitiveLessThanOrEqualExpression",
-    "PyLegendPrimitiveGreaterThanExpression",
-    "PyLegendPrimitiveGreaterThanOrEqualExpression",
     "PyLegendIsEmptyExpression",
     "PyLegendIsNotEmptyExpression",
 ]

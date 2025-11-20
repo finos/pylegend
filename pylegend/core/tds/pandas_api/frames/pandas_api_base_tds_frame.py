@@ -40,7 +40,7 @@ from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
 )
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import (
@@ -56,16 +56,16 @@ R = PyLegendTypeVar('R')
 
 
 class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
-    __columns: PyLegendSequence[PrimitiveTdsColumn]
+    __columns: PyLegendSequence[TdsColumn]
 
-    def __init__(self, columns: PyLegendSequence[PrimitiveTdsColumn]) -> None:
+    def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         col_names = [c.get_name() for c in columns]
         if len(col_names) != len(set(col_names)):
             cols = "[" + ", ".join([str(c) for c in columns]) + "]"
             raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
         self.__columns = [c.copy() for c in columns]
 
-    def columns(self) -> PyLegendSequence[PrimitiveTdsColumn]:
+    def columns(self) -> PyLegendSequence[TdsColumn]:
         return [c.copy() for c in self.__columns]
 
     def __getitem__(self, key):
