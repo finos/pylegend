@@ -85,7 +85,6 @@ __all__: PyLegendSequence[str] = [
     "Base64OperationType",
     "StringFirstCharCaseExpression",
     "FirstCharCaseType",
-    "StringSubstringExpression",
     "StringMatchesExpression",
 ]
 
@@ -785,14 +784,6 @@ class StringBase64Expression(Expression):
         super().__init__(_type="stringBase64Expression")
         self.value = value
         self.operation_type = operation_type
-
-
-class StringSubstringExpression(Expression):
-    values: list["Expression"]
-
-    def __init__(self, values: list["Expression"]) -> None:
-        super().__init__(_type="stringSubstringExpression")
-        self.values = values
 
 
 class StringMatchesExpression(Expression):

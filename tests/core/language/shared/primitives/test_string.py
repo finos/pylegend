@@ -335,6 +335,8 @@ class TestPyLegendString:
                'REPLACE(\n    "root".col2,\n    \'ab\',\n    \'ba\'\n)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").replace("ab", "ba")) == \
                'toOne($t.col2)->replace(\'ab\', \'ba\')'
+        with pytest.raises(TypeError):
+            self.__generate_pure_string(lambda x: x.get_string("col2").replace("s", 12))
 
     def test_string_lpad_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").lpad(3, "_")) == \
@@ -347,6 +349,8 @@ class TestPyLegendString:
                'RPAD(\n    "root".col2,\n    3,\n    \'_\'\n)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").rpad(3, "_")) == \
                'toOne($t.col2)->rpad(3, \'_\')'
+        with pytest.raises(TypeError):
+            self.__generate_pure_string(lambda x: x.get_string("col2").rpad("s", "_"))
 
     def test_string_split_part_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").split_part("_", 3)) == \

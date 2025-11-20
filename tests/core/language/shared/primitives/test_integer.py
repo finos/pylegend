@@ -184,6 +184,18 @@ class TestPyLegendInteger:
         assert self.__generate_pure_string(lambda x: 1 == (x["col2"] + x["col1"])) == \
                '((toOne($t.col2) + toOne($t.col1)) == 1)'
 
+    def test_integer_to_string_expr(self) -> None:
+        assert self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2").to_string()) == \
+               'CAST("root".col2 AS TEXT)'
+        assert self.__generate_pure_string(lambda x: x.get_integer("col2").to_string()) == \
+               'toOne($t.col2)->toString()'
+
+    def test_integer_to_char_expr(self) -> None:
+        assert self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2").char()) == \
+               'CHR(\n    "root".col2\n)'
+        assert self.__generate_pure_string(lambda x: x.get_integer("col2").char()) == \
+               'toOne($t.col2)->char()'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)
         assert isinstance(ret, PyLegendInteger)
