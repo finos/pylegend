@@ -44,7 +44,7 @@ class TestTruncateFunction:
     def test_aggregate_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.aggregate({'col1' : [lambda x: x.count() - (x.min() + x.max())/2], 'col2' : [lambda x: x.count() - (x.min() + x.max())/2]})
+        frame = frame.aggregate({'col1' : [lambda x: x.average()], 'col2' : [lambda x: x.average()]})
         expected = """\
                     SELECT
                         "root".col1 AS "col1",

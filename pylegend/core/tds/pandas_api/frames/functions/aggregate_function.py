@@ -36,7 +36,7 @@ from pylegend.core.language.shared.primitive_collection import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.sql.metamodel import QuerySpecification, SingleColumn
+from pylegend.core.sql.metamodel import QuerySpecification, SelectItem, SingleColumn
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -46,12 +46,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 class AggregateFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __func: dict[
-        str,
-        PyLegendList[
-            PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
-        ]
-    ]
+    __func: PyLegendAggInput
     __axis: PyLegendUnion[int, str]
     __args: PyLegendSequence[PyLegendPrimitive]
     __kwargs: PyLegendMapping[str, PyLegendPrimitive]
@@ -69,10 +64,11 @@ class AggregateFunction(PandasApiAppliedFunction):
             **kwargs: PyLegendPrimitive
     ) -> None:
         self.__base_frame = base_frame
-        self.__func_input = func
+        self.__func = func
         self.__axis = axis
         self.__args = args
         self.__kwargs = kwargs
+        
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query: QuerySpecification = self.__base_frame.to_sql_query_object(config)
@@ -90,24 +86,10 @@ class AggregateFunction(PandasApiAppliedFunction):
         else:
             new_query = copy_query(base_query)
 
-        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame)
-        aggregates_list: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]] = []
+        new_select_items: PyLegendList[SelectItem] = []
 
-        for column_name, func_list in self.__func.items():
-            mapper_function: PyLegendCallable[[AbstractTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
-                f"lambda r: r.{column_name}")
-            map_result: PyLegendPrimitiveOrPythonPrimitive = mapper_function(tds_row)
-            collection: PyLegendPrimitiveCollection = create_primitive_collection(map_result)
-
-            for func in func_list:
-                agg_result: PyLegendPrimitive = func(collection)
-                aggregates_list.append(("lambda_applied", map_result, agg_result))
-
-        new_select_items: PyLegendList[str] = []
-
-        for agg in aggregates_list:
+        for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
-
             new_select_items.append(
                 SingleColumn(alias=agg[0], expression=agg_sql_expr)
             )
@@ -115,8 +97,6 @@ class AggregateFunction(PandasApiAppliedFunction):
         new_query.select.selectItems = new_select_items
 
         return new_query
-
-        
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         pass
@@ -136,22 +116,38 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
             )
 
-        normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_dict(self.__func_input)
-        self.__func = dict()
-        for col, func_list in normalized_func.items():
-            self.__func[col] = [self.__normalize_agg_func_to_lambda_function(func) for func in func_list]
+        self.__aggregates_list: PyLegendList[
+            PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+        ] = []
+
+        normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_dict(self.__func)
+        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame)
+
+        for column_name, aggregate_function in normalized_func.items():
+            mapper_function: PyLegendCallable[[PandasApiTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
+                f"lambda r: r.{column_name}")
+            map_result: PyLegendPrimitiveOrPythonPrimitive = mapper_function(tds_row)
+            collection: PyLegendPrimitiveCollection = create_primitive_collection(map_result)
+
+            aggregated_column_name: str
+            agg_result: PyLegendPrimitive
+            aggregated_column_name, normalized_aggregate_function = \
+                self.__normalize_agg_func_to_lambda_function(aggregate_function)
+            agg_result = normalized_aggregate_function(collection)
+
+            self.__aggregates_list.append((aggregated_column_name, map_result, agg_result))
 
         return True
 
     def __normalize_input_func_to_standard_dict(
             self,
             func_input: PyLegendAggInput
-    ) -> dict[str, PyLegendAggList]:
+    ) -> dict[str, PyLegendAggFunc]:
 
         column_names = {col.get_name() for col in self.calculate_columns()}
 
         if isinstance(func_input, collections.abc.Mapping):
-            normalized: dict[str, PyLegendAggList] = {}
+            normalized: dict[str, PyLegendAggFunc] = {}
 
             for key, value in func_input.items():
                 if not isinstance(key, str):
@@ -169,55 +165,78 @@ class AggregateFunction(PandasApiAppliedFunction):
                     )
 
                 if isinstance(value, collections.abc.Sequence) and not isinstance(value, str):
-                    for i, f in enumerate(value):
-                        if not (callable(f) or isinstance(f, str) or isinstance(f, np.ufunc)):
-                            raise TypeError(
-                                f"Invalid `func` argument for the aggregate function.\n"
-                                f"When a dictionary is provided with a key whose value is a list, "
-                                f"all elements of the list must be of type callable, str, or np.ufunc.\n"
-                                f"But got element at index {i} (0-indexed) of key "
-                                f"{key!r}: {f!r} (type: {type(f).__name__})\n"
-                            )
-                    normalized[key] = value
-                else:
-                    if not (callable(value) or isinstance(value, str) or isinstance(f, np.ufunc)):
+                    if len(value) != 1:
+                        raise ValueError(
+                            f"Invalid `func` argument for the aggregate function.\n"
+                            f"When providing a list of functions for a specific column, "
+                            f"the list must contain exactly one element (single aggregation only).\n"
+                            f"Column: {key!r}\n"
+                            f"List Length: {len(value)}\n"
+                            f"Value: {value!r}\n"
+                        )
+                    
+                    single_func = value[0]
+
+                    if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
                         raise TypeError(
                             f"Invalid `func` argument for the aggregate function.\n"
-                            f"When a dictionary is provided, a key can have its value as a "
-                            f"callable, str, np.ufunc, or a list of those.\n"
-                            f"But got value of the key {key!r}: {value!r} (type: {type(value).__name__})\n"
+                            f"The single element in the list for key {key!r} must be a callable, str, or np.ufunc.\n"
+                            f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
                         )
-                    normalized[key] = PyLegendAggList([value])
+                    
+                    normalized[key] = single_func
+
+                else:
+                    if not (callable(value) or isinstance(value, str) or isinstance(value, np.ufunc)):
+                        raise TypeError(
+                            f"Invalid `func` argument for the aggregate function.\n"
+                            f"When a dictionary is provided, the value must be a callable, str, or np.ufunc "
+                            f"(or a list containing exactly one of these).\n"
+                            f"But got value for key {key!r}: {value!r} (type: {type(value).__name__})\n"
+                        )
+                    normalized[key] = value
 
             return normalized
 
         elif isinstance(func_input, collections.abc.Sequence) and not isinstance(func_input, str):
-            for i, f in enumerate(func_input):
-                if not (callable(f) or isinstance(f, str) or isinstance(f, np.ufunc)):
-                    raise TypeError(
-                        f"Invalid `func` argument for the aggregate function.\n"
-                        f"When a list is provided, all elements must be of type callable, str, or np.ufunc.\n"
-                        f"But got element at index {i} (0-indexed): {f!r} (type: {type(f).__name__})\n"
-                    )
-            return {col: PyLegendAggList(func_input.copy())
-                    for col in column_names}
+            
+            # Enforce exactly one element
+            if len(func_input) != 1:
+                raise ValueError(
+                    f"Invalid `func` argument for the aggregate function.\n"
+                    f"When providing a list as the func argument, it must contain exactly one element "
+                    f"(which will be applied to all columns).\n"
+                    f"Multiple functions are not supported.\n"
+                    f"List Length: {len(func_input)}\n"
+                    f"Input: {func_input!r}\n"
+                )
+            
+            single_func = func_input[0]
+
+            if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
+                raise TypeError(
+                    f"Invalid `func` argument for the aggregate function.\n"
+                    f"The single element in the top-level list must be a callable, str, or np.ufunc.\n"
+                    f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
+                )
+
+            return {col: single_func for col in column_names}
 
         elif callable(func_input) or isinstance(func_input, str) or isinstance(func_input, np.ufunc):
-            return {col: PyLegendAggList([func_input])
-                    for col in column_names}
+            return {col: func_input for col in column_names}
 
         else:
             raise TypeError(
                 "Invalid `func` argument for aggregate function. "
-                "Expected a callable, str, np.ufunc, or a list of those, "
-                "or a mapping[str -> those or a list of those]. "
+                "Expected a callable, str, np.ufunc, a list containing exactly one of these, "
+                "or a mapping[str -> callable/str/ufunc/a list containing exactly one of these]. "
                 f"But got: {func_input!r} (type: {type(func_input).__name__})"
             )
 
     def __normalize_agg_func_to_lambda_function(
             self,
             func: PyLegendAggFunc
-    ) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
+    ) -> PyLegendTuple[str, PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]]:
         
         if isinstance(func, str):
             raise NotImplementedError("WIP")
@@ -225,7 +244,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         if isinstance(func, np.ufunc):
             raise NotImplementedError("WIP")
         
-        return func
+        return f"meow(COL1)", func
         
         # ALLOWED_METHODS = {
         #     'sum', 'count',
