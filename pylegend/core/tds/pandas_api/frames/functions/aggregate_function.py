@@ -132,7 +132,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             aggregated_column_name: str
             agg_result: PyLegendPrimitive
             aggregated_column_name, normalized_aggregate_function = \
-                self.__normalize_agg_func_to_lambda_function(aggregate_function)
+                self.__normalize_agg_func_to_lambda_function(column_name, aggregate_function)
             agg_result = normalized_aggregate_function(collection)
 
             self.__aggregates_list.append((aggregated_column_name, map_result, agg_result))
@@ -235,85 +235,60 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def __normalize_agg_func_to_lambda_function(
             self,
+            column_name: str,
             func: PyLegendAggFunc
     ) -> PyLegendTuple[str, PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]]:
         
+        PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[PyLegendList[str], str] = {
+            ["mean", "average"]: "average",
+            ["sum"]: "sum",
+            ["min", "amin"]: "min", 
+            ["max", "amax"]: "max",
+            ["std", "std_dev"]: "std",
+            ["var", "variance"]: "var",
+            ["median"]: "median",
+            ["count", "size", "len", "length"]: "count",
+            ["int", "integer", "parse_int", "parse_integer"]: "parse_integer",
+            ["float", "parse_float"]: "parse_float",
+        }
+
+        FLATTENED_FUNCTION_MAPPING: dict[str, str] = {}
+        for source_list, target_method in PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING.items():
+            for alias in source_list:
+                FLATTENED_FUNCTION_MAPPING[alias] = target_method
+
+        final_lambda: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+
         if isinstance(func, str):
-            raise NotImplementedError("WIP")
-        
-        if isinstance(func, np.ufunc):
-            raise NotImplementedError("WIP")
-        
-        return f"meow(COL1)", func
-        
-        # ALLOWED_METHODS = {
-        #     'sum', 'count',
-        #     'min', 'max',
-        #     'mean', 'median',
-        #     'std', 'var'
-        # }
+            func_lower = func.lower()
+            if func_lower in FLATTENED_FUNCTION_MAPPING:
+                internal_method_name = FLATTENED_FUNCTION_MAPPING[func_lower]
+            else:
+                internal_method_name = func
+            description: str = f"{internal_method_name}({column_name})"
+            lambda_source: str = f"lambda x: x.{internal_method_name}()"
+            final_lambda = eval(lambda_source)
+            return description, final_lambda
 
-        # ALLOWED_NODE_TYPES = {
-        #     ast.Lambda, ast.Name, ast.Attribute, ast.Call, 
-        #     ast.BinOp, ast.UnaryOp, ast.Constant, 
-        #     ast.Load, ast.Store, ast.arguments, ast.arg
-        # }
+        elif isinstance(func, np.ufunc):
+            func_name = func.__name__
+            if func_name in FLATTENED_FUNCTION_MAPPING:
+                internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
+            else:
+                internal_method_name = func_name
+            description = f"{internal_method_name}({column_name})"
+            lambda_source = f"lambda x: x.{internal_method_name}()"
+            final_lambda = eval(lambda_source)
+            return description, final_lambda
 
-        # ALLOWED_BINARY_OPERATORS = {
-        #     ast.Add, ast.Sub, ast.Mult, ast.Div, 
-        #     ast.FloorDiv, ast.Mod, ast.Pow,
-        # }
-
-        # ALLOWED_UNARY_OPERATORS = {
-        #     ast.UAdd, ast.USub,
-        # }
-
-        # try:
-        #     source = inspect.getsource(lambda_func)
-        # except OSError:
-        #     raise ValueError("Could not retrieve source code for the provided lambda function.")
-
-        # source = textwrap.dedent(source).strip()
-        
-        # try:
-        #     tree = ast.parse(source)
-        # except SyntaxError:
-        #     raise ValueError("Could not parse the provided lambda function.")
-
-        # lambda_node = None
-        # for node in ast.walk(tree):
-        #     if isinstance(node, ast.Lambda):
-        #         lambda_node = node
-        #         break
-        
-        # if lambda_node is None:
-        #     raise ValueError("No lambda function found in the provided source code.")
-
-        # for node in ast.walk(lambda_node):
-        #     if type(node) not in ALLOWED_NODE_TYPES:
-        #         raise ValueError(f"Security violation: AST node '{type(node).__name__}' is not allowed.")
-
-        #     # B. Validate Binary Operators (if applicable)
-        #     if isinstance(node, ast.BinOp):
-        #         if type(node.op) not in ALLOWED_BINARY_OPERATORS:
-        #             raise ValueError(f"Security violation: Binary operator '{type(node.op).__name__}' is not allowed.")
-
-        #     # C. Validate Unary Operators (if applicable)
-        #     if isinstance(node, ast.UnaryOp):
-        #         if type(node.op) not in ALLOWED_UNARY_OPERATORS:
-        #             raise ValueError(f"Security violation: Unary operator '{type(node.op).__name__}' is not allowed.")
-
-        #     # D. Validate Function/Method Calls
-        #     if isinstance(node, ast.Call):
-        #         # Case 1: Method call (e.g., x.sum())
-        #         if isinstance(node.func, ast.Attribute):
-        #             if node.func.attr not in ALLOWED_METHODS:
-        #                 raise ValueError(f"Security violation: Method '{node.func.attr}' is not allowed.")
-                
-        #         # Case 2: Direct function call (e.g., sum(x)) - Optional, depending on your needs.
-        #         # If you only want to allow x.sum(), you might reject ast.Name here.
-        #         elif isinstance(node.func, ast.Name):
-        #             if node.func.id not in ALLOWED_METHODS:
-        #                 raise ValueError(f"Security violation: Function '{node.func.id}' is not allowed.")
-
-        # return lambda_func
+        else:
+            func_name = getattr(func, "__name__", "").lower()
+            if func_name in FLATTENED_FUNCTION_MAPPING and func_name != "<lambda>":
+                internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
+                description = f"{internal_method_name}({column_name})"
+                lambda_source = f"lambda x: x.{internal_method_name}()"
+                final_lambda = eval(lambda_source)
+                return description, final_lambda
+            
+            else:
+                return f"lambda({column_name})", func

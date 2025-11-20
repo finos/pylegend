@@ -13,7 +13,10 @@
 # limitations under the License.
 
 import json
+from math import sqrt
 from textwrap import dedent
+
+import numpy as np
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -44,7 +47,7 @@ class TestTruncateFunction:
     def test_aggregate_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.aggregate({'col1' : [lambda x: x.average()], 'col2' : [lambda x: x.average()]})
+        frame = frame.aggregate({'col1' : ['min'], 'col2' : ['count']})
         expected = """\
                     SELECT
                         "root".col1 AS "col1",
