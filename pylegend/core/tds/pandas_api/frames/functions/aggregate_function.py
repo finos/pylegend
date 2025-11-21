@@ -32,6 +32,8 @@ from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import
     PyLegendAggInput
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
+from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection, create_primitive_collection
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.primitives.string import PyLegendString
@@ -71,6 +73,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        db_extension = config.sql_to_string_generator().get_db_extension()
         base_query: QuerySpecification = self.__base_frame.to_sql_query_object(config)
 
         should_create_sub_query = (
@@ -79,7 +82,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             base_query.offset is not None or
             base_query.limit is not None
         )
-        
+
         new_query: QuerySpecification
         if should_create_sub_query:
             new_query = create_sub_query(base_query, config, "root")
@@ -91,15 +94,33 @@ class AggregateFunction(PandasApiAppliedFunction):
         for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
             new_select_items.append(
-                SingleColumn(alias=agg[0], expression=agg_sql_expr)
+                SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr)
             )
 
         new_query.select.selectItems = new_select_items
-
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        pass
+        group_strings = []
+        for col_name in self.__grouping_column_name_list:
+            group_strings.append(escape_column_name(col_name))
+
+        if len(group_strings) == 0:
+            group_strings = ['test_col']
+
+        agg_strings = []
+        for agg in self.__aggregates_list:
+            map_expr_string = (agg[1].to_pure_expression(config) if isinstance(agg[1], PyLegendPrimitive)
+                               else convert_literal_to_literal_expression(agg[1]).to_pure_expression(config))
+            agg_expr_string = agg[2].to_pure_expression(config).replace(map_expr_string, "$c")
+            agg_strings.append(f"{escape_column_name(agg[0])}:{generate_pure_lambda('r', map_expr_string)}:"
+                               f"{generate_pure_lambda('c', agg_expr_string)}")
+            
+        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+                f"->groupBy({config.separator(2)}"
+                f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
+                f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                f")")
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
@@ -125,17 +146,16 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         for column_name, aggregate_function in normalized_func.items():
             mapper_function: PyLegendCallable[[PandasApiTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
-                f"lambda r: r.{column_name}")
+                f'lambda r: r["{column_name}"]')
             map_result: PyLegendPrimitiveOrPythonPrimitive = mapper_function(tds_row)
             collection: PyLegendPrimitiveCollection = create_primitive_collection(map_result)
 
-            aggregated_column_name: str
-            agg_result: PyLegendPrimitive
-            aggregated_column_name, normalized_aggregate_function = \
-                self.__normalize_agg_func_to_lambda_function(column_name, aggregate_function)
-            agg_result = normalized_aggregate_function(collection)
+            normalized_aggregate_function = self.__normalize_agg_func_to_lambda_function(aggregate_function)
+            agg_result: PyLegendPrimitive = normalized_aggregate_function(collection)
 
-            self.__aggregates_list.append((aggregated_column_name, map_result, agg_result))
+            self.__aggregates_list.append((column_name, map_result, agg_result))
+
+        self.__grouping_column_name_list: PyLegendList[str] = []
 
         return True
 
@@ -235,25 +255,22 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def __normalize_agg_func_to_lambda_function(
             self,
-            column_name: str,
             func: PyLegendAggFunc
     ) -> PyLegendTuple[str, PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]]:
-        
-        PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[PyLegendList[str], str] = {
-            ["mean", "average"]: "average",
-            ["sum"]: "sum",
-            ["min", "amin"]: "min", 
-            ["max", "amax"]: "max",
-            ["std", "std_dev"]: "std",
-            ["var", "variance"]: "var",
-            ["median"]: "median",
-            ["count", "size", "len", "length"]: "count",
-            ["int", "integer", "parse_int", "parse_integer"]: "parse_integer",
-            ["float", "parse_float"]: "parse_float",
+
+        PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[str, PyLegendList[str]] = {
+            "average": ["mean", "average"],
+            "sum":     ["sum"],
+            "min":     ["min", "amin"],
+            "max":     ["max", "amax"],
+            "std":     ["std", "std_dev"],
+            "var":     ["var", "variance"],
+            "median":  ["median"],
+            "count":   ["count", "size", "len", "length"],
         }
 
         FLATTENED_FUNCTION_MAPPING: dict[str, str] = {}
-        for source_list, target_method in PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING.items():
+        for target_method, source_list in PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING.items():
             for alias in source_list:
                 FLATTENED_FUNCTION_MAPPING[alias] = target_method
 
@@ -265,10 +282,9 @@ class AggregateFunction(PandasApiAppliedFunction):
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_lower]
             else:
                 internal_method_name = func
-            description: str = f"{internal_method_name}({column_name})"
             lambda_source: str = f"lambda x: x.{internal_method_name}()"
             final_lambda = eval(lambda_source)
-            return description, final_lambda
+            return final_lambda
 
         elif isinstance(func, np.ufunc):
             func_name = func.__name__
@@ -276,19 +292,17 @@ class AggregateFunction(PandasApiAppliedFunction):
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
             else:
                 internal_method_name = func_name
-            description = f"{internal_method_name}({column_name})"
             lambda_source = f"lambda x: x.{internal_method_name}()"
             final_lambda = eval(lambda_source)
-            return description, final_lambda
+            return final_lambda
 
         else:
             func_name = getattr(func, "__name__", "").lower()
             if func_name in FLATTENED_FUNCTION_MAPPING and func_name != "<lambda>":
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
-                description = f"{internal_method_name}({column_name})"
                 lambda_source = f"lambda x: x.{internal_method_name}()"
                 final_lambda = eval(lambda_source)
-                return description, final_lambda
+                return final_lambda
             
             else:
-                return f"lambda({column_name})", func
+                return func
