@@ -73,9 +73,6 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
             else [False] * len(operands)
         )
 
-    # ----------------------------------------------------
-    # SQL
-    # ----------------------------------------------------
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
@@ -87,9 +84,6 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
         ]
         return self.__to_sql_func(sql_operands, frame_name_to_base_query_map, config)
 
-    # ----------------------------------------------------
-    # PURE
-    # ----------------------------------------------------
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         pure_operands: PyLegendList[str] = []
 
