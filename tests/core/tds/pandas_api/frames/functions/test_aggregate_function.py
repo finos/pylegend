@@ -44,26 +44,29 @@ class TestTruncateFunction:
             frame.aggregate(func=lambda x: 0, axis=1)
         assert v.value.args[0] == "The 'axis' parameter of the aggregate function must be 0 or 'index', but got: 1"
 
-    # def test_aggregate_simple_query_generation(self) -> None:
-    #     columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2"), PrimitiveTdsColumn.integer_column("test_col")]
-    #     frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-    #     frame = frame.aggregate({'col1' : ['min'], 'col2' : ['count']}).truncate(5, 10).truncate(5)
-    #     expected = """\
-    #                 SELECT
-    #                     "root".col1 AS "col1",
-    #                     "root".col2 AS "col2"
-    #                 FROM
-    #                     test_schema.test_table AS "root"\
-    #                 """
-    #     assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-    #     assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
-    #         """\
-    #         #Table(test_schema.test_table)#
-    #           ->slice(0, 4)"""
-    #     )
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
-        #     "#Table(test_schema.test_table)#->slice(0, 4)"
-        # )
+    def test_aggregate_simple_query_generation(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2"), PrimitiveTdsColumn.integer_column("test_col")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.aggregate({'col1' : ['min'], 'col2' : ['count']})
+        expected = """\
+                    SELECT
+                        MIN("root".col1) AS "col1",
+                        COUNT("root".col2) AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->aggregate(
+                ~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->count()}]
+              )"""
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#"
+            "->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->count()}])"
+        )
 
     def test_e2e_aggregate_single_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])

@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-import ast
-import inspect
-import textwrap
 import numpy as np
 import collections.abc
 from pylegend._typing import (
@@ -28,7 +24,6 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
     PyLegendAggFunc,
-    PyLegendAggList,
     PyLegendAggInput
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
@@ -36,8 +31,6 @@ from pylegend.core.language.shared.helpers import escape_column_name, generate_p
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection, create_primitive_collection
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
-from pylegend.core.language.shared.primitives.string import PyLegendString
-from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.sql.metamodel import QuerySpecification, SelectItem, SingleColumn
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -105,9 +98,6 @@ class AggregateFunction(PandasApiAppliedFunction):
         for col_name in self.__grouping_column_name_list:
             group_strings.append(escape_column_name(col_name))
 
-        if len(group_strings) == 0:
-            group_strings = ['test_col']
-
         agg_strings = []
         for agg in self.__aggregates_list:
             map_expr_string = (agg[1].to_pure_expression(config) if isinstance(agg[1], PyLegendPrimitive)
@@ -117,8 +107,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                                f"{generate_pure_lambda('c', agg_expr_string)}")
             
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                f"->groupBy({config.separator(2)}"
-                f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
+                f"->aggregate({config.separator(2)}"
                 f"~[{', '.join(agg_strings)}]{config.separator(1)}"
                 f")")
 
@@ -220,7 +209,6 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         elif isinstance(func_input, collections.abc.Sequence) and not isinstance(func_input, str):
             
-            # Enforce exactly one element
             if len(func_input) != 1:
                 raise ValueError(
                     f"Invalid `func` argument for the aggregate function.\n"
@@ -282,7 +270,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_lower]
             else:
                 internal_method_name = func
-            lambda_source: str = f"lambda x: x.{internal_method_name}()"
+            lambda_source: str = self._generate_lambda_source(internal_method_name)
             final_lambda = eval(lambda_source)
             return final_lambda
 
@@ -292,7 +280,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
             else:
                 internal_method_name = func_name
-            lambda_source = f"lambda x: x.{internal_method_name}()"
+            lambda_source: str = self._generate_lambda_source(internal_method_name)
             final_lambda = eval(lambda_source)
             return final_lambda
 
@@ -300,9 +288,22 @@ class AggregateFunction(PandasApiAppliedFunction):
             func_name = getattr(func, "__name__", "").lower()
             if func_name in FLATTENED_FUNCTION_MAPPING and func_name != "<lambda>":
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
-                lambda_source = f"lambda x: x.{internal_method_name}()"
+                lambda_source: str = self._generate_lambda_source(internal_method_name)
                 final_lambda = eval(lambda_source)
                 return final_lambda
-            
             else:
                 return func
+            
+    def _generate_lambda_source(self, internal_method_name: str) -> str:
+        arg_str = self._build_method_call_args()
+        return f"lambda x: x.{internal_method_name}({arg_str})"
+
+    def _build_method_call_args(self) -> str:
+        arg_parts: list[str] = []
+
+        for a in self.__args or []:
+            arg_parts.append(repr(a))
+        for k, v in (self.__kwargs or {}).items():
+            arg_parts.append(f"{k}={repr(v)}")
+
+        return ", ".join(arg_parts)

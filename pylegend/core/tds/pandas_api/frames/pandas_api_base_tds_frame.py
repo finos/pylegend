@@ -195,8 +195,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             base_frame=self,
             func=func,
             axis=axis,
-            args=args,
-            kwargs=kwargs
+            *args,
+            **kwargs
         ))
 
     @abstractmethod
