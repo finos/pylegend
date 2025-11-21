@@ -40,7 +40,7 @@ class TestPyLegendString:
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_string_col_access(self) -> None:
@@ -253,6 +253,124 @@ class TestPyLegendString:
                '$t.col2->isNotEmpty()'
         assert self.__generate_pure_string(lambda x: x["col2"].lower().is_null()) == \
                'toOne($t.col2)->toLower()->isEmpty()'
+
+    def test_string_to_string_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").to_string()) == \
+               'CAST("root".col2 AS TEXT)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").to_string()) == \
+               'toOne($t.col2)->toString()'
+
+    def test_string_parse_boolean_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_boolean()) == \
+               'CAST("root".col2 AS BOOLEAN)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_boolean()) == \
+               'toOne($t.col2)->parseBoolean()'
+
+    def test_string_parse_datetime_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_datetime()) == \
+               'CAST("root".col2 AS TIMESTAMPTZ)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_datetime()) == \
+               'toOne($t.col2)->parseDate()'
+
+    def test_string_ascii_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").ascii()) == \
+               'ASCII(\n    "root".col2\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").ascii()) == \
+               'toOne($t.col2)->ascii()'
+
+    def test_string_decode_base64_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").decode_base64()) == \
+               'CONVERT_FROM(\n    DECODE(\n        "root".col2,\n        \'BASE64\'\n    ),\n    \'UTF8\'\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").decode_base64()) == \
+               'toOne($t.col2)->decodeBase64()'
+
+    def test_string_encode_base64_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").encode_base64()) == \
+               'ENCODE(\n    CONVERT_TO(\n        "root".col2,\n        \'UTF8\'\n    ),\n    \'BASE64\'\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").encode_base64()) == \
+               'toOne($t.col2)->encodeBase64()'
+
+    def test_string_reverse_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").reverse()) == \
+               'REVERSE(\n    "root".col2\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").reverse()) == \
+               'toOne($t.col2)->reverseString()'
+
+    def test_string_to_lower_first_character_expr(self) -> None:
+        assert (self.__generate_sql_string(lambda x: x.get_string("col2").to_lower_first_character()) ==
+                'CONCAT(\n    LOWER(\n        LEFT(\n            ' +
+                '"root".col2,\n            1\n        )\n    ),\n    SUBSTR(\n        "root".col2,\n        2\n    )\n)')
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").to_lower_first_character()) == \
+               'toOne($t.col2)->toLowerFirstCharacter()'
+
+    def test_string_to_upper_first_character_expr(self) -> None:
+        assert (self.__generate_sql_string(lambda x: x.get_string("col2").to_upper_first_character()) ==
+               'CONCAT(\n    UPPER(\n        LEFT(\n            ' +
+                '"root".col2,\n            1\n        )\n    ),\n    SUBSTR(\n        "root".col2,\n        2\n    )\n)')
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").to_upper_first_character()) == \
+               'toOne($t.col2)->toUpperFirstCharacter()'
+
+    def test_string_left_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").left(2)) == \
+               'LEFT(\n    "root".col2,\n    2\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").left(2)) == \
+               'toOne($t.col2)->left(2)'
+
+    def test_string_right_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").right(2)) == \
+               'RIGHT(\n    "root".col2,\n    2\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").right(2)) == \
+               'toOne($t.col2)->right(2)'
+
+    def test_string_substr_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").substring(1)) == \
+               'SUBSTR(\n    "root".col2,\n    1\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1)) == \
+               'toOne($t.col2)->substring(1)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").substring(1, 3)) == \
+               'SUBSTR(\n    "root".col2,\n    1,\n    3\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1, 3)) == \
+               'toOne($t.col2)->substring(1, 3)'
+
+    def test_string_replace_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").replace("ab", "ba")) == \
+               'REPLACE(\n    "root".col2,\n    \'ab\',\n    \'ba\'\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").replace("ab", "ba")) == \
+               'toOne($t.col2)->replace(\'ab\', \'ba\')'
+        with pytest.raises(TypeError):
+            self.__generate_pure_string(lambda x: x.get_string("col2").replace("s", 12))
+
+    def test_string_lpad_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").lpad(3, "_")) == \
+               'LPAD(\n    "root".col2,\n    3,\n    \'_\'\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").lpad(3, "_")) == \
+               'toOne($t.col2)->lpad(3, \'_\')'
+
+    def test_string_rpad_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").rpad(3, "_")) == \
+               'RPAD(\n    "root".col2,\n    3,\n    \'_\'\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").rpad(3, "_")) == \
+               'toOne($t.col2)->rpad(3, \'_\')'
+        with pytest.raises(TypeError):
+            self.__generate_pure_string(lambda x: x.get_string("col2").rpad("s", "_"))
+
+    def test_string_split_part_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").split_part("_", 3)) == \
+               'SPLIT_PART(\n    "root".col2,\n    \'_\',\n    3\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").split_part("_", 3)) == \
+               'toOne($t.col2)->splitPart(\'_\', 3)'
+
+    def test_string_matches_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").matches("ab")) == \
+               '("root".col2) ~ \'^\' || \'ab\' || \'$\''
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").matches("ab")) == \
+               'toOne($t.col2)->matches(\'ab\')'
+
+    def test_string_repeat_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").repeat_string(3)) == \
+               'REPEAT(\n    "root".col2,\n    3\n)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").repeat_string(3)) == \
+               'toOne($t.col2)->repeatString(3)'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

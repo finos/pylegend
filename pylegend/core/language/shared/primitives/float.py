@@ -32,9 +32,11 @@ from pylegend.core.language.shared.operations.float_operation_expressions import
     PyLegendFloatNegativeExpression,
     PyLegendFloatSubtractExpression,
     PyLegendFloatMultiplyExpression,
+    PyLegendFloatToStringExpression
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendInteger
+    from pylegend.core.language.shared.primitives import PyLegendString
 
 __all__: PyLegendSequence[str] = [
     "PyLegendFloat"
@@ -50,6 +52,10 @@ class PyLegendFloat(PyLegendNumber):
     ) -> None:
         self.__value_copy = value
         super().__init__(value)
+
+    def to_string(self) -> "PyLegendString":
+        from pylegend.core.language.shared.primitives import PyLegendString
+        return PyLegendString(PyLegendFloatToStringExpression(self.__value_copy))
 
     def __add__(
             self,
