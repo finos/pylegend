@@ -52,6 +52,7 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").length()) == 'CHAR_LENGTH("root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").len()) == 'toOne($t.col2)->length()'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").length()) == 'toOne($t.col2)->length()'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1).length()) == 'toOne(toOne($t.col2)->substring(1))->length()'
 
     def test_string_startswith_expr(self) -> None:
         with pytest.raises(TypeError) as t:
