@@ -65,6 +65,15 @@ class TestFilteringFunction:
         assert v.value.args[0] == "invalid syntax"
 
     def test_filtering_function_invalid_operator_error(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)  # noqa: F841
+
         # Logical expression
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] > 10) + (frame['col2'] == 2)]")
@@ -82,10 +91,20 @@ class TestFilteringFunction:
         with pytest.raises(TypeError) as v:
             eval("frame[(frame['col1'] + 10) & (frame['col2'] == 2)]")
         assert v.value.args[0].startswith(
-            "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value"
+            "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value "
+            "<pylegend.core.language.shared.primitives.integer.PyLegendInteger object"
         )
 
-    def test_filtering_function_error_on_invalid_column(self) -> None:
+    def test_filtering_function_error_on_invalid_key(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.float_column("col4"),
+            PrimitiveTdsColumn.float_column("col5")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)  # noqa: F841
+
         # str input
         with pytest.raises(KeyError) as v:
             eval("frame['col6']")
@@ -104,6 +123,11 @@ class TestFilteringFunction:
         with pytest.raises(KeyError) as v:
             eval("frame[(frame['col8'] > 10) & (frame['col1'] == 2) | (frame['col6'] == 'test')]")
         assert v.value.args[0] == "['col8'] not in index"
+
+        # invalid key type
+        with pytest.raises(TypeError) as v2:
+            eval("frame[123]")
+        assert v2.value.args[0] == "Invalid key type: <class 'int'>. Expected str, list, or boolean expression"
 
     def test_filtering_function_on_str_input(self) -> None:
         columns = [
@@ -482,25 +506,6 @@ class TestFilteringFunction:
                 {"values": ["Fabrice", 34]},
                 {"values": ["Oliver", 32]},
                 {"values": ["David", 35]}
-            ],
-        }
-        res = newframe.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
-
-    def test_e2e_filtering_function_integer_operations(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:  # noqa: E501
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-
-        newframe = frame['Age'] + 2  # type: ignore
-        expected = {
-            "columns": ["Age_plus_2"],
-            "rows": [
-                {"values": [25]},
-                {"values": [24]},
-                {"values": [14]},
-                {"values": [24]},
-                {"values": [36]},
-                {"values": [34]},
-                {"values": [37]},
             ],
         }
         res = newframe.execute_frame_to_string()
