@@ -24,7 +24,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <legend.engine.version>4.109.0</legend.engine.version>
+        <legend.engine.version>4.108.0</legend.engine.version>
     </properties>
 
     <dependencies>
