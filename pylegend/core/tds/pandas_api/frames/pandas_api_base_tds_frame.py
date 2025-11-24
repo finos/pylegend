@@ -194,6 +194,25 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             *args,
             **kwargs
         ))
+    
+    def agg(
+        self,
+        func: PyLegendAggInput = None,
+        axis: PyLegendUnion[int, str] = 0,
+        *args: PyLegendPrimitive,
+        **kwargs: PyLegendPrimitive
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
+        return PandasApiAppliedFunctionTdsFrame(AggregateFunction(
+            self,
+            func,
+            axis,
+            *args,
+            **kwargs
+        ))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

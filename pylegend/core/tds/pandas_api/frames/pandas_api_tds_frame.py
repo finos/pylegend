@@ -106,3 +106,13 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         **kwargs: PyLegendPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
+
+    @abstractmethod
+    def agg(
+        self,
+        func: PyLegendAggInput = None,
+        axis: PyLegendUnion[int, str] = 0,
+        *args: PyLegendPrimitive,
+        **kwargs: PyLegendPrimitive
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover

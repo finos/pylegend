@@ -245,8 +245,8 @@ class AggregateFunction(PandasApiAppliedFunction):
             "sum":     ["sum", "nansum"],
             "min":     ["min", "amin", "minimum", "nanmin"],
             "max":     ["max", "amax", "maximum", "nanmax"],
-            "std":     ["std", "std_dev", "nanstd"],
-            "var":     ["var", "variance", "nanvar"],
+            "std_dev_sample":     ["std", "std_dev", "nanstd"],
+            "variance_sample":     ["var", "variance", "nanvar"],
             "median":  ["median", "nanmedian"],
             "count":   ["count", "size", "len", "length"],
         }
