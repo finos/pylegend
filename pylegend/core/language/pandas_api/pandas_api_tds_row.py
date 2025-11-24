@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language import (
     PyLegendBoolean,
@@ -36,26 +35,12 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDateTime,
     PandasApiDate,
     PandasApiPrimitive,
-    PandasApiPartialFrame,
-    PandasApiWindowReference,
 )
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    Expression,
-    FunctionCall,
-    QualifiedName,
-    IntegerLiteral
-)
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsRow",
-    "PandasApiLeadRow",
-    "PandasApiLagRow",
-    "PandasApiFirstRow",
-    "PandasApiLastRow",
-    "PandasApiNthRow",
 ]
 
 
@@ -66,33 +51,6 @@ class PandasApiTdsRow(AbstractTdsRow):
     @staticmethod
     def from_tds_frame(frame_name: str, frame: PyLegendTdsFrame) -> "PandasApiTdsRow":
         return PandasApiTdsRow(frame_name=frame_name, frame=frame)
-
-    def __getattr__(self, key: str) -> PandasApiPrimitive:
-        return self[key]
-
-    def get_boolean(self, column: str) -> PandasApiBoolean:
-        return PandasApiBoolean(super().get_boolean(column))
-
-    def get_string(self, column: str) -> PandasApiString:
-        return PandasApiString(super().get_string(column))
-
-    def get_number(self, column: str) -> PandasApiNumber:
-        return PandasApiNumber(super().get_number(column))
-
-    def get_integer(self, column: str) -> PandasApiInteger:
-        return PandasApiInteger(super().get_integer(column))
-
-    def get_float(self, column: str) -> PandasApiFloat:
-        return PandasApiFloat(super().get_float(column))
-
-    def get_date(self, column: str) -> PandasApiDate:
-        return PandasApiDate(super().get_date(column))
-
-    def get_datetime(self, column: str) -> PandasApiDateTime:
-        return PandasApiDateTime(super().get_datetime(column))
-
-    def get_strictdate(self, column: str) -> PandasApiStrictDate:
-        return PandasApiStrictDate(super().get_strictdate(column))
 
     def __getitem__(self, item: str) -> PandasApiPrimitive:
         res = super().__getitem__(item)
@@ -114,178 +72,3 @@ class PandasApiTdsRow(AbstractTdsRow):
             return PandasApiDate(res)
 
         raise RuntimeError(f"Unhandled primitive type {type(res)} in LegendQL Api")
-
-
-class PandasApiLeadRow(PandasApiTdsRow):
-    __partial_frame: PandasApiPartialFrame
-    __row: "PandasApiTdsRow"
-
-    def __init__(
-            self,
-            partial_frame: PandasApiPartialFrame,
-            row: "PandasApiTdsRow"
-    ) -> None:
-        super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
-        self.__partial_frame = partial_frame
-        self.__row = row
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return f"{self.__partial_frame.to_pure_expression(config)}->lead({self.__row.to_pure_expression(config)})"
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["lead"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
-
-
-class PandasApiLagRow(PandasApiTdsRow):
-    __partial_frame: PandasApiPartialFrame
-    __row: "PandasApiTdsRow"
-
-    def __init__(
-            self,
-            partial_frame: PandasApiPartialFrame,
-            row: "PandasApiTdsRow"
-    ) -> None:
-        super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
-        self.__partial_frame = partial_frame
-        self.__row = row
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return f"{self.__partial_frame.to_pure_expression(config)}->lag({self.__row.to_pure_expression(config)})"
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["lag"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
-
-
-class PandasApiFirstRow(PandasApiTdsRow):
-    __partial_frame: PandasApiPartialFrame
-    __window_ref: PandasApiWindowReference
-    __row: "PandasApiTdsRow"
-
-    def __init__(
-            self,
-            partial_frame: PandasApiPartialFrame,
-            window_ref: PandasApiWindowReference,
-            row: "PandasApiTdsRow"
-    ) -> None:
-        super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
-        self.__partial_frame = partial_frame
-        self.__window_ref = window_ref
-        self.__row = row
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return (f"{self.__partial_frame.to_pure_expression(config)}->first("
-                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["first_value"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
-
-
-class PandasApiLastRow(PandasApiTdsRow):
-    __partial_frame: PandasApiPartialFrame
-    __window_ref: PandasApiWindowReference
-    __row: "PandasApiTdsRow"
-
-    def __init__(
-            self,
-            partial_frame: PandasApiPartialFrame,
-            window_ref: PandasApiWindowReference,
-            row: "PandasApiTdsRow"
-    ) -> None:
-        super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
-        self.__partial_frame = partial_frame
-        self.__window_ref = window_ref
-        self.__row = row
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return (f"{self.__partial_frame.to_pure_expression(config)}->last("
-                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["last_value"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
-
-
-class PandasApiNthRow(PandasApiTdsRow):
-    __partial_frame: PandasApiPartialFrame
-    __window_ref: PandasApiWindowReference
-    __row: "PandasApiTdsRow"
-    __offset: int
-
-    def __init__(
-            self,
-            partial_frame: PandasApiPartialFrame,
-            window_ref: PandasApiWindowReference,
-            row: "PandasApiTdsRow",
-            offset: int
-    ) -> None:
-        super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
-        self.__partial_frame = partial_frame
-        self.__window_ref = window_ref
-        self.__row = row
-        self.__offset = offset
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return (
-            f"{self.__partial_frame.to_pure_expression(config)}->nth("
-            f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)}, {self.__offset})"
-        )
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["nth_value"]),
-            distinct=False,
-            arguments=[
-                super().column_sql_expression(column, frame_name_to_base_query_map, config),
-                IntegerLiteral(self.__offset)
-            ],
-            filter_=None,
-            window=None
-        )

@@ -27,7 +27,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api, simple_trade_service_frame_pandas_api
 
 
 class TestAggregateFunction:
@@ -182,7 +182,7 @@ class TestAggregateFunction:
         assert v.value.args[0] == expected_msg
 
     def test_aggregate_simple_query_generation(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.date_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.aggregate({'col1': ['min'], 'col2': ['count']})
         expected = """\
@@ -205,7 +205,46 @@ class TestAggregateFunction:
             "->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->count()}])"
         )
 
-    def test_e2e_aggregate_subquery_generation(self) -> None:
+    def test_aggregate_for_bool_and_datetime_column(self) -> None:
+        columns = [PrimitiveTdsColumn.boolean_column("col1"), PrimitiveTdsColumn.datetime_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.aggregate({'col1': ['count'], 'col2': ['min']})
+        expected = """\
+                    SELECT
+                        COUNT("root".col1) AS "col1",
+                        MIN("root".col2) AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
+
+    def test_aggregate_fewer_metrics_than_columns(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"),
+                   PrimitiveTdsColumn.number_column("col2"),
+                   PrimitiveTdsColumn.float_column("col3")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.aggregate({'col3': ['var'], 'col2': ['std']})
+        expected = """\
+                    SELECT
+                        VAR_SAMP("root".col3) AS "col3",
+                        STDDEV_SAMP("root".col2) AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->aggregate(
+                ~[col3:{r | $r.col3}:{c | $c->varianceSample()}, col2:{r | $r.col2}:{c | $c->stdDevSample()}]
+              )"""
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#"
+            "->aggregate(~[col3:{r | $r.col3}:{c | $c->varianceSample()}, col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+        )
+
+    def test_aggregate_subquery_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.truncate(5, 10).aggregate({'col1': ['min'], 'col2': ['count']})
@@ -426,9 +465,18 @@ class TestAggregateFunction:
         }
         assert json.loads(frame_lambda_sum.execute_frame_to_string())["result"] == expected_sum
 
-        frame_lambda_count = frame.aggregate({'Last Name': lambda x: x.count()})
+        frame_lambda_count = frame.agg({'Last Name': lambda x: x.count()})
         expected_count = {
             "columns": ["Last Name"],
             "rows": [{"values": [7]}]
         }
         assert json.loads(frame_lambda_count.execute_frame_to_string())["result"] == expected_count
+
+    def test_e2e_aggregate_date_time(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.aggregate({'Date': lambda x: x.min(), 'Settlement Date Time': 'max'})
+        expected = {
+            "columns": ["Date", "Settlement Date Time"],
+            "rows": [{"values": ['2014-12-01', '2014-12-05T21:00:00.000000000+0000']}]
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected

@@ -116,7 +116,6 @@ class AggregateFunction(PandasApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
-        print('here here here')
         if self.__axis not in [0, "index"]:
             raise NotImplementedError(
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
@@ -241,14 +240,14 @@ class AggregateFunction(PandasApiAppliedFunction):
     ) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
 
         PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[str, PyLegendList[str]] = {
-            "average": ["mean", "average", "nanmean"],
-            "sum":     ["sum", "nansum"],
-            "min":     ["min", "amin", "minimum", "nanmin"],
-            "max":     ["max", "amax", "maximum", "nanmax"],
-            "std_dev_sample":     ["std", "std_dev", "nanstd"],
-            "variance_sample":     ["var", "variance", "nanvar"],
-            "median":  ["median", "nanmedian"],
-            "count":   ["count", "size", "len", "length"],
+            "average":         ["mean", "average", "nanmean"],
+            "sum":             ["sum", "nansum"],
+            "min":             ["min", "amin", "minimum", "nanmin"],
+            "max":             ["max", "amax", "maximum", "nanmax"],
+            "std_dev_sample":  ["std", "std_dev", "nanstd"],
+            "variance_sample": ["var", "variance", "nanvar"],
+            "median":          ["median", "nanmedian"],
+            "count":           ["count", "size", "len", "length"],
         }
 
         FLATTENED_FUNCTION_MAPPING: dict[str, str] = {}
