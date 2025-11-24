@@ -294,7 +294,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                             f"Custom aggregation function must return a PyLegendPrimitive (Expression).\n"
                             f"But got type: {type(result).__name__}\n"
                             f"Value: {result!r}"
-                        )
+                        )  # pragma: no cover
                     return result
 
                 return validation_wrapper
