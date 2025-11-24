@@ -14,6 +14,7 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -48,6 +49,9 @@ from pylegend.extensions.tds.result_handler import (
     PandasDfReadConfig,
 )
 
+if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
 ]
@@ -67,6 +71,60 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
         return [c.copy() for c in self.__columns]
+
+    def __getitem__(
+            self,
+            key: PyLegendUnion[str, PyLegendList[str], PyLegendBoolean]
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
+            PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.filtering import \
+            PandasApiFilteringFunction
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+
+        if isinstance(key, PyLegendBoolean):
+            return PandasApiAppliedFunctionTdsFrame(
+                PandasApiFilteringFunction(self, filter_expr=key)
+            )
+
+        elif isinstance(key, str):
+            for col in self.__columns:
+                if col.get_name() == key:
+                    col_type = col.get_type()
+                    if col_type == "Boolean":
+                        from pylegend.core.language.pandas_api.pandas_api_series import BooleanSeries
+                        return BooleanSeries(self, key)
+                    elif col_type == "String":
+                        from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
+                        return StringSeries(self, key)
+                    elif col_type == "Integer":
+                        from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
+                        return IntegerSeries(self, key)
+                    elif col_type == "Float":
+                        from pylegend.core.language.pandas_api.pandas_api_series import FloatSeries
+                        return FloatSeries(self, key)
+                    elif col_type == "Date":
+                        from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
+                        return DateSeries(self, key)
+                    elif col_type == "DateTime":
+                        from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
+                        return DateTimeSeries(self, key)
+                    elif col_type == "StrictDate":
+                        from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
+                        return StrictDateSeries(self, key)
+                    else:
+                        from pylegend.core.language.pandas_api.pandas_api_series import Series
+                        return Series(self, key)
+            raise KeyError(f"['{key}'] not in index")
+
+        elif isinstance(key, list):
+            valid_col_names = {col.get_name() for col in self.__columns}
+            invalid_cols = [k for k in key if k not in valid_col_names]
+            if invalid_cols:
+                raise KeyError(f"{invalid_cols} not in index")
+            return self.filter(items=key)
+        else:
+            raise TypeError(f"Invalid key type: {type(key)}. Expected str, list, or boolean expression")
 
     def assign(
             self,

@@ -14,6 +14,7 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 from pylegend._typing import (
     PyLegendCallable,
@@ -32,12 +33,22 @@ from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
+if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
 ]
 
 
 class PandasApiTdsFrame(PyLegendTdsFrame):
+
+    @abstractmethod
+    def __getitem__(
+            self,
+            key: PyLegendUnion[str, PyLegendList[str], PyLegendBoolean]
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        pass  # pragma: no cover
 
     @abstractmethod
     def assign(
