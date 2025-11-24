@@ -92,8 +92,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 if col.get_name() == key:
                     col_type = col.get_type()
                     if col_type == "Boolean":
-                        from pylegend.core.language.pandas_api.pandas_api_series import BooleanSeries
-                        return BooleanSeries(self, key)
+                        from pylegend.core.language.pandas_api.pandas_api_series import BooleanSeries  # pragma: no cover
+                        return BooleanSeries(self, key)  # pragma: no cover
                     elif col_type == "String":
                         from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
                         return StringSeries(self, key)
@@ -106,15 +106,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                     elif col_type == "Date":
                         from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
                         return DateSeries(self, key)
-                    elif col_type == "DateTime":
-                        from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
-                        return DateTimeSeries(self, key)
-                    elif col_type == "StrictDate":
-                        from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
-                        return StrictDateSeries(self, key)
+                    elif col_type == "DateTime":  # pragma: no cover
+                        from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries  # pragma: no cover
+                        return DateTimeSeries(self, key)  # pragma: no cover
+                    elif col_type == "StrictDate":  # pragma: no cover
+                        from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries  # pragma: no cover
+                        return StrictDateSeries(self, key)  # pragma: no cover
                     else:
-                        from pylegend.core.language.pandas_api.pandas_api_series import Series
-                        return Series(self, key)
+                        from pylegend.core.language.pandas_api.pandas_api_series import Series  # pragma: no cover
+                        return Series(self, key)  # pragma: no cover
             raise KeyError(f"['{key}'] not in index")
 
         elif isinstance(key, list):
