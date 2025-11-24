@@ -7,8 +7,7 @@ from pylegend._typing import (
     PyLegendMapping,
     PyLegendHashable,
 )
-from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
-from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 
 __all__: PyLegendSequence[str] = [
     "PyLegendAggFunc",
@@ -18,8 +17,8 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-PyLegendAggFunc = PyLegendUnion[
-    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive],
+PyLegendAggFunc = PyLegendUnion[  # type: ignore[explicit-any]
+    PyLegendCallable[..., PyLegendPrimitiveOrPythonPrimitive],
     str,
     np.ufunc,
 ]

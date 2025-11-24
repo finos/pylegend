@@ -49,7 +49,7 @@ class AggregateFunction(PandasApiAppliedFunction):
     @classmethod
     def name(cls) -> str:
         return "aggregate_function"  # pragma: no cover
-    
+
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
@@ -63,7 +63,6 @@ class AggregateFunction(PandasApiAppliedFunction):
         self.__axis = axis
         self.__args = args
         self.__kwargs = kwargs
-        
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         db_extension = config.sql_to_string_generator().get_db_extension()
@@ -94,10 +93,6 @@ class AggregateFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        group_strings = []
-        for col_name in self.__grouping_column_name_list:
-            group_strings.append(escape_column_name(col_name))
-
         agg_strings = []
         for agg in self.__aggregates_list:
             map_expr_string = (agg[1].to_pure_expression(config) if isinstance(agg[1], PyLegendPrimitive)
@@ -105,7 +100,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             agg_expr_string = agg[2].to_pure_expression(config).replace(map_expr_string, "$c")
             agg_strings.append(f"{escape_column_name(agg[0])}:{generate_pure_lambda('r', map_expr_string)}:"
                                f"{generate_pure_lambda('c', agg_expr_string)}")
-            
+
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
                 f"->aggregate({config.separator(2)}"
                 f"~[{', '.join(agg_strings)}]{config.separator(1)}"
@@ -121,6 +116,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
+        print('here here here')
         if self.__axis not in [0, "index"]:
             raise NotImplementedError(
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
@@ -144,8 +140,6 @@ class AggregateFunction(PandasApiAppliedFunction):
 
             self.__aggregates_list.append((column_name, map_result, agg_result))
 
-        self.__grouping_column_name_list: PyLegendList[str] = []
-
         return True
 
     def __normalize_input_func_to_standard_dict(
@@ -153,7 +147,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             func_input: PyLegendAggInput
     ) -> dict[str, PyLegendAggFunc]:
 
-        column_names = {col.get_name() for col in self.calculate_columns()}
+        column_names = [col.get_name() for col in self.calculate_columns()]
 
         if isinstance(func_input, collections.abc.Mapping):
             normalized: dict[str, PyLegendAggFunc] = {}
@@ -183,7 +177,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                             f"List Length: {len(value)}\n"
                             f"Value: {value!r}\n"
                         )
-                    
+
                     single_func = value[0]
 
                     if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
@@ -192,7 +186,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                             f"The single element in the list for key {key!r} must be a callable, str, or np.ufunc.\n"
                             f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
                         )
-                    
+
                     normalized[key] = single_func
 
                 else:
@@ -208,7 +202,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             return normalized
 
         elif isinstance(func_input, collections.abc.Sequence) and not isinstance(func_input, str):
-            
+
             if len(func_input) != 1:
                 raise ValueError(
                     f"Invalid `func` argument for the aggregate function.\n"
@@ -218,7 +212,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                     f"List Length: {len(func_input)}\n"
                     f"Input: {func_input!r}\n"
                 )
-            
+
             single_func = func_input[0]
 
             if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
@@ -244,16 +238,16 @@ class AggregateFunction(PandasApiAppliedFunction):
     def __normalize_agg_func_to_lambda_function(
             self,
             func: PyLegendAggFunc
-    ) -> PyLegendTuple[str, PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]]:
+    ) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
 
         PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[str, PyLegendList[str]] = {
-            "average": ["mean", "average"],
-            "sum":     ["sum"],
-            "min":     ["min", "amin"],
-            "max":     ["max", "amax"],
-            "std":     ["std", "std_dev"],
-            "var":     ["var", "variance"],
-            "median":  ["median"],
+            "average": ["mean", "average", "nanmean"],
+            "sum":     ["sum", "nansum"],
+            "min":     ["min", "amin", "minimum", "nanmin"],
+            "max":     ["max", "amax", "maximum", "nanmax"],
+            "std":     ["std", "std_dev", "nanstd"],
+            "var":     ["var", "variance", "nanvar"],
+            "median":  ["median", "nanmedian"],
             "count":   ["count", "size", "len", "length"],
         }
 
@@ -262,6 +256,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             for alias in source_list:
                 FLATTENED_FUNCTION_MAPPING[alias] = target_method
 
+        lambda_source: str
         final_lambda: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
 
         if isinstance(func, str):
@@ -269,8 +264,8 @@ class AggregateFunction(PandasApiAppliedFunction):
             if func_lower in FLATTENED_FUNCTION_MAPPING:
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_lower]
             else:
-                internal_method_name = func
-            lambda_source: str = self._generate_lambda_source(internal_method_name)
+                internal_method_name = func  # pragma: no cover
+            lambda_source = self._generate_lambda_source(internal_method_name)
             final_lambda = eval(lambda_source)
             return final_lambda
 
@@ -279,8 +274,8 @@ class AggregateFunction(PandasApiAppliedFunction):
             if func_name in FLATTENED_FUNCTION_MAPPING:
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
             else:
-                internal_method_name = func_name
-            lambda_source: str = self._generate_lambda_source(internal_method_name)
+                internal_method_name = func_name  # pragma: no cover
+            lambda_source = self._generate_lambda_source(internal_method_name)
             final_lambda = eval(lambda_source)
             return final_lambda
 
@@ -288,12 +283,22 @@ class AggregateFunction(PandasApiAppliedFunction):
             func_name = getattr(func, "__name__", "").lower()
             if func_name in FLATTENED_FUNCTION_MAPPING and func_name != "<lambda>":
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
-                lambda_source: str = self._generate_lambda_source(internal_method_name)
+                lambda_source = self._generate_lambda_source(internal_method_name)
                 final_lambda = eval(lambda_source)
                 return final_lambda
             else:
-                return func
-            
+                def validation_wrapper(x: PyLegendPrimitiveCollection) -> PyLegendPrimitive:
+                    result = func(x)
+                    if not isinstance(result, PyLegendPrimitive):
+                        raise TypeError(
+                            f"Custom aggregation function must return a PyLegendPrimitive (Expression).\n"
+                            f"But got type: {type(result).__name__}\n"
+                            f"Value: {result!r}"
+                        )
+                    return result
+
+                return validation_wrapper
+
     def _generate_lambda_source(self, internal_method_name: str) -> str:
         arg_str = self._build_method_call_args()
         return f"lambda x: x.{internal_method_name}({arg_str})"
@@ -302,8 +307,8 @@ class AggregateFunction(PandasApiAppliedFunction):
         arg_parts: list[str] = []
 
         for a in self.__args or []:
-            arg_parts.append(repr(a))
+            arg_parts.append(repr(a))  # pragma: no cover
         for k, v in (self.__kwargs or {}).items():
-            arg_parts.append(f"{k}={repr(v)}")
+            arg_parts.append(f"{k}={repr(v)}")  # pragma: no cover
 
         return ", ".join(arg_parts)

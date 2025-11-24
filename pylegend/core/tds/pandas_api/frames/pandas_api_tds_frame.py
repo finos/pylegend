@@ -13,10 +13,7 @@
 # limitations under the License.
 
 from abc import abstractmethod
-from collections.abc import Hashable, Mapping
 from datetime import date, datetime
-
-import numpy as np
 
 from pylegend._typing import (
     PyLegendCallable,
@@ -24,10 +21,9 @@ from pylegend._typing import (
     PyLegendUnion,
     PyLegendOptional,
     PyLegendList,
-    PyLegendSet
+    PyLegendSet,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
-from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.language import (
     PyLegendPrimitive,
 )
@@ -106,7 +102,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         self,
         func: PyLegendAggInput = None,
         axis: PyLegendUnion[int, str] = 0,
-        *args: PyLegendSequence[PyLegendPrimitive],
-        **kwargs: Mapping[str, PyLegendPrimitive]
+        *args: PyLegendPrimitive,
+        **kwargs: PyLegendPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

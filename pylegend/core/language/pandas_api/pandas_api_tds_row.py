@@ -59,7 +59,6 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-
 class PandasApiTdsRow(AbstractTdsRow):
     def __init__(self, frame_name: str, frame: PyLegendTdsFrame) -> None:
         super().__init__(frame_name, frame)
