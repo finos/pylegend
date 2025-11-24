@@ -41,7 +41,7 @@ class TestFilteringFunction:
         # Brackets
         with pytest.raises(SyntaxError) as v:
             eval("frame[]")
-        assert v.value.args[0] == "invalid syntax"
+        assert v.value.args[0] in ("unexpected EOF while parsing", "invalid syntax")
 
         with pytest.raises(SyntaxError) as v:
             eval("frame[(frame['col1'] > 10} & (frame['col2'] == 2)]")
