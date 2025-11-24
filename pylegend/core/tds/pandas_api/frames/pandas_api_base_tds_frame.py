@@ -194,7 +194,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             *args,
             **kwargs
         ))
-    
+
     def agg(
         self,
         func: PyLegendAggInput = None,
