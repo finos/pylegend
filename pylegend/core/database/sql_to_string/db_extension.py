@@ -1235,4 +1235,3 @@ class SqlToStringDbExtension:
 
     def process_union(self, union: Union, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
         return union_processor(union, self, config, nested_subquery)
-
