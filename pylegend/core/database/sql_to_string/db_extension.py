@@ -132,7 +132,6 @@ from pylegend.core.sql.metamodel_extension import (
     EpochExpression,
     WindowExpression,
     ConstantExpression,
-    StringMatchesExpression
 )
 
 
@@ -455,8 +454,6 @@ def expression_processor(
         return extension.process_window_expression(expression, config)
     elif isinstance(expression, ConstantExpression):
         return expression.name
-    elif isinstance(expression, StringMatchesExpression):
-        return extension.process_matches_expression(expression, config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -487,6 +484,10 @@ def comparison_expression_processor(
         cmp = "<"
     elif comparison.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
         cmp = "<="
+    elif comparison.operator == ComparisonOperator.REGEX_MATCH:
+        cmp = "~"
+    elif comparison.operator == ComparisonOperator.LIKE:
+        cmp = "~~"
     else:
         raise ValueError("Unknown comparison operator type: " + str(comparison.operator))  # pragma: no cover
 
@@ -1235,11 +1236,3 @@ class SqlToStringDbExtension:
     def process_union(self, union: Union, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
         return union_processor(union, self, config, nested_subquery)
 
-    def process_matches_expression(self, expr: StringMatchesExpression, config: SqlToStringConfig) -> str:
-        value = f"({self.process_expression(expr.value, config)})"
-        pattern = self.process_expression(expr.pattern, config)
-
-        if expr.match_exact:
-            return f"{value} ~ '^' || {pattern} || '$'"
-        else:
-            return f"{value} ~ {pattern}"

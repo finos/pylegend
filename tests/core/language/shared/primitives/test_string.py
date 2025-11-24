@@ -360,11 +360,17 @@ class TestPyLegendString:
         assert self.__generate_pure_string(lambda x: x.get_string("col2").split_part("_", 3)) == \
                'toOne($t.col2)->splitPart(\'_\', 3)'
 
-    def test_string_matches_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").matches("ab")) == \
-               '("root".col2) ~ \'^\' || \'ab\' || \'$\''
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").matches("ab")) == \
+    def test_string_full_match_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").full_match("ab")) == \
+               '("root".col2 ~~ \'ab\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").full_match("ab")) == \
                'toOne($t.col2)->matches(\'ab\')'
+
+    def test_string_match_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").match("ab")) == \
+               '("root".col2 ~ \'ab\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").match("ab")) == \
+               'toOne($t.col2)->regexpLike(\'ab\')'
 
     def test_string_repeat_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").repeat_string(3)) == \

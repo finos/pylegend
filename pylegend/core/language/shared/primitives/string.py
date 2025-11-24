@@ -64,9 +64,10 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringLpadExpression,
     PyLegendStringRpadExpression,
     PyLegendStringSplitPartExpression,
-    PyLegendStringMatchesExpression,
+    PyLegendStringFullMatchExpression,
     PyLegendStringToStringExpression,
-    PyLegendStringRepeatStringExpression
+    PyLegendStringRepeatStringExpression,
+    PyLegendStringMatchExpression
 )
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 
@@ -219,10 +220,15 @@ class PyLegendString(PyLegendPrimitive):
         part_op = PyLegendIntegerLiteralExpression(part) if isinstance(part, int) else part.value()
         return PyLegendString(PyLegendStringSplitPartExpression([self.__value, sep_op, part_op]))
 
-    def matches(self, pattern: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
-        PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "matches parameter")
+    def full_match(self, pattern: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
+        PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "full_match parameter")
         pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(pattern, str) else pattern.__value
-        return PyLegendBoolean(PyLegendStringMatchesExpression(self.__value, pattern_op))
+        return PyLegendBoolean(PyLegendStringFullMatchExpression(self.__value, pattern_op))
+
+    def match(self, pattern: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
+        PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "match parameter")
+        pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(pattern, str) else pattern.__value
+        return PyLegendBoolean(PyLegendStringMatchExpression(self.__value, pattern_op))
 
     def repeat_string(self, times: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(times, "repeatString parameter")

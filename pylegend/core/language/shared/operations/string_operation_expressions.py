@@ -90,9 +90,10 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLpadExpression",
     "PyLegendStringRpadExpression",
     "PyLegendStringSplitPartExpression",
-    "PyLegendStringMatchesExpression",
     "PyLegendStringToStringExpression",
-    "PyLegendStringRepeatStringExpression"
+    "PyLegendStringRepeatStringExpression",
+    "PyLegendStringFullMatchExpression",
+    "PyLegendStringMatchExpression"
 ]
 
 
@@ -451,7 +452,7 @@ class PyLegendStringParseDateTimeExpression(PyLegendUnaryExpression, PyLegendExp
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return Cast(expression, ColumnType(name="TIMESTAMPTZ", parameters=[]))
+        return Cast(expression, ColumnType(name="TIMESTAMP", parameters=[]))
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -732,7 +733,7 @@ class PyLegendStringConcatExpression(PyLegendBinaryExpression, PyLegendExpressio
         )
 
 
-class PyLegendStringMatchesExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+class PyLegendStringFullMatchExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
 
     @staticmethod
     def __to_sql_func(
@@ -741,7 +742,7 @@ class PyLegendStringMatchesExpression(PyLegendBinaryExpression, PyLegendExpressi
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return StringMatchesExpression(expression1, expression2, match_exact=True)
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.LIKE)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -753,8 +754,37 @@ class PyLegendStringMatchesExpression(PyLegendBinaryExpression, PyLegendExpressi
             self,
             operand1,
             operand2,
-            PyLegendStringMatchesExpression.__to_sql_func,
-            PyLegendStringMatchesExpression.__to_pure_func,
+            PyLegendStringFullMatchExpression.__to_sql_func,
+            PyLegendStringFullMatchExpression.__to_pure_func,
+            non_nullable=True,
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
+        )
+
+
+class PyLegendStringMatchExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.REGEX_MATCH)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("regexpLike", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendStringMatchExpression.__to_sql_func,
+            PyLegendStringMatchExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
             second_operand_needs_to_be_non_nullable=True

@@ -148,7 +148,9 @@ class ComparisonOperator(Enum):
     LESS_THAN = 3,
     LESS_THAN_OR_EQUAL = 4,
     GREATER_THAN = 5,
-    GREATER_THAN_OR_EQUAL = 6
+    GREATER_THAN_OR_EQUAL = 6,
+    REGEX_MATCH = 7,
+    LIKE = 8
 
 
 class CurrentTimeType(Enum):

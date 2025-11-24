@@ -282,6 +282,12 @@ class TestSqlToStringDbExtensionProcessing:
         comparison.operator = ComparisonOperator.LESS_THAN_OR_EQUAL
         assert extension.process_expression(comparison, config) == "(101 <= 202)"
 
+        comparison.operator = ComparisonOperator.REGEX_MATCH
+        assert extension.process_expression(comparison, config) == "(101 ~ 202)"
+
+        comparison.operator = ComparisonOperator.LIKE
+        assert extension.process_expression(comparison, config) == "(101 ~~ 202)"
+
     def test_process_logical_binary_expression(self) -> None:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
