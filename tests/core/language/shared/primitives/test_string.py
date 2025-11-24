@@ -268,7 +268,7 @@ class TestPyLegendString:
 
     def test_string_parse_datetime_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_datetime()) == \
-               'CAST("root".col2 AS TIMESTAMPTZ)'
+               'CAST("root".col2 AS TIMESTAMP)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_datetime()) == \
                'toOne($t.col2)->parseDate()'
 
