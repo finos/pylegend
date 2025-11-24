@@ -770,14 +770,14 @@ class PyLegendStringMatchExpression(PyLegendBinaryExpression, PyLegendExpression
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.REGEX_MATCH) # pragma: no cover
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.REGEX_MATCH)  # pragma: no cover
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("regexpLike", [op1_expr, op2_expr]) # pragma: no cover
+        return generate_pure_functional_call("regexpLike", [op1_expr, op2_expr])  # pragma: no cover
 
     def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionStringReturn) -> None:
-        PyLegendExpressionBooleanReturn.__init__(self) # pragma: no cover
+        PyLegendExpressionBooleanReturn.__init__(self)  # pragma: no cover
         PyLegendBinaryExpression.__init__(
             self,
             operand1,
@@ -787,7 +787,7 @@ class PyLegendStringMatchExpression(PyLegendBinaryExpression, PyLegendExpression
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
             second_operand_needs_to_be_non_nullable=True
-        ) # pragma: no cover
+        )  # pragma: no cover
 
 
 class PyLegendStringRepeatStringExpression(PyLegendBinaryExpression, PyLegendExpressionStringReturn):

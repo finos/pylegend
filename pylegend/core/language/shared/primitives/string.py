@@ -226,9 +226,9 @@ class PyLegendString(PyLegendPrimitive):
         return PyLegendBoolean(PyLegendStringFullMatchExpression(self.__value, pattern_op))
 
     def match(self, pattern: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
-        PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "match parameter") # pragma: no cover
-        pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(pattern, str) else pattern.__value # pragma: no cover
-        return PyLegendBoolean(PyLegendStringMatchExpression(self.__value, pattern_op)) # pragma: no cover
+        PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "match parameter")  # pragma: no cover
+        pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(pattern, str) else pattern.__value  # pragma: no cover
+        return PyLegendBoolean(PyLegendStringMatchExpression(self.__value, pattern_op))  # pragma: no cover
 
     def repeat_string(self, times: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(times, "repeatString parameter")
