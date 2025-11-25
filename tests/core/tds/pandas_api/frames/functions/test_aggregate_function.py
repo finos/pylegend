@@ -247,6 +247,31 @@ class TestAggregateFunction:
             "->aggregate(~[col3:{r | $r.col3}:{c | $c->varianceSample()}, col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
         )
 
+    def test_aggregate_repeat_column(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"),
+                   PrimitiveTdsColumn.number_column("col2"),
+                   PrimitiveTdsColumn.float_column("col3")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.aggregate({'col3': ['var'], 'col3': ['std']})
+        expected = """\
+                    SELECT
+                        STDDEV_SAMP("root".col3) AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->aggregate(
+                ~[col3:{r | $r.col3}:{c | $c->stdDevSample()}]
+              )"""
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#"
+            "->aggregate(~[col3:{r | $r.col3}:{c | $c->stdDevSample()}])"
+        )
+
     def test_aggregate_subquery_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
