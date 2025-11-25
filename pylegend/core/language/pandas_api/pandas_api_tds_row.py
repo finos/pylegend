@@ -71,4 +71,4 @@ class PandasApiTdsRow(AbstractTdsRow):
         if isinstance(res, PyLegendDate):
             return PandasApiDate(res)
 
-        raise RuntimeError(f"Unhandled primitive type {type(res)} in LegendQL Api")
+        raise RuntimeError(f"Unhandled primitive type {type(res)} in LegendQL Api")  # pragma: no cover
