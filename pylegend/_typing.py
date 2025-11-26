@@ -25,6 +25,8 @@ from typing import Tuple as PyLegendTuple
 from typing import Generator as PyLegendGenerator
 from typing import Union as PyLegendUnion
 from typing import Generic as PyLegendGeneric
+from typing import Hashable as PyLegendHashable
+from typing import Mapping as PyLegendMapping
 from typing import TYPE_CHECKING
 
 
@@ -42,5 +44,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendGenerator",
     "PyLegendUnion",
     "PyLegendGeneric",
+    "PyLegendMapping",
+    "PyLegendHashable",
     "TYPE_CHECKING",
 ]

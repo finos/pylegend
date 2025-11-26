@@ -15,6 +15,27 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
+from pylegend.core.language import (
+    PyLegendBoolean,
+    PyLegendString,
+    PyLegendInteger,
+    PyLegendFloat,
+    PyLegendNumber,
+    PyLegendStrictDate,
+    PyLegendDateTime,
+    PyLegendDate,
+)
+from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+    PandasApiBoolean,
+    PandasApiString,
+    PandasApiInteger,
+    PandasApiFloat,
+    PandasApiNumber,
+    PandasApiStrictDate,
+    PandasApiDateTime,
+    PandasApiDate,
+    PandasApiPrimitive,
+)
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
@@ -30,3 +51,24 @@ class PandasApiTdsRow(AbstractTdsRow):
     @staticmethod
     def from_tds_frame(frame_name: str, frame: PyLegendTdsFrame) -> "PandasApiTdsRow":
         return PandasApiTdsRow(frame_name=frame_name, frame=frame)
+
+    def __getitem__(self, item: str) -> PandasApiPrimitive:
+        res = super().__getitem__(item)
+        if isinstance(res, PyLegendBoolean):
+            return PandasApiBoolean(res)
+        if isinstance(res, PyLegendString):
+            return PandasApiString(res)
+        if isinstance(res, PyLegendInteger):
+            return PandasApiInteger(res)
+        if isinstance(res, PyLegendFloat):
+            return PandasApiFloat(res)
+        if isinstance(res, PyLegendNumber):
+            return PandasApiNumber(res)
+        if isinstance(res, PyLegendStrictDate):
+            return PandasApiStrictDate(res)
+        if isinstance(res, PyLegendDateTime):
+            return PandasApiDateTime(res)
+        if isinstance(res, PyLegendDate):
+            return PandasApiDate(res)
+
+        raise RuntimeError(f"Unhandled primitive type {type(res)} in Pandas Api")  # pragma: no cover
