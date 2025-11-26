@@ -692,8 +692,7 @@ def function_call_processor(
     single_line = (
             len(arguments) == 0 or
             (
-                    len(function_call.arguments) == 1
-                    and "\n" not in arguments
+                    "\n" not in arguments
                     and len(arguments) <= 80
             )
     )
@@ -927,7 +926,6 @@ class SqlToStringDbExtension:
                 # TODO: check quoted flag
                 return "'" + literal.value.replace("'", "''") + "'"
             raise RuntimeError("Unsupported literal type: " + str(type(literal)))
-
         return literal_process_function
 
     def process_query_specification(self, query: QuerySpecification,

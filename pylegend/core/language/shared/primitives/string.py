@@ -20,6 +20,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.literal_expressions import PyLegendIntegerLiteralExpression
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -68,7 +69,6 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringRepeatStringExpression,
     PyLegendStringMatchExpression
 )
-from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 
 __all__: PyLegendSequence[str] = [
     "PyLegendString"

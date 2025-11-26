@@ -35,7 +35,6 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
     PyLegendIntegerModuloExpression,
     PyLegendIntegerCharExpression
 )
-
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendFloat
     from pylegend.core.language.shared.primitives.string import PyLegendString
