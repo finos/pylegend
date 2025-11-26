@@ -179,7 +179,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def aggregate(
         self,
-        func: PyLegendAggInput = None,
+        func: PyLegendAggInput,
         axis: PyLegendUnion[int, str] = 0,
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive
@@ -198,7 +198,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def agg(
         self,
-        func: PyLegendAggInput = None,
+        func: PyLegendAggInput,
         axis: PyLegendUnion[int, str] = 0,
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive

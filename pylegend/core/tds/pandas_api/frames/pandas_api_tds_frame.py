@@ -101,7 +101,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def aggregate(
         self,
-        func: PyLegendAggInput = None,
+        func: PyLegendAggInput,
         axis: PyLegendUnion[int, str] = 0,
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive
@@ -111,7 +111,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def agg(
         self,
-        func: PyLegendAggInput = None,
+        func: PyLegendAggInput,
         axis: PyLegendUnion[int, str] = 0,
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive

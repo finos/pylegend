@@ -195,7 +195,7 @@ class TestAggregateFunction:
     def test_aggregate_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.date_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.aggregate()
+        frame = frame.aggregate({'col1': ['min'], 'col2': ['count']})
         expected = """\
                     SELECT
                         MIN("root".col1) AS "col1",
