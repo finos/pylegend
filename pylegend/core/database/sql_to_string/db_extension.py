@@ -135,7 +135,6 @@ from pylegend.core.sql.metamodel_extension import (
     StringSubStringExpression,
 )
 
-
 __all__: PyLegendSequence[str] = [
     "SqlToStringDbExtension"
 ]
@@ -690,19 +689,19 @@ def function_call_processor(
         window = " " + extension.process_window(function_call.window, config)
 
     name = extension.process_qualified_name(function_call.name, config)
-
     single_line = (
-            len(function_call.arguments) == 1
-            and "\n" not in arguments
-            and len(arguments) <= 80
+            len(arguments) == 0 or
+            (
+                    len(function_call.arguments) == 1
+                    and "\n" not in arguments
+                    and len(arguments) <= 80
+            )
     )
 
     if single_line:
         return f"{name}({arguments}){window}"
     else:
-        first_sep = config.format.separator(1) if function_call.arguments else ""
-        sep0 = config.format.separator(0) if function_call.arguments else ""
-        return f"{name}({first_sep}{arguments}{sep0}){window}"
+        return f"{name}({config.format.separator(1)}{arguments}{config.format.separator(0)}){window}"
 
 
 def named_argument_processor(
@@ -928,6 +927,7 @@ class SqlToStringDbExtension:
                 # TODO: check quoted flag
                 return "'" + literal.value.replace("'", "''") + "'"
             raise RuntimeError("Unsupported literal type: " + str(type(literal)))
+
         return literal_process_function
 
     def process_query_specification(self, query: QuerySpecification,
