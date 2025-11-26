@@ -87,8 +87,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringRightExpression",
     "PyLegendStringSubStringExpression",
     "PyLegendStringReplaceExpression",
-    "PyLegendStringRjustExpression",
-    "PyLegendStringLjustExpression",
+    "PyLegendStringLpadExpression",
+    "PyLegendStringRpadExpression",
     "PyLegendStringSplitPartExpression",
     "PyLegendStringRepeatStringExpression",
     "PyLegendStringFullMatchExpression",
@@ -1004,7 +1004,10 @@ class PyLegendStringSubStringExpression(PyLegendNaryExpression, PyLegendExpressi
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return StringSubStringExpression(expressions)
+        if len(expressions) > 2:
+            return StringSubStringExpression(expressions[0], expressions[1], expressions[2])
+        else:
+            return StringSubStringExpression(expressions[0], expressions[1])
 
     @staticmethod
     def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
@@ -1053,7 +1056,7 @@ class PyLegendStringReplaceExpression(PyLegendNaryExpression, PyLegendExpression
         )
 
 
-class PyLegendStringRjustExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
+class PyLegendStringLpadExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
     def __to_sql_func(
@@ -1077,14 +1080,14 @@ class PyLegendStringRjustExpression(PyLegendNaryExpression, PyLegendExpressionSt
         PyLegendNaryExpression.__init__(
             self,
             operands,
-            PyLegendStringRjustExpression.__to_sql_func,
-            PyLegendStringRjustExpression.__to_pure_func,
+            PyLegendStringLpadExpression.__to_sql_func,
+            PyLegendStringLpadExpression.__to_pure_func,
             non_nullable=True,
             operands_non_nullable_flags=[True, True, True]
         )
 
 
-class PyLegendStringLjustExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
+class PyLegendStringRpadExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
     def __to_sql_func(
@@ -1108,8 +1111,8 @@ class PyLegendStringLjustExpression(PyLegendNaryExpression, PyLegendExpressionSt
         PyLegendNaryExpression.__init__(
             self,
             operands,
-            PyLegendStringLjustExpression.__to_sql_func,
-            PyLegendStringLjustExpression.__to_pure_func,
+            PyLegendStringRpadExpression.__to_sql_func,
+            PyLegendStringRpadExpression.__to_pure_func,
             non_nullable=True,
             operands_non_nullable_flags=[True, True, True]
         )

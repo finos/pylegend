@@ -471,10 +471,7 @@ class TestWindowExtendAppliedFunction:
                 (lag("root"."col1") + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col11",
                 first_value("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col12",
                 last_value("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col13",
-                nth_value(
-                    "root"."col1",
-                    10
-                ) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col14"
+                nth_value("root"."col1", 10) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col14"
             FROM
                 (
                     SELECT

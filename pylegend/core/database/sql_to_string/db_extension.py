@@ -680,24 +680,29 @@ def function_call_processor(
 ) -> str:
     # TODO: Handle distinct and filter
 
-    arguments = ("," + config.format.separator(1)).join(
-        [extension.process_expression(arg, config.push_indent()) for arg in function_call.arguments]
+    formatted_args = [
+        extension.process_expression(arg, config.push_indent())
+        for arg in function_call.arguments
+    ]
+
+    total_args_length = sum(len(arg) for arg in formatted_args)
+
+    requires_multiline = (
+            any("\n" in arg or len(arg) > 80 for arg in formatted_args)
+            or total_args_length > 80
     )
+
+    arguments = (
+            "," + (config.format.separator(1) if requires_multiline else " ")
+    ).join(formatted_args)
 
     window = ""
     if function_call.window:
         window = " " + extension.process_window(function_call.window, config)
 
     name = extension.process_qualified_name(function_call.name, config)
-    single_line = (
-            len(arguments) == 0 or
-            (
-                    "\n" not in arguments
-                    and len(arguments) <= 80
-            )
-    )
 
-    if single_line:
+    if not requires_multiline:
         return f"{name}({arguments}){window}"
     else:
         return f"{name}({config.format.separator(1)}{arguments}{config.format.separator(0)}){window}"

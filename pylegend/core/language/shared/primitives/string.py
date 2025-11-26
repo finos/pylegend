@@ -62,8 +62,8 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringRightExpression,
     PyLegendStringSubStringExpression,
     PyLegendStringReplaceExpression,
-    PyLegendStringRjustExpression,
-    PyLegendStringLjustExpression,
+    PyLegendStringLpadExpression,
+    PyLegendStringRpadExpression,
     PyLegendStringSplitPartExpression,
     PyLegendStringFullMatchExpression,
     PyLegendStringRepeatStringExpression,
@@ -202,19 +202,19 @@ class PyLegendString(PyLegendPrimitive):
             self,
             length: PyLegendUnion[int, "PyLegendInteger"],
             fill_char: PyLegendUnion[str, "PyLegendString"] = ' ') -> "PyLegendString":
-        PyLegendString.__validate_param_to_be_int_or_int_expr(length, "lpad length parameter")
+        PyLegendString.__validate_param_to_be_int_or_int_expr(length, "rjust length parameter")
         length_op = PyLegendIntegerLiteralExpression(length) if isinstance(length, int) else length.value()
         fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char, str) else fill_char.__value
-        return PyLegendString(PyLegendStringRjustExpression([self.__value, length_op, fill_char_op]))
+        return PyLegendString(PyLegendStringLpadExpression([self.__value, length_op, fill_char_op]))
 
     def ljust(
             self,
             length: PyLegendUnion[int, "PyLegendInteger"],
             fill_char: PyLegendUnion[str, "PyLegendString"] = ' ') -> "PyLegendString":
-        PyLegendString.__validate_param_to_be_int_or_int_expr(length, "rpad length parameter")
+        PyLegendString.__validate_param_to_be_int_or_int_expr(length, "ljust length parameter")
         length_op = PyLegendIntegerLiteralExpression(length) if isinstance(length, int) else length.value()
         fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char, str) else fill_char.__value
-        return PyLegendString(PyLegendStringLjustExpression([self.__value, length_op, fill_char_op]))
+        return PyLegendString(PyLegendStringRpadExpression([self.__value, length_op, fill_char_op]))
 
     def split_part(
             self,

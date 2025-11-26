@@ -751,15 +751,15 @@ class ConstantExpression(Expression):
 class StringSubStringExpression(Expression):
     value: "Expression"
     start: "Expression"
-    end: PyLegendOptional["Expression"] = None
+    end: PyLegendOptional["Expression"]
 
     def __init__(
             self,
-            params: list["Expression"]
+            value: "Expression",
+            start: "Expression",
+            end: PyLegendOptional["Expression"] = None
     ) -> None:
         super().__init__(_type="stringSubStringExpression")
-        self.value = params[0]
-        self.start = params[1]
-
-        if len(params) > 2:
-            self.end = params[2]
+        self.value = value
+        self.start = start
+        self.end = end
