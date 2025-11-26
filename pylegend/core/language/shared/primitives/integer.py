@@ -25,9 +25,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
-from pylegend.core.tds.tds_frame import (
-    FrameToSqlConfig,
-)
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.shared.operations.integer_operation_expressions import (
     PyLegendIntegerAddExpression,
     PyLegendIntegerAbsoluteExpression,
@@ -39,7 +37,7 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
 )
 
 if TYPE_CHECKING:
-    from pylegend.core.language.shared.primitives import (PyLegendFloat)
+    from pylegend.core.language.shared.primitives import PyLegendFloat
     from pylegend.core.language.shared.primitives.string import PyLegendString
 
 __all__: PyLegendSequence[str] = [

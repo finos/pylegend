@@ -15,7 +15,7 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
-    PyLegendUnion
+    PyLegendUnion,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
@@ -23,7 +23,7 @@ from pylegend.core.language.shared.literal_expressions import PyLegendBooleanLit
 from pylegend.core.language.shared.operations.boolean_operation_expressions import (
     PyLegendBooleanOrExpression,
     PyLegendBooleanAndExpression,
-    PyLegendBooleanNotExpression
+    PyLegendBooleanNotExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -31,6 +31,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
+
 
 __all__: PyLegendSequence[str] = [
     "PyLegendBoolean"

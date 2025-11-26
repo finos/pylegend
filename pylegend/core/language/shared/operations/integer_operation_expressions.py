@@ -18,7 +18,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionIntegerReturn,
-    PyLegendExpressionStringReturn
+    PyLegendExpressionStringReturn,
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
@@ -46,7 +46,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendIntegerSubtractExpression",
     "PyLegendIntegerMultiplyExpression",
     "PyLegendIntegerModuloExpression",
-    "PyLegendIntegerCharExpression"
+    "PyLegendIntegerCharExpression",
 ]
 
 

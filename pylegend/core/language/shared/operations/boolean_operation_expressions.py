@@ -17,7 +17,7 @@ from pylegend._typing import (
     PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
-    PyLegendExpressionBooleanReturn
+    PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
@@ -35,7 +35,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendBooleanOrExpression",
     "PyLegendBooleanAndExpression",
-    "PyLegendBooleanNotExpression"
+    "PyLegendBooleanNotExpression",
 ]
 
 

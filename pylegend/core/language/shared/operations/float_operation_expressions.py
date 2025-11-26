@@ -17,7 +17,7 @@ from pylegend._typing import (
     PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
-    PyLegendExpressionFloatReturn
+    PyLegendExpressionFloatReturn,
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
@@ -41,7 +41,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendFloatAbsoluteExpression",
     "PyLegendFloatNegativeExpression",
     "PyLegendFloatSubtractExpression",
-    "PyLegendFloatMultiplyExpression"
+    "PyLegendFloatMultiplyExpression",
 ]
 
 

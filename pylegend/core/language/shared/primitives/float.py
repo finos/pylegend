@@ -31,7 +31,7 @@ from pylegend.core.language.shared.operations.float_operation_expressions import
     PyLegendFloatAddExpression,
     PyLegendFloatNegativeExpression,
     PyLegendFloatSubtractExpression,
-    PyLegendFloatMultiplyExpression
+    PyLegendFloatMultiplyExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendInteger
