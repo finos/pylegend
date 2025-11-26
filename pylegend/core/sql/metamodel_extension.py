@@ -80,8 +80,7 @@ __all__: PyLegendSequence[str] = [
     "SecondExpression",
     "EpochExpression",
     "WindowExpression",
-    "ConstantExpression",
-    "StringMatchesExpression",
+    "ConstantExpression"
 ]
 
 
@@ -746,20 +745,3 @@ class ConstantExpression(Expression):
     ) -> None:
         super().__init__(_type="constantExpression")
         self.name = name
-
-
-class StringMatchesExpression(Expression):
-    value: "Expression"
-    pattern: "Expression"
-    match_exact: bool  # new flag
-
-    def __init__(
-            self,
-            value: "Expression",
-            pattern: "Expression",
-            match_exact: bool = False
-    ) -> None:
-        super().__init__(_type="stringMatchesExpression")
-        self.value = value
-        self.pattern = pattern
-        self.match_exact = match_exact

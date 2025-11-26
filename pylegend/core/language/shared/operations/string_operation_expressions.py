@@ -89,7 +89,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLpadExpression",
     "PyLegendStringRpadExpression",
     "PyLegendStringSplitPartExpression",
-    "PyLegendStringToStringExpression",
     "PyLegendStringRepeatStringExpression",
     "PyLegendStringFullMatchExpression",
     "PyLegendStringMatchExpression"
@@ -821,32 +820,6 @@ class PyLegendStringRepeatStringExpression(PyLegendBinaryExpression, PyLegendExp
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
             second_operand_needs_to_be_non_nullable=True
-        )
-
-
-class PyLegendStringToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(expression, ColumnType(name="TEXT", parameters=[]))
-
-    @staticmethod
-    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("toString", [op_expr])
-
-    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
-        PyLegendExpressionStringReturn.__init__(self)
-        PyLegendUnaryExpression.__init__(
-            self,
-            operand,
-            PyLegendStringToStringExpression.__to_sql_func,
-            PyLegendStringToStringExpression.__to_pure_func,
-            non_nullable=True,
-            operand_needs_to_be_non_nullable=True,
         )
 
 

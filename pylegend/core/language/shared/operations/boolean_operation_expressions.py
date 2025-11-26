@@ -17,8 +17,7 @@ from pylegend._typing import (
     PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
-    PyLegendExpressionBooleanReturn,
-    PyLegendExpressionStringReturn
+    PyLegendExpressionBooleanReturn
 )
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
@@ -29,8 +28,6 @@ from pylegend.core.sql.metamodel import (
     LogicalBinaryExpression,
     LogicalBinaryType,
     NotExpression,
-    Cast,
-    ColumnType
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -38,8 +35,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 __all__: PyLegendSequence[str] = [
     "PyLegendBooleanOrExpression",
     "PyLegendBooleanAndExpression",
-    "PyLegendBooleanNotExpression",
-    "PyLegendBooleanToStringExpression"
+    "PyLegendBooleanNotExpression"
 ]
 
 
@@ -122,32 +118,6 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
             operand,
             PyLegendBooleanNotExpression.__to_sql_func,
             PyLegendBooleanNotExpression.__to_pure_func,
-            non_nullable=True,
-            operand_needs_to_be_non_nullable=True,
-        )
-
-
-class PyLegendBooleanToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(expression, ColumnType(name="TEXT", parameters=[]))
-
-    @staticmethod
-    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("toString", [op_expr])
-
-    def __init__(self, operand: PyLegendExpressionBooleanReturn) -> None:
-        PyLegendExpressionStringReturn.__init__(self)
-        PyLegendUnaryExpression.__init__(
-            self,
-            operand,
-            PyLegendBooleanToStringExpression.__to_sql_func,
-            PyLegendBooleanToStringExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )

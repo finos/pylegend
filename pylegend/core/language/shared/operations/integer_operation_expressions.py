@@ -29,8 +29,6 @@ from pylegend.core.sql.metamodel import (
     ArithmeticType,
     ArithmeticExpression,
     NegativeExpression,
-    Cast,
-    ColumnType,
     FunctionCall,
     QualifiedName
 )
@@ -48,8 +46,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendIntegerSubtractExpression",
     "PyLegendIntegerMultiplyExpression",
     "PyLegendIntegerModuloExpression",
-    "PyLegendIntegerCharExpression",
-    "PyLegendIntegerToStringExpression"
+    "PyLegendIntegerCharExpression"
 ]
 
 
@@ -247,32 +244,6 @@ class PyLegendIntegerCharExpression(PyLegendUnaryExpression, PyLegendExpressionS
             operand,
             PyLegendIntegerCharExpression.__to_sql_func,
             PyLegendIntegerCharExpression.__to_pure_func,
-            non_nullable=True,
-            operand_needs_to_be_non_nullable=True,
-        )
-
-
-class PyLegendIntegerToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(expression, ColumnType(name="TEXT", parameters=[]))
-
-    @staticmethod
-    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("toString", [op_expr])
-
-    def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
-        PyLegendExpressionStringReturn.__init__(self)
-        PyLegendUnaryExpression.__init__(
-            self,
-            operand,
-            PyLegendIntegerToStringExpression.__to_sql_func,
-            PyLegendIntegerToStringExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )

@@ -36,8 +36,7 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
     PyLegendIntegerSubtractExpression,
     PyLegendIntegerMultiplyExpression,
     PyLegendIntegerModuloExpression,
-    PyLegendIntegerCharExpression,
-    PyLegendIntegerToStringExpression
+    PyLegendIntegerCharExpression
 )
 
 if TYPE_CHECKING:
@@ -62,10 +61,6 @@ class PyLegendInteger(PyLegendNumber):
     def char(self) -> "PyLegendString":
         from pylegend.core.language.shared.primitives.string import PyLegendString
         return PyLegendString(PyLegendIntegerCharExpression(self.__value_copy))
-
-    def to_string(self) -> "PyLegendString":
-        from pylegend.core.language.shared.primitives import PyLegendString
-        return PyLegendString(PyLegendIntegerToStringExpression(self.__value_copy))
 
     def to_sql_expression(
             self,

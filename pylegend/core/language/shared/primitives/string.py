@@ -65,7 +65,6 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringRpadExpression,
     PyLegendStringSplitPartExpression,
     PyLegendStringFullMatchExpression,
-    PyLegendStringToStringExpression,
     PyLegendStringRepeatStringExpression,
     PyLegendStringMatchExpression
 )
@@ -146,9 +145,6 @@ class PyLegendString(PyLegendPrimitive):
 
     def parse_datetime(self) -> "PyLegendDateTime":
         return PyLegendDateTime(PyLegendStringParseDateTimeExpression(self.__value))
-
-    def to_string(self) -> "PyLegendString":
-        return PyLegendString(PyLegendStringToStringExpression(self.__value))
 
     def ascii(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendStringAsciiExpression(self.__value))

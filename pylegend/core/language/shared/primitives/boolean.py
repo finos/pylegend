@@ -15,8 +15,7 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
-    PyLegendUnion,
-    TYPE_CHECKING
+    PyLegendUnion
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
@@ -24,8 +23,7 @@ from pylegend.core.language.shared.literal_expressions import PyLegendBooleanLit
 from pylegend.core.language.shared.operations.boolean_operation_expressions import (
     PyLegendBooleanOrExpression,
     PyLegendBooleanAndExpression,
-    PyLegendBooleanNotExpression,
-    PyLegendBooleanToStringExpression
+    PyLegendBooleanNotExpression
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -33,9 +31,6 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-
-if TYPE_CHECKING:
-    from pylegend.core.language.shared.primitives.string import PyLegendString
 
 __all__: PyLegendSequence[str] = [
     "PyLegendBoolean"
@@ -63,10 +58,6 @@ class PyLegendBoolean(PyLegendPrimitive):
 
     def value(self) -> PyLegendExpressionBooleanReturn:
         return self.__value
-
-    def to_string(self) -> "PyLegendString":
-        from pylegend.core.language.shared.primitives.string import PyLegendString
-        return PyLegendString(PyLegendBooleanToStringExpression(self.__value))
 
     def __or__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
