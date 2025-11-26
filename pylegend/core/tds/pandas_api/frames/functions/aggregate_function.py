@@ -121,7 +121,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
             )
 
-        if self.__args is not None or self.__kwargs is not None:
+        if len(self.__args) > 0 or len(self.__kwargs) > 0:
             raise NotImplementedError(
                 "AggregateFunction currently does not support additional positional "
                 "or keyword arguments. Please remove extra *args/**kwargs."
