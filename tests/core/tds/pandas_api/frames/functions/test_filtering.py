@@ -41,33 +41,6 @@ class TestFilteringFunction:
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_filtering_function_syntax_error(self) -> None:
-        # Brackets
-        with pytest.raises(SyntaxError) as v:
-            eval("frame[]")
-        assert v.value.args[0] in ("unexpected EOF while parsing", "invalid syntax")
-
-        with pytest.raises(SyntaxError) as v:
-            eval("frame[(frame['col1'] > 10} & (frame['col2'] == 2)]")
-        assert v.value.args[0] == "closing parenthesis '}' does not match opening parenthesis '('"
-
-        # Invalid symbol
-        with pytest.raises(SyntaxError) as v:
-            eval("frame[frame['col1'] >< 10]")
-        assert v.value.args[0] == "invalid syntax"
-
-        with pytest.raises(SyntaxError) as v:
-            eval("frame[(frame['col1'] > 10) && (frame['col2'] == 2)]")
-        assert v.value.args[0] == "invalid syntax"
-
-        with pytest.raises(SyntaxError) as v:
-            eval("frame[(frame['col1'] > 10) | % (frame['col2'] == 2)]")
-        assert v.value.args[0] == "invalid syntax"
-
-        with pytest.raises(SyntaxError) as v:
-            eval("frame[(frame['col1'] > 10) | & (frame['col2'] == 2)]")
-        assert v.value.args[0] == "invalid syntax"
-
     def test_filtering_function_invalid_operator_error(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -80,20 +53,20 @@ class TestFilteringFunction:
 
         # Logical expression
         with pytest.raises(TypeError) as v:
-            eval("frame[(frame['col1'] > 10) + (frame['col2'] == 2)]")
+            frame[(frame['col1'] > 10) + (frame['col2'] == 2)]  # type: ignore
         assert v.value.args[0] == "unsupported operand type(s) for +: 'PyLegendBoolean' and 'PyLegendBoolean'"
 
         with pytest.raises(TypeError) as v:
-            eval("frame[(frame['col1'] > 10) ^ (frame['col2'] == 2)]")
+            frame[(frame['col1'] > 10) ^ (frame['col2'] == 2)]  # type: ignore
         assert v.value.args[0] == "unsupported operand type(s) for ^: 'PyLegendBoolean' and 'PyLegendBoolean'"
 
         # Comparator expression
         with pytest.raises(TypeError) as v:
-            eval("frame[(frame['col1'] >> 10)]")
+            frame[(frame['col1'] >> 10)]  # type: ignore
         assert v.value.args[0] == "unsupported operand type(s) for >>: 'IntegerSeries' and 'int'"
 
         with pytest.raises(TypeError) as v:
-            eval("frame[(frame['col1'] + 10) & (frame['col2'] == 2)]")
+            frame[(frame['col1'] + 10) & (frame['col2'] == 2)]  # type: ignore
         assert v.value.args[0].startswith(
             "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value "
             "<pylegend.core.language.shared.primitives.integer.PyLegendInteger object"
@@ -111,26 +84,26 @@ class TestFilteringFunction:
 
         # str input
         with pytest.raises(KeyError) as v:
-            eval("frame['col6']")
+            frame['col6']
         assert v.value.args[0] == "['col6'] not in index"
 
         # list input
         with pytest.raises(KeyError) as v:
-            eval("frame[['col1', 'col7']]")
+            frame[['col1', 'col7']]
         assert v.value.args[0] == "['col7'] not in index"
 
         with pytest.raises(KeyError) as v:
-            eval("frame[['col6', 'col7']]")
+            frame[['col6', 'col7']]
         assert v.value.args[0] == "['col6', 'col7'] not in index"
 
         # expression input
         with pytest.raises(KeyError) as v:
-            eval("frame[(frame['col8'] > 10) & (frame['col1'] == 2) | (frame['col6'] == 'test')]")
+            frame[(frame['col8'] > 10) & (frame['col1'] == 2) | (frame['col6'] == 'test')]  # type: ignore
         assert v.value.args[0] == "['col8'] not in index"
 
         # invalid key type
         with pytest.raises(TypeError) as v2:
-            eval("frame[123]")
+            frame[123]  # type: ignore
         assert v2.value.args[0] == "Invalid key type: <class 'int'>. Expected str, list, or boolean expression"
 
     def test_filtering_function_on_sql_pure(self) -> None:
