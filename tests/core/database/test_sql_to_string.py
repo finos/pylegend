@@ -596,7 +596,7 @@ class TestSqlToStringDbExtensionProcessing:
         func_call.arguments = [
             ref
         ]
-        assert extension.process_expression(func_call, config) == "test.func( test_db.test_schema.test_table.test_col )"
+        assert extension.process_expression(func_call, config) == "test.func(test_db.test_schema.test_table.test_col)"
 
         func_call.arguments = [
             ref,
@@ -653,9 +653,7 @@ class TestSqlToStringDbExtensionProcessing:
             ref
         ]
         expected = """\
-            test.func(
-                test_db.test_schema.test_table.test_col
-            )"""
+            test.func(test_db.test_schema.test_table.test_col)"""
         assert extension.process_expression(func_call, config) == dedent(expected)
 
         func_call.arguments = [
@@ -719,7 +717,7 @@ class TestSqlToStringDbExtensionProcessing:
             ],
             window=None
         ))
-        assert extension.process_relation(table_func, config) == "test.func( param1 => test_table.test_col )"
+        assert extension.process_relation(table_func, config) == "test.func(param1 => test_table.test_col)"
 
     def test_process_aliased_relation(self) -> None:
         extension = SqlToStringDbExtension()

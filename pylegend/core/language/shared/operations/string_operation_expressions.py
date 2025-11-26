@@ -51,6 +51,7 @@ from pylegend.core.sql.metamodel_extension import (
     StringPosExpression,
     StringConcatExpression,
     ConstantExpression,
+    StringSubStringExpression
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -86,8 +87,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringRightExpression",
     "PyLegendStringSubStringExpression",
     "PyLegendStringReplaceExpression",
-    "PyLegendStringLpadExpression",
-    "PyLegendStringRpadExpression",
+    "PyLegendStringRjustExpression",
+    "PyLegendStringLjustExpression",
     "PyLegendStringSplitPartExpression",
     "PyLegendStringRepeatStringExpression",
     "PyLegendStringFullMatchExpression",
@@ -927,65 +928,71 @@ class PyLegendStringGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegen
         )
 
 
-class PyLegendStringLeftExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
+class PyLegendStringLeftExpression(PyLegendBinaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
     def __to_sql_func(
-            expressions: list[Expression],
+            expression1: Expression,
+            expression2: Expression,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
         return FunctionCall(
             name=QualifiedName(parts=["LEFT"]),
             distinct=False,
-            arguments=expressions,
+            arguments=[expression1, expression2],
             filter_=None, window=None
         )
 
     @staticmethod
-    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("left", op_expr)
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("left", [op1_expr, op2_expr])
 
-    def __init__(self, operands: list[PyLegendExpression]) -> None:
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
-        PyLegendNaryExpression.__init__(
+        PyLegendBinaryExpression.__init__(
             self,
-            operands,
+            operand1,
+            operand2,
             PyLegendStringLeftExpression.__to_sql_func,
             PyLegendStringLeftExpression.__to_pure_func,
             non_nullable=True,
-            operands_non_nullable_flags=[True, True]
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
 
 
-class PyLegendStringRightExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
+class PyLegendStringRightExpression(PyLegendBinaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
     def __to_sql_func(
-            expressions: list[Expression],
+            expression1: Expression,
+            expression2: Expression,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
         return FunctionCall(
             name=QualifiedName(parts=["RIGHT"]),
             distinct=False,
-            arguments=expressions,
+            arguments=[expression1, expression2],
             filter_=None, window=None
         )
 
     @staticmethod
-    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("right", op_expr)
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("right", [op1_expr, op2_expr])
 
-    def __init__(self, operands: list[PyLegendExpression]) -> None:
+    def __init__(self, operand1: PyLegendExpressionStringReturn, operand2: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
-        PyLegendNaryExpression.__init__(
+        PyLegendBinaryExpression.__init__(
             self,
-            operands,
+            operand1,
+            operand2,
             PyLegendStringRightExpression.__to_sql_func,
             PyLegendStringRightExpression.__to_pure_func,
             non_nullable=True,
-            operands_non_nullable_flags=[True, True]
+            first_operand_needs_to_be_non_nullable=True,
+            second_operand_needs_to_be_non_nullable=True
         )
 
 
@@ -997,12 +1004,7 @@ class PyLegendStringSubStringExpression(PyLegendNaryExpression, PyLegendExpressi
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["SUBSTR"]),
-            distinct=False,
-            arguments=expressions,
-            filter_=None, window=None
-        )
+        return StringSubStringExpression(expressions)
 
     @staticmethod
     def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
@@ -1051,7 +1053,7 @@ class PyLegendStringReplaceExpression(PyLegendNaryExpression, PyLegendExpression
         )
 
 
-class PyLegendStringLpadExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
+class PyLegendStringRjustExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
     def __to_sql_func(
@@ -1075,14 +1077,14 @@ class PyLegendStringLpadExpression(PyLegendNaryExpression, PyLegendExpressionStr
         PyLegendNaryExpression.__init__(
             self,
             operands,
-            PyLegendStringLpadExpression.__to_sql_func,
-            PyLegendStringLpadExpression.__to_pure_func,
+            PyLegendStringRjustExpression.__to_sql_func,
+            PyLegendStringRjustExpression.__to_pure_func,
             non_nullable=True,
             operands_non_nullable_flags=[True, True, True]
         )
 
 
-class PyLegendStringRpadExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
+class PyLegendStringLjustExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
     def __to_sql_func(
@@ -1106,8 +1108,8 @@ class PyLegendStringRpadExpression(PyLegendNaryExpression, PyLegendExpressionStr
         PyLegendNaryExpression.__init__(
             self,
             operands,
-            PyLegendStringRpadExpression.__to_sql_func,
-            PyLegendStringRpadExpression.__to_pure_func,
+            PyLegendStringLjustExpression.__to_sql_func,
+            PyLegendStringLjustExpression.__to_pure_func,
             non_nullable=True,
             operands_non_nullable_flags=[True, True, True]
         )

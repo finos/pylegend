@@ -192,7 +192,7 @@ class TestPyLegendInteger:
 
     def test_integer_to_char_expr(self) -> None:
         assert self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2").char()) == \
-               'CHR(\n    "root".col2\n)'
+               'CHR("root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2").char()) == \
                'toOne($t.col2)->char()'
 

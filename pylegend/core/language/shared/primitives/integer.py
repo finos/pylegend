@@ -27,7 +27,6 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.tds_frame import (
     FrameToSqlConfig,
-    FrameToPureConfig,
 )
 from pylegend.core.language.shared.operations.integer_operation_expressions import (
     PyLegendIntegerAddExpression,
@@ -68,9 +67,6 @@ class PyLegendInteger(PyLegendNumber):
             config: FrameToSqlConfig
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return self.__value_copy.to_pure_expression(config)
 
     def value(self) -> PyLegendExpressionIntegerReturn:
         return self.__value_copy

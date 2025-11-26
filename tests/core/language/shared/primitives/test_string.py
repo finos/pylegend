@@ -276,25 +276,25 @@ class TestPyLegendString:
 
     def test_string_ascii_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").ascii()) == \
-               'ASCII(\n    "root".col2\n)'
+               'ASCII("root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").ascii()) == \
                'toOne($t.col2)->ascii()'
 
-    def test_string_decode_base64_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").decode_base64()) == \
+    def test_string_b64decode_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").b64decode()) == \
                'CONVERT_FROM(\n    DECODE(\n        "root".col2,\n        \'BASE64\'\n    ),\n    \'UTF8\'\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").decode_base64()) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").b64decode()) == \
                'toOne($t.col2)->decodeBase64()'
 
-    def test_string_encode_base64_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").encode_base64()) == \
+    def test_string_b64encode_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").b64encode()) == \
                'ENCODE(\n    CONVERT_TO(\n        "root".col2,\n        \'UTF8\'\n    ),\n    \'BASE64\'\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").encode_base64()) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").b64encode()) == \
                'toOne($t.col2)->encodeBase64()'
 
     def test_string_reverse_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").reverse()) == \
-               'REVERSE(\n    "root".col2\n)'
+               'REVERSE("root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").reverse()) == \
                'toOne($t.col2)->reverseString()'
 
@@ -326,11 +326,11 @@ class TestPyLegendString:
 
     def test_string_substr_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").substring(1)) == \
-               'SUBSTR(\n    "root".col2,\n    1\n)'
+               'SUBSTR("root".col2, (1) + 1)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1)) == \
                'toOne($t.col2)->substring(1)'
         assert self.__generate_sql_string(lambda x: x.get_string("col2").substring(1, 3)) == \
-               'SUBSTR(\n    "root".col2,\n    1,\n    3\n)'
+               'SUBSTR("root".col2, (1) + 1, (3) - (1) + 1)'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").substring(1, 3)) == \
                'toOne($t.col2)->substring(1, 3)'
 
@@ -342,19 +342,19 @@ class TestPyLegendString:
         with pytest.raises(TypeError):
             self.__generate_pure_string(lambda x: x.get_string("col2").replace("s", 12))
 
-    def test_string_lpad_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").lpad(3, "_")) == \
+    def test_string_rjust_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").rjust(3, "_")) == \
                'LPAD(\n    "root".col2,\n    3,\n    \'_\'\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").lpad(3, "_")) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").rjust(3, "_")) == \
                'toOne($t.col2)->lpad(3, \'_\')'
 
-    def test_string_rpad_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col2").rpad(3, "_")) == \
+    def test_string_ljust_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").ljust(3, "_")) == \
                'RPAD(\n    "root".col2,\n    3,\n    \'_\'\n)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col2").rpad(3, "_")) == \
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").ljust(3, "_")) == \
                'toOne($t.col2)->rpad(3, \'_\')'
         with pytest.raises(TypeError):
-            self.__generate_pure_string(lambda x: x.get_string("col2").rpad("s", "_"))
+            self.__generate_pure_string(lambda x: x.get_string("col2").ljust("s", "_"))
 
     def test_string_split_part_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").split_part("_", 3)) == \

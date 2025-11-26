@@ -80,7 +80,8 @@ __all__: PyLegendSequence[str] = [
     "SecondExpression",
     "EpochExpression",
     "WindowExpression",
-    "ConstantExpression"
+    "ConstantExpression",
+    "StringSubStringExpression"
 ]
 
 
@@ -745,3 +746,20 @@ class ConstantExpression(Expression):
     ) -> None:
         super().__init__(_type="constantExpression")
         self.name = name
+
+
+class StringSubStringExpression(Expression):
+    value: "Expression"
+    start: "Expression"
+    end: PyLegendOptional["Expression"] = None
+
+    def __init__(
+            self,
+            params: list["Expression"]
+    ) -> None:
+        super().__init__(_type="stringSubStringExpression")
+        self.value = params[0]
+        self.start = params[1]
+
+        if len(params) > 2:
+            self.end = params[2]

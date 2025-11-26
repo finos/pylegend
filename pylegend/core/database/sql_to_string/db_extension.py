@@ -132,6 +132,7 @@ from pylegend.core.sql.metamodel_extension import (
     EpochExpression,
     WindowExpression,
     ConstantExpression,
+    StringSubStringExpression,
 )
 
 
@@ -454,6 +455,8 @@ def expression_processor(
         return extension.process_window_expression(expression, config)
     elif isinstance(expression, ConstantExpression):
         return expression.name
+    elif isinstance(expression, StringSubStringExpression):
+        return extension.process_string_substring_expression(expression, config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -686,10 +689,20 @@ def function_call_processor(
     if function_call.window:
         window = " " + extension.process_window(function_call.window, config)
 
-    first_sep = config.format.separator(1) if function_call.arguments else ""
-    sep0 = config.format.separator(0) if function_call.arguments else ""
     name = extension.process_qualified_name(function_call.name, config)
-    return f"{name}({first_sep}{arguments}{sep0}){window}"
+
+    single_line = (
+            len(function_call.arguments) == 1
+            and "\n" not in arguments
+            and len(arguments) <= 80
+    )
+
+    if single_line:
+        return f"{name}({arguments}){window}"
+    else:
+        first_sep = config.format.separator(1) if function_call.arguments else ""
+        sep0 = config.format.separator(0) if function_call.arguments else ""
+        return f"{name}({first_sep}{arguments}{sep0}){window}"
 
 
 def named_argument_processor(
@@ -1012,6 +1025,15 @@ class SqlToStringDbExtension:
 
     def process_string_pos_expression(self, expr: StringPosExpression, config: SqlToStringConfig) -> str:
         return f"STRPOS({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_string_substring_expression(self, expr: StringSubStringExpression, config: SqlToStringConfig) -> str:
+        value = self.process_expression(expr.value, config)
+        start = self.process_expression(expr.start, config)
+        return (
+            f"SUBSTR({value}, ({start}) + 1)"
+            if expr.end is None
+            else f"SUBSTR({value}, ({start}) + 1, ({self.process_expression(expr.end, config)}) - ({start}) + 1)"
+        )
 
     def process_string_concat_expression(self, expr: StringConcatExpression, config: SqlToStringConfig) -> str:
         return f"CONCAT({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
