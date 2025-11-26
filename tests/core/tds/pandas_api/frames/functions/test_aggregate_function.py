@@ -252,7 +252,7 @@ class TestAggregateFunction:
                    PrimitiveTdsColumn.number_column("col2"),
                    PrimitiveTdsColumn.float_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.aggregate({'col3': ['var'], 'col3': ['std']})
+        frame = frame.aggregate({'col3': ['var'], 'col3': ['std']})  # noqa
         expected = """\
                     SELECT
                         STDDEV_SAMP("root".col3) AS "col3"
