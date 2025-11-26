@@ -88,13 +88,13 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return super().to_pure_expression(config)
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
-        return self._filtered_frame.columns()  # pragma: no cover
+        return self._filtered_frame.columns()
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         return self._filtered_frame.to_sql_query(config)
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
-        return self._filtered_frame.to_pure_query(config)  # pragma: no cover
+        return self._filtered_frame.to_pure_query(config)
 
     def execute_frame(
             self,
@@ -117,7 +117,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self._filtered_frame.to_sql_query_object(config)  # type: ignore  # pragma: no cover
+        return self._filtered_frame.to_sql_query_object(config)  # type: ignore
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return self._filtered_frame.to_pure(config)  # type: ignore
@@ -128,8 +128,8 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore
     def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)  # pragma: no cover
-        PyLegendBoolean.__init__(self, self)  # pragma: no cover
+        super().__init__(base_frame, column)  # pragma: no cover (Boolean column not supported in PURE)
+        PyLegendBoolean.__init__(self, self)  # pragma: no cover (Boolean column not supported in PURE)
 
 
 class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):  # type: ignore
@@ -164,11 +164,11 @@ class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):  # type: i
 
 class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeReturn):  # type: ignore
     def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)  # pragma: no cover
-        PyLegendDateTime.__init__(self, self)  # pragma: no cover
+        super().__init__(base_frame, column)
+        PyLegendDateTime.__init__(self, self)
 
 
 class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):  # type: ignore
     def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)  # pragma: no cover
-        PyLegendStrictDate.__init__(self, self)  # pragma: no cover
+        super().__init__(base_frame, column)
+        PyLegendStrictDate.__init__(self, self)
