@@ -269,7 +269,11 @@ class AggregateFunction(PandasApiAppliedFunction):
             if func_lower in FLATTENED_FUNCTION_MAPPING:
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_lower]
             else:
-                internal_method_name = func  # pragma: no cover
+                raise NotImplementedError(
+                    f"Invalid `func` argument for the aggregate function.\n"
+                    f"The string {func!r} does not correspond to any supported aggregation.\n"
+                    f"Available string functions are: {sorted(FLATTENED_FUNCTION_MAPPING.keys())}"
+                )  # pragma: no cover
             lambda_source = self._generate_lambda_source(internal_method_name)
             final_lambda = eval(lambda_source)
             return final_lambda
@@ -279,7 +283,11 @@ class AggregateFunction(PandasApiAppliedFunction):
             if func_name in FLATTENED_FUNCTION_MAPPING:
                 internal_method_name = FLATTENED_FUNCTION_MAPPING[func_name]
             else:
-                internal_method_name = func_name  # pragma: no cover
+                raise NotImplementedError(
+                    f"Invalid `func` argument for the aggregate function.\n"
+                    f"The NumPy function {func_name!r} is not supported.\n"
+                    f"Supported aggregate functions are: {sorted(FLATTENED_FUNCTION_MAPPING.keys())}"
+                )  # pragma: no cover
             lambda_source = self._generate_lambda_source(internal_method_name)
             final_lambda = eval(lambda_source)
             return final_lambda
