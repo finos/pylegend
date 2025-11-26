@@ -30,6 +30,7 @@ from pylegend.core.language import (
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
@@ -102,8 +103,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         self,
         func: PyLegendAggInput = None,
         axis: PyLegendUnion[int, str] = 0,
-        *args: PyLegendPrimitive,
-        **kwargs: PyLegendPrimitive
+        *args: PyLegendPrimitiveOrPythonPrimitive,
+        **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
@@ -112,7 +113,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         self,
         func: PyLegendAggInput = None,
         axis: PyLegendUnion[int, str] = 0,
-        *args: PyLegendPrimitive,
-        **kwargs: PyLegendPrimitive
+        *args: PyLegendPrimitiveOrPythonPrimitive,
+        **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

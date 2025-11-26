@@ -48,7 +48,6 @@ PyLegendAggDict = PyLegendMapping[
 ]
 
 PyLegendAggInput = PyLegendUnion[
-    None,
     PyLegendAggFunc,
     PyLegendAggList,
     PyLegendAggDict,

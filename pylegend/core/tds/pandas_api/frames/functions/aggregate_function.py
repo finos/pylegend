@@ -43,20 +43,20 @@ class AggregateFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
     __func: PyLegendAggInput
     __axis: PyLegendUnion[int, str]
-    __args: PyLegendSequence[PyLegendPrimitive]
-    __kwargs: PyLegendMapping[str, PyLegendPrimitive]
+    __args: PyLegendSequence[PyLegendPrimitiveOrPythonPrimitive]
+    __kwargs: PyLegendMapping[str, PyLegendPrimitiveOrPythonPrimitive]
 
     @classmethod
     def name(cls) -> str:
-        return "aggregate_function"  # pragma: no cover
+        return "aggregate"  # pragma: no cover
 
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
             func: PyLegendAggInput,
             axis: PyLegendUnion[int, str],
-            *args: PyLegendPrimitive,
-            **kwargs: PyLegendPrimitive
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> None:
         self.__base_frame = base_frame
         self.__func = func
@@ -119,6 +119,12 @@ class AggregateFunction(PandasApiAppliedFunction):
         if self.__axis not in [0, "index"]:
             raise NotImplementedError(
                 f"The 'axis' parameter of the aggregate function must be 0 or 'index', but got: {self.__axis}"
+            )
+
+        if self.__args is not None or self.__kwargs is not None:
+            raise NotImplementedError(
+                "AggregateFunction currently does not support additional positional "
+                "or keyword arguments. Please remove extra *args/**kwargs."
             )
 
         self.__aggregates_list: PyLegendList[
@@ -299,15 +305,4 @@ class AggregateFunction(PandasApiAppliedFunction):
                 return validation_wrapper
 
     def _generate_lambda_source(self, internal_method_name: str) -> str:
-        arg_str = self._build_method_call_args()
-        return f"lambda x: x.{internal_method_name}({arg_str})"
-
-    def _build_method_call_args(self) -> str:
-        arg_parts: list[str] = []
-
-        for a in self.__args or []:
-            arg_parts.append(repr(a))  # pragma: no cover
-        for k, v in (self.__kwargs or {}).items():
-            arg_parts.append(f"{k}={repr(v)}")  # pragma: no cover
-
-        return ", ".join(arg_parts)
+        return f"lambda x: x.{internal_method_name}()"

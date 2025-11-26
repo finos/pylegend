@@ -46,6 +46,14 @@ class TestAggregateFunction:
             frame.aggregate(func=lambda x: 0, axis=1)
         assert v.value.args[0] == "The 'axis' parameter of the aggregate function must be 0 or 'index', but got: 1"
 
+    def test_aggregate_error_invalid_args_kwargs(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.aggregate('sum', 0, 12, dummy_arg=23)
+        assert v.value.args[0] == "AggregateFunction currently does not support additional positional " +\
+            "or keyword arguments. Please remove extra *args/**kwargs."
+
     def test_aggregate_error_dict_invalid_key_type(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
@@ -187,7 +195,7 @@ class TestAggregateFunction:
     def test_aggregate_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.date_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.aggregate({'col1': ['min'], 'col2': ['count']})
+        frame = frame.aggregate()
         expected = """\
                     SELECT
                         MIN("root".col1) AS "col1",
