@@ -65,7 +65,7 @@ class PandasApiFilteringFunction(PandasApiAppliedFunction):
                 type_=LogicalBinaryType.AND,
                 left=new_query.where,
                 right=sql_expr
-            )  # pragma: no cover
+            )
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
