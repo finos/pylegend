@@ -103,14 +103,26 @@ jobs:
           path: ./dist/*
 
   docker_build_push:
-    name: Build-Push Docker Image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
+      name: Build-Push Docker Image
+      needs: [release]
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v6
 
-      - name: Build-Publish Docker Image
-        uses: ./.github/workflows/actions/build_publish_docker_image
-        with:
-          docker_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+        - name: Extract Tag Name
+            id: extract_tag
+            shell: bash
+            run: |
+              # Calculate the clean tag using Bash syntax
+              CLEAN_TAG=${GITHUB_REF#refs/*/pylegend-}
+              
+              # Save it to GitHub Outputs so the next step can see it
+              echo "image_tag=$CLEAN_TAG" >> $GITHUB_OUTPUT
+
+        - name: Build-Publish Docker Image
+          uses: ./.github/workflows/actions/build_publish_docker_image
+          with:
+            docker_username: ${{ secrets.DOCKER_USERNAME }}
+            docker_password: ${{ secrets.DOCKER_PASSWORD }}
+            image_tag: ${{ steps.extract_tag.outputs.image_tag }}
