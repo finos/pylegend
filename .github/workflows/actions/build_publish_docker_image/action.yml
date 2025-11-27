@@ -24,7 +24,7 @@ inputs:
     required: true
   image_tag:
     description: 'Image Tag'
-      required: true
+    required: true
 
 runs:
   using: "composite"
