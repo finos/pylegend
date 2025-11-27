@@ -111,14 +111,14 @@ jobs:
           uses: actions/checkout@v6
 
         - name: Extract Tag Name
-            id: extract_tag
-            shell: bash
-            run: |
-              # Calculate the clean tag using Bash syntax
-              CLEAN_TAG=${GITHUB_REF#refs/*/pylegend-}
-              
-              # Save it to GitHub Outputs so the next step can see it
-              echo "image_tag=$CLEAN_TAG" >> $GITHUB_OUTPUT
+          id: extract_tag
+          shell: bash
+          run: |
+            # Calculate the clean tag using Bash syntax
+            CLEAN_TAG=${GITHUB_REF#refs/*/pylegend-}
+            
+            # Save it to GitHub Outputs so the next step can see it
+            echo "image_tag=$CLEAN_TAG" >> $GITHUB_OUTPUT
 
         - name: Build-Publish Docker Image
           uses: ./.github/workflows/actions/build_publish_docker_image
