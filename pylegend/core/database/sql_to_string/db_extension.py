@@ -132,8 +132,8 @@ from pylegend.core.sql.metamodel_extension import (
     EpochExpression,
     WindowExpression,
     ConstantExpression,
+    StringSubStringExpression,
 )
-
 
 __all__: PyLegendSequence[str] = [
     "SqlToStringDbExtension"
@@ -454,6 +454,8 @@ def expression_processor(
         return extension.process_window_expression(expression, config)
     elif isinstance(expression, ConstantExpression):
         return expression.name
+    elif isinstance(expression, StringSubStringExpression):
+        return extension.process_string_substring_expression(expression, config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -484,6 +486,10 @@ def comparison_expression_processor(
         cmp = "<"
     elif comparison.operator == ComparisonOperator.LESS_THAN_OR_EQUAL:
         cmp = "<="
+    elif comparison.operator == ComparisonOperator.REGEX_MATCH:
+        cmp = "~"
+    elif comparison.operator == ComparisonOperator.LIKE:
+        cmp = "~~"
     else:
         raise ValueError("Unknown comparison operator type: " + str(comparison.operator))  # pragma: no cover
 
@@ -674,18 +680,32 @@ def function_call_processor(
 ) -> str:
     # TODO: Handle distinct and filter
 
-    arguments = ("," + config.format.separator(1)).join(
-        [extension.process_expression(arg, config.push_indent()) for arg in function_call.arguments]
+    formatted_args = [
+        extension.process_expression(arg, config.push_indent())
+        for arg in function_call.arguments
+    ]
+
+    total_args_length = sum(len(arg) for arg in formatted_args)
+
+    requires_multiline = (
+            any("\n" in arg or len(arg) > 80 for arg in formatted_args)
+            or total_args_length > 80
     )
+
+    arguments = (
+            "," + (config.format.separator(1) if requires_multiline else " ")
+    ).join(formatted_args)
 
     window = ""
     if function_call.window:
         window = " " + extension.process_window(function_call.window, config)
 
-    first_sep = config.format.separator(1) if function_call.arguments else ""
-    sep0 = config.format.separator(0) if function_call.arguments else ""
     name = extension.process_qualified_name(function_call.name, config)
-    return f"{name}({first_sep}{arguments}{sep0}){window}"
+
+    if not requires_multiline:
+        return f"{name}({arguments}){window}"
+    else:
+        return f"{name}({config.format.separator(1)}{arguments}{config.format.separator(0)}){window}"
 
 
 def named_argument_processor(
@@ -1008,6 +1028,15 @@ class SqlToStringDbExtension:
 
     def process_string_pos_expression(self, expr: StringPosExpression, config: SqlToStringConfig) -> str:
         return f"STRPOS({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_string_substring_expression(self, expr: StringSubStringExpression, config: SqlToStringConfig) -> str:
+        value = self.process_expression(expr.value, config)
+        start = self.process_expression(expr.start, config)
+        return (
+            f"SUBSTR({value}, ({start}) + 1)"
+            if expr.end is None
+            else f"SUBSTR({value}, ({start}) + 1, ({self.process_expression(expr.end, config)}) - ({start}) + 1)"
+        )
 
     def process_string_concat_expression(self, expr: StringConcatExpression, config: SqlToStringConfig) -> str:
         return f"CONCAT({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"

@@ -42,7 +42,7 @@ class TestPyLegendFloat:
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_float_col_access(self) -> None:
@@ -169,6 +169,12 @@ class TestPyLegendFloat:
                '($t.col2 == 1)'
         assert self.__generate_pure_string(lambda x: 1 == (x["col2"] + x["col1"])) == \
                '((toOne($t.col2) + toOne($t.col1)) == 1)'
+
+    def test_float_to_string_expr(self) -> None:
+        assert self.__generate_sql_string_no_float_assert(lambda x: x.get_float("col2").to_string()) == \
+               'CAST("root".col2 AS TEXT)'
+        assert self.__generate_pure_string(lambda x: x.get_float("col2").to_string()) == \
+               'toOne($t.col2)->toString()'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

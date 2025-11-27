@@ -42,7 +42,7 @@ class TestPyLegendBoolean:
     base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_boolean_col_access(self) -> None:
@@ -117,6 +117,12 @@ class TestPyLegendBoolean:
         assert self.__generate_pure_string(lambda x: True == x["col2"]) == '($t.col2 == true)'  # noqa: E712
         assert self.__generate_pure_string(lambda x: True == (x["col2"] & x["col1"])) == \
                '((toOne($t.col2) && toOne($t.col1)) == true)'
+
+    def test_boolean_to_string_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_boolean("col2").to_string()) == \
+               'CAST("root".col2 AS TEXT)'
+        assert self.__generate_pure_string(lambda x: x.get_boolean("col2").to_string()) == \
+               'toOne($t.col2)->toString()'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(

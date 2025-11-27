@@ -32,11 +32,13 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
     PyLegendPrimitiveNotEqualsExpression,
     PyLegendIsEmptyExpression,
     PyLegendIsNotEmptyExpression,
+    PyLegendPrimitiveToStringExpression
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+    from pylegend.core.language.shared.primitives.string import PyLegendString
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
@@ -99,6 +101,10 @@ class PyLegendPrimitive(metaclass=ABCMeta):
 
     def is_not_null(self) -> "PyLegendBoolean":
         return self.is_not_empty()
+
+    def to_string(self) -> "PyLegendString":
+        from pylegend.core.language.shared.primitives.string import PyLegendString
+        return PyLegendString(PyLegendPrimitiveToStringExpression(self.value()))
 
     @staticmethod
     def __validate_param_to_be_primitive(
