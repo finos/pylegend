@@ -12,9 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Flake8 Lint Check
+name: Build and Publish Docker Image
+description: Builds and pushes the image
 
-description: Flake8 Lint Check
+inputs:
+  docker_username:
+    description: 'Docker Hub Username'
+    required: true
+  docker_password:
+    description: 'Docker Hub Password'
+    required: true
 
 runs:
   using: "composite"
@@ -22,7 +29,7 @@ runs:
     - name: Build and Push Docker image
       shell: bash
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/pylegend-img:latest .
-        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-        docker push ${{ secrets.DOCKER_USERNAME }}/pylegend-img:latest
+        docker build -t ${{ inputs.docker_username }}/pylegend-img:latest .
+        docker login -u ${{ inputs.docker_username }} -p ${{ inputs.docker_password }}
+        docker push ${{ inputs.docker_username }}/pylegend-img:latest
         

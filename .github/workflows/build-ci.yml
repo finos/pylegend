@@ -111,3 +111,6 @@ jobs:
 
       - name: Build-Publish Docker Image
         uses: ./.github/workflows/actions/build_publish_docker_image
+        with:
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
