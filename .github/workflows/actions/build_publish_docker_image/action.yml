@@ -22,7 +22,7 @@ runs:
     - name: Build and Push Docker image
       shell: bash
       run: |
-        docker build -t ${{secrets.DOCKER_USERNAME}}/pylegend-img:latest .
-        docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
-        docker push ${{secrets.DOCKER_USERNAME}}/pylegend-img:latest
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/pylegend-img:latest .
+        docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        docker push ${{ secrets.DOCKER_USERNAME }}/pylegend-img:latest
         
