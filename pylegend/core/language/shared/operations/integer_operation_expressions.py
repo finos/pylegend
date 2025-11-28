@@ -38,6 +38,7 @@ from pylegend.core.sql.metamodel_extension import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
+
 __all__: PyLegendSequence[str] = [
     "PyLegendIntegerAddExpression",
     "PyLegendIntegerAbsoluteExpression",
