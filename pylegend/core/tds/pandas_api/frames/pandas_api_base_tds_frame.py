@@ -271,6 +271,30 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             *args,
             **kwargs
         ))
+    
+    def groupby(
+        self,
+        by: PyLegendUnion[str, PyLegendList[str]],
+        level: PyLegendOptional[PyLegendUnion[str, int, PyLegendList[str]]] = None,
+        as_index: bool = False,
+        sort: bool = True,
+        group_keys: bool = False,
+        observed: bool = False,
+        dropna: bool = False,
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import (
+            PandasApiGroupbyTdsFrame
+        )
+        return PandasApiGroupbyTdsFrame(
+            base_frame=self,
+            by=by,
+            level=level,
+            as_index=as_index,
+            sort=sort,
+            group_keys=group_keys,
+            observed=observed,
+            dropna=dropna
+        )
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

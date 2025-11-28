@@ -24,7 +24,8 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
     PyLegendAggFunc,
-    PyLegendAggInput
+    PyLegendAggInput,
+    PyLegendAggList
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
@@ -34,17 +35,19 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import QuerySpecification, SelectItem, SingleColumn
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 
 class AggregateFunction(PandasApiAppliedFunction):
-    __base_frame: PandasApiBaseTdsFrame
+    __base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
     __func: PyLegendAggInput
     __axis: PyLegendUnion[int, str]
     __args: PyLegendSequence[PyLegendPrimitiveOrPythonPrimitive]
     __kwargs: PyLegendMapping[str, PyLegendPrimitiveOrPythonPrimitive]
+    # __multiple_aggregates_for_one_column: bool
 
     @classmethod
     def name(cls) -> str:
@@ -52,7 +55,7 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def __init__(
             self,
-            base_frame: PandasApiBaseTdsFrame,
+            base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
             func: PyLegendAggInput,
             axis: PyLegendUnion[int, str],
             *args: PyLegendPrimitiveOrPythonPrimitive,
@@ -66,7 +69,8 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         db_extension = config.sql_to_string_generator().get_db_extension()
-        base_query: QuerySpecification = self.__base_frame.to_sql_query_object(config)
+
+        base_query: QuerySpecification = self.base_frame().to_sql_query_object(config)
 
         should_create_sub_query = (
             len(base_query.groupBy) > 0 or
@@ -75,13 +79,25 @@ class AggregateFunction(PandasApiAppliedFunction):
             base_query.limit is not None
         )
 
+        columns_to_retain: PyLegendList[str] = [db_extension.quote_identifier(x) for x in self.__base_frame.grouping_column_name_list()]
         new_query: QuerySpecification
         if should_create_sub_query:
             new_query = create_sub_query(base_query, config, "root")
         else:
             new_query = copy_query(base_query)
 
-        new_select_items: PyLegendList[SelectItem] = []
+        new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
+        for col in new_query.select.selectItems:
+            if not isinstance(col, SingleColumn):
+                raise ValueError("Group By operation not supported for queries "
+                                 "with columns other than SingleColumn")  # pragma: no cover
+            if col.alias is None:
+                raise ValueError("Group By operation not supported for queries "
+                                 "with SingleColumns with missing alias")  # pragma: no cover
+            if col.alias in columns_to_retain:
+                new_cols_with_index.append((columns_to_retain.index(col.alias), col))
+
+        new_select_items: PyLegendList[SelectItem] = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
 
         for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
@@ -90,6 +106,14 @@ class AggregateFunction(PandasApiAppliedFunction):
             )
 
         new_query.select.selectItems = new_select_items
+
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+            new_query.groupBy = [
+                (lambda x: x[c])(tds_row).to_sql_expression({"r": new_query}, config)
+                for c in self.__base_frame.grouping_column_name_list()
+            ]
+
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -101,19 +125,36 @@ class AggregateFunction(PandasApiAppliedFunction):
             agg_strings.append(f"{escape_column_name(agg[0])}:{generate_pure_lambda('r', map_expr_string)}:"
                                f"{generate_pure_lambda('c', agg_expr_string)}")
 
-        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                f"->aggregate({config.separator(2)}"
-                f"~[{', '.join(agg_strings)}]{config.separator(1)}"
-                f")")
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            group_strings = []
+            for col_name in self.__base_frame.grouping_column_name_list():
+                group_strings.append(escape_column_name(col_name))
+
+            return (f"{self.base_frame().to_pure(config)}{config.separator(1)}" +
+                    f"->groupBy({config.separator(2)}"
+                    f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
+                    f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                    f")")
+        else:
+            return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+                    f"->aggregate({config.separator(2)}"
+                    f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                    f")")
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
-        return self.__base_frame
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            return self.__base_frame.base_frame()
+        else:
+            return self.__base_frame
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        return [c.copy() for c in self.__base_frame.columns()]
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            return [c.copy() for c in self.base_frame().columns()]
+        else:
+            return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:
@@ -132,7 +173,16 @@ class AggregateFunction(PandasApiAppliedFunction):
         ] = []
 
         normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_dict(self.__func)
-        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame)
+
+        # normalized_func: PyLegendUnion[dict[str, PyLegendAggFunc], dict[str, PyLegendAggList]] = \
+        #     self.__normalize_input_func_to_standard_dict(self.__func)
+        
+        # if all(isinstance(v, list) for v in normalized_func.values()):
+        #     self.__multiple_aggregates_for_one_column = True
+        # else:
+        #     self.__multiple_aggregates_for_one_column = False
+
+        tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
 
         for column_name, aggregate_function in normalized_func.items():
             mapper_function: PyLegendCallable[[PandasApiTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
