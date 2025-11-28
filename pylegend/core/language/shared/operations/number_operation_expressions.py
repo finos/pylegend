@@ -56,8 +56,7 @@ from pylegend.core.sql.metamodel_extension import (
     TanExpression,
     ArcTanExpression,
     ArcTan2Expression,
-    CotExpression,
-    ConstantExpression
+    CotExpression
 )
 
 
@@ -1066,7 +1065,13 @@ class PyLegendNumberPiExpression(PyLegendNullaryExpression, PyLegendExpressionNu
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return ConstantExpression('PI')
+        return FunctionCall(
+            name=QualifiedName(parts=["PI"]),
+            distinct=False,
+            arguments=[],
+            filter_=None,
+            window=None
+        )
 
     @staticmethod
     def __to_pure_func(config: FrameToPureConfig) -> str:

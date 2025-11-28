@@ -25,6 +25,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
+from pylegend.core.language.shared.functions import pi
 
 
 class TestPyLegendNumber:
@@ -514,6 +515,10 @@ class TestPyLegendNumber:
                'toOne($t.col2)->tanh()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).tanh()) == \
                '(toOne($t.col2) + toOne($t.col1))->tanh()'
+
+    def test_number_pi_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: pi()) == 'PI()'
+        assert self.__generate_pure_string(lambda x: pi()) == 'pi()'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
