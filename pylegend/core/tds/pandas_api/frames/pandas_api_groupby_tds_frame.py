@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from pylegend._typing import (
     PyLegendOptional,
     PyLegendUnion,
     PyLegendList,
+    TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+
+if TYPE_CHECKING:
+    from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 
 
 class PandasApiGroupbyTdsFrame:
@@ -98,7 +102,7 @@ class PandasApiGroupbyTdsFrame:
         input_cols: PyLegendList[str] = []
         if isinstance(self.__by, str):
             input_cols = [self.__by]
-        elif isinstance(self.__by, PyLegendList[str]):
+        elif isinstance(self.__by, PyLegendList) and all(isinstance(col, str) for col in self.__by):
             input_cols = self.__by
         else:
             raise TypeError(

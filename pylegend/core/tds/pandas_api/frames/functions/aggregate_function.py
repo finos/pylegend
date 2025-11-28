@@ -79,25 +79,28 @@ class AggregateFunction(PandasApiAppliedFunction):
             base_query.limit is not None
         )
 
-        columns_to_retain: PyLegendList[str] = [db_extension.quote_identifier(x) for x in self.__base_frame.grouping_column_name_list()]
         new_query: QuerySpecification
         if should_create_sub_query:
             new_query = create_sub_query(base_query, config, "root")
         else:
             new_query = copy_query(base_query)
 
-        new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
-        for col in new_query.select.selectItems:
-            if not isinstance(col, SingleColumn):
-                raise ValueError("Group By operation not supported for queries "
-                                 "with columns other than SingleColumn")  # pragma: no cover
-            if col.alias is None:
-                raise ValueError("Group By operation not supported for queries "
-                                 "with SingleColumns with missing alias")  # pragma: no cover
-            if col.alias in columns_to_retain:
-                new_cols_with_index.append((columns_to_retain.index(col.alias), col))
+        new_select_items: PyLegendList[SelectItem] = []
 
-        new_select_items: PyLegendList[SelectItem] = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            columns_to_retain: PyLegendList[str] = [db_extension.quote_identifier(x) for x in self.__base_frame.grouping_column_name_list()]
+            new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
+            for col in new_query.select.selectItems:
+                if not isinstance(col, SingleColumn):
+                    raise ValueError("Group By operation not supported for queries "
+                                    "with columns other than SingleColumn")  # pragma: no cover
+                if col.alias is None:
+                    raise ValueError("Group By operation not supported for queries "
+                                    "with SingleColumns with missing alias")  # pragma: no cover
+                if col.alias in columns_to_retain:
+                    new_cols_with_index.append((columns_to_retain.index(col.alias), col))
+
+            new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
 
         for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)

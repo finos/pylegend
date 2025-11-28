@@ -37,6 +37,7 @@ from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
@@ -127,4 +128,17 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def groupby(
+        self,
+        by: PyLegendUnion[str, PyLegendList[str]],
+        level: PyLegendOptional[PyLegendUnion[str, int, PyLegendList[str]]] = None,
+        as_index: bool = False,
+        sort: bool = True,
+        group_keys: bool = False,
+        observed: bool = False,
+        dropna: bool = False,
+    ) -> "PandasApiGroupbyTdsFrame":
         pass  # pragma: no cover

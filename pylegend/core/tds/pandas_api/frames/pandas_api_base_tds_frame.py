@@ -53,6 +53,7 @@ from pylegend.extensions.tds.result_handler import (
 
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
@@ -281,7 +282,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         group_keys: bool = False,
         observed: bool = False,
         dropna: bool = False,
-    ) -> "PandasApiTdsFrame":
+    ) -> "PandasApiGroupbyTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import (
             PandasApiGroupbyTdsFrame
         )
