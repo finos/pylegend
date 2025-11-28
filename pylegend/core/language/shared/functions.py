@@ -34,6 +34,7 @@ __all__: PyLegendSequence[str] = [
     "today",
     "now",
     "current_user",
+    "pi"
 ]
 
 

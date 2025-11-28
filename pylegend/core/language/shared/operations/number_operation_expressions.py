@@ -19,7 +19,7 @@ from pylegend._typing import (
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
-    PyLegendExpressionBooleanReturn
+    PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
@@ -56,7 +56,7 @@ from pylegend.core.sql.metamodel_extension import (
     TanExpression,
     ArcTanExpression,
     ArcTan2Expression,
-    CotExpression
+    CotExpression,
 )
 
 

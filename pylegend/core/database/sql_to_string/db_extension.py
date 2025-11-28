@@ -545,7 +545,7 @@ def arithmetic_expression_processor(
     elif op_type == ArithmeticType.DIVIDE:
         return f"((1.0 * {left}) / {right})"
     elif op_type == ArithmeticType.MODULUS:
-        return f"((({left}) % ({right})) + ({right})) % ({right})"
+        return f"MOD({left}, {right})"
     else:
         raise ValueError("Unknown arithmetic operator type: " + str(op_type))  # pragma: no cover
 
