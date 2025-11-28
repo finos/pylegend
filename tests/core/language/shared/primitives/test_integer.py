@@ -123,11 +123,11 @@ class TestPyLegendInteger:
 
     def test_integer_modulo_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_integer("col2") % x.get_integer("col1")) == \
-               'MOD("root".col2, "root".col1)'
+               'MOD((MOD("root".col2, "root".col1) + "root".col1), "root".col1)'
         assert self.__generate_sql_string(lambda x: x.get_integer("col2") % 10) == \
-               'MOD("root".col2, 10)'
+               'MOD((MOD("root".col2, 10) + 10), 10)'
         assert self.__generate_sql_string(lambda x: 10 % x.get_integer("col2")) == \
-               'MOD(10, "root".col2)'
+               'MOD((MOD(10, "root".col2) + "root".col2), "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2") % x.get_integer("col1")) == \
                'toOne($t.col2)->mod(toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2") % 10) == \

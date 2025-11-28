@@ -56,6 +56,13 @@ from pylegend.core.language.shared.operations.number_operation_expressions impor
     PyLegendNumberArcTanExpression,
     PyLegendNumberArcTan2Expression,
     PyLegendNumberCotExpression,
+    PyLegendNumberLog10Expression,
+    PyLegendNumberDegreesExpression,
+    PyLegendNumberRadiansExpression,
+    PyLegendNumberSignExpression,
+    PyLegendNumberHyperbolicSinExpression,
+    PyLegendNumberHyperbolicCosExpression,
+    PyLegendNumberHyperbolicTanExpression
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -289,6 +296,27 @@ class PyLegendNumber(PyLegendPrimitive):
             if not isinstance(n, int):
                 raise TypeError("Round parameter should be an int. Passed - " + str(type(n)))
             return PyLegendNumber(PyLegendNumberRoundExpression(self.__value, PyLegendIntegerLiteralExpression(n)))
+
+    def log10(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberLog10Expression(self.__value))
+
+    def degrees(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberDegreesExpression(self.__value))
+
+    def radians(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberRadiansExpression(self.__value))
+
+    def sign(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberSignExpression(self.__value))
+
+    def sinh(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberHyperbolicSinExpression(self.__value))
+
+    def cosh(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberHyperbolicCosExpression(self.__value))
+
+    def tanh(self) -> "PyLegendNumber":
+        return PyLegendNumber(PyLegendNumberHyperbolicTanExpression(self.__value))
 
     def __round__(self, n: PyLegendOptional[int] = None) -> "PyLegendNumber":
         return self.round(n)

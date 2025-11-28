@@ -22,6 +22,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
+from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -34,6 +35,8 @@ from pylegend.core.sql.metamodel import (
     ComparisonOperator,
     ComparisonExpression,
     NegativeExpression,
+    FunctionCall,
+    QualifiedName
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
@@ -85,6 +88,14 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberArcTanExpression",
     "PyLegendNumberArcTan2Expression",
     "PyLegendNumberCotExpression",
+    "PyLegendNumberLog10Expression",
+    "PyLegendNumberDegreesExpression",
+    "PyLegendNumberRadiansExpression",
+    "PyLegendNumberSignExpression",
+    "PyLegendNumberHyperbolicSinExpression",
+    "PyLegendNumberHyperbolicCosExpression",
+    "PyLegendNumberHyperbolicTanExpression",
+    "PyLegendNumberPiExpression"
 ]
 
 
@@ -820,4 +831,257 @@ class PyLegendNumberCotExpression(PyLegendUnaryExpression, PyLegendExpressionNum
             PyLegendNumberCotExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberLog10Expression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["LOG10"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("log10", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberLog10Expression.__to_sql_func,
+            PyLegendNumberLog10Expression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberDegreesExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["DEGREES"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("toDegrees", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberDegreesExpression.__to_sql_func,
+            PyLegendNumberDegreesExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberRadiansExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["RADIANS"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("toRadians", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberRadiansExpression.__to_sql_func,
+            PyLegendNumberRadiansExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberSignExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["SIGN"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("sign", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberSignExpression.__to_sql_func,
+            PyLegendNumberSignExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberHyperbolicSinExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["SINH"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("sinh", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberHyperbolicSinExpression.__to_sql_func,
+            PyLegendNumberHyperbolicSinExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberHyperbolicCosExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["COSH"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("cosh", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberHyperbolicCosExpression.__to_sql_func,
+            PyLegendNumberHyperbolicCosExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberHyperbolicTanExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["TANH"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("tanh", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendNumberHyperbolicTanExpression.__to_sql_func,
+            PyLegendNumberHyperbolicTanExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendNumberPiExpression(PyLegendNullaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["PI"]),
+            distinct=False,
+            arguments=[],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(config: FrameToPureConfig) -> str:
+        return "pi()"
+
+    def __init__(self) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendNullaryExpression.__init__(
+            self,
+            PyLegendNumberPiExpression.__to_sql_func,
+            PyLegendNumberPiExpression.__to_pure_func,
+            non_nullable=True
         )

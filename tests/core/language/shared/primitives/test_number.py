@@ -25,6 +25,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
+from pylegend.core.language.shared.functions import pi
 
 
 class TestPyLegendNumber:
@@ -448,6 +449,76 @@ class TestPyLegendNumber:
                '$t.col2->isNotEmpty()'
         assert self.__generate_pure_string(lambda x: abs(x["col2"]).is_empty()) == \
                'toOne($t.col2)->abs()->isEmpty()'
+
+    def test_number_log10_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").log10()) == \
+               'LOG10("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).log10()) == \
+               'LOG10(("root".col2 + "root".col1))'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").log10()) == \
+               'toOne($t.col2)->log10()'
+        assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).log10()) == \
+               '(toOne($t.col2) + toOne($t.col1))->log10()'
+
+    def test_number_degrees_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").degrees()) == \
+               'DEGREES("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).degrees()) == \
+               'DEGREES(("root".col2 + "root".col1))'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").degrees()) == \
+               'toOne($t.col2)->toDegrees()'
+        assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).degrees()) == \
+               '(toOne($t.col2) + toOne($t.col1))->toDegrees()'
+
+    def test_number_radians_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").radians()) == \
+               'RADIANS("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).radians()) == \
+               'RADIANS(("root".col2 + "root".col1))'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").radians()) == \
+               'toOne($t.col2)->toRadians()'
+        assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).radians()) == \
+               '(toOne($t.col2) + toOne($t.col1))->toRadians()'
+
+    def test_number_sign_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").sign()) == \
+               'SIGN("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").sign()) == \
+               'toOne($t.col2)->sign()'
+
+    def test_number_sinh_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").sinh()) == \
+               'SINH("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sinh()) == \
+               'SINH(("root".col2 + "root".col1))'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").sinh()) == \
+               'toOne($t.col2)->sinh()'
+        assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).sinh()) == \
+               '(toOne($t.col2) + toOne($t.col1))->sinh()'
+
+    def test_number_cosh_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").cosh()) == \
+               'COSH("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cosh()) == \
+               'COSH(("root".col2 + "root".col1))'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").cosh()) == \
+               'toOne($t.col2)->cosh()'
+        assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).cosh()) == \
+               '(toOne($t.col2) + toOne($t.col1))->cosh()'
+
+    def test_number_tanh_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").tanh()) == \
+               'TANH("root".col2)'
+        assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).tanh()) == \
+               'TANH(("root".col2 + "root".col1))'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").tanh()) == \
+               'toOne($t.col2)->tanh()'
+        assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).tanh()) == \
+               '(toOne($t.col2) + toOne($t.col1))->tanh()'
+
+    def test_number_pi_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: pi()) == 'PI()'
+        assert self.__generate_pure_string(lambda x: pi()) == 'pi()'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
