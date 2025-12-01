@@ -75,12 +75,10 @@ class TestGroupbyFunction:
                    PrimitiveTdsColumn.date_column("col2"),
                    PrimitiveTdsColumn.integer_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.groupby("col1")[[]].aggregate("min")
+        frame = frame.groupby("col1").aggregate("min")
         expected = """\
                     SELECT
                         "root".col1 AS "col1",
-                        MIN("root".col2) AS "col2",
-                        SUM("root".col3) AS "col3"
                     FROM
                         test_schema.test_table AS "root"
                     GROUP BY

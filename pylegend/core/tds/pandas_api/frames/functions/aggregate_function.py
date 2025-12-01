@@ -205,16 +205,23 @@ class AggregateFunction(PandasApiAppliedFunction):
             func_input: PyLegendAggInput
     ) -> dict[str, PyLegendAggFunc]:
 
-        column_names: PyLegendList[str]
+        validation_columns: PyLegendList[str]
+        default_broadcast_columns: PyLegendList[str]
+
+        all_cols = [col.get_name() for col in self.calculate_columns()]
+
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             if self.__base_frame.selected_columns() is not None:
-                column_names = self.__base_frame.selected_columns()
+                validation_columns = self.__base_frame.selected_columns()
+                default_broadcast_columns = self.__base_frame.selected_columns()
             else:
-                all_cols = [col.get_name() for col in self.calculate_columns()]
+                validation_columns = all_cols
+
                 group_cols = set(self.__base_frame.grouping_column_name_list())
-                column_names = [c for c in all_cols if c not in group_cols]
+                default_broadcast_columns = [c for c in all_cols if c not in group_cols]
         else:
-            column_names = [col.get_name() for col in self.calculate_columns()]
+            validation_columns = all_cols
+            default_broadcast_columns = all_cols
 
         if isinstance(func_input, collections.abc.Mapping):
             normalized: dict[str, PyLegendAggFunc] = {}
@@ -226,11 +233,12 @@ class AggregateFunction(PandasApiAppliedFunction):
                         f"When a dictionary is provided, all keys must be strings.\n"
                         f"But got key: {key!r} (type: {type(key).__name__})\n"
                     )
-                if key not in column_names:
+
+                if key not in validation_columns:
                     raise ValueError(
                         f"Invalid `func` argument for the aggregate function.\n"
                         f"When a dictionary is provided, all keys must be column names.\n"
-                        f"Available columns are: {sorted(column_names)}\n"
+                        f"Available columns are: {sorted(validation_columns)}\n"
                         f"But got key: {key!r} (type: {type(key).__name__})\n"
                     )
 
@@ -244,7 +252,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                             f"List Length: {len(value)}\n"
                             f"Value: {value!r}\n"
                         )
-
+                    
                     single_func = value[0]
 
                     if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
@@ -253,7 +261,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                             f"The single element in the list for key {key!r} must be a callable, str, or np.ufunc.\n"
                             f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
                         )
-
+                    
                     normalized[key] = single_func
 
                 else:
@@ -269,7 +277,6 @@ class AggregateFunction(PandasApiAppliedFunction):
             return normalized
 
         elif isinstance(func_input, collections.abc.Sequence) and not isinstance(func_input, str):
-
             if len(func_input) != 1:
                 raise ValueError(
                     f"Invalid `func` argument for the aggregate function.\n"
@@ -279,7 +286,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                     f"List Length: {len(func_input)}\n"
                     f"Input: {func_input!r}\n"
                 )
-
+            
             single_func = func_input[0]
 
             if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
@@ -289,10 +296,10 @@ class AggregateFunction(PandasApiAppliedFunction):
                     f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
                 )
 
-            return {col: single_func for col in column_names}
+            return {col: single_func for col in default_broadcast_columns}
 
         elif callable(func_input) or isinstance(func_input, str) or isinstance(func_input, np.ufunc):
-            return {col: func_input for col in column_names}
+            return {col: func_input for col in default_broadcast_columns}
 
         else:
             raise TypeError(
