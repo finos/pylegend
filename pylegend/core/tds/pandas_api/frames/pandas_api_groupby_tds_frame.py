@@ -38,6 +38,7 @@ class PandasApiGroupbyTdsFrame:
     __dropna: bool
 
     __grouping_column_name_list: PyLegendList[str]
+    __selected_columns: PyLegendOptional[PyLegendList[str]]
 
 
     @classmethod
@@ -63,6 +64,8 @@ class PandasApiGroupbyTdsFrame:
         self.__group_keys = group_keys
         self.__observed = observed
         self.__dropna = dropna
+
+        self.__selected_columns = None
 
         self.__validate()
 
@@ -112,6 +115,9 @@ class PandasApiGroupbyTdsFrame:
     
         available_columns = {c.get_name() for c in self.__base_frame.columns()}
 
+        if len(input_cols) == 0:
+            raise ValueError("The 'by' parameter in groupby function must contain at least one column name.")
+
         for col in input_cols:
             if col not in available_columns:
                 raise KeyError(
@@ -125,7 +131,7 @@ class PandasApiGroupbyTdsFrame:
         columns_to_select: PyLegendList[str] = []
         if isinstance(item, str):
             columns_to_select = [item]
-        elif isinstance(item, list):
+        elif isinstance(item, list) and all(isinstance(col, str) for col in item):
             columns_to_select = item
         else:
             raise TypeError(
@@ -140,6 +146,12 @@ class PandasApiGroupbyTdsFrame:
                     f"Column - '{col}' in groupby function's aggregation list doesn't exist in the current frame. "
                     f"Current frame columns: {available_columns}"
                 )
+            if col in self.__grouping_column_name_list:
+                raise KeyError(
+                    f"Column - '{col}' in groupby function's aggregation list is a grouping column. "
+                    f"Only non-grouping columns can be aggregated. "
+                    f"Current non-grouping columns available: {available_columns - set(self.__grouping_column_name_list)}"
+                )
 
         self.__selected_columns = columns_to_select.copy()
         return self
@@ -150,7 +162,9 @@ class PandasApiGroupbyTdsFrame:
     def grouping_column_name_list(self) -> PyLegendList[str]:
         return self.__grouping_column_name_list.copy()
     
-    def selected_columns(self) -> PyLegendList[str]:
+    def selected_columns(self) -> PyLegendOptional[PyLegendList[str]]:
+        if self.__selected_columns is None:
+            return None
         return self.__selected_columns.copy()
 
     def aggregate(

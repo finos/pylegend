@@ -36,9 +36,9 @@ from tests.test_helpers.test_legend_service_frames import (
 
 class TestGroupbyFunction:
 
-    @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    # @pytest.fixture(autouse=True)
+    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_groupby_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
@@ -69,3 +69,33 @@ class TestGroupbyFunction:
             "#Table(test_schema.test_table)#"
             "->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}, col3:{r | $r.col3}:{c | $c->sum()}])"
         )
+
+    def test_groupby_column_selection_for_aggregation(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"),
+                   PrimitiveTdsColumn.date_column("col2"),
+                   PrimitiveTdsColumn.integer_column("col3")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.groupby(by="col1")[["col1", "col2", "col3"]].aggregate("min")
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        MIN("root".col2) AS "col2",
+                        SUM("root".col3) AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".col1
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
+        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+        #     """\
+        #     #Table(test_schema.test_table)#
+        #       ->groupBy(
+        #         ~[col1],
+        #         ~[col2:{r | $r.col2}:{c | $c->min()}, col3:{r | $r.col3}:{c | $c->sum()}]
+        #       )"""
+        # )
+        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+        #     "#Table(test_schema.test_table)#"
+        #     "->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}, col3:{r | $r.col3}:{c | $c->sum()}])"
+        # )

@@ -104,6 +104,14 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
+            if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame) and\
+                self.__base_frame.selected_columns() is not None and\
+                agg[0] not in self.__base_frame.selected_columns():
+                raise KeyError(
+                    f"Column - '{agg[0]}' in aggregate function's aggregation list was not selected "
+                    f"after groupby. Selected columns: {self.__base_frame.selected_columns()}"
+                )
+
             new_select_items.append(
                 SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr)
             )
@@ -177,14 +185,6 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_dict(self.__func)
 
-        # normalized_func: PyLegendUnion[dict[str, PyLegendAggFunc], dict[str, PyLegendAggList]] = \
-        #     self.__normalize_input_func_to_standard_dict(self.__func)
-        
-        # if all(isinstance(v, list) for v in normalized_func.values()):
-        #     self.__multiple_aggregates_for_one_column = True
-        # else:
-        #     self.__multiple_aggregates_for_one_column = False
-
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
 
         for column_name, aggregate_function in normalized_func.items():
@@ -205,7 +205,10 @@ class AggregateFunction(PandasApiAppliedFunction):
             func_input: PyLegendAggInput
     ) -> dict[str, PyLegendAggFunc]:
 
-        column_names = [col.get_name() for col in self.calculate_columns()]
+        column_names: PyLegendList[str]
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame) and self.__base_frame.selected_columns() is not None:
+            column_names = self.__base_frame.selected_columns()
+        else: column_names = [col.get_name() for col in self.calculate_columns()]
 
         if isinstance(func_input, collections.abc.Mapping):
             normalized: dict[str, PyLegendAggFunc] = {}
