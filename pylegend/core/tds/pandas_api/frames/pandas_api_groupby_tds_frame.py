@@ -153,8 +153,19 @@ class PandasApiGroupbyTdsFrame:
                 f"Current frame columns: {sorted(available_columns)}"
             )
 
-        self.__selected_columns = columns_to_select.copy()
-        return self
+        new_frame = PandasApiGroupbyTdsFrame(
+            base_frame=self.__base_frame,
+            by=self.__by,
+            level=self.__level,
+            as_index=self.__as_index,
+            sort=self.__sort,
+            group_keys=self.__group_keys,
+            observed=self.__observed,
+            dropna=self.__dropna
+        )
+
+        new_frame.__selected_columns = columns_to_select.copy()
+        return new_frame
     
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
