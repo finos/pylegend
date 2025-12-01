@@ -101,37 +101,39 @@ class PandasApiGroupbyTdsFrame:
                 f"The 'dropna' parameter of the groupby function must be False, "
                 f"but got: {self.__dropna} (type: {type(self.__dropna).__name__})"
             )
-
+        
         input_cols: PyLegendList[str] = []
         if isinstance(self.__by, str):
             input_cols = [self.__by]
-        elif isinstance(self.__by, PyLegendList) and all(isinstance(col, str) for col in self.__by):
+        elif isinstance(self.__by, list):
             input_cols = self.__by
         else:
             raise TypeError(
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
             )
-    
-        available_columns = {c.get_name() for c in self.__base_frame.columns()}
 
         if len(input_cols) == 0:
             raise ValueError("The 'by' parameter in groupby function must contain at least one column name.")
 
-        for col in input_cols:
-            if col not in available_columns:
-                raise KeyError(
-                    f"Column - '{col}' in groupby function's provided columns list doesn't exist in the current frame. "
-                    f"Current frame columns: {available_columns}"
-                )
+        available_columns = {c.get_name() for c in self.__base_frame.columns()}
+        missing_cols = [col for col in input_cols if col not in available_columns]
 
-        self.__grouping_column_name_list: PyLegendList[str] = input_cols
+        if len(missing_cols) > 0:
+             raise KeyError(
+                f"Column(s) {missing_cols} in groupby function's provided columns list "
+                f"do not exist in the current frame. "
+                f"Current frame columns: {sorted(available_columns)}"
+            )
+
+        self.__grouping_column_name_list = input_cols.copy()
 
     def __getitem__(self, item: PyLegendUnion[str, PyLegendList[str]]) -> "PandasApiGroupbyTdsFrame":
         columns_to_select: PyLegendList[str] = []
+
         if isinstance(item, str):
             columns_to_select = [item]
-        elif isinstance(item, list) and all(isinstance(col, str) for col in item):
+        elif isinstance(item, list):
             columns_to_select = item
         else:
             raise TypeError(
@@ -139,19 +141,17 @@ class PandasApiGroupbyTdsFrame:
                 f"but got: {item} (type: {type(item).__name__})"
             )
 
+        if len(columns_to_select) == 0:
+            raise ValueError("When performing column selection after groupby, at least one column must be selected.")
+
         available_columns = {c.get_name() for c in self.__base_frame.columns()}
-        for col in columns_to_select:
-            if col not in available_columns:
-                raise KeyError(
-                    f"Column - '{col}' in groupby function's aggregation list doesn't exist in the current frame. "
-                    f"Current frame columns: {available_columns}"
-                )
-            if col in self.__grouping_column_name_list:
-                raise KeyError(
-                    f"Column - '{col}' in groupby function's aggregation list is a grouping column. "
-                    f"Only non-grouping columns can be aggregated. "
-                    f"Current non-grouping columns available: {available_columns - set(self.__grouping_column_name_list)}"
-                )
+        missing_cols = [col for col in columns_to_select if col not in available_columns]
+
+        if len(missing_cols) > 0:
+            raise KeyError(
+                f"Column(s) {missing_cols} selected after groupby do not exist in the current frame. "
+                f"Current frame columns: {sorted(available_columns)}"
+            )
 
         self.__selected_columns = columns_to_select.copy()
         return self

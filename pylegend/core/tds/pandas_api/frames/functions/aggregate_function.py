@@ -206,9 +206,15 @@ class AggregateFunction(PandasApiAppliedFunction):
     ) -> dict[str, PyLegendAggFunc]:
 
         column_names: PyLegendList[str]
-        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame) and self.__base_frame.selected_columns() is not None:
-            column_names = self.__base_frame.selected_columns()
-        else: column_names = [col.get_name() for col in self.calculate_columns()]
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            if self.__base_frame.selected_columns() is not None:
+                column_names = self.__base_frame.selected_columns()
+            else:
+                all_cols = [col.get_name() for col in self.calculate_columns()]
+                group_cols = set(self.__base_frame.grouping_column_name_list())
+                column_names = [c for c in all_cols if c not in group_cols]
+        else:
+            column_names = [col.get_name() for col in self.calculate_columns()]
 
         if isinstance(func_input, collections.abc.Mapping):
             normalized: dict[str, PyLegendAggFunc] = {}
