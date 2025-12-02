@@ -43,7 +43,7 @@ class PandasApiGroupbyTdsFrame:
 
     @classmethod
     def name(cls) -> str:
-        return "groupby"
+        return "groupby"  # pragma: no cover
     
     def __init__(
             self,
