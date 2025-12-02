@@ -44,6 +44,7 @@ jobs:
           release_version=${GITHUB_REF#refs/*/pylegend-}
           if [ ${project_version} == ${release_version} ]; then
             echo "Version matches"
+            echo "image_tag=$release_version" >> $GITHUB_OUTPUT
           else
             echo "Version in pyproject.toml ${project_version} doesn't match with release tag version ${release_version}"
             exit 1
@@ -114,3 +115,21 @@ jobs:
           fi
           echo "Poetry executable is:" $(which poetry)
           poetry publish --build --username "$PYPI_USERNAME" --password "$PYPI_PASSWORD"
+
+  docker_build_push:
+    name: Build-Push Docker Image
+    needs: [release,validate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Build-Publish Docker Image
+        shell: bash
+        run: |
+          IMAGE_TAG=${{ needs.validate.outputs.image_tag }}
+          DOCKER_USER=${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASS=${{ secrets.DOCKER_PASSWORD }}
+          docker build --build-arg PYLEGEND_VERSION=$IMAGE_TAG -f ./deployment/tag/Dockerfile -t $DOCKER_USER/pylegend:$IMAGE_TAG .
+          echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+          docker push $DOCKER_USER/pylegend:$IMAGE_TAG

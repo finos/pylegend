@@ -101,3 +101,22 @@ jobs:
         with:
           name: build-artifacts
           path: ./dist/*
+
+  docker_build_push:
+    if: github.ref == 'refs/heads/main'
+    name: Build-Push Docker Image
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Build-Publish Docker Image
+        shell: bash
+        run: |
+          IMAGE_TAG=SNAPSHOT
+          DOCKER_USER=${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASS=${{ secrets.DOCKER_PASSWORD }}
+          docker build -f ./deployment/snapshot/Dockerfile -t $DOCKER_USER/pylegend:$IMAGE_TAG .
+          echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+          docker push $DOCKER_USER/pylegend:$IMAGE_TAG
