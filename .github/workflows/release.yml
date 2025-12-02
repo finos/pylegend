@@ -118,7 +118,7 @@ jobs:
 
   docker_build_push:
     name: Build-Push Docker Image
-    needs: [release,validate]
+    needs: [validate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
