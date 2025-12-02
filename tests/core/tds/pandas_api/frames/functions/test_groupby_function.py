@@ -271,6 +271,7 @@ class TestPandasApiGroupbyAndAggregateErrors:
         )
 
 
+
 class TestGroupbyFunctionality:
 
     @pytest.fixture(autouse=True)
@@ -313,8 +314,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.integer_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby("col1")[['col2', 'col3']].aggregate({'col2':["max"], 'col3': [np.sum, np.mean]})
-        expected = """\
-                    SELECT
+        expected = """                    SELECT
                         "root".col1 AS "col1",
                         MAX("root".col2) AS "max(col2)",
                         SUM("root".col3) AS "sum(col3)",
@@ -326,8 +326,7 @@ class TestGroupbyFunctionality:
                     """
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
-            """\
-            #Table(test_schema.test_table)#
+            """            #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col1],
                 ~['max(col2)':{r | $r.col2}:{c | $c->max()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}, 'mean(col3)':{r | $r.col3}:{c | $c->average()}]
@@ -338,5 +337,318 @@ class TestGroupbyFunctionality:
             "->groupBy(~[col1], ~['max(col2)':{r | $r.col2}:{c | $c->max()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}, 'mean(col3)':{r | $r.col3}:{c | $c->average()}])"
         )
 
+    def test_groupby_multiple_grouping_columns(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"),
+                   PrimitiveTdsColumn.string_column("col2"),
+                   PrimitiveTdsColumn.integer_column("col3"),
+                   PrimitiveTdsColumn.float_column("col4")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.groupby(["col1", "col2"]).aggregate({"col3": "sum", "col4": ["min", "max"]})
+        expected_sql = """            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                SUM("root".col3) AS "col3",
+                MIN("root".col4) AS "min(col4)",
+                MAX("root".col4) AS "max(col4)"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1,
+                "root".col2
+            """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+
+        expected_pure = dedent(
+            """            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1, col2],
+                ~[col3:{r | $r.col3}:{c | $c->sum()}, 'min(col4)':{r | $r.col4}:{c | $c->min()}, 'max(col4)':{r | $r.col4}:{c | $c->max()}]
+              )"""
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=True), self.legend_client) == expected_pure
+
+        expected_pure_pretty_false = (
+            "#Table(test_schema.test_table)#"
+            "->groupBy(~[col1, col2], ~[col3:{r | $r.col3}:{c | $c->sum()}, 'min(col4)':{r | $r.col4}:{c | $c->min()}, 'max(col4)':{r | $r.col4}:{c | $c->max()}])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
+                                               self.legend_client) == expected_pure_pretty_false
+
+    def test_groupby_broadcast_agg_func_string(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"),
+                   PrimitiveTdsColumn.integer_column("col2"),
+                   PrimitiveTdsColumn.float_column("col3")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.groupby("col1").aggregate("sum")
+        expected_sql = """            SELECT
+                "root".col1 AS "col1",
+                SUM("root".col2) AS "col2",
+                SUM("root".col3) AS "col3"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+
+        expected_pure = dedent(
+            """            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[col2:{r | $r.col2}:{c | $c->sum()}, col3:{r | $r.col3}:{c | $c->sum()}]
+              )"""
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=True), self.legend_client) == expected_pure
+
+        expected_pure_pretty_false = (
+            "#Table(test_schema.test_table)#"
+            "->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->sum()}, col3:{r | $r.col3}:{c | $c->sum()}])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
+                                               self.legend_client) == expected_pure_pretty_false
+
+    def test_groupby_broadcast_agg_func_list(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"),
+                   PrimitiveTdsColumn.integer_column("col2"),
+                   PrimitiveTdsColumn.float_column("col3")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.groupby("col1").aggregate(['sum', 'mean'])
+        expected_sql = """            SELECT
+                "root".col1 AS "col1",
+                SUM("root".col2) AS "sum(col2)",
+                AVG("root".col2) AS "mean(col2)",
+                SUM("root".col3) AS "sum(col3)",
+                AVG("root".col3) AS "mean(col3)"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+
+        expected_pure = dedent(
+            """            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~['sum(col2)':{r | $r.col2}:{c | $c->sum()}, 'mean(col2)':{r | $r.col2}:{c | $c->average()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}, 'mean(col3)':{r | $r.col3}:{c | $c->average()}]
+              )"""
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=True), self.legend_client) == expected_pure
+
+        expected_pure_pretty_false = (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], "
+            "~['sum(col2)':{r | $r.col2}:{c | $c->sum()}, 'mean(col2)':{r | $r.col2}:{c | $c->average()}, "
+            "'sum(col3)':{r | $r.col3}:{c | $c->sum()}, 'mean(col3)':{r | $r.col3}:{c | $c->average()}])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
+                                               self.legend_client) == expected_pure_pretty_false
+
+    def test_groupby_aggregate_with_string_input(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"),
+                   PrimitiveTdsColumn.integer_column("col2"),
+                   PrimitiveTdsColumn.integer_column("col3")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("col1").aggregate("sum")
+        
+        expected_sql = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        SUM("root".col2) AS "col2",
+                        SUM("root".col3) AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".col1
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[col2:{r | $r.col2}:{c | $c->sum()}, col3:{r | $r.col3}:{c | $c->sum()}]
+              )"""
+        )
+
+    def test_groupby_aggregate_with_list_input(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"),
+                   PrimitiveTdsColumn.number_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("col1")["col2"].aggregate(["min", "max"])
+        
+        expected_sql = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        MIN("root".col2) AS "min(col2)",
+                        MAX("root".col2) AS "max(col2)"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".col1
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+        
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~['min(col2)':{r | $r.col2}:{c | $c->min()}, 'max(col2)':{r | $r.col2}:{c | $c->max()}]
+              )"""
+        )
+
+    def test_groupby_aggregate_with_mixed_dict_input(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("Region"),
+                   PrimitiveTdsColumn.integer_column("Sales"),
+                   PrimitiveTdsColumn.integer_column("Profit")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("Region").aggregate({
+            "Sales": ["sum", "mean"],
+            "Profit": "max"
+        })
+        
+        expected_sql = """\
+                    SELECT
+                        "root".Region AS "Region",
+                        SUM("root".Sales) AS "sum(Sales)",
+                        AVG("root".Sales) AS "mean(Sales)",
+                        MAX("root".Profit) AS "Profit"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".Region
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+        
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[Region],
+                ~['sum(Sales)':{r | $r.Sales}:{c | $c->sum()}, 'mean(Sales)':{r | $r.Sales}:{c | $c->average()}, Profit:{r | $r.Profit}:{c | $c->max()}]
+              )"""
+        )
+
+    def test_groupby_aggregate_with_lambdas(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("id"),
+                   PrimitiveTdsColumn.float_column("val")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("id").aggregate({
+            "val": [lambda x: x.min(), lambda x: x.max()]
+        })
+        
+        expected_sql = """\
+                    SELECT
+                        "root".id AS "id",
+                        MIN("root".val) AS "lambda_1(val)",
+                        MAX("root".val) AS "lambda_2(val)"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".id
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+        
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[id],
+                ~['lambda_1(val)':{r | $r.val}:{c | $c->min()}, 'lambda_2(val)':{r | $r.val}:{c | $c->max()}]
+              )"""
+        )
+
+    def test_groupby_multiple_grouping_keys(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("Category"),
+                   PrimitiveTdsColumn.string_column("SubCategory"),
+                   PrimitiveTdsColumn.integer_column("Amount")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby(["Category", "SubCategory"]).aggregate({"Amount": "sum"})
+        
+        expected_sql = """\
+                    SELECT
+                        "root".Category AS "Category",
+                        "root".SubCategory AS "SubCategory",
+                        SUM("root".Amount) AS "Amount"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".Category,
+                        "root".SubCategory
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+        
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[Category, SubCategory],
+                ~[Amount:{r | $r.Amount}:{c | $c->sum()}]
+              )"""
+        )
+
+    def test_groupby_explicit_aggregation_of_grouping_key(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("Type"),
+                   PrimitiveTdsColumn.integer_column("Value")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("Type").aggregate({"Type": "count", "Value": "sum"})
+        
+        expected_sql = """\
+                    SELECT
+                        "root".Type AS "Type",
+                        COUNT("root".Type) AS "count(Type)",
+                        SUM("root".Value) AS "Value"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".Type
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+        
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[Type],
+                ~['count(Type)':{r | $r.Type}:{c | $c->count()}, Value:{r | $r.Value}:{c | $c->sum()}]
+              )"""
+        )
+
+    def test_groupby_numpy_functions_integration(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("id"),
+                   PrimitiveTdsColumn.float_column("score")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("id")["score"].aggregate([np.min, np.sum])
+        
+        expected_sql = """\
+                    SELECT
+                        "root".id AS "id",
+                        MIN("root".score) AS "min(score)",
+                        SUM("root".score) AS "sum(score)"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".id
+                    """
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
+        
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[id],
+                ~['min(score)':{r | $r.score}:{c | $c->min()}, 'sum(score)':{r | $r.score}:{c | $c->sum()}]
+              )"""
+        )
+
+        
 
 # class TestGroupbyForCoverage:

@@ -25,6 +25,7 @@ from pylegend._typing import (
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
     PyLegendAggFunc,
     PyLegendAggInput,
+    PyLegendAggList,
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
@@ -256,24 +257,25 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         validation_columns: PyLegendList[str]
         default_broadcast_columns: PyLegendList[str]
+        group_cols: set[str] = set()
 
         all_cols = [col.get_name() for col in self.base_frame().columns()]
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            group_cols = set(self.__base_frame.grouping_column_name_list())
+            
             if self.__base_frame.selected_columns() is not None:
                 validation_columns = self.__base_frame.selected_columns()
                 default_broadcast_columns = self.__base_frame.selected_columns()
             else:
                 validation_columns = all_cols
-
-                group_cols = set(self.__base_frame.grouping_column_name_list())
                 default_broadcast_columns = [c for c in all_cols if c not in group_cols]
         else:
             validation_columns = all_cols
             default_broadcast_columns = all_cols
 
         if isinstance(func_input, collections.abc.Mapping):
-            normalized: dict[str, PyLegendAggFunc] = {}
+            normalized: dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]] = {}
 
             for key, value in func_input.items():
                 if not isinstance(key, str):
@@ -307,9 +309,13 @@ class AggregateFunction(PandasApiAppliedFunction):
                             f"Invalid `func` argument for the aggregate function.\n"
                             f"When a dictionary is provided, the value must be a callable, str, or np.ufunc "
                             f"(or a list containing these).\n"
-                            f"But got value for key {key!r}: {value!r} (type: {type(value).__name__})\n"
+                            f"But got value for key '{key}': {value} (type: {type(value).__name__})\n"
                         )
-                    normalized[key] = value
+
+                    if key in group_cols:
+                        normalized[key] = [value]
+                    else:
+                        normalized[key] = value
 
             return normalized
 
