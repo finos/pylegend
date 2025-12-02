@@ -111,12 +111,28 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Build-Publish Docker Image
+      - name: Build Docker Image
         shell: bash
         run: |
           IMAGE_TAG=SNAPSHOT
           DOCKER_USER=${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASS=${{ secrets.DOCKER_PASSWORD }}
           docker build -f ./deployment/snapshot/Dockerfile -t $DOCKER_USER/pylegend:$IMAGE_TAG .
+
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/pylegend:SNAPSHOT
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Publish Docker Image
+        shell: bash
+        run: |
+          IMAGE_TAG=SNAPSHOT
+          DOCKER_USER=${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASS=${{ secrets.DOCKER_PASSWORD }}
           echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
           docker push $DOCKER_USER/pylegend:$IMAGE_TAG
