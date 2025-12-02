@@ -134,5 +134,21 @@ jobs:
           DOCKER_USER=${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASS=${{ secrets.DOCKER_PASSWORD }}
           docker build --build-arg PYLEGEND_VERSION=$IMAGE_TAG -f ./deployment/tag/Dockerfile -t $DOCKER_USER/pylegend:$IMAGE_TAG .
+
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/pylegend:${{ needs.validate.outputs.image_tag }}
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Publish Docker Image
+        shell: bash
+        run: |
+          IMAGE_TAG=${{ needs.validate.outputs.image_tag }}
+          DOCKER_USER=${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASS=${{ secrets.DOCKER_PASSWORD }}
           echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
           docker push $DOCKER_USER/pylegend:$IMAGE_TAG
