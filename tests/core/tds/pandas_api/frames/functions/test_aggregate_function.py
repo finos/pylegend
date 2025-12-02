@@ -83,23 +83,6 @@ class TestAggregateFunction:
         )
         assert expected_msg == v.value.args[0]
 
-    def test_aggregate_error_dict_value_list_invalid_length(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(ValueError) as v:
-            frame.aggregate({"col1": ["min", "max"]})
-
-        expected_msg = (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When providing a list of functions for a specific column, "
-            "the list must contain exactly one element (single aggregation only).\n"
-            "Column: 'col1'\n"
-            "List Length: 2\n"
-            "Value: ['min', 'max']\n"
-        )
-        assert v.value.args[0] == expected_msg
-
     def test_aggregate_error_dict_value_list_invalid_content_type(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
@@ -109,8 +92,8 @@ class TestAggregateFunction:
 
         expected_msg = (
             "Invalid `func` argument for the aggregate function.\n"
-            "The single element in the list for key 'col1' must be a callable, str, or np.ufunc.\n"
-            "But got element: 123 (type: int)\n"
+            "When a list is provided for a column, all elements must be callable, str, or np.ufunc.\n"
+            "But got element at index 0: 123 (type: int)\n"
         )
         assert v.value.args[0] == expected_msg
 
@@ -124,42 +107,8 @@ class TestAggregateFunction:
         expected_msg = (
             "Invalid `func` argument for the aggregate function.\n"
             "When a dictionary is provided, the value must be a callable, str, or np.ufunc "
-            "(or a list containing exactly one of these).\n"
+            "(or a list containing these).\n"
             "But got value for key 'col1': 123 (type: int)\n"
-        )
-        assert v.value.args[0] == expected_msg
-
-    def test_aggregate_error_list_input_invalid_length(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(ValueError) as v:
-            frame.aggregate(["min", "max"])
-
-        expected_msg = (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When providing a list as the func argument, it must contain exactly one element "
-            "(which will be applied to all columns).\n"
-            "Multiple functions are not supported.\n"
-            "List Length: 2\n"
-            "Input: ['min', 'max']\n"
-        )
-        assert v.value.args[0] == expected_msg
-
-    def test_aggregate_error_list_input_empty(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(ValueError) as v:
-            frame.aggregate([])
-
-        expected_msg = (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When providing a list as the func argument, it must contain exactly one element "
-            "(which will be applied to all columns).\n"
-            "Multiple functions are not supported.\n"
-            "List Length: 0\n"
-            "Input: []\n"
         )
         assert v.value.args[0] == expected_msg
 
@@ -172,8 +121,8 @@ class TestAggregateFunction:
 
         expected_msg = (
             "Invalid `func` argument for the aggregate function.\n"
-            "The single element in the top-level list must be a callable, str, or np.ufunc.\n"
-            "But got element: 123 (type: int)\n"
+            "When a list is provided as the main argument, all elements must be callable, str, or np.ufunc.\n"
+            "But got element at index 0: 123 (type: int)\n"
         )
         assert v.value.args[0] == expected_msg
 
@@ -198,8 +147,8 @@ class TestAggregateFunction:
         frame = frame.aggregate({'col1': ['min'], 'col2': ['count']})
         expected = """\
                     SELECT
-                        MIN("root".col1) AS "col1",
-                        COUNT("root".col2) AS "col2"
+                        MIN("root".col1) AS "min(col1)",
+                        COUNT("root".col2) AS "count(col2)"
                     FROM
                         test_schema.test_table AS "root"
                     """
@@ -208,12 +157,12 @@ class TestAggregateFunction:
             """\
             #Table(test_schema.test_table)#
               ->aggregate(
-                ~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->count()}]
+                ~['min(col1)':{r | $r.col1}:{c | $c->min()}, 'count(col2)':{r | $r.col2}:{c | $c->count()}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->count()}])"
+            "->aggregate(~['min(col1)':{r | $r.col1}:{c | $c->min()}, 'count(col2)':{r | $r.col2}:{c | $c->count()}])"
         )
 
     def test_aggregate_for_bool_and_datetime_column(self) -> None:
@@ -222,8 +171,8 @@ class TestAggregateFunction:
         frame = frame.aggregate({'col1': ['count'], 'col2': ['min']})
         expected = """\
                     SELECT
-                        COUNT("root".col1) AS "col1",
-                        MIN("root".col2) AS "col2"
+                        COUNT("root".col1) AS "count(col1)",
+                        MIN("root".col2) AS "min(col2)"
                     FROM
                         test_schema.test_table AS "root"
                     """
@@ -237,8 +186,8 @@ class TestAggregateFunction:
         frame = frame.aggregate({'col3': ['var'], 'col2': ['std']})
         expected = """\
                     SELECT
-                        VAR_SAMP("root".col3) AS "col3",
-                        STDDEV_SAMP("root".col2) AS "col2"
+                        VAR_SAMP("root".col3) AS "var(col3)",
+                        STDDEV_SAMP("root".col2) AS "std(col2)"
                     FROM
                         test_schema.test_table AS "root"
                     """
@@ -247,12 +196,12 @@ class TestAggregateFunction:
             """\
             #Table(test_schema.test_table)#
               ->aggregate(
-                ~[col3:{r | $r.col3}:{c | $c->varianceSample()}, col2:{r | $r.col2}:{c | $c->stdDevSample()}]
+                ~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, 'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~[col3:{r | $r.col3}:{c | $c->varianceSample()}, col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "->aggregate(~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, 'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}])"
         )
 
     def test_aggregate_repeat_column(self) -> None:
@@ -263,7 +212,7 @@ class TestAggregateFunction:
         frame = frame.aggregate({'col3': ['var'], 'col3': ['std']})  # noqa
         expected = """\
                     SELECT
-                        STDDEV_SAMP("root".col3) AS "col3"
+                        STDDEV_SAMP("root".col3) AS "std(col3)"
                     FROM
                         test_schema.test_table AS "root"
                     """
@@ -272,12 +221,12 @@ class TestAggregateFunction:
             """\
             #Table(test_schema.test_table)#
               ->aggregate(
-                ~[col3:{r | $r.col3}:{c | $c->stdDevSample()}]
+                ~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~[col3:{r | $r.col3}:{c | $c->stdDevSample()}])"
+            "->aggregate(~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()}])"
         )
 
     def test_aggregate_subquery_generation(self) -> None:
@@ -286,8 +235,8 @@ class TestAggregateFunction:
         frame = frame.truncate(5, 10).aggregate({'col1': ['min'], 'col2': ['count']})
         expected = """\
                     SELECT
-                        MIN("root"."col1") AS "col1",
-                        COUNT("root"."col2") AS "col2"
+                        MIN("root"."col1") AS "min(col1)",
+                        COUNT("root"."col2") AS "count(col2)"
                     FROM
                         (
                             SELECT
@@ -305,13 +254,13 @@ class TestAggregateFunction:
             #Table(test_schema.test_table)#
               ->slice(5, 11)
               ->aggregate(
-                ~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->count()}]
+                ~['min(col1)':{r | $r.col1}:{c | $c->min()}, 'count(col2)':{r | $r.col2}:{c | $c->count()}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
             "->slice(5, 11)"
-            "->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->count()}])"
+            "->aggregate(~['min(col1)':{r | $r.col1}:{c | $c->min()}, 'count(col2)':{r | $r.col2}:{c | $c->count()}])"
         )
 
     def test_e2e_aggregate_single_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
@@ -328,7 +277,7 @@ class TestAggregateFunction:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.aggregate({'Age': ['sum']})
         expected = {
-            "columns": ["Age"],
+            "columns": ["sum(Age)"],
             "rows": [{"values": [180]}]
         }
         res = frame.execute_frame_to_string()
@@ -384,7 +333,7 @@ class TestAggregateFunction:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.aggregate([np.maximum])
         expected = {
-            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+            "columns": ["maximum(First Name)", "maximum(Last Name)", "maximum(Age)", "maximum(Firm/Legal Name)"],
             "rows": [{"values": ["Peter", "Smith", 35, "Firm X"]}]
         }
         res = frame.execute_frame_to_string()
