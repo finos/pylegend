@@ -22,6 +22,8 @@ jobs:
   validate:
     name: Validate Release
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.validate_and_set_image_tag.outputs.image_tag }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -32,6 +34,7 @@ jobs:
           python-version: 3.12
 
       - name: Validate
+        id: validate_and_set_image_tag
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
