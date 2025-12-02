@@ -34,11 +34,239 @@ from tests.test_helpers.test_legend_service_frames import (
 
 
 
+class TestPandasApiGroupbyAndAggregateErrors:
+
+    def test_groupby_error_invalid_level(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby('col1', level=1)
+        assert v.value.args[0] == (
+            "The 'level' parameter of the groupby function is not supported yet. "
+            "Please specify groupby column names using the 'by' parameter."
+        )
+
+    def test_groupby_error_as_index_true(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby('col1', as_index=True)
+        assert v.value.args[0] == (
+            "The 'as_index' parameter of the groupby function must be False, "
+            "but got: True (type: bool)"
+        )
+
+    def test_groupby_error_group_keys_true(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby('col1', group_keys=True)
+        assert v.value.args[0] == (
+            "The 'group_keys' parameter of the groupby function must be False, "
+            "but got: True (type: bool)"
+        )
+
+    def test_groupby_error_observed_true(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby('col1', observed=True)
+        assert v.value.args[0] == (
+            "The 'observed' parameter of the groupby function must be False, "
+            "but got: True (type: bool)"
+        )
+
+    def test_groupby_error_dropna_true(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby('col1', dropna=True)
+        assert v.value.args[0] == (
+            "The 'dropna' parameter of the groupby function must be False, "
+            "but got: True (type: bool)"
+        )
+
+    def test_groupby_error_invalid_by_type(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(TypeError) as v:
+            frame.groupby(by=123)  # type: ignore
+        assert v.value.args[0] == (
+            "The 'by' parameter in groupby function must be a string or a list of strings."
+            "but got: 123 (type: int)"
+        )
+
+    def test_groupby_error_empty_by_list(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(ValueError) as v:
+            frame.groupby(by=[])
+        assert v.value.args[0] == (
+            "The 'by' parameter in groupby function must contain at least one column name."
+        )
+
+    def test_groupby_error_missing_column(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(KeyError) as v:
+            frame.groupby(by=['col1', 'missing_col'])
+        # Note: sorted(['col1']) is ['col1']
+        assert "Column(s) ['missing_col'] in groupby function's provided columns list do not exist" in v.value.args[0]
+        assert "Current frame columns: ['col1']" in v.value.args[0]
+
+    def test_groupby_getitem_error_invalid_type(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby('col1')
+        with pytest.raises(TypeError) as v:
+            gb[123]  # type: ignore
+        assert v.value.args[0] == (
+            "Column selection after groupby function must be a string or a list of strings, "
+            "but got: 123 (type: int)"
+        )
+
+    def test_groupby_getitem_error_empty_list(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby('col1')
+        with pytest.raises(ValueError) as v:
+            gb[[]]
+        assert v.value.args[0] == (
+            "When performing column selection after groupby, at least one column must be selected."
+        )
+
+    def test_groupby_getitem_error_missing_column(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby('col1')
+        with pytest.raises(KeyError) as v:
+            gb[['col2', 'missing_col']]
+        assert "Column(s) ['missing_col'] selected after groupby do not exist" in v.value.args[0]
+        assert "Current frame columns: ['col1', 'col2']" in v.value.args[0]
+
+    def test_aggregate_error_invalid_axis(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.aggregate({'col1': 'sum'}, axis=1)
+        assert v.value.args[0] == (
+            "The 'axis' parameter of the aggregate function must be 0 or 'index', but got: 1"
+        )
+
+    def test_aggregate_error_extra_args(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.aggregate({'col1': 'sum'}, 0, "extra_arg")
+        assert v.value.args[0] == (
+            "AggregateFunction currently does not support additional positional "
+            "or keyword arguments. Please remove extra *args/**kwargs."
+        )
+
+    def test_aggregate_error_extra_kwargs(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.aggregate({'col1': 'sum'}, extra_kwarg=1)
+        assert v.value.args[0] == (
+            "AggregateFunction currently does not support additional positional "
+            "or keyword arguments. Please remove extra *args/**kwargs."
+        )
+
+    def test_aggregate_dict_error_key_not_string(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(TypeError) as v:
+            frame.aggregate({1: 'sum'})  # type: ignore
+        assert v.value.args[0] == (
+            "Invalid `func` argument for the aggregate function.\n"
+            "When a dictionary is provided, all keys must be strings.\n"
+            "But got key: 1 (type: int)\n"
+        )
+
+    def test_aggregate_dict_error_key_missing_column(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(ValueError) as v:
+            frame.aggregate({'missing': 'sum'})
+        assert "Invalid `func` argument for the aggregate function." in v.value.args[0]
+        assert "When a dictionary is provided, all keys must be column names." in v.value.args[0]
+        assert "Available columns are: ['col1']" in v.value.args[0]
+        assert "But got key: 'missing' (type: str)" in v.value.args[0]
+
+    def test_aggregate_dict_error_list_invalid_element(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(TypeError) as v:
+            frame.aggregate({'col1': ['sum', 123]})
+        assert "When a list is provided for a column, all elements must be callable, str, or np.ufunc." in v.value.args[0]
+        assert "But got element at index 1: 123 (type: int)" in v.value.args[0]
+
+    def test_aggregate_dict_error_scalar_invalid_type(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(TypeError) as v:
+            frame.aggregate({'col1': 123})
+        assert "When a dictionary is provided, the value must be a callable, str, or np.ufunc" in v.value.args[0]
+        assert "But got value for key 'col1': 123 (type: int)" in v.value.args[0]
+
+    def test_aggregate_list_error_invalid_element(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(TypeError) as v:
+            frame.aggregate(['sum', 123])
+        assert "When a list is provided as the main argument, all elements must be callable, str, or np.ufunc." in v.value.args[0]
+        assert "But got element at index 1: 123 (type: int)" in v.value.args[0]
+
+    def test_aggregate_scalar_error_invalid_type(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(TypeError) as v:
+            frame.aggregate(123)
+        assert "Invalid `func` argument for aggregate function." in v.value.args[0]
+        assert "But got: 123 (type: int)" in v.value.args[0]
+
+    def test_normalize_agg_func_error_unsupported_string(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.aggregate({'col1': 'unsupported_func'})
+        assert "The string 'unsupported_func' does not correspond to any supported aggregation." in v.value.args[0]
+
+    def test_normalize_agg_func_error_unsupported_ufunc(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.aggregate({'col1': np.sin}) # np.sin is a ufunc, but not a supported agg
+        assert "The NumPy function 'sin' is not supported." in v.value.args[0]
+
+    def test_aggregate_custom_lambda_invalid_return_type(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        
+        # We need to trigger the execution logic to catch this
+        # Since this test uses TableSpecInputFrame, validate() runs immediately
+        with pytest.raises(TypeError) as v:
+            frame.aggregate(lambda x: 0)
+            
+        assert "Custom aggregation function must return a PyLegendPrimitive (Expression)." in v.value.args[0]
+        assert "But got type: int" in v.value.args[0]
+        assert "Value: 0" in v.value.args[0]
+
+
 class TestGroupbyFunction:
 
     # @pytest.fixture(autouse=True)
     # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
     #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_aggregate_error_invalid_level(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby('col1', level=1)
+        assert v.value.args[0] == f"The 'level' parameter of the groupby function is not supported yet. "\
+                f"Please specify groupby column names using the 'by' parameter."
 
     def test_groupby_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
@@ -75,7 +303,7 @@ class TestGroupbyFunction:
                    PrimitiveTdsColumn.date_column("col2"),
                    PrimitiveTdsColumn.integer_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.groupby("col1").aggregate("min")
+        frame = frame.groupby("col1")[['col2', 'col3']].aggregate({'col2':["min", "max"], 'col3': [np.sum, np.mean]})
         expected = """\
                     SELECT
                         "root".col1 AS "col1",

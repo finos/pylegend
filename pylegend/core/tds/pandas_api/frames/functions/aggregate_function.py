@@ -30,13 +30,21 @@ from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection, create_primitive_collection
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.shared.primitives.date import PyLegendDate
+from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
+from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import QuerySpecification, SelectItem, SingleColumn
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn, TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 
@@ -153,10 +161,42 @@ class AggregateFunction(PandasApiAppliedFunction):
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
+        if not self.__aggregates_list:
+            self.validate()
+
+        new_columns = []
+
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            return [c.copy() for c in self.base_frame().columns()]
+            base_cols_map = {c.get_name(): c for c in self.base_frame().columns()}
+            
+            for group_col_name in self.__base_frame.grouping_column_name_list():
+                if group_col_name in base_cols_map:
+                    new_columns.append(base_cols_map[group_col_name].copy())
+
+        for alias, _, agg_expr in self.__aggregates_list:
+            new_columns.append(self.__infer_column_from_expression(alias, agg_expr))
+
+        return new_columns
+    
+    def __infer_column_from_expression(self, name: str, expr: PyLegendPrimitive) -> TdsColumn:
+        if isinstance(expr, PyLegendInteger):
+            return PrimitiveTdsColumn.integer_column(name)
+        elif isinstance(expr, PyLegendFloat):
+            return PrimitiveTdsColumn.float_column(name)
+        elif isinstance(expr, PyLegendNumber):
+            return PrimitiveTdsColumn.number_column(name)
+        elif isinstance(expr, PyLegendString):
+            return PrimitiveTdsColumn.string_column(name)
+        elif isinstance(expr, PyLegendBoolean):
+            return PrimitiveTdsColumn.boolean_column(name)
+        elif isinstance(expr, PyLegendDate):
+            return PrimitiveTdsColumn.date_column(name)
+        elif isinstance(expr, PyLegendDateTime):
+            return PrimitiveTdsColumn.datetime_column(name)
+        elif isinstance(expr, PyLegendStrictDate):
+            return PrimitiveTdsColumn.strictdate_column(name)
         else:
-            return [c.copy() for c in self.__base_frame.columns()]
+            raise TypeError(f"Could not infer TdsColumn type for aggregation result type: {type(expr)}")
 
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:
@@ -217,7 +257,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         validation_columns: PyLegendList[str]
         default_broadcast_columns: PyLegendList[str]
 
-        all_cols = [col.get_name() for col in self.calculate_columns()]
+        all_cols = [col.get_name() for col in self.base_frame().columns()]
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             if self.__base_frame.selected_columns() is not None:
