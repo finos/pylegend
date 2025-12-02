@@ -25,7 +25,6 @@ from pylegend._typing import (
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
     PyLegendAggFunc,
     PyLegendAggInput,
-    PyLegendAggList
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
@@ -47,7 +46,6 @@ class AggregateFunction(PandasApiAppliedFunction):
     __axis: PyLegendUnion[int, str]
     __args: PyLegendSequence[PyLegendPrimitiveOrPythonPrimitive]
     __kwargs: PyLegendMapping[str, PyLegendPrimitiveOrPythonPrimitive]
-    # __multiple_aggregates_for_one_column: bool
 
     @classmethod
     def name(cls) -> str:
@@ -104,13 +102,6 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
-            if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame) and\
-                self.__base_frame.selected_columns() is not None and\
-                agg[0] not in self.__base_frame.selected_columns():
-                raise KeyError(
-                    f"Column - '{agg[0]}' in aggregate function's aggregation list was not selected "
-                    f"after groupby. Selected columns: {self.__base_frame.selected_columns()}"
-                )
 
             new_select_items.append(
                 SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr)
@@ -187,16 +178,34 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
 
-        for column_name, aggregate_function in normalized_func.items():
+        for column_name, agg_input in normalized_func.items():
             mapper_function: PyLegendCallable[[PandasApiTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
                 f'lambda r: r["{column_name}"]')
             map_result: PyLegendPrimitiveOrPythonPrimitive = mapper_function(tds_row)
             collection: PyLegendPrimitiveCollection = create_primitive_collection(map_result)
 
-            normalized_aggregate_function = self.__normalize_agg_func_to_lambda_function(aggregate_function)
-            agg_result: PyLegendPrimitive = normalized_aggregate_function(collection)
+            if isinstance(agg_input, list):
+                lambda_counter = 0
+                for func in agg_input:
+                    is_anonymous_lambda = False
+                    if not isinstance(func, str):
+                        if getattr(func, "__name__", "<lambda>") == "<lambda>":
+                            is_anonymous_lambda = True
+                    
+                    if is_anonymous_lambda:
+                        lambda_counter += 1
+                    
+                    normalized_agg_func = self.__normalize_agg_func_to_lambda_function(func)
+                    agg_result = normalized_agg_func(collection)
+                    
+                    alias = self._generate_column_alias(column_name, func, lambda_counter)
+                    self.__aggregates_list.append((alias, map_result, agg_result))
 
-            self.__aggregates_list.append((column_name, map_result, agg_result))
+            else:
+                normalized_agg_func = self.__normalize_agg_func_to_lambda_function(agg_input)
+                agg_result = normalized_agg_func(collection)
+                
+                self.__aggregates_list.append((column_name, map_result, agg_result))
 
         return True
 
@@ -243,33 +252,21 @@ class AggregateFunction(PandasApiAppliedFunction):
                     )
 
                 if isinstance(value, collections.abc.Sequence) and not isinstance(value, str):
-                    if len(value) != 1:
-                        raise ValueError(
-                            f"Invalid `func` argument for the aggregate function.\n"
-                            f"When providing a list of functions for a specific column, "
-                            f"the list must contain exactly one element (single aggregation only).\n"
-                            f"Column: {key!r}\n"
-                            f"List Length: {len(value)}\n"
-                            f"Value: {value!r}\n"
-                        )
-                    
-                    single_func = value[0]
-
-                    if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
-                        raise TypeError(
-                            f"Invalid `func` argument for the aggregate function.\n"
-                            f"The single element in the list for key {key!r} must be a callable, str, or np.ufunc.\n"
-                            f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
-                        )
-                    
-                    normalized[key] = single_func
+                    for i, f in enumerate(value):
+                        if not (callable(f) or isinstance(f, str) or isinstance(f, np.ufunc)):
+                            raise TypeError(
+                                f"Invalid `func` argument for the aggregate function.\n"
+                                f"When a list is provided for a column, all elements must be callable, str, or np.ufunc.\n"
+                                f"But got element at index {i}: {f!r} (type: {type(f).__name__})\n"
+                            )
+                    normalized[key] = value
 
                 else:
                     if not (callable(value) or isinstance(value, str) or isinstance(value, np.ufunc)):
                         raise TypeError(
                             f"Invalid `func` argument for the aggregate function.\n"
                             f"When a dictionary is provided, the value must be a callable, str, or np.ufunc "
-                            f"(or a list containing exactly one of these).\n"
+                            f"(or a list containing these).\n"
                             f"But got value for key {key!r}: {value!r} (type: {type(value).__name__})\n"
                         )
                     normalized[key] = value
@@ -277,26 +274,15 @@ class AggregateFunction(PandasApiAppliedFunction):
             return normalized
 
         elif isinstance(func_input, collections.abc.Sequence) and not isinstance(func_input, str):
-            if len(func_input) != 1:
-                raise ValueError(
-                    f"Invalid `func` argument for the aggregate function.\n"
-                    f"When providing a list as the func argument, it must contain exactly one element "
-                    f"(which will be applied to all columns).\n"
-                    f"Multiple functions are not supported.\n"
-                    f"List Length: {len(func_input)}\n"
-                    f"Input: {func_input!r}\n"
-                )
-            
-            single_func = func_input[0]
+            for i, f in enumerate(func_input):
+                if not (callable(f) or isinstance(f, str) or isinstance(f, np.ufunc)):
+                    raise TypeError(
+                        f"Invalid `func` argument for the aggregate function.\n"
+                        f"When a list is provided as the main argument, all elements must be callable, str, or np.ufunc.\n"
+                        f"But got element at index {i}: {f!r} (type: {type(f).__name__})\n"
+                    )
 
-            if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
-                raise TypeError(
-                    f"Invalid `func` argument for the aggregate function.\n"
-                    f"The single element in the top-level list must be a callable, str, or np.ufunc.\n"
-                    f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
-                )
-
-            return {col: single_func for col in default_broadcast_columns}
+            return {col: func_input for col in default_broadcast_columns}
 
         elif callable(func_input) or isinstance(func_input, str) or isinstance(func_input, np.ufunc):
             return {col: func_input for col in default_broadcast_columns}
@@ -383,3 +369,19 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def _generate_lambda_source(self, internal_method_name: str) -> str:
         return f"lambda x: x.{internal_method_name}()"
+    
+    def _generate_column_alias(
+            self,
+            col_name: str,
+            func: PyLegendAggFunc,
+            lambda_counter: int
+    ) -> str:
+        if isinstance(func, str):
+            return f"{func}({col_name})"
+
+        func_name = getattr(func, "__name__", "<lambda>")
+        
+        if func_name != "<lambda>":
+            return f"{func_name}({col_name})"
+        else:
+            return f"lambda_{lambda_counter}({col_name})"
