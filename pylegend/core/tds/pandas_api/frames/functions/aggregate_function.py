@@ -46,7 +46,7 @@ from pylegend.core.sql.metamodel import (
     SingleColumn,
     SortItem,
     SortItemOrdering,
-    SortItemNullOrdering
+    SortItemNullOrdering,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -68,12 +68,12 @@ class AggregateFunction(PandasApiAppliedFunction):
         return "aggregate"  # pragma: no cover
 
     def __init__(
-            self,
-            base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
-            func: PyLegendAggInput,
-            axis: PyLegendUnion[int, str],
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+        self,
+        base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
+        func: PyLegendAggInput,
+        axis: PyLegendUnion[int, str],
+        *args: PyLegendPrimitiveOrPythonPrimitive,
+        **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> None:
         self.__base_frame = base_frame
         self.__func = func
@@ -87,10 +87,10 @@ class AggregateFunction(PandasApiAppliedFunction):
         base_query: QuerySpecification = self.base_frame().to_sql_query_object(config)
 
         should_create_sub_query = (
-            len(base_query.groupBy) > 0 or
-            base_query.select.distinct or
-            base_query.offset is not None or
-            base_query.limit is not None
+            len(base_query.groupBy) > 0
+            or base_query.select.distinct
+            or base_query.offset is not None
+            or base_query.limit is not None
         )
 
         new_query: QuerySpecification
@@ -102,15 +102,19 @@ class AggregateFunction(PandasApiAppliedFunction):
         new_select_items: PyLegendList[SelectItem] = []
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            columns_to_retain: PyLegendList[str] = [db_extension.quote_identifier(x) for x in self.__base_frame.grouping_column_name_list()]
-            new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
+            columns_to_retain: PyLegendList[str] = [
+                db_extension.quote_identifier(x) for x in self.__base_frame.grouping_column_name_list()
+            ]
+            new_cols_with_index: PyLegendList[PyLegendTuple[int, "SelectItem"]] = []
             for col in new_query.select.selectItems:
                 if not isinstance(col, SingleColumn):
-                    raise ValueError("Group By operation not supported for queries "
-                                    "with columns other than SingleColumn")  # pragma: no cover
+                    raise ValueError(
+                        "Group By operation not supported for queries " "with columns other than SingleColumn"
+                    )  # pragma: no cover
                 if col.alias is None:
-                    raise ValueError("Group By operation not supported for queries "
-                                    "with SingleColumns with missing alias")  # pragma: no cover
+                    raise ValueError(
+                        "Group By operation not supported for queries " "with SingleColumns with missing alias"
+                    )  # pragma: no cover
                 if col.alias in columns_to_retain:
                     new_cols_with_index.append((columns_to_retain.index(col.alias), col))
 
@@ -119,9 +123,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
 
-            new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr)
-            )
+            new_select_items.append(SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr))
 
         new_query.select.selectItems = new_select_items
 
@@ -132,16 +134,14 @@ class AggregateFunction(PandasApiAppliedFunction):
                 for c in self.__base_frame.grouping_column_name_list()
             ]
 
-            # Handle Sort=True
-            # Accessing private attribute via name mangling because getter is not available
             is_sorted = getattr(self.__base_frame, "_PandasApiGroupbyTdsFrame__sort", True)
-            
+
             if is_sorted:
                 new_query.orderBy = [
                     SortItem(
                         sortKey=(lambda x: x[c])(tds_row).to_sql_expression({"r": new_query}, config),
                         ordering=SortItemOrdering.ASCENDING,
-                        nullOrdering=SortItemNullOrdering.UNDEFINED
+                        nullOrdering=SortItemNullOrdering.UNDEFINED,
                     )
                     for c in self.__base_frame.grouping_column_name_list()
                 ]
@@ -151,37 +151,43 @@ class AggregateFunction(PandasApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         agg_strings = []
         for agg in self.__aggregates_list:
-            map_expr_string = (agg[1].to_pure_expression(config) if isinstance(agg[1], PyLegendPrimitive)
-                               else convert_literal_to_literal_expression(agg[1]).to_pure_expression(config))
+            map_expr_string = (
+                agg[1].to_pure_expression(config)
+                if isinstance(agg[1], PyLegendPrimitive)
+                else convert_literal_to_literal_expression(agg[1]).to_pure_expression(config)
+            )
             agg_expr_string = agg[2].to_pure_expression(config).replace(map_expr_string, "$c")
-            agg_strings.append(f"{escape_column_name(agg[0])}:{generate_pure_lambda('r', map_expr_string)}:"
-                               f"{generate_pure_lambda('c', agg_expr_string)}")
+            agg_strings.append(
+                f"{escape_column_name(agg[0])}:{generate_pure_lambda('r', map_expr_string)}:"
+                f"{generate_pure_lambda('c', agg_expr_string)}"
+            )
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             group_strings = []
             for col_name in self.__base_frame.grouping_column_name_list():
                 group_strings.append(escape_column_name(col_name))
 
-            pure_expression = (f"{self.base_frame().to_pure(config)}{config.separator(1)}" +
-                               f"->groupBy({config.separator(2)}"
-                               f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
-                               f"~[{', '.join(agg_strings)}]{config.separator(1)}"
-                               f")")
-            
-            # Handle Sort=True
-            # Accessing private attribute via name mangling
+            pure_expression = (
+                f"{self.base_frame().to_pure(config)}{config.separator(1)}" + f"->groupBy({config.separator(2)}"
+                f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
+                f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                f")"
+            )
+
             is_sorted = getattr(self.__base_frame, "_PandasApiGroupbyTdsFrame__sort", True)
-            
+
             if is_sorted:
                 sort_items = [f"~{c}->ascending()" for c in group_strings]
                 pure_expression += f"{config.separator(1)}->sort([{', '.join(sort_items)}])"
-            
+
             return pure_expression
         else:
-            return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-                    f"->aggregate({config.separator(2)}"
-                    f"~[{', '.join(agg_strings)}]{config.separator(1)}"
-                    f")")
+            return (
+                f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+                f"->aggregate({config.separator(2)}"
+                f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                f")"
+            )
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
@@ -205,7 +211,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             new_columns.append(self.__infer_column_from_expression(alias, agg_expr))
 
         return new_columns
-    
+
     def __infer_column_from_expression(self, name: str, expr: PyLegendPrimitive) -> TdsColumn:
         if isinstance(expr, PyLegendInteger):
             return PrimitiveTdsColumn.integer_column(name)
@@ -238,17 +244,18 @@ class AggregateFunction(PandasApiAppliedFunction):
                 "or keyword arguments. Please remove extra *args/**kwargs."
             )
 
-        self.__aggregates_list: PyLegendList[
-            PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
-        ] = []
+        self.__aggregates_list: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]] = []
 
-        normalized_func: dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]] = self.__normalize_input_func_to_standard_dict(self.__func)
+        normalized_func: dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]] = (
+            self.__normalize_input_func_to_standard_dict(self.__func)
+        )
 
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
 
         for column_name, agg_input in normalized_func.items():
             mapper_function: PyLegendCallable[[PandasApiTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
-                f'lambda r: r["{column_name}"]')
+                f'lambda r: r["{column_name}"]'
+            )
             map_result: PyLegendPrimitiveOrPythonPrimitive = mapper_function(tds_row)
             collection: PyLegendPrimitiveCollection = create_primitive_collection(map_result)
 
@@ -259,27 +266,26 @@ class AggregateFunction(PandasApiAppliedFunction):
                     if not isinstance(func, str):
                         if getattr(func, "__name__", "<lambda>") == "<lambda>":
                             is_anonymous_lambda = True
-                    
+
                     if is_anonymous_lambda:
                         lambda_counter += 1
-                    
+
                     normalized_agg_func = self.__normalize_agg_func_to_lambda_function(func)
                     agg_result = normalized_agg_func(collection)
-                    
+
                     alias = self._generate_column_alias(column_name, func, lambda_counter)
                     self.__aggregates_list.append((alias, map_result, agg_result))
 
             else:
                 normalized_agg_func = self.__normalize_agg_func_to_lambda_function(agg_input)
                 agg_result = normalized_agg_func(collection)
-                
+
                 self.__aggregates_list.append((column_name, map_result, agg_result))
 
         return True
 
     def __normalize_input_func_to_standard_dict(
-            self,
-            func_input: PyLegendAggInput
+        self, func_input: PyLegendAggInput
     ) -> dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]]:
 
         validation_columns: PyLegendList[str]
@@ -292,7 +298,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             group_cols = set(self.__base_frame.grouping_column_name_list())
 
             selected_cols = self.__base_frame.selected_columns()
-            
+
             if selected_cols is not None:
                 validation_columns = selected_cols
                 default_broadcast_columns = selected_cols
@@ -371,19 +377,18 @@ class AggregateFunction(PandasApiAppliedFunction):
             )
 
     def __normalize_agg_func_to_lambda_function(
-            self,
-            func: PyLegendAggFunc
+        self, func: PyLegendAggFunc
     ) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
 
         PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[str, PyLegendList[str]] = {
-            "average":         ["mean", "average", "nanmean"],
-            "sum":             ["sum", "nansum"],
-            "min":             ["min", "amin", "minimum", "nanmin"],
-            "max":             ["max", "amax", "maximum", "nanmax"],
-            "std_dev_sample":  ["std", "std_dev", "nanstd"],
+            "average": ["mean", "average", "nanmean"],
+            "sum": ["sum", "nansum"],
+            "min": ["min", "amin", "minimum", "nanmin"],
+            "max": ["max", "amax", "maximum", "nanmax"],
+            "std_dev_sample": ["std", "std_dev", "nanstd"],
             "variance_sample": ["var", "variance", "nanvar"],
-            "median":          ["median", "nanmedian"],
-            "count":           ["count", "size", "len", "length"],
+            "median": ["median", "nanmedian"],
+            "count": ["count", "size", "len", "length"],
         }
 
         FLATTENED_FUNCTION_MAPPING: dict[str, str] = {}
@@ -430,6 +435,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                 final_lambda = eval(lambda_source)
                 return final_lambda
             else:
+
                 def validation_wrapper(x: PyLegendPrimitiveCollection) -> PyLegendPrimitive:
                     result = func(x)
                     if not isinstance(result, PyLegendPrimitive):
@@ -444,18 +450,13 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def _generate_lambda_source(self, internal_method_name: str) -> str:
         return f"lambda x: x.{internal_method_name}()"
-    
-    def _generate_column_alias(
-            self,
-            col_name: str,
-            func: PyLegendAggFunc,
-            lambda_counter: int
-    ) -> str:
+
+    def _generate_column_alias(self, col_name: str, func: PyLegendAggFunc, lambda_counter: int) -> str:
         if isinstance(func, str):
             return f"{func}({col_name})"
 
         func_name = getattr(func, "__name__", "<lambda>")
-        
+
         if func_name != "<lambda>":
             return f"{func_name}({col_name})"
         else:
