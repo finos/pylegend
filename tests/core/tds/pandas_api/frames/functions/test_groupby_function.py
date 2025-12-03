@@ -227,7 +227,7 @@ class TestGroupbyErrors:
             "Invalid `func` argument for the aggregate function.\n"
             "The string 'unsupported_func' does not correspond to any supported aggregation.\n"
             "Available string functions are: ['amax', 'amin', 'average', 'count', 'len', 'length', 'max', 'maximum'"
-            ", 'mean', 'median', 'min', 'minimum', 'nanmax', 'nanmean', 'nanmedian', 'nanmin', 'nanstd', 'nansum', 'nanvar',"
+            ", 'mean', 'min', 'minimum', 'nanmax', 'nanmean', 'nanmin', 'nanstd', 'nansum', 'nanvar',"
             " 'size', 'std', 'std_dev', 'sum', 'var', 'variance']"
         )
 
@@ -240,7 +240,7 @@ class TestGroupbyErrors:
             "Invalid `func` argument for the aggregate function.\n"
             "The NumPy function 'sin' is not supported.\n"
             "Supported aggregate functions are: ['amax', 'amin', 'average', 'count', 'len', 'length', 'max', 'maximum',"
-            " 'mean', 'median', 'min', 'minimum', 'nanmax', 'nanmean', 'nanmedian', 'nanmin', 'nanstd', 'nansum',"
+            " 'mean', 'min', 'minimum', 'nanmax', 'nanmean', 'nanmin', 'nanstd', 'nansum',"
             " 'nanvar', 'size', 'std', 'std_dev', 'sum', 'var', 'variance']"
         )
 
@@ -671,6 +671,133 @@ class TestGroupbyFunctionality:
               )"""
         )
 
+    def test_groupby_convenience_methods_all(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.number_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Reuse this GroupBy object for all assertions
+        gb = frame.groupby("col1", sort=False)
+
+        # 1. Sum
+        res = gb.sum()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                SUM("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->sum()}])"
+        )
+
+        # 2. Mean
+        res = gb.mean()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                AVG("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->average()}])"
+        )
+
+        # 4. Min
+        res = gb.min()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                MIN("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}])"
+        )
+
+        # 5. Max
+        res = gb.max()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                MAX("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->max()}])"
+        )
+
+        # 6. Std (stdDevSample)
+        res = gb.std()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                STDDEV_SAMP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+        )
+
+        # 7. Var (varianceSample)
+        res = gb.var()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                VAR_SAMP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()}])"
+        )
+
+        # 8. Count
+        res = gb.count()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                COUNT("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->count()}])"
+        )
+
+        # 9. Size (Maps to count logic but uses 'size' alias, passed as scalar 'size')
+        res = gb.size()
+        expected_sql = """\
+            SELECT
+                "root".col1 AS "col1",
+                COUNT("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1"""
+        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->count()}])"
+        )
+
 
 class TestGroupbyEndtoEnd:
     @pytest.fixture(autouse=True)
@@ -805,3 +932,5 @@ class TestGroupbyEndtoEnd:
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+    

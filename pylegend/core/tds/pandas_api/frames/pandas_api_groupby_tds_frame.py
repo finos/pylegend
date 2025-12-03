@@ -187,3 +187,71 @@ class PandasApiGroupbyTdsFrame:
         from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
         return PandasApiAppliedFunctionTdsFrame(AggregateFunction(self, func, axis, *args, **kwargs))
+    
+    def agg(
+        self,
+        func: PyLegendAggInput,
+        axis: PyLegendUnion[int, str] = 0,
+        *args: PyLegendPrimitiveOrPythonPrimitive,
+        **kwargs: PyLegendPrimitiveOrPythonPrimitive,
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
+
+        return PandasApiAppliedFunctionTdsFrame(AggregateFunction(self, func, axis, *args, **kwargs))
+
+    def sum(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("sum", 0, *args, **kwargs)
+
+    def mean(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("mean", 0, *args, **kwargs)
+
+    def min(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("min", 0, *args, **kwargs)
+
+    def max(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("max", 0, *args, **kwargs)
+
+    def std(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("std", 0, *args, **kwargs)
+
+    def var(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("var", 0, *args, **kwargs)
+
+    def count(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("count", 0, *args, **kwargs)
+
+    def size(
+            self,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        return self.aggregate("size", 0, *args, **kwargs)
