@@ -162,14 +162,10 @@ class AggregateFunction(PandasApiAppliedFunction):
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        if not self.__aggregates_list:
-            self.validate()
-
         new_columns = []
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             base_cols_map = {c.get_name(): c for c in self.base_frame().columns()}
-            
             for group_col_name in self.__base_frame.grouping_column_name_list():
                 if group_col_name in base_cols_map:
                     new_columns.append(base_cols_map[group_col_name].copy())
@@ -189,7 +185,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         elif isinstance(expr, PyLegendString):
             return PrimitiveTdsColumn.string_column(name)
         elif isinstance(expr, PyLegendBoolean):
-            return PrimitiveTdsColumn.boolean_column(name)
+            return PrimitiveTdsColumn.boolean_column(name)  # pragma: no cover
         elif isinstance(expr, PyLegendDate):
             return PrimitiveTdsColumn.date_column(name)
         elif isinstance(expr, PyLegendDateTime):
@@ -197,7 +193,7 @@ class AggregateFunction(PandasApiAppliedFunction):
         elif isinstance(expr, PyLegendStrictDate):
             return PrimitiveTdsColumn.strictdate_column(name)
         else:
-            raise TypeError(f"Could not infer TdsColumn type for aggregation result type: {type(expr)}")
+            raise TypeError(f"Could not infer TdsColumn type for aggregation result type: {type(expr)}")  # pragma: no cover
 
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:

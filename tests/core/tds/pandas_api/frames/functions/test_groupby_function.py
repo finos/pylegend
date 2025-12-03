@@ -19,8 +19,7 @@ from tests.test_helpers.test_legend_service_frames import (
 )
 
 
-
-class TestPandasApiGroupbyAndAggregateErrors:
+class TestGroupbyErrors:
 
     def test_groupby_error_invalid_level(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
@@ -341,9 +340,9 @@ class TestGroupbyFunctionality:
 
     def test_groupby_multiple_grouping_columns(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1"),
-                   PrimitiveTdsColumn.string_column("col2"),
+                   PrimitiveTdsColumn.strictdate_column("col2"),
                    PrimitiveTdsColumn.integer_column("col3"),
-                   PrimitiveTdsColumn.float_column("col4")]
+                   PrimitiveTdsColumn.datetime_column("col4")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(["col1", "col2"]).aggregate({"col3": "sum", "col4": ["min", "max"]})
         expected_sql = """\
@@ -657,4 +656,120 @@ class TestGroupbyFunctionality:
               )"""
         )
 
-# class TestGroupbyEndtoEnd:
+
+class TestGroupbyEndtoEnd:
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_e2e_groupby_simple_sum(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame_lambda_sum = frame.groupby("Firm/Legal Name").aggregate({'Age': lambda x: x.sum()})
+        expected_sum = {
+            "columns": ["Firm/Legal Name", "Age"],
+            "rows": [
+                {"values": ["Firm A", 34]},
+                {"values": ["Firm B", 32]},
+                {"values": ["Firm C", 35]},
+                {"values": ["Firm X", 79]}
+            ]
+        }
+        assert json.loads(frame_lambda_sum.execute_frame_to_string())["result"] == expected_sum
+
+    def test_e2e_groupby_multiple_aggregations_list(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby("Firm/Legal Name").aggregate({'Age': ['min', 'max']})
+        expected = {
+            "columns": ["Firm/Legal Name", "min(Age)", "max(Age)"],
+            "rows": [
+                {"values": ["Firm A", 34, 34]},
+                {"values": ["Firm B", 32, 32]},
+                {"values": ["Firm C", 35, 35]},
+                {"values": ["Firm X", 12, 23]}
+            ]
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+    def test_e2e_groupby_multi_column_different_metrics(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby("Firm/Legal Name").aggregate({
+            'Age': 'mean',
+            'Last Name': 'count'
+        })
+        expected = {
+            "columns": ["Firm/Legal Name", "Age", "Last Name"],
+            "rows": [
+                {"values": ["Firm A", 34.0, 1]},
+                {"values": ["Firm B", 32.0, 1]},
+                {"values": ["Firm C", 35.0, 1]},
+                {"values": ["Firm X", 19.75, 4]}
+            ]
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+    def test_e2e_groupby_implicit_selection_broadcasting(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby("Product/Name")['Quantity'].aggregate(['sum'])
+        
+        expected = {
+            "columns": ["Product/Name", "sum(Quantity)"],
+            "rows": [
+                {"values": ["Firm A", 66.0]},
+                {"values": ["Firm C", 176.0]},
+                {"values": ["Firm X", 345.0]},
+                {"values": [None, 5.0]}
+            ]
+        }
+        res = json.loads(frame.execute_frame_to_string())["result"]
+        res['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
+        expected['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
+        assert res == expected
+
+    def test_e2e_groupby_multi_keys(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby(["Firm/Legal Name", "First Name"]).aggregate({'Age': 'sum'})
+        
+        expected = {
+            "columns": ["Firm/Legal Name", "First Name", "Age"],
+            "rows": [
+                {"values": ["Firm A", "Fabrice", 34]},
+                {"values": ["Firm B", "Oliver", 32]},
+                {"values": ["Firm C", "David", 35]},
+                {"values": ["Firm X", "Anthony", 22]},
+                {"values": ["Firm X", "John", 34]},
+                {"values": ["Firm X", "Peter", 23]}
+            ]
+        }
+        res = json.loads(frame.execute_frame_to_string())["result"]
+        res['rows'].sort(key=lambda x: (x['values'][0], x['values'][1]))
+        assert res == expected
+
+    def test_e2e_groupby_explicit_key_aggregation(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby("Firm/Legal Name").aggregate({"Firm/Legal Name": "count"})
+        
+        expected = {
+            "columns": ["Firm/Legal Name", "count(Firm/Legal Name)"],
+            "rows": [
+                {"values": ["Firm A", 1]},
+                {"values": ["Firm B", 1]},
+                {"values": ["Firm C", 1]},
+                {"values": ["Firm X", 4]}
+            ]
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+    def test_e2e_groupby_numpy_functions(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby("Firm/Legal Name")['Age'].aggregate([np.min, np.max])
+        
+        expected = {
+            "columns": ["Firm/Legal Name", "min(Age)", "max(Age)"],
+            "rows": [
+                {"values": ["Firm A", 34, 34]},
+                {"values": ["Firm B", 32, 32]},
+                {"values": ["Firm C", 35, 35]},
+                {"values": ["Firm X", 12, 23]}
+            ]
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected
