@@ -662,7 +662,7 @@ class TestGroupbyFunctionality:
         columns = [PrimitiveTdsColumn.integer_column("id"), PrimitiveTdsColumn.float_column("score")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("id", sort=False)["score"].aggregate([np.min, np.sum])
+        frame = frame.groupby("id", sort=False)["score"].agg([np.min, np.sum])
 
         expected_sql = """\
                     SELECT

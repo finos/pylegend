@@ -226,9 +226,9 @@ class AggregateFunction(PandasApiAppliedFunction):
         elif isinstance(expr, PyLegendDate):
             return PrimitiveTdsColumn.date_column(name)
         elif isinstance(expr, PyLegendDateTime):
-            return PrimitiveTdsColumn.datetime_column(name)  # pragma: no cover
+            return PrimitiveTdsColumn.datetime_column(name)
         elif isinstance(expr, PyLegendStrictDate):
-            return PrimitiveTdsColumn.strictdate_column(name)  # pragma: no cover
+            return PrimitiveTdsColumn.strictdate_column(name)
         else:
             raise TypeError(f"Could not infer TdsColumn type for aggregation result type: {type(expr)}")  # pragma: no cover
 
