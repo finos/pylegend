@@ -19,4 +19,6 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /workspace
 COPY . /workspace
+
+RUN pip install -U pip
 RUN pip install -e .
