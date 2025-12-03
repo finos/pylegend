@@ -22,6 +22,8 @@ jobs:
   validate:
     name: Validate Release
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.validate_and_set_image_tag.outputs.image_tag }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -32,6 +34,7 @@ jobs:
           python-version: 3.12
 
       - name: Validate
+        id: validate_and_set_image_tag
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
@@ -44,6 +47,7 @@ jobs:
           release_version=${GITHUB_REF#refs/*/pylegend-}
           if [ ${project_version} == ${release_version} ]; then
             echo "Version matches"
+            echo "image_tag=$release_version" >> $GITHUB_OUTPUT
           else
             echo "Version in pyproject.toml ${project_version} doesn't match with release tag version ${release_version}"
             exit 1
@@ -114,3 +118,35 @@ jobs:
           fi
           echo "Poetry executable is:" $(which poetry)
           poetry publish --build --username "$PYPI_USERNAME" --password "$PYPI_PASSWORD"
+
+  docker_build_push:
+    name: Build-Push Docker Image
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Build-Publish Docker Image
+        shell: bash
+        run: |
+          docker build --build-arg PYLEGEND_VERSION=${{ needs.validate.outputs.image_tag }} -f ./deployment/tag/Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/pylegend:${{ needs.validate.outputs.image_tag }} .
+
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/pylegend:${{ needs.validate.outputs.image_tag }}
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish Docker Image
+        shell: bash
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/pylegend:${{ needs.validate.outputs.image_tag }}
