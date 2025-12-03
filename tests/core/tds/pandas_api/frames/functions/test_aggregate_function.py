@@ -201,7 +201,8 @@ class TestAggregateFunction:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, 'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "->aggregate(~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, "
+            "'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}])"
         )
 
     def test_aggregate_repeat_column(self) -> None:
