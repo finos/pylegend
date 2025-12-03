@@ -290,7 +290,8 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}, col2:{r | $r.col2}:{c | $c->average()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}, "
+            "col2:{r | $r.col2}:{c | $c->average()}])"
         )
 
         res = frame.min()
