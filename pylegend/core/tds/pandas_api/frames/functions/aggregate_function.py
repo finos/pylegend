@@ -40,7 +40,14 @@ from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
 from pylegend.core.language.shared.primitives.string import PyLegendString
-from pylegend.core.sql.metamodel import QuerySpecification, SelectItem, SingleColumn
+from pylegend.core.sql.metamodel import (
+    QuerySpecification,
+    SelectItem,
+    SingleColumn,
+    SortItem,
+    SortItemOrdering,
+    SortItemNullOrdering
+)
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -125,6 +132,20 @@ class AggregateFunction(PandasApiAppliedFunction):
                 for c in self.__base_frame.grouping_column_name_list()
             ]
 
+            # Handle Sort=True
+            # Accessing private attribute via name mangling because getter is not available
+            is_sorted = getattr(self.__base_frame, "_PandasApiGroupbyTdsFrame__sort", True)
+            
+            if is_sorted:
+                new_query.orderBy = [
+                    SortItem(
+                        sortKey=(lambda x: x[c])(tds_row).to_sql_expression({"r": new_query}, config),
+                        ordering=SortItemOrdering.ASCENDING,
+                        nullOrdering=SortItemNullOrdering.UNDEFINED
+                    )
+                    for c in self.__base_frame.grouping_column_name_list()
+                ]
+
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -141,11 +162,21 @@ class AggregateFunction(PandasApiAppliedFunction):
             for col_name in self.__base_frame.grouping_column_name_list():
                 group_strings.append(escape_column_name(col_name))
 
-            return (f"{self.base_frame().to_pure(config)}{config.separator(1)}" +
-                    f"->groupBy({config.separator(2)}"
-                    f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
-                    f"~[{', '.join(agg_strings)}]{config.separator(1)}"
-                    f")")
+            pure_expression = (f"{self.base_frame().to_pure(config)}{config.separator(1)}" +
+                               f"->groupBy({config.separator(2)}"
+                               f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
+                               f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                               f")")
+            
+            # Handle Sort=True
+            # Accessing private attribute via name mangling
+            is_sorted = getattr(self.__base_frame, "_PandasApiGroupbyTdsFrame__sort", True)
+            
+            if is_sorted:
+                sort_items = [f"~{c}->ascending()" for c in group_strings]
+                pure_expression += f"{config.separator(1)}->sort([{', '.join(sort_items)}])"
+            
+            return pure_expression
         else:
             return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
                     f"->aggregate({config.separator(2)}"

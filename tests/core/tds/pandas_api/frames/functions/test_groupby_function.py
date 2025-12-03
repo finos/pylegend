@@ -292,6 +292,8 @@ class TestGroupbyFunctionality:
                         test_schema.test_table AS "root"
                     GROUP BY
                         "root".col1
+                    ORDER BY
+                        "root".col1
                     """
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
@@ -300,11 +302,12 @@ class TestGroupbyFunctionality:
               ->groupBy(
                 ~[col1],
                 ~[col2:{r | $r.col2}:{c | $c->min()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}]
-              )"""
+              )
+              ->sort([~col1->ascending()])"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}])"
+            "->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}])->sort([~col1->ascending()])"
         )
 
     def test_groupby_column_selection_for_aggregation(self) -> None:
@@ -323,6 +326,8 @@ class TestGroupbyFunctionality:
                         test_schema.test_table AS "root"
                     GROUP BY
                         "root".col1
+                    ORDER BY
+                        "root".col1
                     """
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)[:-1]
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
@@ -331,11 +336,12 @@ class TestGroupbyFunctionality:
               ->groupBy(
                 ~[col1],
                 ~['max(col2)':{r | $r.col2}:{c | $c->max()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}, 'mean(col3)':{r | $r.col3}:{c | $c->average()}]
-              )"""
+              )
+              ->sort([~col1->ascending()])"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->groupBy(~[col1], ~['max(col2)':{r | $r.col2}:{c | $c->max()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}, 'mean(col3)':{r | $r.col3}:{c | $c->average()}])"
+            "->groupBy(~[col1], ~['max(col2)':{r | $r.col2}:{c | $c->max()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}, 'mean(col3)':{r | $r.col3}:{c | $c->average()}])->sort([~col1->ascending()])"
         )
 
     def test_groupby_multiple_grouping_columns(self) -> None:
@@ -357,6 +363,9 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1,
                 "root".col2
+            ORDER BY
+                "root".col1,
+                "root".col2
             """
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)[:-1]
 
@@ -366,13 +375,14 @@ class TestGroupbyFunctionality:
               ->groupBy(
                 ~[col1, col2],
                 ~[col3:{r | $r.col3}:{c | $c->sum()}, 'min(col4)':{r | $r.col4}:{c | $c->min()}, 'max(col4)':{r | $r.col4}:{c | $c->max()}]
-              )"""
+              )
+              ->sort([~col1->ascending(), ~col2->ascending()])"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=True), self.legend_client) == expected_pure
 
         expected_pure_pretty_false = (
             "#Table(test_schema.test_table)#"
-            "->groupBy(~[col1, col2], ~[col3:{r | $r.col3}:{c | $c->sum()}, 'min(col4)':{r | $r.col4}:{c | $c->min()}, 'max(col4)':{r | $r.col4}:{c | $c->max()}])"
+            "->groupBy(~[col1, col2], ~[col3:{r | $r.col3}:{c | $c->sum()}, 'min(col4)':{r | $r.col4}:{c | $c->min()}, 'max(col4)':{r | $r.col4}:{c | $c->max()}])->sort([~col1->ascending(), ~col2->ascending()])"
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False),
                                                self.legend_client) == expected_pure_pretty_false
@@ -382,7 +392,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.integer_column("col2"),
                    PrimitiveTdsColumn.float_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.groupby("col1").aggregate("sum")
+        frame = frame.groupby("col1", sort=False).aggregate("sum")
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -417,7 +427,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.integer_column("col2"),
                    PrimitiveTdsColumn.float_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame = frame.groupby("col1").aggregate(['sum', 'mean'])
+        frame = frame.groupby("col1", sort=False).aggregate(['sum', 'mean'])
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -456,7 +466,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.integer_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("col1").aggregate("sum")
+        frame = frame.groupby("col1", sort=False).aggregate("sum")
         
         expected_sql = """\
                     SELECT
@@ -484,7 +494,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.number_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("col1")["col2"].aggregate(["min", "max"])
+        frame = frame.groupby("col1", sort=False)["col2"].aggregate(["min", "max"])
         
         expected_sql = """\
                     SELECT
@@ -513,7 +523,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.integer_column("Profit")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("Region").aggregate({
+        frame = frame.groupby("Region", sort=False).aggregate({
             "Sales": ["sum", "mean"],
             "Profit": "max"
         })
@@ -545,7 +555,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.float_column("val")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("id").aggregate({
+        frame = frame.groupby("id", sort=False).aggregate({
             "val": [lambda x: x.min(), lambda x: x.max()]
         })
         
@@ -576,7 +586,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.integer_column("Amount")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby(["Category", "SubCategory"]).aggregate({"Amount": "sum"})
+        frame = frame.groupby(["Category", "SubCategory"], sort=False).aggregate({"Amount": "sum"})
         
         expected_sql = """\
                     SELECT
@@ -605,7 +615,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.integer_column("Value")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("Type").aggregate({"Type": "count", "Value": "sum"})
+        frame = frame.groupby("Type", sort=False).aggregate({"Type": "count", "Value": "sum"})
         
         expected_sql = """\
                     SELECT
@@ -633,7 +643,7 @@ class TestGroupbyFunctionality:
                    PrimitiveTdsColumn.float_column("score")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("id")["score"].aggregate([np.min, np.sum])
+        frame = frame.groupby("id", sort=False)["score"].aggregate([np.min, np.sum])
         
         expected_sql = """\
                     SELECT
