@@ -103,7 +103,6 @@ jobs:
           path: ./dist/*
 
   docker_build_push:
-    if: github.ref == 'refs/heads/main'
     name: Build-Push Docker Image
     needs: [build]
     runs-on: ubuntu-latest
