@@ -272,7 +272,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             *args,
             **kwargs
         ))
-    
+
     def groupby(
         self,
         by: PyLegendUnion[str, PyLegendList[str]],
