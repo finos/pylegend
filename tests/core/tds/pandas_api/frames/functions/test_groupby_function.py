@@ -165,7 +165,7 @@ class TestGroupbyErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         with pytest.raises(TypeError) as v:
-            frame.aggregate({1: 'sum'})  # type: ignore
+            frame.aggregate({1: 'sum'})
         assert v.value.args[0] == (
             "Invalid `func` argument for the aggregate function.\n"
             "When a dictionary is provided, all keys must be strings.\n"
@@ -188,7 +188,7 @@ class TestGroupbyErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         with pytest.raises(TypeError) as v:
-            frame.aggregate({'col1': ['sum', 123]})
+            frame.aggregate({'col1': ['sum', 123]})  # type: ignore
         assert v.value.args[0] == (
             "Invalid `func` argument for the aggregate function.\n"
             "When a list is provided for a column, all elements must be callable, str, or np.ufunc.\n"
@@ -199,7 +199,7 @@ class TestGroupbyErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         with pytest.raises(TypeError) as v:
-            frame.aggregate({'col1': 123})
+            frame.aggregate({'col1': 123})  # type: ignore
         assert v.value.args[0] == (
             "Invalid `func` argument for the aggregate function.\n"
             "When a dictionary is provided, the value must be a callable, str, or np.ufunc "
@@ -211,7 +211,7 @@ class TestGroupbyErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         with pytest.raises(TypeError) as v:
-            frame.aggregate(['sum', 123])
+            frame.aggregate(['sum', 123])  # type: ignore
         assert v.value.args[0] == (
             "Invalid `func` argument for the aggregate function.\n"
             "When a list is provided as the main argument, all elements must be callable, str, or np.ufunc.\n"
@@ -222,7 +222,7 @@ class TestGroupbyErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         with pytest.raises(TypeError) as v:
-            frame.aggregate(123)
+            frame.aggregate(123)  # type: ignore
         assert v.value.args[0] == (
             "Invalid `func` argument for aggregate function. "
             "Expected a callable, str, np.ufunc, a list containing exactly one of these, "
@@ -732,7 +732,6 @@ class TestGroupbyEndtoEnd:
         }
         res = json.loads(frame.execute_frame_to_string())["result"]
         res['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
-        expected['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
         assert res == expected
 
     def test_e2e_groupby_datetime_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
@@ -750,7 +749,6 @@ class TestGroupbyEndtoEnd:
         }
         res = json.loads(frame.execute_frame_to_string())["result"]
         res['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
-        expected['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
         assert res == expected
 
     def test_e2e_groupby_multi_keys(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
