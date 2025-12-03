@@ -725,6 +725,24 @@ class TestGroupbyEndtoEnd:
         expected['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
         assert res == expected
 
+    def test_e2e_groupby_datetime_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby("Product/Name")['Settlement Date Time'].aggregate('min')
+        
+        expected = {
+            "columns": ["Product/Name", "Settlement Date Time"],
+            "rows": [
+                {"values": ["Firm A", '2014-12-02T21:00:00.000000000+0000']},
+                {"values": ["Firm C", '2014-12-04T15:22:23.123456789+0000']},
+                {"values": ["Firm X", '2014-12-02T21:00:00.000000000+0000']},
+                {"values": [None, None]}
+            ]
+        }
+        res = json.loads(frame.execute_frame_to_string())["result"]
+        res['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
+        expected['rows'].sort(key=lambda x: (x['values'][0] is None, x['values'][0]))
+        assert res == expected
+
     def test_e2e_groupby_multi_keys(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby(["Firm/Legal Name", "First Name"]).aggregate({'Age': 'sum'})
