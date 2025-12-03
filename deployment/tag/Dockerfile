@@ -19,5 +19,5 @@ ENV PYTHONUNBUFFERED=1
 
 ARG PYLEGEND_VERSION
 
-RUN pip install -U pip
+RUN python -m pip install --no-cache-dir --upgrade pip
 RUN pip install pylegend==${PYLEGEND_VERSION}

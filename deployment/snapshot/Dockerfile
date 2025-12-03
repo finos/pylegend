@@ -20,5 +20,5 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /workspace
 COPY . /workspace
 
-RUN pip install -U pip
+RUN python -m pip install --no-cache-dir --upgrade pip
 RUN pip install -e .
