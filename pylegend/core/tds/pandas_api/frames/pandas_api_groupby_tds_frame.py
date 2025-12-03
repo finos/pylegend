@@ -187,7 +187,7 @@ class PandasApiGroupbyTdsFrame:
         from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
         return PandasApiAppliedFunctionTdsFrame(AggregateFunction(self, func, axis, *args, **kwargs))
-    
+
     def agg(
         self,
         func: PyLegendAggInput,

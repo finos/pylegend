@@ -675,10 +675,8 @@ class TestGroupbyFunctionality:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.number_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        # Reuse this GroupBy object for all assertions
         gb = frame.groupby("col1", sort=False)
 
-        # 1. Sum
         res = gb.sum()
         expected_sql = """\
             SELECT
@@ -693,7 +691,6 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->sum()}])"
         )
 
-        # 2. Mean
         res = gb.mean()
         expected_sql = """\
             SELECT
@@ -708,7 +705,6 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->average()}])"
         )
 
-        # 4. Min
         res = gb.min()
         expected_sql = """\
             SELECT
@@ -723,7 +719,6 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}])"
         )
 
-        # 5. Max
         res = gb.max()
         expected_sql = """\
             SELECT
@@ -738,7 +733,6 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->max()}])"
         )
 
-        # 6. Std (stdDevSample)
         res = gb.std()
         expected_sql = """\
             SELECT
@@ -753,7 +747,6 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
         )
 
-        # 7. Var (varianceSample)
         res = gb.var()
         expected_sql = """\
             SELECT
@@ -768,7 +761,6 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()}])"
         )
 
-        # 8. Count
         res = gb.count()
         expected_sql = """\
             SELECT
@@ -783,7 +775,6 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->count()}])"
         )
 
-        # 9. Size (Maps to count logic but uses 'size' alias, passed as scalar 'size')
         res = gb.size()
         expected_sql = """\
             SELECT
@@ -932,5 +923,3 @@ class TestGroupbyEndtoEnd:
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
-
-    

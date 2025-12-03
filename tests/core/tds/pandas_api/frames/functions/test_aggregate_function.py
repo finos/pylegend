@@ -268,7 +268,6 @@ class TestAggregateFunction:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.number_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        # 1. Sum
         res = frame.sum()
         expected_sql = """\
             SELECT
@@ -278,10 +277,10 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}, col2:{r | $r.col2}:{c | $c->sum()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}, "
+            "col2:{r | $r.col2}:{c | $c->sum()}])"
         )
 
-        # 2. Mean
         res = frame.mean()
         expected_sql = """\
             SELECT
@@ -294,7 +293,6 @@ class TestAggregateFunction:
             "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}, col2:{r | $r.col2}:{c | $c->average()}])"
         )
 
-        # 4. Min
         res = frame.min()
         expected_sql = """\
             SELECT
@@ -304,10 +302,10 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, col2:{r | $r.col2}:{c | $c->min()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, "
+            "col2:{r | $r.col2}:{c | $c->min()}])"
         )
 
-        # 5. Max
         res = frame.max()
         expected_sql = """\
             SELECT
@@ -317,10 +315,10 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}, col2:{r | $r.col2}:{c | $c->max()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}, "
+            "col2:{r | $r.col2}:{c | $c->max()}])"
         )
 
-        # 6. Std (stdDevSample)
         res = frame.std()
         expected_sql = """\
             SELECT
@@ -330,10 +328,10 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}, col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}, "
+            "col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
         )
 
-        # 7. Var (varianceSample)
         res = frame.var()
         expected_sql = """\
             SELECT
@@ -343,10 +341,10 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}, col2:{r | $r.col2}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}, "
+            "col2:{r | $r.col2}:{c | $c->varianceSample()}])"
         )
 
-        # 8. Count
         res = frame.count()
         expected_sql = """\
             SELECT
@@ -356,12 +354,10 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}, col2:{r | $r.col2}:{c | $c->count()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}, "
+            "col2:{r | $r.col2}:{c | $c->count()}])"
         )
 
-        # 9. Size (Maps to count logic but uses 'size' alias string, though scalar input keeps column name)
-        # Note: Since .size() calls .aggregate('size'), it hits the scalar path.
-        # In scalar path, we keep the original column name 'col1', NOT 'size(col1)'.
         res = frame.size()
         expected_sql = """\
             SELECT
@@ -371,7 +367,8 @@ class TestAggregateFunction:
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}, col2:{r | $r.col2}:{c | $c->count()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}, "
+            "col2:{r | $r.col2}:{c | $c->count()}])"
         )
 
     def test_e2e_aggregate_single_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
