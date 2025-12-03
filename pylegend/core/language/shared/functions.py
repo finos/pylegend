@@ -16,6 +16,8 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
+from pylegend.core.language import PyLegendNumber
+from pylegend.core.language.shared.operations.number_operation_expressions import PyLegendNumberPiExpression
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.primitives.string import PyLegendString
@@ -32,6 +34,7 @@ __all__: PyLegendSequence[str] = [
     "today",
     "now",
     "current_user",
+    "pi"
 ]
 
 
@@ -45,3 +48,7 @@ def now() -> PyLegendDateTime:
 
 def current_user() -> PyLegendString:
     return PyLegendString(PyLegendCurrentUserExpression())
+
+
+def pi() -> PyLegendNumber:
+    return PyLegendNumber(PyLegendNumberPiExpression())

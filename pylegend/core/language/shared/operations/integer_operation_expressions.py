@@ -146,7 +146,13 @@ class PyLegendIntegerModuloExpression(PyLegendBinaryExpression, PyLegendExpressi
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.MODULUS, expression1, expression2)
+        return ArithmeticExpression(
+            ArithmeticType.MODULUS,
+            ArithmeticExpression(
+                ArithmeticType.ADD,
+                ArithmeticExpression(ArithmeticType.MODULUS, expression1, expression2),
+                expression2),
+            expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
