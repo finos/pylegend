@@ -242,7 +242,7 @@ class AggregateFunction(PandasApiAppliedFunction):
             PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
         ] = []
 
-        normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_dict(self.__func)
+        normalized_func: dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]] = self.__normalize_input_func_to_standard_dict(self.__func)
 
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
 
@@ -280,7 +280,7 @@ class AggregateFunction(PandasApiAppliedFunction):
     def __normalize_input_func_to_standard_dict(
             self,
             func_input: PyLegendAggInput
-    ) -> dict[str, PyLegendAggFunc]:
+    ) -> dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]]:
 
         validation_columns: PyLegendList[str]
         default_broadcast_columns: PyLegendList[str]
@@ -290,10 +290,12 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             group_cols = set(self.__base_frame.grouping_column_name_list())
+
+            selected_cols = self.__base_frame.selected_columns()
             
-            if self.__base_frame.selected_columns() is not None:
-                validation_columns = self.__base_frame.selected_columns()
-                default_broadcast_columns = self.__base_frame.selected_columns()
+            if selected_cols is not None:
+                validation_columns = selected_cols
+                default_broadcast_columns = selected_cols
             else:
                 validation_columns = all_cols
                 default_broadcast_columns = [c for c in all_cols if c not in group_cols]

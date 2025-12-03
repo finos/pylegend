@@ -289,8 +289,8 @@ class TestGroupbyFunctionality:
               ->groupBy(
                 ~[col1],
                 ~[col2:{r | $r.col2}:{c | $c->min()}, 'sum(col3)':{r | $r.col3}:{c | $c->sum()}]
-              )"""
-            """->sort([~col1->ascending()])"""
+              )
+              ->sort([~col1->ascending()])"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
