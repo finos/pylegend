@@ -116,7 +116,7 @@ jobs:
           docker build -f ./deployment/snapshot/Dockerfile -t finos/pylegend:SNAPSHOT .
 
       - name: Scan Image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: finos/pylegend:SNAPSHOT
           format: table
