@@ -24,23 +24,37 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
     PyLegendAggFunc,
-    PyLegendAggInput
+    PyLegendAggInput,
+    PyLegendAggList,
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection, create_primitive_collection
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.shared.primitives.date import PyLegendDate
+from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
+from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
-from pylegend.core.sql.metamodel import QuerySpecification, SelectItem, SingleColumn
+from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+from pylegend.core.language.shared.primitives.string import PyLegendString
+from pylegend.core.sql.metamodel import (
+    QuerySpecification,
+    SelectItem,
+    SingleColumn,
+)
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn, TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 
 class AggregateFunction(PandasApiAppliedFunction):
-    __base_frame: PandasApiBaseTdsFrame
+    __base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
     __func: PyLegendAggInput
     __axis: PyLegendUnion[int, str]
     __args: PyLegendSequence[PyLegendPrimitiveOrPythonPrimitive]
@@ -51,12 +65,12 @@ class AggregateFunction(PandasApiAppliedFunction):
         return "aggregate"  # pragma: no cover
 
     def __init__(
-            self,
-            base_frame: PandasApiBaseTdsFrame,
-            func: PyLegendAggInput,
-            axis: PyLegendUnion[int, str],
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+        self,
+        base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
+        func: PyLegendAggInput,
+        axis: PyLegendUnion[int, str],
+        *args: PyLegendPrimitiveOrPythonPrimitive,
+        **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> None:
         self.__base_frame = base_frame
         self.__func = func
@@ -66,13 +80,14 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         db_extension = config.sql_to_string_generator().get_db_extension()
-        base_query: QuerySpecification = self.__base_frame.to_sql_query_object(config)
+
+        base_query: QuerySpecification = self.base_frame().to_sql_query_object(config)
 
         should_create_sub_query = (
-            len(base_query.groupBy) > 0 or
-            base_query.select.distinct or
-            base_query.offset is not None or
-            base_query.limit is not None
+            len(base_query.groupBy) > 0
+            or base_query.select.distinct
+            or base_query.offset is not None
+            or base_query.limit is not None
         )
 
         new_query: QuerySpecification
@@ -83,37 +98,118 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         new_select_items: PyLegendList[SelectItem] = []
 
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            columns_to_retain: PyLegendList[str] = [
+                db_extension.quote_identifier(x) for x in self.__base_frame.grouping_column_name_list()
+            ]
+            new_cols_with_index: PyLegendList[PyLegendTuple[int, "SelectItem"]] = []
+            for col in new_query.select.selectItems:
+                if not isinstance(col, SingleColumn):
+                    raise ValueError(
+                        "Group By operation not supported for queries " "with columns other than SingleColumn"
+                    )  # pragma: no cover
+                if col.alias is None:
+                    raise ValueError(
+                        "Group By operation not supported for queries " "with SingleColumns with missing alias"
+                    )  # pragma: no cover
+                if col.alias in columns_to_retain:
+                    new_cols_with_index.append((columns_to_retain.index(col.alias), col))
+
+            new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
+
         for agg in self.__aggregates_list:
             agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
-            new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr)
-            )
+
+            new_select_items.append(SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr))
 
         new_query.select.selectItems = new_select_items
+
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+            new_query.groupBy = [
+                (lambda x: x[c])(tds_row).to_sql_expression({"r": new_query}, config)
+                for c in self.__base_frame.grouping_column_name_list()
+            ]
+
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         agg_strings = []
         for agg in self.__aggregates_list:
-            map_expr_string = (agg[1].to_pure_expression(config) if isinstance(agg[1], PyLegendPrimitive)
-                               else convert_literal_to_literal_expression(agg[1]).to_pure_expression(config))
+            map_expr_string = (
+                agg[1].to_pure_expression(config)
+                if isinstance(agg[1], PyLegendPrimitive)
+                else convert_literal_to_literal_expression(agg[1]).to_pure_expression(config)
+            )
             agg_expr_string = agg[2].to_pure_expression(config).replace(map_expr_string, "$c")
-            agg_strings.append(f"{escape_column_name(agg[0])}:{generate_pure_lambda('r', map_expr_string)}:"
-                               f"{generate_pure_lambda('c', agg_expr_string)}")
+            agg_strings.append(
+                f"{escape_column_name(agg[0])}:{generate_pure_lambda('r', map_expr_string)}:"
+                f"{generate_pure_lambda('c', agg_expr_string)}"
+            )
 
-        return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            group_strings = []
+            for col_name in self.__base_frame.grouping_column_name_list():
+                group_strings.append(escape_column_name(col_name))
+
+            pure_expression = (
+                f"{self.base_frame().to_pure(config)}{config.separator(1)}" + f"->groupBy({config.separator(2)}"
+                f"~[{', '.join(group_strings)}],{config.separator(2, True)}"
+                f"~[{', '.join(agg_strings)}]{config.separator(1)}"
+                f")"
+            )
+
+            return pure_expression
+        else:
+            return (
+                f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
                 f"->aggregate({config.separator(2)}"
                 f"~[{', '.join(agg_strings)}]{config.separator(1)}"
-                f")")
+                f")"
+            )
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
-        return self.__base_frame
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            return self.__base_frame.base_frame()
+        else:
+            return self.__base_frame
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        return [c.copy() for c in self.__base_frame.columns()]
+        new_columns = []
+
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            base_cols_map = {c.get_name(): c for c in self.base_frame().columns()}
+            for group_col_name in self.__base_frame.grouping_column_name_list():
+                if group_col_name in base_cols_map:
+                    new_columns.append(base_cols_map[group_col_name].copy())
+
+        for alias, _, agg_expr in self.__aggregates_list:
+            new_columns.append(self.__infer_column_from_expression(alias, agg_expr))
+
+        return new_columns
+
+    def __infer_column_from_expression(self, name: str, expr: PyLegendPrimitive) -> TdsColumn:
+        if isinstance(expr, PyLegendInteger):
+            return PrimitiveTdsColumn.integer_column(name)
+        elif isinstance(expr, PyLegendFloat):
+            return PrimitiveTdsColumn.float_column(name)
+        elif isinstance(expr, PyLegendNumber):
+            return PrimitiveTdsColumn.number_column(name)
+        elif isinstance(expr, PyLegendString):
+            return PrimitiveTdsColumn.string_column(name)
+        elif isinstance(expr, PyLegendBoolean):
+            return PrimitiveTdsColumn.boolean_column(name)  # pragma: no cover
+        elif isinstance(expr, PyLegendDate):
+            return PrimitiveTdsColumn.date_column(name)
+        elif isinstance(expr, PyLegendDateTime):
+            return PrimitiveTdsColumn.datetime_column(name)
+        elif isinstance(expr, PyLegendStrictDate):
+            return PrimitiveTdsColumn.strictdate_column(name)
+        else:
+            raise TypeError(f"Could not infer TdsColumn type for aggregation result type: {type(expr)}")  # pragma: no cover
 
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:
@@ -127,35 +223,73 @@ class AggregateFunction(PandasApiAppliedFunction):
                 "or keyword arguments. Please remove extra *args/**kwargs."
             )
 
-        self.__aggregates_list: PyLegendList[
-            PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
-        ] = []
+        self.__aggregates_list: PyLegendList[PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]] = []
 
-        normalized_func: dict[str, PyLegendAggFunc] = self.__normalize_input_func_to_standard_dict(self.__func)
-        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame)
+        normalized_func: dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]] = (
+            self.__normalize_input_func_to_standard_dict(self.__func)
+        )
 
-        for column_name, aggregate_function in normalized_func.items():
+        tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+
+        for column_name, agg_input in normalized_func.items():
             mapper_function: PyLegendCallable[[PandasApiTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
-                f'lambda r: r["{column_name}"]')
+                f'lambda r: r["{column_name}"]'
+            )
             map_result: PyLegendPrimitiveOrPythonPrimitive = mapper_function(tds_row)
             collection: PyLegendPrimitiveCollection = create_primitive_collection(map_result)
 
-            normalized_aggregate_function = self.__normalize_agg_func_to_lambda_function(aggregate_function)
-            agg_result: PyLegendPrimitive = normalized_aggregate_function(collection)
+            if isinstance(agg_input, list):
+                lambda_counter = 0
+                for func in agg_input:
+                    is_anonymous_lambda = False
+                    if not isinstance(func, str):
+                        if getattr(func, "__name__", "<lambda>") == "<lambda>":
+                            is_anonymous_lambda = True
 
-            self.__aggregates_list.append((column_name, map_result, agg_result))
+                    if is_anonymous_lambda:
+                        lambda_counter += 1
+
+                    normalized_agg_func = self.__normalize_agg_func_to_lambda_function(func)
+                    agg_result = normalized_agg_func(collection)
+
+                    alias = self._generate_column_alias(column_name, func, lambda_counter)
+                    self.__aggregates_list.append((alias, map_result, agg_result))
+
+            else:
+                normalized_agg_func = self.__normalize_agg_func_to_lambda_function(agg_input)
+                agg_result = normalized_agg_func(collection)
+
+                self.__aggregates_list.append((column_name, map_result, agg_result))
 
         return True
 
     def __normalize_input_func_to_standard_dict(
-            self,
-            func_input: PyLegendAggInput
-    ) -> dict[str, PyLegendAggFunc]:
+        self, func_input: PyLegendAggInput
+    ) -> dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]]:
 
-        column_names = [col.get_name() for col in self.calculate_columns()]
+        validation_columns: PyLegendList[str]
+        default_broadcast_columns: PyLegendList[str]
+        group_cols: set[str] = set()
+
+        all_cols = [col.get_name() for col in self.base_frame().columns()]
+
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            group_cols = set(self.__base_frame.grouping_column_name_list())
+
+            selected_cols = self.__base_frame.selected_columns()
+
+            if selected_cols is not None:
+                validation_columns = selected_cols
+                default_broadcast_columns = selected_cols
+            else:
+                validation_columns = all_cols
+                default_broadcast_columns = [c for c in all_cols if c not in group_cols]
+        else:
+            validation_columns = all_cols
+            default_broadcast_columns = all_cols
 
         if isinstance(func_input, collections.abc.Mapping):
-            normalized: dict[str, PyLegendAggFunc] = {}
+            normalized: dict[str, PyLegendUnion[PyLegendAggFunc, PyLegendAggList]] = {}
 
             for key, value in func_input.items():
                 if not isinstance(key, str):
@@ -164,73 +298,54 @@ class AggregateFunction(PandasApiAppliedFunction):
                         f"When a dictionary is provided, all keys must be strings.\n"
                         f"But got key: {key!r} (type: {type(key).__name__})\n"
                     )
-                if key not in column_names:
+
+                if key not in validation_columns:
                     raise ValueError(
                         f"Invalid `func` argument for the aggregate function.\n"
                         f"When a dictionary is provided, all keys must be column names.\n"
-                        f"Available columns are: {sorted(column_names)}\n"
+                        f"Available columns are: {sorted(validation_columns)}\n"
                         f"But got key: {key!r} (type: {type(key).__name__})\n"
                     )
 
                 if isinstance(value, collections.abc.Sequence) and not isinstance(value, str):
-                    if len(value) != 1:
-                        raise ValueError(
-                            f"Invalid `func` argument for the aggregate function.\n"
-                            f"When providing a list of functions for a specific column, "
-                            f"the list must contain exactly one element (single aggregation only).\n"
-                            f"Column: {key!r}\n"
-                            f"List Length: {len(value)}\n"
-                            f"Value: {value!r}\n"
-                        )
-
-                    single_func = value[0]
-
-                    if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
-                        raise TypeError(
-                            f"Invalid `func` argument for the aggregate function.\n"
-                            f"The single element in the list for key {key!r} must be a callable, str, or np.ufunc.\n"
-                            f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
-                        )
-
-                    normalized[key] = single_func
+                    for i, f in enumerate(value):
+                        if not (callable(f) or isinstance(f, str) or isinstance(f, np.ufunc)):
+                            raise TypeError(
+                                f"Invalid `func` argument for the aggregate function.\n"
+                                f"When a list is provided for a column, all elements must be callable, str, or np.ufunc.\n"
+                                f"But got element at index {i}: {f!r} (type: {type(f).__name__})\n"
+                            )
+                    normalized[key] = value
 
                 else:
                     if not (callable(value) or isinstance(value, str) or isinstance(value, np.ufunc)):
                         raise TypeError(
                             f"Invalid `func` argument for the aggregate function.\n"
                             f"When a dictionary is provided, the value must be a callable, str, or np.ufunc "
-                            f"(or a list containing exactly one of these).\n"
-                            f"But got value for key {key!r}: {value!r} (type: {type(value).__name__})\n"
+                            f"(or a list containing these).\n"
+                            f"But got value for key '{key}': {value} (type: {type(value).__name__})\n"
                         )
-                    normalized[key] = value
+
+                    if key in group_cols:
+                        normalized[key] = [value]
+                    else:
+                        normalized[key] = value
 
             return normalized
 
         elif isinstance(func_input, collections.abc.Sequence) and not isinstance(func_input, str):
+            for i, f in enumerate(func_input):
+                if not (callable(f) or isinstance(f, str) or isinstance(f, np.ufunc)):
+                    raise TypeError(
+                        f"Invalid `func` argument for the aggregate function.\n"
+                        f"When a list is provided as the main argument, all elements must be callable, str, or np.ufunc.\n"
+                        f"But got element at index {i}: {f!r} (type: {type(f).__name__})\n"
+                    )
 
-            if len(func_input) != 1:
-                raise ValueError(
-                    f"Invalid `func` argument for the aggregate function.\n"
-                    f"When providing a list as the func argument, it must contain exactly one element "
-                    f"(which will be applied to all columns).\n"
-                    f"Multiple functions are not supported.\n"
-                    f"List Length: {len(func_input)}\n"
-                    f"Input: {func_input!r}\n"
-                )
-
-            single_func = func_input[0]
-
-            if not (callable(single_func) or isinstance(single_func, str) or isinstance(single_func, np.ufunc)):
-                raise TypeError(
-                    f"Invalid `func` argument for the aggregate function.\n"
-                    f"The single element in the top-level list must be a callable, str, or np.ufunc.\n"
-                    f"But got element: {single_func!r} (type: {type(single_func).__name__})\n"
-                )
-
-            return {col: single_func for col in column_names}
+            return {col: func_input for col in default_broadcast_columns}
 
         elif callable(func_input) or isinstance(func_input, str) or isinstance(func_input, np.ufunc):
-            return {col: func_input for col in column_names}
+            return {col: func_input for col in default_broadcast_columns}
 
         else:
             raise TypeError(
@@ -241,19 +356,17 @@ class AggregateFunction(PandasApiAppliedFunction):
             )
 
     def __normalize_agg_func_to_lambda_function(
-            self,
-            func: PyLegendAggFunc
+        self, func: PyLegendAggFunc
     ) -> PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]:
 
         PYTHON_FUNCTION_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[str, PyLegendList[str]] = {
-            "average":         ["mean", "average", "nanmean"],
-            "sum":             ["sum", "nansum"],
-            "min":             ["min", "amin", "minimum", "nanmin"],
-            "max":             ["max", "amax", "maximum", "nanmax"],
-            "std_dev_sample":  ["std", "std_dev", "nanstd"],
+            "average": ["mean", "average", "nanmean"],
+            "sum": ["sum", "nansum"],
+            "min": ["min", "amin", "minimum", "nanmin"],
+            "max": ["max", "amax", "maximum", "nanmax"],
+            "std_dev_sample": ["std", "std_dev", "nanstd"],
             "variance_sample": ["var", "variance", "nanvar"],
-            "median":          ["median", "nanmedian"],
-            "count":           ["count", "size", "len", "length"],
+            "count": ["count", "size", "len", "length"],
         }
 
         FLATTENED_FUNCTION_MAPPING: dict[str, str] = {}
@@ -300,6 +413,7 @@ class AggregateFunction(PandasApiAppliedFunction):
                 final_lambda = eval(lambda_source)
                 return final_lambda
             else:
+
                 def validation_wrapper(x: PyLegendPrimitiveCollection) -> PyLegendPrimitive:
                     result = func(x)
                     if not isinstance(result, PyLegendPrimitive):
@@ -314,3 +428,14 @@ class AggregateFunction(PandasApiAppliedFunction):
 
     def _generate_lambda_source(self, internal_method_name: str) -> str:
         return f"lambda x: x.{internal_method_name}()"
+
+    def _generate_column_alias(self, col_name: str, func: PyLegendAggFunc, lambda_counter: int) -> str:
+        if isinstance(func, str):
+            return f"{func}({col_name})"
+
+        func_name = getattr(func, "__name__", "<lambda>")
+
+        if func_name != "<lambda>":
+            return f"{func_name}({col_name})"
+        else:
+            return f"lambda_{lambda_counter}({col_name})"
