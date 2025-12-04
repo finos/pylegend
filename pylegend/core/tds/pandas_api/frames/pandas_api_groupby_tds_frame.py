@@ -202,11 +202,11 @@ class PandasApiGroupbyTdsFrame:
         return PandasApiAppliedFunctionTdsFrame(AggregateFunction(self, func, axis, *args, **kwargs))
 
     def sum(
-            self,
-            numeric_only: bool = False,
-            min_count: int = 0,
-            engine: PyLegendOptional[str] = None,
-            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
+        self,
+        numeric_only: bool = False,
+        min_count: int = 0,
+        engine: PyLegendOptional[str] = None,
+        engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in sum function.")
@@ -219,10 +219,10 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("sum", 0)
 
     def mean(
-            self,
-            numeric_only: bool = False,
-            engine: PyLegendOptional[str] = None,
-            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
+        self,
+        numeric_only: bool = False,
+        engine: PyLegendOptional[str] = None,
+        engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in mean function.")
@@ -233,11 +233,11 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("mean", 0)
 
     def min(
-            self,
-            numeric_only: bool = False,
-            min_count: int = -1,
-            engine: PyLegendOptional[str] = None,
-            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
+        self,
+        numeric_only: bool = False,
+        min_count: int = -1,
+        engine: PyLegendOptional[str] = None,
+        engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in min function.")
@@ -250,11 +250,11 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("min", 0)
 
     def max(
-            self,
-            numeric_only: bool = False,
-            min_count: int = -1,
-            engine: PyLegendOptional[str] = None,
-            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
+        self,
+        numeric_only: bool = False,
+        min_count: int = -1,
+        engine: PyLegendOptional[str] = None,
+        engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in max function.")
@@ -267,11 +267,11 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("max", 0)
 
     def std(
-            self,
-            ddof: int = 1,
-            engine: PyLegendOptional[str] = None,
-            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
-            numeric_only: bool = False
+        self,
+        ddof: int = 1,
+        engine: PyLegendOptional[str] = None,
+        engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
+        numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
         if ddof != 1:
             raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
@@ -284,11 +284,11 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("std", 0)
 
     def var(
-            self,
-            ddof: int = 1,
-            engine: PyLegendOptional[str] = None,
-            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
-            numeric_only: bool = False
+        self,
+        ddof: int = 1,
+        engine: PyLegendOptional[str] = None,
+        engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
+        numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
         if ddof != 1:
             raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
