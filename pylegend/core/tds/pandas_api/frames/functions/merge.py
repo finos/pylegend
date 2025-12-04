@@ -160,13 +160,9 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
         return [(k, k) for k in inferred]
 
     def __normalize_suffixes(self) -> None:
-        if self.__suffixes is None:
-            self.__suffixes = ["_x", "_y"]
-            return
-
         # Convert None to empty string and coerce to list[str]
-        left = self.__suffixes[0] or ""
-        right = self.__suffixes[1] or ""
+        left = self.__suffixes[0] or ""  # type: ignore
+        right = self.__suffixes[1] or ""  # type: ignore
 
         self.__suffixes = [left, right]
 
@@ -206,7 +202,7 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
         if join_type != JoinType.CROSS:
             join_condition_expr = self.__build_condition()
             if isinstance(join_condition_expr, bool):
-                join_condition_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(join_condition_expr))
+                join_condition_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(join_condition_expr))  # pragma: no cover  # noqa: E501
             join_sql_expr = join_condition_expr.to_sql_expression(
                 {
                     "left": create_sub_query(left_query, config, "left"),
@@ -301,11 +297,8 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
         right_cols = [c.get_name() for c in self.__other_frame.columns()]
 
         # Suffix handling for overlapping non-key columns
-        if self.__suffixes is None:
-            left_suf, right_suf = "_x", "_y"
-        else:
-            s = list(self.__suffixes)
-            left_suf, right_suf = s[0], s[1]  # type: ignore
+        s = list(self.__suffixes)  # type: ignore
+        left_suf, right_suf = s[0], s[1]
 
         left_col_set = set(left_cols)
         right_col_set = set(right_cols)
@@ -324,8 +317,8 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
             if col in identical_key_names:
                 continue
 
-            left_rename_map[col] = col + left_suf
-            right_rename_map[col] = col + right_suf
+            left_rename_map[col] = col + left_suf  # type: ignore
+            right_rename_map[col] = col + right_suf  # type: ignore
 
         # Temporary rename for identical key names on right
         temp_right_key_map = {}
@@ -354,7 +347,7 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
                 expr = part if expr is None else (expr & part)
 
             if not isinstance(expr, PyLegendPrimitive):
-                expr = convert_literal_to_literal_expression(expr)  # type: ignore
+                expr = convert_literal_to_literal_expression(expr)  # type: ignore  # pragma: no cover
             cond_str = expr.to_pure_expression(config.push_indent(2))  # type: ignore
         else:
             cond_str = "1==1"
@@ -376,7 +369,7 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
 
             for c in left_cols:
                 if (c in overlapping and c not in identical_key_names):
-                    final_cols.append(c + left_suf)
+                    final_cols.append(c + left_suf)  # type: ignore
                 else:
                     final_cols.append(c)
 
@@ -384,7 +377,7 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
                 if c in temp_right_key_map:
                     continue
                 if (c in overlapping and c not in identical_key_names):
-                    final_cols.append(c + right_suf)
+                    final_cols.append(c + right_suf)  # type: ignore
                 else:
                     final_cols.append(c)
 
@@ -510,11 +503,11 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
         if self.__validate:
             raise NotImplementedError("Validate parameter is not supported yet in PandasApi merge function")
 
+        self.__join_type()  # runs how validation
+        self.__normalize_suffixes()  # runs suffixes validation
+
         key_pairs = self.__derive_key_pairs()  # runs key validations
         if not key_pairs and self.__how.lower() != "cross":
             raise ValueError("No merge keys resolved. Specify 'on' or 'left_on'/'right_on', or ensure common columns.")
-
-        self.__join_type()  # runs how validation
-        self.__normalize_suffixes()  # runs suffixes validation
 
         return True
