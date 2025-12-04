@@ -22,10 +22,12 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
     PyLegendList,
+    PyLegendTuple,
     PyLegendSet,
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
+    PyLegendDict
 )
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
@@ -421,6 +423,128 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             group_keys=group_keys,
             observed=observed,
             dropna=dropna
+        )
+
+    def merge(
+            self,
+            other: "PandasApiTdsFrame",
+            how: PyLegendOptional[str] = "inner",
+            on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            left_on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            right_on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            left_index: PyLegendOptional[bool] = False,
+            right_index: PyLegendOptional[bool] = False,
+            sort: PyLegendOptional[bool] = False,
+            suffixes: PyLegendOptional[
+                PyLegendUnion[
+                    PyLegendTuple[PyLegendUnion[str, None], PyLegendUnion[str, None]],
+                    PyLegendList[PyLegendUnion[str, None]],
+                ]
+            ] = ("_x", "_y"),
+            indicator: PyLegendOptional[PyLegendUnion[bool, str]] = False,
+            validate: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        """
+        Pandas-like merge:
+        - Mutually exclusive: `on` vs (`left_on`, `right_on`)
+        - If no keys provided, infer intersection of column names
+        - `how`: inner | left | right | outer (outer mapped to full)
+        - `suffixes`: applied to overlapping non-key columns
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.merge import (
+            PandasApiMergeFunction
+        )
+        merge_fn = PandasApiMergeFunction(
+            self,
+            other,  # type: ignore
+            how=how,
+            on=on,
+            left_on=left_on,
+            right_on=right_on,
+            left_index=left_index,
+            right_index=right_index,
+            sort=sort,
+            suffixes=suffixes,
+            indicator=indicator,
+            validate=validate
+        )
+        merged = PandasApiAppliedFunctionTdsFrame(merge_fn)
+
+        if sort:
+            return merged.sort_values(
+                by=merge_fn.get_sort_keys(),
+                axis=0,
+                ascending=True,
+                inplace=False,
+                kind=None,
+                na_position="last",
+                ignore_index=True,
+                key=None
+            )
+        else:
+            return merged
+
+    def join(
+            self,
+            other: "PandasApiTdsFrame",
+            on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            how: PyLegendOptional[str] = "left",
+            lsuffix: str = "",
+            rsuffix: str = "",
+            sort: PyLegendOptional[bool] = False,
+            validate: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        """
+        Pandas-like join delegating to merge. No index support, only column-on-column via `on`.
+        """
+        return self.merge(
+            other=other,
+            how=how,
+            on=on,
+            sort=sort,
+            suffixes=[lsuffix, rsuffix],
+            validate=validate
+        )
+
+    def rename(
+            self,
+            mapper: PyLegendOptional[PyLegendUnion[PyLegendDict[str, str], PyLegendCallable[[str], str]]] = None,
+            index: PyLegendOptional[PyLegendUnion[PyLegendDict[str, str], PyLegendCallable[[str], str]]] = None,
+            columns: PyLegendOptional[PyLegendUnion[PyLegendDict[str, str], PyLegendCallable[[str], str]]] = None,
+            axis: PyLegendUnion[str, int] = 1,
+            inplace: PyLegendUnion[bool] = False,
+            copy: PyLegendUnion[bool] = True,
+            level: PyLegendOptional[PyLegendUnion[int, str]] = None,
+            errors: str = "ignore",
+    ) -> "PandasApiTdsFrame":
+        """
+        Pandas-like rename:
+        - Supports mapping via `mapper` or explicit `index`/`columns`
+        - Only column renames are applied when `axis` is 1
+        - `errors`: ignore | raise
+        """
+
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rename import (
+            PandasApiRenameFunction
+        )
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiRenameFunction(
+                base_frame=self,
+                mapper=mapper,
+                axis=axis,
+                index=index,
+                columns=columns,
+                copy=copy,
+                inplace=inplace,
+                level=level,
+                errors=errors
+            )
         )
 
     @abstractmethod
