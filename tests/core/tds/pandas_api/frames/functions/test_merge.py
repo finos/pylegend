@@ -106,6 +106,11 @@ class TestMergeFunction:
             frame.merge(frame2, how="inner", suffixes=('_x', '_y', '_z'))  # type: ignore
         assert v1.value.args[0] == "too many values to unpack (expected 2)"
 
+        # sort
+        with pytest.raises(TypeError) as v:
+            frame.merge(frame2, how="inner", sort="False")  # type: ignore
+        assert v.value.args[0] == "Sort parameter must be bool, got <class 'str'>"
+
     def test_merge_on_unsupported_errors(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -205,6 +210,11 @@ class TestMergeFunction:
         with pytest.raises(ValueError) as v:
             frame.merge(frame2, how="cross", on='col1')
         assert v.value.args[0] == "Can not pass on, right_on, left_on for how='cross'"
+
+        # how = invalid
+        with pytest.raises(ValueError) as v:
+            frame.merge(frame2, how="invalid", on='col1')
+        assert v.value.args[0] == "do not recognize join method invalid"
 
     def test_merge_on_parameter(self) -> None:
         columns = [
