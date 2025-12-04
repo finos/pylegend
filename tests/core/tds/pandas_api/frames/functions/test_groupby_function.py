@@ -136,138 +136,71 @@ class TestGroupbyErrors:
             "Current frame columns: ['col1', 'col2']"
         )
 
-    def test_aggregate_error_invalid_axis(self) -> None:
+    def test_groupby_convenience_error_numeric_only_true(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby("col1")
+
+        methods = ["sum", "mean", "min", "max", "std", "var"]
+        for method in methods:
+            with pytest.raises(NotImplementedError) as v:
+                getattr(gb, method)(numeric_only=True)
+            assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
+
+    def test_groupby_convenience_error_engine_args(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby("col1")
+
+        methods = ["sum", "mean", "min", "max", "std", "var"]
+        for method in methods:
+            with pytest.raises(NotImplementedError) as v1:
+                getattr(gb, method)(engine="numba")
+            assert f"engine parameter is not supported in {method} function" in v1.value.args[0]
+
+            with pytest.raises(NotImplementedError) as v2:
+                getattr(gb, method)(engine_kwargs={"nopython": True})
+            assert f"engine_kwargs parameter is not supported in {method} function" in v2.value.args[0]
+
+    def test_groupby_sum_error_min_count_nonzero(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby("col1")
+
         with pytest.raises(NotImplementedError) as v:
-            frame.aggregate({"col1": "sum"}, axis=1)
-        assert v.value.args[0] == ("The 'axis' parameter of the aggregate function must be 0 or 'index', but got: 1")
+            gb.sum(min_count=5)
+        assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
 
-    def test_aggregate_error_extra_args(self) -> None:
+    def test_groupby_min_max_error_min_count_not_minus_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby("col1")
+
+        with pytest.raises(NotImplementedError) as v_min:
+            gb.min(min_count=0)
+        assert "min_count must be -1 (default) in min function, but got: 0" in v_min.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v_max:
+            gb.max(min_count=5)
+        assert "min_count must be -1 (default) in max function, but got: 5" in v_max.value.args[0]
+
+    def test_groupby_std_error_ddof_not_one(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby("col1")
+
         with pytest.raises(NotImplementedError) as v:
-            frame.aggregate({"col1": "sum"}, 0, "extra_arg")
-        assert v.value.args[0] == (
-            "AggregateFunction currently does not support additional positional "
-            "or keyword arguments. Please remove extra *args/**kwargs."
-        )
+            gb.std(ddof=0)
+        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
 
-    def test_aggregate_error_extra_kwargs(self) -> None:
+    def test_groupby_var_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby("col1")
+
         with pytest.raises(NotImplementedError) as v:
-            frame.aggregate({"col1": "sum"}, extra_kwarg=1)
-        assert v.value.args[0] == (
-            "AggregateFunction currently does not support additional positional "
-            "or keyword arguments. Please remove extra *args/**kwargs."
-        )
-
-    def test_aggregate_dict_error_key_not_string(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(TypeError) as v:
-            frame.aggregate({1: "sum"})
-        assert v.value.args[0] == (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When a dictionary is provided, all keys must be strings.\n"
-            "But got key: 1 (type: int)\n"
-        )
-
-    def test_aggregate_dict_error_key_missing_column(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(ValueError) as v:
-            frame.aggregate({"missing": "sum"})
-        assert v.value.args[0] == (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When a dictionary is provided, all keys must be column names.\n"
-            "Available columns are: ['col1']\n"
-            "But got key: 'missing' (type: str)\n"
-        )
-
-    def test_aggregate_dict_error_list_invalid_element(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(TypeError) as v:
-            frame.aggregate({"col1": ["sum", 123]})  # type: ignore
-        assert v.value.args[0] == (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When a list is provided for a column, all elements must be callable, str, or np.ufunc.\n"
-            "But got element at index 1: 123 (type: int)\n"
-        )
-
-    def test_aggregate_dict_error_scalar_invalid_type(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(TypeError) as v:
-            frame.aggregate({"col1": 123})  # type: ignore
-        assert v.value.args[0] == (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When a dictionary is provided, the value must be a callable, str, or np.ufunc "
-            "(or a list containing these).\n"
-            "But got value for key 'col1': 123 (type: int)\n"
-        )
-
-    def test_aggregate_list_error_invalid_element(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(TypeError) as v:
-            frame.aggregate(["sum", 123])  # type: ignore
-        assert v.value.args[0] == (
-            "Invalid `func` argument for the aggregate function.\n"
-            "When a list is provided as the main argument, all elements must be callable, str, or np.ufunc.\n"
-            "But got element at index 1: 123 (type: int)\n"
-        )
-
-    def test_aggregate_scalar_error_invalid_type(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(TypeError) as v:
-            frame.aggregate(123)  # type: ignore
-        assert v.value.args[0] == (
-            "Invalid `func` argument for aggregate function. "
-            "Expected a callable, str, np.ufunc, a list containing exactly one of these, "
-            "or a mapping[str -> callable/str/ufunc/a list containing exactly one of these]. "
-            "But got: 123 (type: int)"
-        )
-
-    def test_normalize_agg_func_error_unsupported_string(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(NotImplementedError) as v:
-            frame.aggregate({"col1": "unsupported_func"})
-        assert v.value.args[0] == (
-            "Invalid `func` argument for the aggregate function.\n"
-            "The string 'unsupported_func' does not correspond to any supported aggregation.\n"
-            "Available string functions are: ['amax', 'amin', 'average', 'count', 'len', 'length', 'max', 'maximum'"
-            ", 'mean', 'min', 'minimum', 'nanmax', 'nanmean', 'nanmin', 'nanstd', 'nansum', 'nanvar',"
-            " 'size', 'std', 'std_dev', 'sum', 'var', 'variance']"
-        )
-
-    def test_normalize_agg_func_error_unsupported_ufunc(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        with pytest.raises(NotImplementedError) as v:
-            frame.aggregate({"col1": np.sin})
-        assert v.value.args[0] == (
-            "Invalid `func` argument for the aggregate function.\n"
-            "The NumPy function 'sin' is not supported.\n"
-            "Supported aggregate functions are: ['amax', 'amin', 'average', 'count', 'len', 'length', 'max', 'maximum',"
-            " 'mean', 'min', 'minimum', 'nanmax', 'nanmean', 'nanmin', 'nanstd', 'nansum',"
-            " 'nanvar', 'size', 'std', 'std_dev', 'sum', 'var', 'variance']"
-        )
-
-    def test_aggregate_custom_lambda_invalid_return_type(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(TypeError) as v:
-            frame.aggregate(lambda x: 0)
-
-        assert v.value.args[0] == (
-            "Custom aggregation function must return a PyLegendPrimitive (Expression).\n" "But got type: int\n" "Value: 0"
-        )
+            gb.var(ddof=2)
+        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
 
 
 class TestGroupbyFunctionality:
@@ -776,20 +709,6 @@ class TestGroupbyFunctionality:
         )
 
         res = gb.count()
-        expected_sql = """\
-            SELECT
-                "root".col1 AS "col1",
-                COUNT("root".col2) AS "col2"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1"""
-        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
-        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->count()}])"
-        )
-
-        res = gb.size()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",

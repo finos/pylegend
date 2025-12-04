@@ -17,6 +17,7 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendUnion,
     PyLegendList,
+    PyLegendDict,
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -202,56 +203,102 @@ class PandasApiGroupbyTdsFrame:
 
     def sum(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            numeric_only: bool = False,
+            min_count: int = 0,
+            engine: PyLegendOptional[str] = None,
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("sum", 0, *args, **kwargs)
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in sum function.")
+        if min_count != 0:
+            raise NotImplementedError(f"min_count must be 0 in sum function, but got: {min_count}")
+        if engine is not None:
+            raise NotImplementedError("engine parameter is not supported in sum function.")
+        if engine_kwargs is not None:
+            raise NotImplementedError("engine_kwargs parameter is not supported in sum function.")
+        return self.aggregate("sum", 0)
 
     def mean(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            numeric_only: bool = False,
+            engine: PyLegendOptional[str] = None,
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("mean", 0, *args, **kwargs)
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in mean function.")
+        if engine is not None:
+            raise NotImplementedError("engine parameter is not supported in mean function.")
+        if engine_kwargs is not None:
+            raise NotImplementedError("engine_kwargs parameter is not supported in mean function.")
+        return self.aggregate("mean", 0)
 
     def min(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            numeric_only: bool = False,
+            min_count: int = -1,
+            engine: PyLegendOptional[str] = None,
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("min", 0, *args, **kwargs)
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in min function.")
+        if min_count != -1:
+            raise NotImplementedError(f"min_count must be -1 (default) in min function, but got: {min_count}")
+        if engine is not None:
+            raise NotImplementedError("engine parameter is not supported in min function.")
+        if engine_kwargs is not None:
+            raise NotImplementedError("engine_kwargs parameter is not supported in min function.")
+        return self.aggregate("min", 0)
 
     def max(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            numeric_only: bool = False,
+            min_count: int = -1,
+            engine: PyLegendOptional[str] = None,
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("max", 0, *args, **kwargs)
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in max function.")
+        if min_count != -1:
+            raise NotImplementedError(f"min_count must be -1 (default) in max function, but got: {min_count}")
+        if engine is not None:
+            raise NotImplementedError("engine parameter is not supported in max function.")
+        if engine_kwargs is not None:
+            raise NotImplementedError("engine_kwargs parameter is not supported in max function.")
+        return self.aggregate("max", 0)
 
     def std(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            ddof: int = 1,
+            engine: PyLegendOptional[str] = None,
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
+            numeric_only: bool = False
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("std", 0, *args, **kwargs)
+        if ddof != 1:
+            raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+        if engine is not None:
+            raise NotImplementedError("engine parameter is not supported in std function.")
+        if engine_kwargs is not None:
+            raise NotImplementedError("engine_kwargs parameter is not supported in std function.")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in std function.")
+        return self.aggregate("std", 0)
 
     def var(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            ddof: int = 1,
+            engine: PyLegendOptional[str] = None,
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
+            numeric_only: bool = False
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("var", 0, *args, **kwargs)
+        if ddof != 1:
+            raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
+        if engine is not None:
+            raise NotImplementedError("engine parameter is not supported in var function.")
+        if engine_kwargs is not None:
+            raise NotImplementedError("engine_kwargs parameter is not supported in var function.")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in var function.")
+        return self.aggregate("var", 0)
 
-    def count(
-            self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
-        return self.aggregate("count", 0, *args, **kwargs)
-
-    def size(
-            self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
-        return self.aggregate("size", 0, *args, **kwargs)
+    def count(self) -> "PandasApiTdsFrame":
+        return self.aggregate("count", 0)

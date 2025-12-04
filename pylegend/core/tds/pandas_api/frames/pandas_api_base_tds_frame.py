@@ -275,59 +275,146 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def sum(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
+            min_count: int = 0,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("sum", 0, *args, **kwargs)
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in sum function, but got: {axis}")
+        if skipna is not True:
+            raise NotImplementedError("skipna=False is not currently supported in sum function. "
+                                      "SQL aggregation ignores nulls by default.")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in sum function.")
+        if min_count != 0:
+            raise NotImplementedError(f"min_count must be 0 in sum function, but got: {min_count}")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in sum function: {list(kwargs.keys())}")
+        return self.aggregate("sum", 0)
 
     def mean(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("mean", 0, *args, **kwargs)
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in mean function, but got: {axis}")
+        if skipna is not True:
+            raise NotImplementedError("skipna=False is not currently supported in mean function.")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in mean function.")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in mean function: {list(kwargs.keys())}")
+        return self.aggregate("mean", 0)
+
+    def median(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in median function, but got: {axis}")
+        if skipna is not True:
+            raise NotImplementedError("skipna=False is not currently supported in median function.")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in median function.")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in median function: {list(kwargs.keys())}")
+        return self.aggregate("median", 0)
 
     def min(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("min", 0, *args, **kwargs)
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in min function, but got: {axis}")
+        if skipna is not True:
+            raise NotImplementedError("skipna=False is not currently supported in min function.")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in min function.")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in min function: {list(kwargs.keys())}")
+        return self.aggregate("min", 0)
 
     def max(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("max", 0, *args, **kwargs)
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in max function, but got: {axis}")
+        if skipna is not True:
+            raise NotImplementedError("skipna=False is not currently supported in max function.")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in max function.")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in max function: {list(kwargs.keys())}")
+        return self.aggregate("max", 0)
 
     def std(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            ddof: int = 1,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("std", 0, *args, **kwargs)
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in std function, but got: {axis}")
+        if skipna is not True:
+            raise NotImplementedError("skipna=False is not currently supported in std function.")
+        if ddof != 1:
+            raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in std function.")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in std function: {list(kwargs.keys())}")
+        return self.aggregate("std", 0)
 
     def var(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            ddof: int = 1,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("var", 0, *args, **kwargs)
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in var function, but got: {axis}")
+        if skipna is not True:
+            raise NotImplementedError("skipna=False is not currently supported in var function.")
+        if ddof != 1:
+            raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in var function.")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in var function: {list(kwargs.keys())}")
+        return self.aggregate("var", 0)
 
     def count(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        return self.aggregate("count", 0, *args, **kwargs)
-
-    def size(
-            self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
-        return self.aggregate("size", 0, *args, **kwargs)
+        if axis not in [0, "index"]:
+            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in count function, but got: {axis}")
+        if numeric_only is not False:
+            raise NotImplementedError("numeric_only=True is not currently supported in count function.")
+        if len(kwargs) > 0:
+            raise NotImplementedError(f"Additional keyword arguments not supported in count function: {list(kwargs.keys())}")
+        return self.aggregate("count", 0)
 
     def groupby(
         self,

@@ -146,7 +146,10 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def sum(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
+            min_count: int = 0,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -154,7 +157,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def mean(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -162,7 +167,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def min(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -170,7 +177,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def max(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -178,7 +187,10 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def std(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            ddof: int = 1,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -186,7 +198,10 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def var(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            skipna: bool = True,
+            ddof: int = 1,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -194,15 +209,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def count(
             self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def size(
-            self,
-            *args: PyLegendPrimitiveOrPythonPrimitive,
+            axis: PyLegendUnion[int, str] = 0,
+            numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

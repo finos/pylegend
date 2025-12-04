@@ -141,6 +141,70 @@ class TestAggregateFunction:
         )
         assert v.value.args[0] == expected_msg
 
+    def test_convenience_methods_error_invalid_axis(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var', 'count']
+        for method in methods:
+            with pytest.raises(NotImplementedError) as v:
+                getattr(frame, method)(axis=1)
+            assert f"The 'axis' parameter must be 0 or 'index' in {method} function, but got: 1" in v.value.args[0]
+
+    def test_convenience_methods_error_skipna_false(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var']
+        for method in methods:
+            with pytest.raises(NotImplementedError) as v:
+                getattr(frame, method)(skipna=False)
+            assert f"skipna=False is not currently supported in {method} function" in v.value.args[0]
+
+    def test_convenience_methods_error_numeric_only_true(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var', 'count']
+        for method in methods:
+            with pytest.raises(NotImplementedError) as v:
+                getattr(frame, method)(numeric_only=True)
+            assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
+
+    def test_convenience_methods_error_extra_kwargs(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var', 'count']
+        for method in methods:
+            with pytest.raises(NotImplementedError) as v:
+                getattr(frame, method)(dummy_arg=1)
+            assert f"Additional keyword arguments not supported in {method} function: ['dummy_arg']" in v.value.args[0]
+
+    def test_sum_error_min_count_nonzero(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.sum(min_count=5)
+        assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
+
+    def test_std_error_ddof_not_one(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.std(ddof=0)
+        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+
+    def test_var_error_ddof_not_one(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.var(ddof=2)
+        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+
     def test_aggregate_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.date_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
@@ -347,19 +411,6 @@ class TestAggregateFunction:
         )
 
         res = frame.count()
-        expected_sql = """\
-            SELECT
-                COUNT("root".col1) AS "col1",
-                COUNT("root".col2) AS "col2"
-            FROM
-                test_schema.test_table AS "root\""""
-        assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
-        assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}, "
-            "col2:{r | $r.col2}:{c | $c->count()}])"
-        )
-
-        res = frame.size()
         expected_sql = """\
             SELECT
                 COUNT("root".col1) AS "col1",
