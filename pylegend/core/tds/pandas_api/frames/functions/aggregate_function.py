@@ -44,9 +44,6 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SelectItem,
     SingleColumn,
-    SortItem,
-    SortItemOrdering,
-    SortItemNullOrdering,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -134,18 +131,6 @@ class AggregateFunction(PandasApiAppliedFunction):
                 for c in self.__base_frame.grouping_column_name_list()
             ]
 
-            is_sorted = getattr(self.__base_frame, "_PandasApiGroupbyTdsFrame__sort", True)
-
-            if is_sorted:
-                new_query.orderBy = [
-                    SortItem(
-                        sortKey=(lambda x: x[c])(tds_row).to_sql_expression({"r": new_query}, config),
-                        ordering=SortItemOrdering.ASCENDING,
-                        nullOrdering=SortItemNullOrdering.UNDEFINED,
-                    )
-                    for c in self.__base_frame.grouping_column_name_list()
-                ]
-
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -173,12 +158,6 @@ class AggregateFunction(PandasApiAppliedFunction):
                 f"~[{', '.join(agg_strings)}]{config.separator(1)}"
                 f")"
             )
-
-            is_sorted = getattr(self.__base_frame, "_PandasApiGroupbyTdsFrame__sort", True)
-
-            if is_sorted:
-                sort_items = [f"~{c}->ascending()" for c in group_strings]
-                pure_expression += f"{config.separator(1)}->sort([{', '.join(sort_items)}])"
 
             return pure_expression
         else:

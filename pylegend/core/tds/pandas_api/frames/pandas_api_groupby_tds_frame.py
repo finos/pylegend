@@ -187,7 +187,28 @@ class PandasApiGroupbyTdsFrame:
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
-        return PandasApiAppliedFunctionTdsFrame(AggregateFunction(self, func, axis, *args, **kwargs))
+        aggregated_result: PandasApiAppliedFunctionTdsFrame = PandasApiAppliedFunctionTdsFrame(
+            AggregateFunction(self, func, axis, *args, **kwargs)
+        )
+
+        if self.__sort:
+            from pylegend.core.tds.pandas_api.frames.functions.sort_values_function import SortValuesFunction
+
+            aggregated_result = PandasApiAppliedFunctionTdsFrame(
+                SortValuesFunction(
+                    base_frame=aggregated_result,
+                    by=self.grouping_column_name_list(),
+                    axis=0,
+                    ascending=True,
+                    inplace=False,
+                    kind=None,
+                    na_position="last",
+                    ignore_index=True,
+                    key=None,
+                )
+            )
+
+        return aggregated_result
 
     def agg(
         self,
