@@ -78,18 +78,12 @@ class PandasApiRenameFunction(PandasApiAppliedFunction):
         mapping_source = None
 
         axis_is_columns = (self.__axis == 1 or self.__axis == "columns")
-        axis_is_index = (self.__axis == 0 or self.__axis == "index")
-
-        if axis_is_index:
-            raise NotImplementedError("Renaming index is not supported yet in Pandas API")
 
         # Priority: explicit columns=, else mapper when axis targets columns
         if self.__columns is not None:
             mapping_source = self.__columns
         elif self.__mapper is not None and axis_is_columns:
             mapping_source = self.__mapper
-        elif self.__index is not None:
-            raise NotImplementedError("Index mapper is not supported yet in Pandas API")
 
         if mapping_source is None:
             return {}
@@ -135,9 +129,9 @@ class PandasApiRenameFunction(PandasApiAppliedFunction):
         new_select_items: PyLegendList[SelectItem] = []
         for col in base_query.select.selectItems:
             if not isinstance(col, SingleColumn):
-                raise ValueError("Rename operation not supported for non-SingleColumn select items")
+                raise ValueError("Rename operation not supported for non-SingleColumn select items")  # pragma: no cover
             if col.alias is None:
-                raise ValueError("Rename operation requires SingleColumn items with aliases")
+                raise ValueError("Rename operation requires SingleColumn items with aliases")  # pragma: no cover
             if col.alias in quoted_from:
                 new_alias = quoted_to[quoted_from.index(col.alias)]
                 new_select_items.append(SingleColumn(alias=new_alias, expression=col.expression))
