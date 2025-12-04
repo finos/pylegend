@@ -145,7 +145,7 @@ class TestAggregateFunction:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var', 'count']
+        methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
             with pytest.raises(NotImplementedError) as v:
                 getattr(frame, method)(axis=1)
@@ -155,7 +155,7 @@ class TestAggregateFunction:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var']
+        methods = ['sum', 'mean', 'min', 'max', 'std', 'var']
         for method in methods:
             with pytest.raises(NotImplementedError) as v:
                 getattr(frame, method)(skipna=False)
@@ -165,7 +165,7 @@ class TestAggregateFunction:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var', 'count']
+        methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
             with pytest.raises(NotImplementedError) as v:
                 getattr(frame, method)(numeric_only=True)
@@ -175,7 +175,7 @@ class TestAggregateFunction:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        methods = ['sum', 'mean', 'median', 'min', 'max', 'std', 'var', 'count']
+        methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
             with pytest.raises(NotImplementedError) as v:
                 getattr(frame, method)(dummy_arg=1)

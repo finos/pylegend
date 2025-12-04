@@ -311,23 +311,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             raise NotImplementedError(f"Additional keyword arguments not supported in mean function: {list(kwargs.keys())}")
         return self.aggregate("mean", 0)
 
-    def median(
-            self,
-            axis: PyLegendUnion[int, str] = 0,
-            skipna: bool = True,
-            numeric_only: bool = False,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
-        if axis not in [0, "index"]:
-            raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in median function, but got: {axis}")
-        if skipna is not True:
-            raise NotImplementedError("skipna=False is not currently supported in median function.")
-        if numeric_only is not False:
-            raise NotImplementedError("numeric_only=True is not currently supported in median function.")
-        if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in median function: {list(kwargs.keys())}")
-        return self.aggregate("median", 0)
-
     def min(
             self,
             axis: PyLegendUnion[int, str] = 0,
