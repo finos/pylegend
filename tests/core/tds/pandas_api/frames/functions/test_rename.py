@@ -200,6 +200,45 @@ class TestRenameFunction:
         expected_pure_compact = "#Table(test_schema.test_table)#->project(~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3])"  # noqa: E501
         assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(pretty=False), self.legend_client) == expected_pure_compact  # noqa: E501
 
+        renamed_frame = frame.rename()
+        expected_sql = '''\
+                          SELECT
+                              "root".col1 AS "col1",
+                              "root".col2 AS "col2",
+                              "root".col3 AS "col3"
+                          FROM
+                              test_schema.test_table AS "root"'''
+        assert renamed_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        expected_pure_pretty = '''\
+                #Table(test_schema.test_table)#
+                  ->project(
+                    ~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3]
+                  )'''
+        assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(), self.legend_client) == dedent(
+            expected_pure_pretty)
+        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3])"  # noqa: E501
+        assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(pretty=False),
+                                               self.legend_client) == expected_pure_compact
+
+        # callable
+        renamed_frame = frame.rename(str.upper, axis=1)
+        expected_sql = '''\
+                         SELECT
+                             "root".col1 AS "COL1",
+                             "root".col2 AS "COL2",
+                             "root".col3 AS "COL3"
+                         FROM
+                             test_schema.test_table AS "root"'''
+        assert renamed_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        expected_pure_pretty = '''\
+        #Table(test_schema.test_table)#
+          ->project(
+            ~[COL1:x|$x.col1, COL2:x|$x.col2, COL3:x|$x.col3]
+          )'''
+        assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)  # noqa: E501
+        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[COL1:x|$x.col1, COL2:x|$x.col2, COL3:x|$x.col3])"  # noqa: E501
+        assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(pretty=False), self.legend_client) == expected_pure_compact  # noqa: E501
+
     def test_rename_chained(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
