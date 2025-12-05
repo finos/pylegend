@@ -23,11 +23,13 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendList,
     PyLegendSet,
+    PyLegendTuple,
+    PyLegendDict
 )
-from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language import (
     PyLegendPrimitive,
 )
+from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
@@ -112,21 +114,70 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
     @abstractmethod
     def aggregate(
-        self,
-        func: PyLegendAggInput,
-        axis: PyLegendUnion[int, str] = 0,
-        *args: PyLegendPrimitiveOrPythonPrimitive,
-        **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            self,
+            func: PyLegendAggInput,
+            axis: PyLegendUnion[int, str] = 0,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod
     def agg(
-        self,
-        func: PyLegendAggInput,
-        axis: PyLegendUnion[int, str] = 0,
-        *args: PyLegendPrimitiveOrPythonPrimitive,
-        **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            self,
+            func: PyLegendAggInput,
+            axis: PyLegendUnion[int, str] = 0,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def merge(
+            self,
+            other: "PandasApiTdsFrame",
+            how: PyLegendOptional[str] = "inner",
+            on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            left_on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            right_on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            left_index: PyLegendOptional[bool] = False,
+            right_index: PyLegendOptional[bool] = False,
+            sort: PyLegendOptional[bool] = False,
+            suffixes: PyLegendOptional[
+                PyLegendUnion[
+                    PyLegendTuple[PyLegendUnion[str, None], PyLegendUnion[str, None]],
+                    PyLegendList[PyLegendUnion[str, None]],
+                ]
+            ] = ("_x", "_y"),
+            indicator: PyLegendOptional[PyLegendUnion[bool, str]] = False,
+            validate: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def join(
+            self,
+            other: "PandasApiTdsFrame",
+            on: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            how: PyLegendOptional[str] = "left",
+            lsuffix: str = "",
+            rsuffix: str = "",
+            sort: PyLegendOptional[bool] = False,
+            validate: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def rename(
+            self,
+            mapper: PyLegendOptional[PyLegendUnion[PyLegendDict[str, str], PyLegendCallable[[str], str]]] = None,
+            index: PyLegendOptional[PyLegendUnion[PyLegendDict[str, str], PyLegendCallable[[str], str]]] = None,
+            columns: PyLegendOptional[PyLegendUnion[PyLegendDict[str, str], PyLegendCallable[[str], str]]] = None,
+            axis: PyLegendUnion[str, int] = 1,
+            inplace: PyLegendUnion[bool] = False,
+            copy: PyLegendUnion[bool] = True,
+            level: PyLegendOptional[PyLegendUnion[int, str]] = None,
+            errors: str = "ignore",
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
