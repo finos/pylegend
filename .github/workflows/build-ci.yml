@@ -71,7 +71,7 @@ jobs:
           path: ./coverage/*.xml
 
       - name: CodeCov Coverage Report
-        uses: codecov/codecov-action@v5.5.1
+        uses: codecov/codecov-action@v5.5.2
         with:
           files: ./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
           flags: pytest
