@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
@@ -33,7 +33,16 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringFormat
 )
-from pylegend.core.language import PyLegendPrimitive, PyLegendInteger, PyLegendBoolean
+from pylegend.core.language import (
+    PyLegendPrimitive,
+    PyLegendInteger,
+    PyLegendFloat,
+    PyLegendString,
+    PyLegendDate,
+    PyLegendStrictDate,
+    PyLegendDateTime,
+    PyLegendBoolean,
+)
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
@@ -73,6 +82,9 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             cols = "[" + ", ".join([str(c) for c in columns]) + "]"
             raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
         self.__columns = [c.copy() for c in columns]
+        self._cached_sql = None
+        self._cached_pure = None
+        self._cached_frames = None
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
         return [c.copy() for c in self.__columns]
@@ -97,7 +109,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 if col.get_name() == key:
                     col_type = col.get_type()
                     if col_type == "Boolean":
-                        from pylegend.core.language.pandas_api.pandas_api_series import BooleanSeries  # pragma: no cover
+                        from pylegend.core.language.pandas_api.pandas_api_series import \
+                            BooleanSeries  # pragma: no cover
                         return BooleanSeries(self, key)  # pragma: no cover (Boolean column not supported in PURE)
                     elif col_type == "String":
                         from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
@@ -129,6 +142,147 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             return self.filter(items=key)
         else:
             raise TypeError(f"Invalid key type: {type(key)}. Expected str, list, or boolean expression")
+
+    def __setitem__(self, key: str, value: PyLegendUnion["Series", PyLegendPrimitiveOrPythonPrimitive]) -> None:
+        """
+        Pandas-like column assignment with replace semantics:
+        - If column exists, drop it first.
+        - Then assign the new value (Series or constant).
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
+        from pylegend.core.tds.pandas_api.frames.functions.drop import PandasApiDropFunction
+        from pylegend.core.language.pandas_api.pandas_api_series import Series, IntegerSeries, FloatSeries, \
+            StringSeries, BooleanSeries, DateSeries, DateTimeSeries, StrictDateSeries
+        from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
+        from pylegend.core.tds.pandas_api.frames.functions.rename import PandasApiRenameFunction
+
+        # Type Check
+        if not isinstance(key, str):
+            raise TypeError(f"Column name must be a string, got: {type(key)}")
+
+        # Reject cross-frame assignment
+        if isinstance(value, Series):
+            origin = value.get_base_frame()
+            if origin is not None and origin is not self:
+                raise ValueError("Assignment from a different frame is not allowed")
+
+        # Column Type check
+        def _validate_type(expr: PyLegendUnion["Series", PyLegendPrimitiveOrPythonPrimitive], col_type: str) -> bool:
+            if col_type.lower() == 'integer':
+                return isinstance(expr, (PyLegendInteger, int, IntegerSeries))
+            elif col_type.lower() == 'float':
+                return isinstance(expr, (PyLegendFloat, float, FloatSeries))
+            elif col_type.lower() == 'string':
+                return isinstance(expr, (PyLegendString, str, StringSeries))
+            elif col_type.lower() == 'boolean':  # pragma: no cover (Boolean column not supported in PURE)
+                return isinstance(expr, (PyLegendBoolean, bool,
+                                         BooleanSeries))  # pragma: no cover (Boolean column not supported in PURE)
+            elif col_type.lower() == 'date':
+                return isinstance(expr, (PyLegendDate, PyLegendStrictDate, PyLegendDateTime, date, datetime, DateSeries,
+                                         DateTimeSeries, StrictDateSeries))
+            elif col_type.lower() == 'strictdate':
+                return isinstance(expr, (PyLegendStrictDate, date, StrictDateSeries))
+            elif col_type.lower() == 'datetime':
+                return isinstance(expr, (PyLegendDateTime, datetime, DateTimeSeries))
+            else:
+                raise ValueError(f"Unsupported column type: {col_type}")  # pragma: no cover
+
+        existing_cols = [c.get_name() for c in self.columns()]
+        existing_set = set(existing_cols)
+        original_idx = existing_cols.index(key) if key in existing_set else len(existing_cols)
+        working_frame: PandasApiBaseTdsFrame = self
+
+        if key in existing_set:
+            col_type = None
+            for c in self.columns():
+                if c.get_name() == key:
+                    col_type = c.get_type()
+                    break
+
+            if not _validate_type(value, col_type):  # type: ignore
+                raise TypeError(f"Assigned value type does not match column '{key}' type '{col_type}'")
+
+        # for Rename
+        tmp_key = f"__tmp__{key}"
+
+        # Normalize the assignment value
+        col_def = {}
+        assign_target = tmp_key if key in existing_set else key
+        col_def[assign_target] = lambda row: value
+
+        assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(working_frame, col_definitions=col_def))
+        if key not in existing_set:
+            self._replace_with(assign_applied)
+
+        # drop, rename and reorder
+        if key in existing_set:
+            # Drop the original key
+            drop_fn = PandasApiDropFunction(
+                base_frame=assign_applied,
+                labels=[key],
+                axis=1,
+                errors="ignore",
+                index=None,
+                columns=None,
+                level=None,
+                inplace=False
+            )
+            dropped = PandasApiAppliedFunctionTdsFrame(drop_fn)
+
+            # Rename tmp_key back to key
+            rename_fn = PandasApiRenameFunction(
+                base_frame=dropped,
+                mapper={tmp_key: key},
+                index=None,
+                columns=None,
+                axis=1,
+                inplace=False,
+                copy=True,
+                level=None,
+                errors="ignore",
+            )
+            renamed = PandasApiAppliedFunctionTdsFrame(rename_fn)
+
+            # Re-order to keep original position
+            new_cols = [c.get_name() for c in renamed.columns()]
+            without_key = [c for c in new_cols if c != key]
+            target_order = without_key[:original_idx] + [key] + without_key[original_idx:]
+
+            reorder_fn = PandasApiFilterFunction(
+                base_frame=renamed,
+                items=target_order,
+                like=None,
+                regex=None,
+                axis=1
+            )
+            reordered = PandasApiAppliedFunctionTdsFrame(reorder_fn)
+            self._replace_with(reordered)
+
+    def _replace_with(self, new_frame: "PandasApiBaseTdsFrame") -> None:
+        """
+        Internal: replace this frame's state with another frame to emulate in-place operations.
+        """
+        from pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame import \
+            PandasApiLegendServiceInputFrame
+
+        # Check if executable
+        frames = new_frame.get_all_tds_frames()
+        is_exec_chain = False
+        is_exec_chain = any(isinstance(f, PandasApiLegendServiceInputFrame) for f in frames)
+
+        # Copy SQL and Pure
+        if hasattr(new_frame, "to_sql_query_object"):
+            self._cached_sql = new_frame.to_sql_query_object(FrameToSqlConfig())  # type: ignore
+        if hasattr(new_frame, "to_pure") and not is_exec_chain:
+            print()
+            self._cached_pure = new_frame.to_pure(FrameToPureConfig())  # type: ignore
+        if hasattr(new_frame, "get_all_tds_frames"):
+            self._cached_frames = new_frame.get_all_tds_frames()  # type: ignore
+
+        self.__columns = new_frame.columns()
 
     def assign(
             self,
@@ -217,7 +371,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             index: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
             columns: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
-            inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
+            inplace: PyLegendUnion[bool, PyLegendBoolean] = False,
             errors: str = "raise",
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import \
@@ -238,11 +392,11 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
 
     def aggregate(
-        self,
-        func: PyLegendAggInput,
-        axis: PyLegendUnion[int, str] = 0,
-        *args: PyLegendPrimitiveOrPythonPrimitive,
-        **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            self,
+            func: PyLegendAggInput,
+            axis: PyLegendUnion[int, str] = 0,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame
@@ -257,11 +411,11 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         ))
 
     def agg(
-        self,
-        func: PyLegendAggInput,
-        axis: PyLegendUnion[int, str] = 0,
-        *args: PyLegendPrimitiveOrPythonPrimitive,
-        **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            self,
+            func: PyLegendAggInput,
+            axis: PyLegendUnion[int, str] = 0,
+            *args: PyLegendPrimitiveOrPythonPrimitive,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame
@@ -293,7 +447,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if min_count != 0:
             raise NotImplementedError(f"min_count must be 0 in sum function, but got: {min_count}")
         if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in sum function: {list(kwargs.keys())}")
+            raise NotImplementedError(
+                f"Additional keyword arguments not supported in sum function: {list(kwargs.keys())}")
         return self.aggregate("sum", 0)
 
     def mean(
@@ -310,7 +465,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in mean function.")
         if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in mean function: {list(kwargs.keys())}")
+            raise NotImplementedError(
+                f"Additional keyword arguments not supported in mean function: {list(kwargs.keys())}")
         return self.aggregate("mean", 0)
 
     def min(
@@ -327,7 +483,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in min function.")
         if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in min function: {list(kwargs.keys())}")
+            raise NotImplementedError(
+                f"Additional keyword arguments not supported in min function: {list(kwargs.keys())}")
         return self.aggregate("min", 0)
 
     def max(
@@ -344,7 +501,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in max function.")
         if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in max function: {list(kwargs.keys())}")
+            raise NotImplementedError(
+                f"Additional keyword arguments not supported in max function: {list(kwargs.keys())}")
         return self.aggregate("max", 0)
 
     def std(
@@ -360,11 +518,13 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if skipna is not True:
             raise NotImplementedError("skipna=False is not currently supported in std function.")
         if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+            raise NotImplementedError(
+                f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
         if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in std function: {list(kwargs.keys())}")
+            raise NotImplementedError(
+                f"Additional keyword arguments not supported in std function: {list(kwargs.keys())}")
         return self.aggregate("std", 0)
 
     def var(
@@ -384,7 +544,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
         if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in var function: {list(kwargs.keys())}")
+            raise NotImplementedError(
+                f"Additional keyword arguments not supported in var function: {list(kwargs.keys())}")
         return self.aggregate("var", 0)
 
     def count(
@@ -398,18 +559,19 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in count function.")
         if len(kwargs) > 0:
-            raise NotImplementedError(f"Additional keyword arguments not supported in count function: {list(kwargs.keys())}")
+            raise NotImplementedError(
+                f"Additional keyword arguments not supported in count function: {list(kwargs.keys())}")
         return self.aggregate("count", 0)
 
     def groupby(
-        self,
-        by: PyLegendUnion[str, PyLegendList[str]],
-        level: PyLegendOptional[PyLegendUnion[str, int, PyLegendList[str]]] = None,
-        as_index: bool = False,
-        sort: bool = True,
-        group_keys: bool = False,
-        observed: bool = False,
-        dropna: bool = False,
+            self,
+            by: PyLegendUnion[str, PyLegendList[str]],
+            level: PyLegendOptional[PyLegendUnion[str, int, PyLegendList[str]]] = None,
+            as_index: bool = False,
+            sort: bool = True,
+            group_keys: bool = False,
+            observed: bool = False,
+            dropna: bool = False,
     ) -> "PandasApiGroupbyTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import (
             PandasApiGroupbyTdsFrame
@@ -547,20 +709,23 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             )
         )
 
-    @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass  # pragma: no cover
+        if self._cached_sql is not None:
+            return self._cached_sql
+        return self._build_sql_query_object(config)  # type: ignore
 
-    @abstractmethod
     def to_pure(self, config: FrameToPureConfig) -> str:
-        pass  # pragma: no cover
+        if self._cached_pure is not None:
+            return self._cached_pure
+        return self._build_to_pure(config)  # type: ignore
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         return self.to_pure(config)
 
-    @abstractmethod
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
-        pass  # pragma: no cover
+        if self._cached_frames is not None:  # pragma: no cover
+            return self._cached_frames  # pragma: no cover
+        return [self]  # pragma: no cover
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         query = self.to_sql_query_object(config)

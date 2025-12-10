@@ -77,6 +77,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def value(self) -> PyLegendColumnExpression:
         return self
 
+    def get_base_frame(self) -> "PandasApiTdsFrame":
+        return self.__base_frame
+
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
