@@ -81,16 +81,30 @@ class RankFunction(PandasApiAppliedFunction):
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         db_extension = config.sql_to_string_generator().get_db_extension()
 
-        base_query = self.__base_frame.to_sql_query_object(config)
+        base_query = self.base_frame().to_sql_query_object(config)
         new_query = create_sub_query(base_query, config, "root")
 
-        tds_row = PandasApiTdsRow.from_tds_frame("root", self.__base_frame)
+        tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
 
         partition_items = []
+        columns_to_rank = [c.get_name() for c in self.base_frame().columns()]
+
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            # 1. Handle Partitioning
             for group_col in self.__base_frame.grouping_column_name_list():
                 col_expr = (lambda x: x[group_col])(tds_row).to_sql_expression({"root": new_query}, config)
                 partition_items.append(col_expr)
+            
+            # 2. Handle Column Selection
+            # If the user did frame.groupby(...)['col'], we only rank 'col'.
+            selected = self.__base_frame.selected_columns()
+            if selected is not None:
+                columns_to_rank = selected
+            else:
+                # If no explicit selection, generally grouping columns are excluded from the result in Pandas
+                # e.g. df.groupby('A').rank() returns columns B, C... but not A.
+                group_cols = set(self.__base_frame.grouping_column_name_list())
+                columns_to_rank = [c for c in columns_to_rank if c not in group_cols]
 
         func_name_str = "RANK"
         if self.__pct:
@@ -117,7 +131,6 @@ class RankFunction(PandasApiAppliedFunction):
             window=None
         )
 
-        # 3. Null Ordering
         null_ordering = SortItemNullOrdering.UNDEFINED
         if self.__na_option == 'top':
             null_ordering = SortItemNullOrdering.FIRST
@@ -126,8 +139,12 @@ class RankFunction(PandasApiAppliedFunction):
 
         new_select_items = []
 
-        for col in self.__base_frame.columns():
+        for col in self.base_frame().columns():
             col_name = col.get_name()
+
+            # Skip columns not in the selection list
+            if col_name not in columns_to_rank:
+                continue
 
             if self.__numeric_only:
                 if col.get_type() not in ["Integer", "Float", "Number"]:
@@ -189,7 +206,7 @@ class RankFunction(PandasApiAppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         new_columns = []
-        for col in self.__base_frame.columns():
+        for col in self.base_frame().columns():
             if self.__numeric_only:
                 if col.get_type() not in ["Integer", "Float", "Number"]:
                     continue
@@ -198,6 +215,7 @@ class RankFunction(PandasApiAppliedFunction):
                 new_col = PrimitiveTdsColumn.float_column(col.get_name())
             else:
                 new_col = PrimitiveTdsColumn.integer_column(col.get_name())
+
             new_columns.append(new_col)
         return new_columns
 
