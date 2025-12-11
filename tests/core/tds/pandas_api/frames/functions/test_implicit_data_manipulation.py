@@ -298,6 +298,37 @@ class TestImplicitDataManipulationFunction:
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
 
+    def test_implicit_function_lambda(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2"),
+            PrimitiveTdsColumn.float_column("col3"),
+            PrimitiveTdsColumn.date_column("col5"),
+            PrimitiveTdsColumn.datetime_column("col6"),
+            PrimitiveTdsColumn.strictdate_column("col7")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame['col4'] = lambda x: x["col1"] + x["col2"]  # type: ignore
+        expected_sql = '''\
+        SELECT
+            "root".col1 AS "col1",
+            "root".col2 AS "col2",
+            "root".col3 AS "col3",
+            "root".col5 AS "col5",
+            "root".col6 AS "col6",
+            "root".col7 AS "col7",
+            ("root".col1 + "root".col2) AS "col4"
+        FROM
+            test_schema.test_table AS "root"'''
+
+        expected_pure = """\
+        #Table(test_schema.test_table)#
+          ->extend(~[col4:c|(toOne($c.col1) + toOne($c.col2))])"""
+
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
     def test_e2e_integer(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 

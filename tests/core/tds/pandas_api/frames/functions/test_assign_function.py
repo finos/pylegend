@@ -14,6 +14,7 @@
 
 import json
 from textwrap import dedent
+from datetime import datetime
 import pytest
 
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -60,7 +61,7 @@ class TestAssignFunction:
     def test_assign_constant(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.integer_column("col2")
+            PrimitiveTdsColumn.datetime_column("col2")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
@@ -79,6 +80,23 @@ class TestAssignFunction:
         FROM
             test_schema.test_table AS "root"''')
         assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+
+        frame = frame.assign(datecol=lambda x: datetime(2024, 1, 1, 12, 30, 0))
+
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent('''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                2 AS "newcol",
+                CAST('2024-01-01T12:30:00' AS TIMESTAMP) AS "datecol"
+            FROM
+                test_schema.test_table AS "root"''')
+
+        expected_pure = dedent("""\
+        #Table(test_schema.test_table)#
+          ->extend(~[newcol:c|2])
+          ->extend(~[datecol:c|%2024-01-01T12:30:00])""")
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_e2e_assign_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])

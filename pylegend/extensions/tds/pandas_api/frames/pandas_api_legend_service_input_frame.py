@@ -59,7 +59,6 @@ class PandasApiLegendServiceInputFrame(PandasApiExecutableInputTdsFrame):
 
         self._cached_sql = None
         self._cached_pure = None
-        self._cached_frames = None
 
         PandasApiExecutableInputTdsFrame.__init__(
             self,

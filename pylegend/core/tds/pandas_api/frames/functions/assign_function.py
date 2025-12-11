@@ -129,10 +129,10 @@ class AssignFunction(PandasApiAppliedFunction):
                 )  # pragma: no cover (Boolean column not supported in PURE)
             elif isinstance(res, (str, PyLegendString)):
                 new_cols.append(PrimitiveTdsColumn.string_column(col))
-            elif isinstance(res, (date, PyLegendDate)):
-                new_cols.append(PrimitiveTdsColumn.date_column(col))
             elif isinstance(res, (datetime, PyLegendDateTime)):
                 new_cols.append(PrimitiveTdsColumn.datetime_column(col))
+            elif isinstance(res, (date, PyLegendDate)):
+                new_cols.append(PrimitiveTdsColumn.date_column(col))
             else:
                 raise RuntimeError("Type not supported")  # pragma: no cover
         return new_cols

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
@@ -84,7 +84,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         self.__columns = [c.copy() for c in columns]
         self._cached_sql = None
         self._cached_pure = None
-        self._cached_frames = None
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
         return [c.copy() for c in self.__columns]
@@ -210,8 +209,12 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         # Normalize the assignment value
         col_def = {}
-        assign_target = tmp_key if key in existing_set else key
-        col_def[assign_target] = lambda row: value
+        if isinstance(value, (Series, PyLegendPrimitiveOrPythonPrimitive)):  # type: ignore
+            assign_target = tmp_key if key in existing_set else key
+            col_def[assign_target] = lambda row: value
+        elif callable(value):
+            assign_target = tmp_key if key in existing_set else key
+            col_def[assign_target] = value
 
         assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(working_frame, col_definitions=col_def))
         if key not in existing_set:
@@ -279,8 +282,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if hasattr(new_frame, "to_pure") and not is_exec_chain:
             print()
             self._cached_pure = new_frame.to_pure(FrameToPureConfig())  # type: ignore
-        if hasattr(new_frame, "get_all_tds_frames"):
-            self._cached_frames = new_frame.get_all_tds_frames()  # type: ignore
 
         self.__columns = new_frame.columns()
 
@@ -722,10 +723,9 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         return self.to_pure(config)
 
+    @abstractmethod
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
-        if self._cached_frames is not None:  # pragma: no cover
-            return self._cached_frames  # pragma: no cover
-        return [self]  # pragma: no cover
+        pass  # pragma: no cover
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         query = self.to_sql_query_object(config)
