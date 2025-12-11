@@ -422,6 +422,29 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             observed=observed,
             dropna=dropna
         )
+    
+    def rank(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            method: str = 'average',
+            numeric_only: bool = False,
+            na_option: str = 'keep',
+            ascending: bool = True,
+            pct: bool = False
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=axis,
+            method=method,
+            numeric_only=numeric_only,
+            na_option=na_option,
+            ascending=ascending,
+            pct=pct
+        ))
 
     @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
