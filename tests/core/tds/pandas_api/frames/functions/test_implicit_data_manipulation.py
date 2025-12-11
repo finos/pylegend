@@ -85,15 +85,12 @@ class TestImplicitDataManipulationFunction:
                              test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
-        expected_pure_pretty = '''\
-        #Table(test_schema.test_table)#
-          ->extend(~[__tmp__col1:c|(toOne($c.col1) + 10)])
-          ->select(~[col2, col3, col4, col5, __tmp__col1])
-          ->project(
-            ~[col2:x|$x.col2, col3:x|$x.col3, col4:x|$x.col4, col5:x|$x.col5, col1:x|$x.__tmp__col1]
-          )
-          ->select(~[col1, col2, col3, col4, col5])'''
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|(toOne($c.col1) + 10), col2:c|$c.col2, col3:c|$c.col3, "
+            "col4:c|$c.col4, col5:c|$c.col5])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
     @pytest.mark.skip(reason="Boolean not yet supported in PURE")
     def test_implicit_function_boolean(self) -> None:
@@ -122,17 +119,12 @@ class TestImplicitDataManipulationFunction:
                              test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
-        expected_pure_pretty = (
-              "#Table(test_schema.test_table)#\n"
-              "  ->extend(~[__tmp__col4:c|toOne($c.col4)->not()])\n"
-              "  ->select(~[col1, col2, col3, col5, col6, col7, __tmp__col4])\n"
-              "  ->project(\n"
-              "    ~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3, col5:x|$x.col5, "
-              "col6:x|$x.col6, col7:x|$x.col7, col4:x|$x.__tmp__col4]\n"
-              "  )\n"
-              "  ->select(~[col1, col2, col3, col4, col5, col6, col7])"
-          )
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col4:c|toOne($c.col4)->not(), col5:c|$c.col5, "
+            "col6:c|$c.col6, col7:c|$c.col7])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
     def test_implicit_function_float(self) -> None:
         columns = [
@@ -147,15 +139,12 @@ class TestImplicitDataManipulationFunction:
 
         frame['col3'] = frame['col3'] + 1.5  # type: ignore
 
-        expected_pure_pretty = '''\
-        #Table(test_schema.test_table)#
-          ->extend(~[__tmp__col3:c|(toOne($c.col3) + 1.5)])
-          ->select(~[col1, col2, col5, col6, col7, __tmp__col3])
-          ->project(
-            ~[col1:x|$x.col1, col2:x|$x.col2, col5:x|$x.col5, col6:x|$x.col6, col7:x|$x.col7, col3:x|$x.__tmp__col3]
-          )
-          ->select(~[col1, col2, col3, col5, col6, col7])'''
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|(toOne($c.col3) + 1.5), col5:c|$c.col5, "
+            "col6:c|$c.col6, col7:c|$c.col7])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
         expected_sql = '''\
                         SELECT
@@ -181,15 +170,12 @@ class TestImplicitDataManipulationFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         frame['col5'] = date(2024, 1, 1)
-        expected_pure_pretty = '''\
-        #Table(test_schema.test_table)#
-          ->extend(~[__tmp__col5:c|%2024-01-01])
-          ->select(~[col1, col2, col3, col6, col7, __tmp__col5])
-          ->project(
-            ~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3, col6:x|$x.col6, col7:x|$x.col7, col5:x|$x.__tmp__col5]
-          )
-          ->select(~[col1, col2, col3, col5, col6, col7])'''
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|%2024-01-01, "
+            "col6:c|$c.col6, col7:c|$c.col7])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
         expected_sql = '''\
                         SELECT
@@ -215,15 +201,12 @@ class TestImplicitDataManipulationFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         frame['col7'] = date(2024, 1, 1)
-        expected_pure_pretty = '''\
-        #Table(test_schema.test_table)#
-          ->extend(~[__tmp__col7:c|%2024-01-01])
-          ->select(~[col1, col2, col3, col5, col6, __tmp__col7])
-          ->project(
-            ~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3, col5:x|$x.col5, col6:x|$x.col6, col7:x|$x.__tmp__col7]
-          )
-          ->select(~[col1, col2, col3, col5, col6, col7])'''
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|$c.col5, "
+            "col6:c|$c.col6, col7:c|%2024-01-01])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
         expected_sql = '''\
                         SELECT
@@ -250,9 +233,11 @@ class TestImplicitDataManipulationFunction:
 
         frame['col4'] = datetime(2024, 1, 1, 12, 30, 0)
 
-        expected_pure_pretty = '''\
-        #Table(test_schema.test_table)#
-          ->extend(~[col4:c|%2024-01-01T12:30:00])'''
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|$c.col5, col6:c|$c.col6, col7:c|$c.col7, "
+            "col4:c|%2024-01-01T12:30:00])"
+        )
 
         expected_sql = '''\
         SELECT
@@ -266,22 +251,17 @@ class TestImplicitDataManipulationFunction:
         FROM
             test_schema.test_table AS "root"'''
 
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
         frame['col6'] = datetime(2024, 1, 1, 12, 30, 0)
-
-        expected_pure_pretty = (
-              "#Table(test_schema.test_table)#\n"
-              "  ->extend(~[col4:c|%2024-01-01T12:30:00])\n"
-              "  ->extend(~[__tmp__col6:c|%2024-01-01T12:30:00])\n"
-              "  ->select(~[col1, col2, col3, col5, col7, col4, __tmp__col6])\n"
-              "  ->project(\n"
-              "    ~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3, col5:x|$x.col5, "
-              "col7:x|$x.col7, col4:x|$x.col4, col6:x|$x.__tmp__col6]\n"
-              "  )\n"
-              "  ->select(~[col1, col2, col3, col5, col6, col7, col4])"
-          )
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|$c.col5, "
+            "col6:c|$c.col6, col7:c|$c.col7, col4:c|%2024-01-01T12:30:00])\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|$c.col5, "
+            "col6:c|%2024-01-01T12:30:00, col7:c|$c.col7, col4:c|$c.col4])"
+        )
 
         expected_sql = '''\
         SELECT
@@ -296,7 +276,7 @@ class TestImplicitDataManipulationFunction:
             test_schema.test_table AS "root"'''
 
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
     def test_implicit_function_lambda(self) -> None:
         columns = [
@@ -322,9 +302,11 @@ class TestImplicitDataManipulationFunction:
         FROM
             test_schema.test_table AS "root"'''
 
-        expected_pure = """\
-        #Table(test_schema.test_table)#
-          ->extend(~[col4:c|(toOne($c.col1) + toOne($c.col2))])"""
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|$c.col5, col6:c|$c.col6, col7:c|$c.col7, "
+            "col4:c|(toOne($c.col1) + toOne($c.col2))])"
+        )
 
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)

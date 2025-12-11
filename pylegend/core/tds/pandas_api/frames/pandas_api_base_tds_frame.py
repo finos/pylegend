@@ -152,11 +152,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
-        from pylegend.core.tds.pandas_api.frames.functions.drop import PandasApiDropFunction
         from pylegend.core.language.pandas_api.pandas_api_series import Series, IntegerSeries, FloatSeries, \
             StringSeries, BooleanSeries, DateSeries, DateTimeSeries, StrictDateSeries
-        from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
-        from pylegend.core.tds.pandas_api.frames.functions.rename import PandasApiRenameFunction
 
         # Type Check
         if not isinstance(key, str):
@@ -170,6 +167,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         # Column Type check
         def _validate_type(expr: PyLegendUnion["Series", PyLegendPrimitiveOrPythonPrimitive], col_type: str) -> bool:
+            if callable(expr):
+                return True  # Cannot validate at this time
             if col_type.lower() == 'integer':
                 return isinstance(expr, (PyLegendInteger, int, IntegerSeries))
             elif col_type.lower() == 'float':
@@ -191,8 +190,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         existing_cols = [c.get_name() for c in self.columns()]
         existing_set = set(existing_cols)
-        original_idx = existing_cols.index(key) if key in existing_set else len(existing_cols)
-        working_frame: PandasApiBaseTdsFrame = self
 
         if key in existing_set:
             col_type = None
@@ -204,65 +201,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             if not _validate_type(value, col_type):  # type: ignore
                 raise TypeError(f"Assigned value type does not match column '{key}' type '{col_type}'")
 
-        # for Rename
-        tmp_key = f"__tmp__{key}"
-
         # Normalize the assignment value
         col_def = {}
         if isinstance(value, (Series, PyLegendPrimitiveOrPythonPrimitive)):  # type: ignore
-            assign_target = tmp_key if key in existing_set else key
-            col_def[assign_target] = lambda row: value
+            col_def[key] = lambda row: value
         elif callable(value):
-            assign_target = tmp_key if key in existing_set else key
-            col_def[assign_target] = value
+            col_def[key] = value
 
-        assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(working_frame, col_definitions=col_def))
-        if key not in existing_set:
-            self._replace_with(assign_applied)
-
-        # drop, rename and reorder
-        if key in existing_set:
-            # Drop the original key
-            drop_fn = PandasApiDropFunction(
-                base_frame=assign_applied,
-                labels=[key],
-                axis=1,
-                errors="ignore",
-                index=None,
-                columns=None,
-                level=None,
-                inplace=False
-            )
-            dropped = PandasApiAppliedFunctionTdsFrame(drop_fn)
-
-            # Rename tmp_key back to key
-            rename_fn = PandasApiRenameFunction(
-                base_frame=dropped,
-                mapper={tmp_key: key},
-                index=None,
-                columns=None,
-                axis=1,
-                inplace=False,
-                copy=True,
-                level=None,
-                errors="ignore",
-            )
-            renamed = PandasApiAppliedFunctionTdsFrame(rename_fn)
-
-            # Re-order to keep original position
-            new_cols = [c.get_name() for c in renamed.columns()]
-            without_key = [c for c in new_cols if c != key]
-            target_order = without_key[:original_idx] + [key] + without_key[original_idx:]
-
-            reorder_fn = PandasApiFilterFunction(
-                base_frame=renamed,
-                items=target_order,
-                like=None,
-                regex=None,
-                axis=1
-            )
-            reordered = PandasApiAppliedFunctionTdsFrame(reorder_fn)
-            self._replace_with(reordered)
+        assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=col_def))
+        self._replace_with(assign_applied)
 
     def _replace_with(self, new_frame: "PandasApiBaseTdsFrame") -> None:
         """

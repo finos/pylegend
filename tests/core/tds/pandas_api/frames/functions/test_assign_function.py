@@ -36,6 +36,17 @@ class TestAssignFunction:
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
+    def test_assign_error(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(RuntimeError) as r:
+            frame.assign(newcol=lambda x: [1, 2])  # type: ignore
+        assert r.value.args[0] == "Type not supported"
+
     def test_assign(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -53,10 +64,30 @@ class TestAssignFunction:
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
-        expected_pure_pretty = dedent("""\
-        #Table(test_schema.test_table)#
-          ->extend(~[sumColumn:c|(toOne($c.col1) + toOne($c.col2))])""")
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure_pretty
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, sumColumn:c|(toOne($c.col1) + toOne($c.col2))])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
+        frame = frame.assign(col1=lambda x: x['col2']+5)  # type: ignore
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, sumColumn:c|(toOne($c.col1) + "
+            "toOne($c.col2))])\n"
+            "  ->project(~[col1:c|(toOne($c.col2) + 5), "
+            "col2:c|$c.col2, sumColumn:c|$c.sumColumn])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+        expected_sql = (
+            'SELECT\n'
+            '    ("root".col2 + 5) AS "col1",\n'
+            '    "root".col2 AS "col2",\n'
+            '    ("root".col1 + "root".col2) AS "sumColumn"\n'
+            'FROM\n'
+            '    test_schema.test_table AS "root"'
+        )
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_assign_constant(self) -> None:
         columns = [
@@ -67,10 +98,11 @@ class TestAssignFunction:
 
         frame = frame.assign(newcol=lambda x: 2)
 
-        expected_pure_pretty = dedent("""\
-        #Table(test_schema.test_table)#
-          ->extend(~[newcol:c|2])""")
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure_pretty
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, newcol:c|2])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
         expected_sql = dedent('''\
         SELECT
@@ -92,11 +124,12 @@ class TestAssignFunction:
             FROM
                 test_schema.test_table AS "root"''')
 
-        expected_pure = dedent("""\
-        #Table(test_schema.test_table)#
-          ->extend(~[newcol:c|2])
-          ->extend(~[datecol:c|%2024-01-01T12:30:00])""")
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, newcol:c|2])\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, newcol:c|$c.newcol, datecol:c|%2024-01-01T12:30:00])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
     def test_e2e_assign_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
