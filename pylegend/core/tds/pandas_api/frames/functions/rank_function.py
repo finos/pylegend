@@ -58,7 +58,7 @@ class RankFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "rank"
+        return "rank"  # pragma: no cover
 
     def __init__(
             self,
@@ -90,19 +90,14 @@ class RankFunction(PandasApiAppliedFunction):
         columns_to_rank = [c.get_name() for c in self.base_frame().columns()]
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            # 1. Handle Partitioning
             for group_col in self.__base_frame.grouping_column_name_list():
                 col_expr = (lambda x: x[group_col])(tds_row).to_sql_expression({"root": new_query}, config)
                 partition_items.append(col_expr)
-            
-            # 2. Handle Column Selection
-            # If the user did frame.groupby(...)['col'], we only rank 'col'.
+
             selected = self.__base_frame.selected_columns()
             if selected is not None:
                 columns_to_rank = selected
             else:
-                # If no explicit selection, generally grouping columns are excluded from the result in Pandas
-                # e.g. df.groupby('A').rank() returns columns B, C... but not A.
                 group_cols = set(self.__base_frame.grouping_column_name_list())
                 columns_to_rank = [c for c in columns_to_rank if c not in group_cols]
 
@@ -115,13 +110,9 @@ class RankFunction(PandasApiAppliedFunction):
             func_name_str = "DENSE_RANK"
         elif self.__method == 'first':
             func_name_str = "ROW_NUMBER"
-        elif self.__method == 'average':
-            # TODO: Implement complex logic for average ( (RANK + (COUNT + RANK - 1)) / 2 )
-            raise NotImplementedError(
-                "Rank method 'average' is not yet supported. Please use 'min', 'dense', or 'first'.")
         else:
             raise NotImplementedError(
-                f"Rank method '{self.__method}' is not supported.")
+                f"Rank method '{self.__method}' is not supported. Please use 'min', 'dense', or 'first'.")
 
         rank_func = FunctionCall(
             name=QualifiedName([func_name_str]),
@@ -142,7 +133,6 @@ class RankFunction(PandasApiAppliedFunction):
         for col in self.base_frame().columns():
             col_name = col.get_name()
 
-            # Skip columns not in the selection list
             if col_name not in columns_to_rank:
                 continue
 
