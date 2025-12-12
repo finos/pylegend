@@ -14,7 +14,8 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ParamSpec
+from typing_extensions import Concatenate
 
 import pandas as pd
 
@@ -71,6 +72,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 R = PyLegendTypeVar('R')
+P = ParamSpec("P")
 
 
 class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
@@ -655,6 +657,72 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 level=level,
                 errors=errors
             )
+        )
+
+    def apply(
+            self,
+            func: PyLegendUnion[
+                PyLegendCallable[Concatenate["Series", P], PyLegendPrimitiveOrPythonPrimitive],
+                str
+            ],
+            axis: PyLegendUnion[int, str] = 0,
+            raw: bool = False,
+            result_type: PyLegendOptional[str] = None,
+            args: PyLegendTuple[PyLegendPrimitiveOrPythonPrimitive, ...] = (),
+            by_row: PyLegendUnion[bool, str] = "compat",
+            engine: str = "python",
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, PyLegendPrimitiveOrPythonPrimitive]] = None,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        """
+        Pandas-like apply (columns-only):
+        - Supports callable func applied to each column (axis=0 or 'index')
+        - Internally delegates to assign by constructing lambdas per column
+        - Unsupported params raise NotImplementedError
+        """
+
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
+        from pylegend.core.language.pandas_api.pandas_api_series import Series
+
+        # Validation
+        if axis not in (0, "index"):
+            raise ValueError("Only column-wise apply is supported. Use axis=0 or 'index'")
+        if raw:
+            raise NotImplementedError("raw=True is not supported. Use raw=False")
+        if result_type is not None:
+            raise NotImplementedError("result_type is not supported")
+        if by_row not in (False, "compat"):
+            raise NotImplementedError("by_row must be False or 'compat'")
+        if engine != "python":
+            raise NotImplementedError("Only engine='python' is supported")
+        if engine_kwargs is not None:
+            raise NotImplementedError("engine_kwargs are not supported")
+        if isinstance(func, str):
+            raise NotImplementedError("String-based apply is not supported")
+        if not callable(func):
+            raise TypeError("Function must be a callable")
+
+        # Build assign column definitions: apply func to each column Series
+        col_definitions = {}
+        for c in self.columns():
+            col_name = c.get_name()
+            series = self[col_name]
+            # Compute row callable via func on the Series
+            def _row_callable(
+                    _row: PandasApiTdsRow,
+                    _s: Series = series,
+                    _a: PyLegendTuple[PyLegendPrimitiveOrPythonPrimitive, ...] = args,
+                    _k: PyLegendPrimitiveOrPythonPrimitive = kwargs
+            ) -> PyLegendPrimitiveOrPythonPrimitive:
+                return func(_s, *_a, **_k)
+
+            col_definitions[col_name] = _row_callable
+
+        return PandasApiAppliedFunctionTdsFrame(
+            AssignFunction(self, col_definitions=col_definitions)
         )
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:

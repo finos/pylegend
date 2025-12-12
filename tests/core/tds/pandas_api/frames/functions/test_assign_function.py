@@ -47,6 +47,46 @@ class TestAssignFunction:
             frame.assign(newcol=lambda x: [1, 2])  # type: ignore
         assert r.value.args[0] == "Type not supported"
 
+    def test_apply_error(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        # axis
+        with pytest.raises(ValueError) as v:
+            frame.apply(lambda x: x, axis=1)
+        assert v.value.args[0] == "Only column-wise apply is supported. Use axis=0 or 'index'"
+        # raw
+        with pytest.raises(NotImplementedError) as n:
+            frame.apply(lambda x: x, raw=True)
+        assert n.value.args[0] == "raw=True is not supported. Use raw=False"
+        # result_type
+        with pytest.raises(NotImplementedError) as n:
+            frame.apply(lambda x: x, result_type='expand')
+        assert n.value.args[0] == "result_type is not supported"
+        # by_row
+        with pytest.raises(NotImplementedError) as n:
+            frame.apply(lambda x: x, by_row=True)
+        assert n.value.args[0] == "by_row must be False or 'compat'"
+        # engine
+        with pytest.raises(NotImplementedError) as n:
+            frame.apply(lambda x: x, engine='numba')
+        assert n.value.args[0] == "Only engine='python' is supported"
+        # engine kwargs
+        with pytest.raises(NotImplementedError) as n:
+            frame.apply(lambda x: x, engine_kwargs={'optimize': True})
+        assert n.value.args[0] == "engine_kwargs are not supported"
+        # str function
+        with pytest.raises(NotImplementedError) as n:
+            frame.apply("sum", axis=0)
+        assert n.value.args[0] == "String-based apply is not supported"
+        # invalid function
+        with pytest.raises(TypeError) as t:
+            frame.apply(123)  # type: ignore
+        assert t.value.args[0] == "Function must be a callable"
+
     def test_assign(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -131,6 +171,32 @@ class TestAssignFunction:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
+    def test_apply(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        def add_offset(series, offset, *, scale=1, label=None):
+            return series * scale + offset
+
+        frame = frame.apply(add_offset, args=(2,), scale=3, label="bump")
+
+        expected_sql = dedent('''\
+            SELECT
+                (("root".col1 * 3) + 2) AS "col1",
+                (("root".col2 * 3) + 2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"''')
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|((toOne($c.col1) * 3) + 2), col2:c|((toOne($c.col2) * 3) + 2)])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
     def test_e2e_assign_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.assign(fullName=lambda x: x.get_string("First Name") + " " + x.get_string("Last Name"))
@@ -154,5 +220,41 @@ class TestAssignFunction:
                              {'values': ['Fabrice', 'Roberts', 34, 'Firm A', 'Fabrice Roberts', 100]},
                              {'values': ['Oliver', 'Hill', 32, 'Firm B', 'Oliver Hill', 100]},
                              {'values': ['David', 'Harris', 35, 'Firm C', 'David Harris', 100]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_apply_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        frame = frame.filter(items=['First Name', 'Last Name', 'Firm/Legal Name'])
+
+        def add_suffix(series, suffix, *, uppercase=False, label=None):
+            result = series + suffix
+            if uppercase:
+                result = result.upper()
+            return result
+
+        frame = frame.apply(add_suffix, args=(" Esq.",), uppercase=True, label="suffixing")
+        expected = {'columns': ['First Name', 'Last Name', 'Firm/Legal Name'],
+                    'rows': [{'values': ['PETER ESQ.', 'SMITH ESQ.', 'FIRM X ESQ.']},
+                             {'values': ['JOHN ESQ.', 'JOHNSON ESQ.', 'FIRM X ESQ.']},
+                             {'values': ['JOHN ESQ.', 'HILL ESQ.', 'FIRM X ESQ.']},
+                             {'values': ['ANTHONY ESQ.', 'ALLEN ESQ.', 'FIRM X ESQ.']},
+                             {'values': ['FABRICE ESQ.', 'ROBERTS ESQ.', 'FIRM A ESQ.']},
+                             {'values': ['OLIVER ESQ.', 'HILL ESQ.', 'FIRM B ESQ.']},
+                             {'values': ['DAVID ESQ.', 'HARRIS ESQ.', 'FIRM C ESQ.']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+        # lamda
+        frame = frame.apply(lambda x: x.lower())
+        expected = {'columns': ['First Name', 'Last Name', 'Firm/Legal Name'],
+                    'rows': [{'values': ['peter esq.', 'smith esq.', 'firm x esq.']},
+                             {'values': ['john esq.', 'johnson esq.', 'firm x esq.']},
+                             {'values': ['john esq.', 'hill esq.', 'firm x esq.']},
+                             {'values': ['anthony esq.', 'allen esq.', 'firm x esq.']},
+                             {'values': ['fabrice esq.', 'roberts esq.', 'firm a esq.']},
+                             {'values': ['oliver esq.', 'hill esq.', 'firm b esq.']},
+                             {'values': ['david esq.', 'harris esq.', 'firm c esq.']}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
