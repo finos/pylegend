@@ -14,7 +14,8 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ParamSpec
+from typing_extensions import Concatenate
 
 from pylegend._typing import (
     PyLegendCallable,
@@ -44,6 +45,8 @@ if TYPE_CHECKING:
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
 ]
+
+P = ParamSpec("P")
 
 
 class PandasApiTdsFrame(PyLegendTdsFrame):
@@ -270,6 +273,24 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             self,
             axis: PyLegendUnion[int, str] = 0,
             numeric_only: bool = False,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def apply(
+            self,
+            func: PyLegendUnion[
+                PyLegendCallable[Concatenate["Series", P], PyLegendPrimitiveOrPythonPrimitive],
+                str
+            ],
+            axis: PyLegendUnion[int, str] = 0,
+            raw: bool = False,
+            result_type: PyLegendOptional[str] = None,
+            args: PyLegendTuple[PyLegendPrimitiveOrPythonPrimitive, ...] = (),
+            by_row: PyLegendUnion[bool, str] = "compat",
+            engine: str = "python",
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, PyLegendPrimitiveOrPythonPrimitive]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

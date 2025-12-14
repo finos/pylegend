@@ -14,7 +14,7 @@
 
 import json
 from textwrap import dedent
-from datetime import datetime
+from datetime import date, datetime
 import pytest
 
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -129,6 +129,47 @@ class TestAssignFunction:
         )
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
+    def test_assign_float_date(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        # Float column
+        frame = frame.assign(floatcol=lambda x: 3.14)
+        expected_sql = dedent('''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                3.14 AS "floatcol"
+            FROM
+                test_schema.test_table AS "root"''')
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, floatcol:c|3.14])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
+        # Date column
+        frame = frame.assign(datecol=lambda x: date(2023, 12, 25))
+        expected_sql = dedent('''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                3.14 AS "floatcol",
+                CAST('2023-12-25' AS DATE) AS "datecol"
+            FROM
+                test_schema.test_table AS "root"''')
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, floatcol:c|3.14])\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, floatcol:c|$c.floatcol, datecol:c|%2023-12-25])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
     def test_assign_constant(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -178,7 +219,7 @@ class TestAssignFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        def add_offset(series, offset, *, scale=1, label=None):
+        def add_offset(series, offset, *, scale=1, label=None):  # type: ignore
             return series * scale + offset
 
         frame = frame.apply(add_offset, args=(2,), scale=3, label="bump")
@@ -228,7 +269,7 @@ class TestAssignFunction:
 
         frame = frame.filter(items=['First Name', 'Last Name', 'Firm/Legal Name'])
 
-        def add_suffix(series, suffix, *, uppercase=False, label=None):
+        def add_suffix(series, suffix, *, uppercase=False, label=None):  # type: ignore
             result = series + suffix
             if uppercase:
                 result = result.upper()
@@ -246,8 +287,8 @@ class TestAssignFunction:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-        # lamda
-        frame = frame.apply(lambda x: x.lower())
+        # lambda
+        frame = frame.apply(lambda x: x.lower())  # type: ignore
         expected = {'columns': ['First Name', 'Last Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['peter esq.', 'smith esq.', 'firm x esq.']},
                              {'values': ['john esq.', 'johnson esq.', 'firm x esq.']},

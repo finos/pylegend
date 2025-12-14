@@ -285,11 +285,11 @@ class TestImplicitDataManipulationFunction:
             PrimitiveTdsColumn.float_column("col3"),
             PrimitiveTdsColumn.date_column("col5"),
             PrimitiveTdsColumn.datetime_column("col6"),
-            PrimitiveTdsColumn.strictdate_column("col7")
+            PrimitiveTdsColumn.integer_column("col7")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        frame['col4'] = lambda x: x["col1"] + x["col2"]  # type: ignore
+        frame['col7'] = lambda x: x["col1"] + x["col2"]  # type: ignore
         expected_sql = '''\
         SELECT
             "root".col1 AS "col1",
@@ -297,15 +297,14 @@ class TestImplicitDataManipulationFunction:
             "root".col3 AS "col3",
             "root".col5 AS "col5",
             "root".col6 AS "col6",
-            "root".col7 AS "col7",
-            ("root".col1 + "root".col2) AS "col4"
+            ("root".col1 + "root".col2) AS "col7"
         FROM
             test_schema.test_table AS "root"'''
 
         expected_pure = (
             "#Table(test_schema.test_table)#\n"
-            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|$c.col5, col6:c|$c.col6, col7:c|$c.col7, "
-            "col4:c|(toOne($c.col1) + toOne($c.col2))])"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col5:c|$c.col5, col6:c|$c.col6, "
+            "col7:c|(toOne($c.col1) + toOne($c.col2))])"
         )
 
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)

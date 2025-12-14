@@ -710,19 +710,20 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         for c in self.columns():
             col_name = c.get_name()
             series = self[col_name]
+
             # Compute row callable via func on the Series
             def _row_callable(
                     _row: PandasApiTdsRow,
-                    _s: Series = series,
+                    _s: Series = series,  # type: ignore
                     _a: PyLegendTuple[PyLegendPrimitiveOrPythonPrimitive, ...] = args,
-                    _k: PyLegendPrimitiveOrPythonPrimitive = kwargs
+                    _k: PyLegendPrimitiveOrPythonPrimitive = kwargs  # type: ignore
             ) -> PyLegendPrimitiveOrPythonPrimitive:
-                return func(_s, *_a, **_k)
+                return func(_s, *_a, **_k)  # type: ignore
 
             col_definitions[col_name] = _row_callable
 
         return PandasApiAppliedFunctionTdsFrame(
-            AssignFunction(self, col_definitions=col_definitions)
+            AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
