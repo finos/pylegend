@@ -14,8 +14,12 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
-from typing import TYPE_CHECKING, ParamSpec
+from typing import TYPE_CHECKING
 from typing_extensions import Concatenate
+try:
+    from typing import ParamSpec
+except Exception:
+    from typing_extensions import ParamSpec  # type: ignore
 
 import pandas as pd
 
