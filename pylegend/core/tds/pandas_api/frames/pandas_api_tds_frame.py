@@ -298,3 +298,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
+
+    @abstractmethod
+    def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover

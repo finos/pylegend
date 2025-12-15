@@ -57,6 +57,9 @@ class TruncateFunction(PandasApiAppliedFunction):
         should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
         new_query = create_sub_query(base_query, config, "root") if should_create_sub_query else copy_query(base_query)
         new_query.offset = LongLiteral(self.__before)
+        print(f"self after is {self.__after}\n")
+        print(f"self before is {self.__before}\n")
+        print(f"limit is {self.__after - self.__before + 1}\n")
         if self.__after is not None:
             new_query.limit = LongLiteral(self.__after - self.__before + 1)
         return new_query

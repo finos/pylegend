@@ -730,6 +730,19 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
 
+    def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        """
+        Return the first `n` rows by calling truncate on rows.
+        Negative `n` is not supported.
+        """
+        if not isinstance(n, int):
+            raise TypeError(f"n must be an int, got {type(n)}")
+        if n < 0:
+            raise NotImplementedError("Negative n is not supported yet in Pandas API head")
+
+        print(f"after is {max(n - 1, -1)}\n")
+        return self.truncate(before=None, after=max(n - 1, -1), axis=0, copy=True)
+
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self._cached_sql is not None:
             return self._cached_sql
