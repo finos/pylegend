@@ -14,8 +14,12 @@
 
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
-from typing import TYPE_CHECKING, ParamSpec
+from typing import TYPE_CHECKING
 from typing_extensions import Concatenate
+try:
+    from typing import ParamSpec
+except Exception:
+    from typing_extensions import ParamSpec  # type: ignore
 
 import pandas as pd
 
@@ -205,10 +209,10 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         # Normalize the assignment value
         col_def = {}
-        if isinstance(value, (Series, PyLegendPrimitiveOrPythonPrimitive)):  # type: ignore
-            col_def[key] = lambda row: value
-        elif callable(value):
+        if callable(value):
             col_def[key] = value
+        else:
+            col_def[key] = lambda row: value
 
         assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=col_def))
         self._replace_with(assign_applied)
