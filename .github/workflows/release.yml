@@ -133,7 +133,7 @@ jobs:
           docker build --build-arg PYLEGEND_VERSION=${{ needs.validate.outputs.image_tag }} -f ./deployment/tag/Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/pylegend:${{ needs.validate.outputs.image_tag }} .
 
       - name: Scan Image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ secrets.DOCKER_USERNAME }}/pylegend:${{ needs.validate.outputs.image_tag }}
           format: table
