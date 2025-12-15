@@ -28,8 +28,11 @@ from pylegend.core.language import (
     PyLegendNumber,
     PyLegendBoolean,
     PyLegendString,
+    PyLegendDate,
+    PyLegendDateTime
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
@@ -50,7 +53,7 @@ class AssignFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "assign"
+        return "assign"  # pragma: no cover
 
     def __init__(
             self,
@@ -74,22 +77,53 @@ class AssignFunction(PandasApiAppliedFunction):
             copy_query(base_query)
         )
 
-        tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
+        base_cols = {c.get_name() for c in self.__base_frame.columns()}
+        tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
-            if not isinstance(res, PyLegendPrimitive):
-                raise RuntimeError("Constants not supported")
-            new_col_expr = res.to_sql_expression(
-                {"frame": base_query},
+            res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
+            new_col_expr = res_expr.to_sql_expression(
+                {"c": base_query},
                 config
             )
-            new_query.select.selectItems.append(
-                SingleColumn(alias=db_extension.quote_identifier(col), expression=new_col_expr)
-            )
+
+            alias = db_extension.quote_identifier(col)
+            if col in base_cols:
+                for i, si in enumerate(new_query.select.selectItems):
+                    if isinstance(si, SingleColumn) and si.alias == alias:
+                        new_query.select.selectItems[i] = SingleColumn(alias=alias, expression=new_col_expr)
+
+            else:
+                new_query.select.selectItems.append(SingleColumn(alias=alias, expression=new_col_expr))
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        raise NotImplementedError("to_pure is not implemented yet")  # pragma: no cover
+        tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
+        base_cols = [c.get_name() for c in self.__base_frame.columns()]
+
+        assigned_exprs: PyLegendDict[str, str] = {}
+        for col, func in self.__col_definitions.items():
+            res = func(tds_row)
+            res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
+            assigned_exprs[col] = res_expr.to_pure_expression(config)
+
+        # build project clauses
+        clauses: PyLegendList[str] = []
+
+        for col in base_cols:
+            if col in assigned_exprs:
+                clauses.append(f"{col}:c|{assigned_exprs[col]}")
+            else:
+                clauses.append(f"{col}:c|$c.{col}")
+
+        for col, pure_expr in assigned_exprs.items():
+            if col not in base_cols:
+                clauses.append(f"{col}:c|{pure_expr}")
+
+        return (
+            f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+            f"->project(~[{', '.join(clauses)}])"
+        )
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
@@ -99,21 +133,29 @@ class AssignFunction(PandasApiAppliedFunction):
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         new_cols = [c.copy() for c in self.__base_frame.columns()]
+        base_cols = {c.get_name() for c in self.__base_frame.columns()}
         tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, func in self.__col_definitions.items():
-            res = func(tds_row)
-            if isinstance(res, (int, PyLegendInteger)):
-                new_cols.append(PrimitiveTdsColumn.integer_column(col))
-            elif isinstance(res, (float, PyLegendFloat)):
-                new_cols.append(PrimitiveTdsColumn.float_column(col))
-            elif isinstance(res, PyLegendNumber):
-                new_cols.append(PrimitiveTdsColumn.number_column(col))
-            elif isinstance(res, (bool, PyLegendBoolean)):
-                new_cols.append(PrimitiveTdsColumn.boolean_column(col))
-            elif isinstance(res, (str, PyLegendString)):
-                new_cols.append(PrimitiveTdsColumn.string_column(col))
-            else:
-                raise RuntimeError("Type not supported")
+            if col not in base_cols:
+                res = func(tds_row)
+                if isinstance(res, (int, PyLegendInteger)):
+                    new_cols.append(PrimitiveTdsColumn.integer_column(col))
+                elif isinstance(res, (float, PyLegendFloat)):
+                    new_cols.append(PrimitiveTdsColumn.float_column(col))
+                elif isinstance(res, PyLegendNumber):
+                    new_cols.append(PrimitiveTdsColumn.number_column(col))  # pragma: no cover
+                elif isinstance(res, (bool, PyLegendBoolean)):
+                    new_cols.append(
+                        PrimitiveTdsColumn.boolean_column(col)
+                    )  # pragma: no cover (Boolean column not supported in PURE)
+                elif isinstance(res, (str, PyLegendString)):
+                    new_cols.append(PrimitiveTdsColumn.string_column(col))
+                elif isinstance(res, (datetime, PyLegendDateTime)):
+                    new_cols.append(PrimitiveTdsColumn.datetime_column(col))
+                elif isinstance(res, (date, PyLegendDate)):
+                    new_cols.append(PrimitiveTdsColumn.date_column(col))
+                else:
+                    raise RuntimeError("Type not supported")
         return new_cols
 
     def validate(self) -> bool:

@@ -160,10 +160,10 @@ class PandasApiDropFunction(PandasApiAppliedFunction):
             self.__columns = _normalize_columns(self.__columns)  # type: ignore
 
         if isinstance(self.__inplace, (bool, PyLegendBoolean)):
-            if self.__inplace is False:
-                raise NotImplementedError(f"Only inplace=True is supported. Got inplace={self.__inplace!r}")
+            if self.__inplace is True:
+                raise NotImplementedError(f"Only inplace=False is supported. Got inplace={self.__inplace!r}")
         else:
-            raise TypeError(f"Inplace must be True. Got inplace={self.__inplace!r}")  # pragma: no cover
+            raise TypeError(f"Inplace must be False. Got inplace={self.__inplace!r}")  # pragma: no cover
 
         if valid_paramters == 0:
             raise ValueError("Need to specify at least one of 'labels' or 'columns'")
