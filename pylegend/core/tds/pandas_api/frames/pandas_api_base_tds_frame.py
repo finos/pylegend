@@ -209,10 +209,10 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         # Normalize the assignment value
         col_def = {}
-        if isinstance(value, (Series, PyLegendPrimitiveOrPythonPrimitive)):  # type: ignore
-            col_def[key] = lambda row: value
-        elif callable(value):
+        if callable(value):
             col_def[key] = value
+        else:
+            col_def[key] = lambda row: value
 
         assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=col_def))
         self._replace_with(assign_applied)
