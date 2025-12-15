@@ -426,7 +426,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def rank(
             self,
             axis: PyLegendUnion[int, str] = 0,
-            method: str = 'average',
+            method: str = 'min',
             numeric_only: bool = False,
             na_option: str = 'keep',
             ascending: bool = True,

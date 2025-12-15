@@ -6,13 +6,10 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 class TestRankFunctionOnBaseFrame:
-    def test_rank_method_min_default(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.number_column("col2")
-        ]
+    def test_rank_method_simple_min(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.rank(method='min', na_option='top')
+        frame = frame.rank(method='min')
 
         expected = '''
             SELECT
@@ -22,7 +19,36 @@ class TestRankFunctionOnBaseFrame:
                     THEN
                         null
                     ELSE
-                        RANK() OVER (ORDER BY "root"."col1")
+                        rank() OVER (ORDER BY "root"."col1")
+                END AS "col1"
+            FROM
+                (
+                    SELECT
+                        "root".col1 AS "col1"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_rank_method_multiple(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.number_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.rank(method='min')
+
+        expected = '''
+            SELECT
+                CASE
+                    WHEN
+                        ("root"."col1" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        rank() OVER (ORDER BY "root"."col1", "root"."col2")
                 END AS "col1",
                 CASE
                     WHEN
@@ -30,7 +56,7 @@ class TestRankFunctionOnBaseFrame:
                     THEN
                         null
                     ELSE
-                        RANK() OVER (ORDER BY "root"."col2")
+                        rank() OVER (ORDER BY "root"."col1", "root"."col2")
                 END AS "col2"
             FROM
                 (
@@ -57,7 +83,7 @@ class TestRankFunctionOnBaseFrame:
                     THEN
                         null
                     ELSE
-                        DENSE_RANK() OVER (ORDER BY "root"."col1" DESC)
+                        dense_rank() OVER (ORDER BY "root"."col1" DESC)
                 END AS "col1"
             FROM
                 (
@@ -77,14 +103,7 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                CASE
-                    WHEN
-                        ("root"."col1" IS NULL)
-                    THEN
-                        null
-                    ELSE
-                        ROW_NUMBER() OVER (ORDER BY "root"."col1")
-                END AS "col1"
+                row_number() OVER (ORDER BY "root"."col1") AS "col1"
             FROM
                 (
                     SELECT
@@ -109,7 +128,7 @@ class TestRankFunctionOnBaseFrame:
                     THEN
                         null
                     ELSE
-                        PERCENT_RANK() OVER (ORDER BY "root"."col1")
+                        percent_rank() OVER (ORDER BY "root"."col1")
                 END AS "col1"
             FROM
                 (
@@ -135,7 +154,7 @@ class TestRankFunctionOnBaseFrame:
                     THEN
                         null
                     ELSE
-                        RANK() OVER (ORDER BY "root"."col1")
+                        rank() OVER (ORDER BY "root"."col1")
                 END AS "col1"
             FROM
                 (
