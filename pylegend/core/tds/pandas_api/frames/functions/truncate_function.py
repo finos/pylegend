@@ -18,6 +18,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
     PyLegendUnion,
+    PyLegendTuple,
+    PyLegendOptional,
 )
 from pylegend.core.sql.metamodel import LongLiteral, QuerySpecification
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
@@ -90,34 +92,62 @@ class TruncateFunction(PandasApiAppliedFunction):
         if self.__copy not in [True]:
             raise NotImplementedError(f"The 'copy' parameter of the truncate function must be True, but got: {self.__copy}")
 
-        if self.__before_input is None:
-            self.__before = 0
-        else:
-            self.__before = self.get_positive_integer_or_raise_exception(self.__before_input, variable_name="before")
-
-        if self.__after_input is None:
-            self.__after = None
-            return True
-        else:
-            self.__after = self.get_positive_integer_or_raise_exception(self.__after_input, variable_name="after")
-
-            if self.__before > self.__after:
-                raise ValueError(
-                    f"The 'before' parameter of the truncate function must be less than or equal to the 'after' parameter, "
-                    f"but got: before={self.__before}, after={self.__after}"
-                )
-
+        self.__before, self.__after = self.__normalize_before_and_after(self.__before_input, self.__after_input)
         return True
 
-    def get_positive_integer_or_raise_exception(
-        self, variable: PyLegendUnion[date, str, int, None], variable_name: str
-    ) -> int:
-        if type(variable) is not int:
-            raise NotImplementedError(
-                f"The '{variable_name}' parameter of the truncate function must be an integer, "
-                f"but got: {variable} (type: {type(variable).__name__})"
-            )
+    @staticmethod
+    def __normalize_before_and_after(
+            before_input: PyLegendUnion[date, str, int, None],
+            after_input: PyLegendUnion[date, str, int, None]
+    ) -> PyLegendTuple[int, PyLegendOptional[int]]:
 
-        if variable < 0:
-            return 0
-        return variable
+        if isinstance(before_input, (date, str)):
+            raise NotImplementedError(
+                f"The 'before' parameter of the truncate function must be of type integer or None, "
+                f"but got: before={before_input} (type: {type(before_input).__name__})")
+
+        if isinstance(after_input, (date, str)):
+            raise NotImplementedError(
+                f"The 'after' parameter of the truncate function must be of type integer or None, "
+                f"but got: after={after_input} (type: {type(after_input).__name__})")
+
+        def __raise_error_if_before_gt_after(before_input: int, after_input: int) -> None:
+            if before_input > after_input:
+                raise ValueError(
+                    f"The 'before' parameter of the truncate function must be less than or equal to the 'after' parameter, "
+                    f"but got: before={before_input}, after={after_input}")
+
+        if before_input is None:
+            if after_input is None:
+                return 0, None
+
+            if isinstance(after_input, int) and after_input >= 0:
+                return 0, after_input
+
+            if isinstance(after_input, int) and after_input < 0:
+                return 0, -1
+
+        if isinstance(before_input, int) and before_input >= 0:
+            if after_input is None:
+                return before_input, None
+
+            if isinstance(after_input, int) and after_input >= 0:
+                __raise_error_if_before_gt_after(before_input, after_input)
+                return before_input, after_input
+
+            if isinstance(after_input, int) and after_input < 0:
+                __raise_error_if_before_gt_after(before_input, after_input)
+
+        if isinstance(before_input, int) and before_input < 0:
+            if after_input is None:
+                return 0, None
+
+            if isinstance(after_input, int) and after_input >= 0:
+                __raise_error_if_before_gt_after(before_input, after_input)
+                return 0, after_input
+
+            if isinstance(after_input, int) and after_input < 0:
+                __raise_error_if_before_gt_after(before_input, after_input)
+                return 0, -1
+
+        return 0, 0  # pragma: no cover

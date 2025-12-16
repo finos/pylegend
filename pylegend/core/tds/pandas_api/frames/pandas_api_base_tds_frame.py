@@ -13,9 +13,12 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
+from io import StringIO
 from datetime import date, datetime
 from typing import TYPE_CHECKING
+
 from typing_extensions import Concatenate
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -743,6 +746,30 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         print(f"after is {max(n - 1, -1)}\n")
         return self.truncate(before=None, after=max(n - 1, -1), axis=0, copy=True)
 
+    def info(
+            self,
+            verbose: PyLegendOptional[bool] = None,
+            buf: PyLegendOptional[StringIO] = None,
+            max_cols: PyLegendOptional[int] = None,
+            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
+            show_counts: PyLegendOptional[bool] = None
+    ) -> None:
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.info import PandasApiInfoFunction
+
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiInfoFunction(
+                base_frame=self,
+                verbose=verbose,
+                buf=buf,
+                max_cols=max_cols,
+                memory_usage=memory_usage,
+                show_counts=show_counts
+            )
+        )
+
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self._cached_sql is not None:
             return self._cached_sql
@@ -802,6 +829,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             )
         legend_client = all_legend_clients[0]
         result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
+        print(f"Result is:\n{result}\n")
         return result_handler.handle_result(self, result)
 
     def execute_frame_to_string(
