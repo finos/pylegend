@@ -17,7 +17,8 @@ from enum import Enum
 import json
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendOptional
 )
 import pandas as pd
 from io import StringIO
@@ -28,7 +29,8 @@ __all__: PyLegendSequence[str] = [
     "PrimitiveType",
     "EnumTdsColumn",
     "tds_columns_from_json",
-    "tds_columns_from_pandas_df"
+    "tds_columns_from_pandas_df",
+    "tds_columns_from_csv_string"
 ]
 
 
@@ -203,6 +205,9 @@ def tds_columns_from_pandas_df(df: pd.DataFrame) -> PyLegendList[PrimitiveTdsCol
     return tds_columns
 
 
-def tds_columns_from_csv_string(csv_string: str) -> PyLegendList[TdsColumn]:
-    df = pd.read_csv(StringIO(csv_string))
+def tds_columns_from_csv_string(
+        csv_string: str,
+        datetime_columns: PyLegendOptional[PyLegendList[str]] = None
+) -> PyLegendList[TdsColumn]:
+    df = pd.read_csv(StringIO(csv_string), parse_dates=datetime_columns)
     return tds_columns_from_pandas_df(df)

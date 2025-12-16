@@ -18,7 +18,9 @@ from pylegend.core.tds.tds_column import (
     PrimitiveTdsColumn,
     PrimitiveType,
     EnumTdsColumn,
+    tds_columns_from_csv_string
 )
+import pandas as pd
 
 
 class TestTdsColumn:
@@ -208,3 +210,34 @@ class TestTdsColumn:
 
         assert "Unable to parse tds columns from schema: " in r.value.args[0]
         assert "Unknown enum type: my::EnumType" in r.value.args[1].args[0]
+
+    def test_tds_columns_from_csv_string(self) -> None:
+        with pytest.raises(
+                pd.errors.EmptyDataError,
+                match="No columns to parse from file"):
+            tds_columns_from_csv_string("")
+
+        csv_string = (
+            "id,name,is_active,created_at,grp\n"
+            "1,A,True,2025-12-16 10:30:45,1.0\n"
+            "3,B,False,2025-12-17 10:30:45,2.0"
+        )
+
+        columns = tds_columns_from_csv_string(
+            csv_string,
+            datetime_columns=["created_at"]
+        )
+
+        assert len(columns) == 5
+
+        expected = [
+            ("id", PrimitiveType.Integer.name),
+            ("name", PrimitiveType.String.name),
+            ("is_active", PrimitiveType.Boolean.name),
+            ("created_at", PrimitiveType.DateTime.name),
+            ("grp", PrimitiveType.Float.name),
+        ]
+
+        for col, (name, type_) in zip(columns, expected):
+            assert col.get_name() == name
+            assert col.get_type() == type_
