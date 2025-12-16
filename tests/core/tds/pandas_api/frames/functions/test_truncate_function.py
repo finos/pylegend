@@ -53,14 +53,16 @@ class TestTruncateFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         with pytest.raises(NotImplementedError) as v:
             frame.truncate(before="a", after=1, axis=0, copy=True)
-        assert v.value.args[0] == "The 'before' parameter of the truncate function must be an integer, but got: a (type: str)"
+        assert v.value.args[0] == ("The 'before' parameter of the truncate function must be of type integer or None, "
+                                   "but got: before=a (type: str)")
 
     def test_truncate_after_not_int(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         with pytest.raises(NotImplementedError) as v:
             frame.truncate(before=0, after="b", axis=0, copy=True)
-        assert v.value.args[0] == "The 'after' parameter of the truncate function must be an integer, but got: b (type: str)"
+        assert v.value.args[0] == ("The 'after' parameter of the truncate function must be of type integer or None, "
+                                   "but got: after=b (type: str)")
 
     def test_truncate_before_greater_than_after(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
@@ -158,27 +160,6 @@ class TestTruncateFunction:
             "#Table(test_schema.test_table)#->drop(0)"
         )
 
-        frame2: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        frame2 = frame2.truncate(before=0, after=-2)
-        expected2 = """\
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                    LIMIT 1
-                    OFFSET 0"""
-        assert frame2.to_sql_query(FrameToSqlConfig()) == dedent(expected2)
-
-        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == dedent(
-            """\
-            #Table(test_schema.test_table)#
-              ->slice(0, 1)"""
-        )
-        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->slice(0, 1)"
-        )
-
     def test_e2e_truncate_no_arguments(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.truncate()
@@ -254,3 +235,168 @@ class TestTruncateFunction:
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+
+class TestTruncateFunctionAllPossibleCombinations:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_truncate_before_none_after_none(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=None, after=None)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    OFFSET 0"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->drop(0)"""
+        )
+
+    def test_truncate_before_none_after_positive(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=None, after=2)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    LIMIT 3
+                    OFFSET 0"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->slice(0, 3)"""
+        )
+
+    def test_truncate_before_none_after_negative(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=None, after=-5)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    LIMIT 0
+                    OFFSET 0"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->slice(0, 0)"""
+        )
+
+    def test_truncate_before_positive_after_none(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=5, after=None)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    OFFSET 5"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->drop(5)"""
+        )
+
+    def test_truncate_before_positive_after_positive_valid(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=1, after=3)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    LIMIT 3
+                    OFFSET 1"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->slice(1, 4)"""
+        )
+
+    def test_truncate_before_positive_after_negative_error(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        with pytest.raises(ValueError) as v:
+            frame.truncate(before=1, after=-2)
+        assert v.value.args[0] == (
+            "The 'before' parameter of the truncate function must be less than or equal to the 'after' parameter, "
+            "but got: before=1, after=-2")
+
+    def test_truncate_before_negative_after_none(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=-5, after=None)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    OFFSET 0"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->drop(0)"""
+        )
+
+    def test_truncate_before_negative_after_positive(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=-5, after=3)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    LIMIT 4
+                    OFFSET 0"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->slice(0, 4)"""
+        )
+
+    def test_truncate_before_negative_after_negative_valid(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(before=-5, after=-2)
+        expected = """\
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    LIMIT 0
+                    OFFSET 0"""
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            """\
+            #Table(test_schema.test_table)#
+              ->slice(0, 0)"""
+        )
