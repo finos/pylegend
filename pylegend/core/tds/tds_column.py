@@ -208,6 +208,6 @@ def tds_columns_from_pandas_df(df: pd.DataFrame) -> PyLegendList[PrimitiveTdsCol
 def tds_columns_from_csv_string(
         csv_string: str,
         datetime_columns: PyLegendOptional[PyLegendList[str]] = None
-) -> PyLegendList[TdsColumn]:
+) -> PyLegendList[PrimitiveTdsColumn]:
     df = pd.read_csv(StringIO(csv_string), parse_dates=datetime_columns)
     return tds_columns_from_pandas_df(df)
