@@ -39,7 +39,7 @@ class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
             self,
             csv_string: str,
     ) -> None:
-        super().__init__(columns=tds_columns_from_csv_string(csv_string))
+        super().__init__(columns=tds_columns_from_csv_string(csv_string))  # type: ignore[call-arg]
         self.__csv_string = csv_string
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
