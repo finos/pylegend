@@ -85,7 +85,7 @@ def tds_columns_from_csv_string(
     return tds_columns
 
 
-def is_strict_date_or_datetime(col: pd.Series) -> bool:
+def is_strict_date_or_datetime(col: pd.Series) -> bool: # type: ignore[explicit-any]
     try:
         pd.to_datetime(col, format="%Y-%m-%d %H:%M:%S", exact=True, errors="raise")
         return True
