@@ -13,14 +13,11 @@
 # limitations under the License.
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendOptional,
-    PyLegendList
 )
 from pylegend.core.tds.legendql_api.frames.legendql_api_input_tds_frame import (
     LegendQLApiNonExecutableInputTdsFrame,
 )
 from pylegend.core.tds.abstract.frames.csv_tds_frame import CsvTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, tds_columns_from_csv_string
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiCsvNonExecutableInputTdsFrame",
@@ -30,8 +27,8 @@ __all__: PyLegendSequence[str] = [
 
 class LegendQLApiCsvTdsFrame(CsvTdsFrame):
 
-    def __init__(self, csv_string: str, columns: PyLegendSequence[TdsColumn]) -> None:
-        CsvTdsFrame.__init__(self, csv_string=csv_string, columns=columns)
+    def __init__(self, csv_string: str) -> None:
+        CsvTdsFrame.__init__(self, csv_string=csv_string)
 
 
 class LegendQLApiCsvNonExecutableInputTdsFrame(
@@ -41,8 +38,6 @@ class LegendQLApiCsvNonExecutableInputTdsFrame(
 
     def __init__(
             self,
-            csv_string: str,
-            datetime_columns: PyLegendOptional[PyLegendList[str]] = None) -> None:
-        columns = tds_columns_from_csv_string(csv_string, datetime_columns)
-        LegendQLApiCsvTdsFrame.__init__(self, csv_string=csv_string, columns=columns)
-        LegendQLApiNonExecutableInputTdsFrame.__init__(self, columns=columns)
+            csv_string: str) -> None:
+        LegendQLApiCsvTdsFrame.__init__(self, csv_string=csv_string)
+        LegendQLApiNonExecutableInputTdsFrame.__init__(self, columns=self.columns())

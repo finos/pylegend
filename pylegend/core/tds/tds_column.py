@@ -18,10 +18,7 @@ import json
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
-    PyLegendOptional
 )
-import pandas as pd
-from io import StringIO
 
 __all__: PyLegendSequence[str] = [
     "TdsColumn",
@@ -29,8 +26,6 @@ __all__: PyLegendSequence[str] = [
     "PrimitiveType",
     "EnumTdsColumn",
     "tds_columns_from_json",
-    "tds_columns_from_pandas_df",
-    "tds_columns_from_csv_string"
 ]
 
 
@@ -174,40 +169,3 @@ def _enum_values_for_type(enum_type: str, all_enums: PyLegendList[dict]) -> PyLe
             return values if isinstance(values, list) else [values]
 
     raise RuntimeError("Unknown enum type: " + enum_type)
-
-
-def tds_columns_from_pandas_df(df: pd.DataFrame) -> PyLegendList[PrimitiveTdsColumn]:
-    tds_columns = []
-    dt = pd.api.types
-
-    for col in df.columns:
-        dtype = df[col].dtype
-
-        if dt.is_bool_dtype(dtype):
-            primitive_type = PrimitiveType.Boolean
-
-        elif dt.is_integer_dtype(dtype):
-            primitive_type = PrimitiveType.Integer
-
-        elif dt.is_float_dtype(dtype):
-            primitive_type = PrimitiveType.Float
-
-        elif dt.is_datetime64_any_dtype(dtype):
-            primitive_type = PrimitiveType.DateTime
-
-        else:
-            primitive_type = PrimitiveType.String
-
-        tds_columns.append(
-            PrimitiveTdsColumn(name=col, _type=primitive_type)
-        )
-
-    return tds_columns
-
-
-def tds_columns_from_csv_string(
-        csv_string: str,
-        datetime_columns: PyLegendOptional[PyLegendList[str]] = None
-) -> PyLegendList[PrimitiveTdsColumn]:
-    df = pd.read_csv(StringIO(csv_string), parse_dates=datetime_columns)
-    return tds_columns_from_pandas_df(df)
