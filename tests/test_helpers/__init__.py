@@ -14,7 +14,7 @@
 
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.abstract.frames.csv_tds_frame import CsvTdsFrame
+from pylegend.extensions.tds.abstract.csv_tds_frame import CsvInputFrameAbstract
 from pylegend.core.tds.abstract.frames.input_tds_frame import InputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 from pylegend.core.tds.tds_frame import FrameToPureConfig, PyLegendTdsFrame
@@ -30,9 +30,9 @@ def generate_pure_query_and_compile(
     assert isinstance(frame, BaseTdsFrame)
     tds_frames = frame.get_all_tds_frames()
     input_frames = [x for x in tds_frames if isinstance(x, InputTdsFrame)]
-    table_input_frames: PyLegendList[PyLegendUnion[TableSpecInputFrameAbstract, CsvTdsFrame]] = []
+    table_input_frames: PyLegendList[PyLegendUnion[TableSpecInputFrameAbstract, CsvInputFrameAbstract]] = []
     for x in input_frames:
-        assert isinstance(x, (TableSpecInputFrameAbstract, CsvTdsFrame))
+        assert isinstance(x, (TableSpecInputFrameAbstract, CsvInputFrameAbstract))
         table_input_frames.append(x)
 
     input_text_replacement_map = {}

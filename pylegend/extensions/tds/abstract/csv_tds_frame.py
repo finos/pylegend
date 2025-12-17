@@ -20,20 +20,19 @@ from io import StringIO
 from pylegend.core.tds.tds_column import (
     PrimitiveType,
     PrimitiveTdsColumn)
-from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyLegendTdsFrame
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
 )
 import pandas as pd
 
 __all__: PyLegendSequence[str] = [
-    "CsvTdsFrame",
+    "CsvInputFrameAbstract",
     "tds_columns_from_csv_string"
 ]
 
 
-class CsvTdsFrame(BaseTdsFrame, metaclass=ABCMeta):
+class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
     __csv_string: str
 
     def __init__(
@@ -42,9 +41,6 @@ class CsvTdsFrame(BaseTdsFrame, metaclass=ABCMeta):
     ) -> None:
         super().__init__(columns=tds_columns_from_csv_string(csv_string))
         self.__csv_string = csv_string
-
-    def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
-        return [self]
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         raise RuntimeError("SQL generation for csv tds frames is not supported yet.")

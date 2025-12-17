@@ -14,7 +14,7 @@
 
 import pytest
 
-from pylegend.core.tds.abstract.frames.csv_tds_frame import tds_columns_from_csv_string
+from pylegend.extensions.tds.abstract.csv_tds_frame import tds_columns_from_csv_string
 from pylegend.core.tds.tds_column import (
     PrimitiveType,
 )

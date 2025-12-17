@@ -17,27 +17,20 @@ from pylegend._typing import (
 from pylegend.core.tds.legendql_api.frames.legendql_api_input_tds_frame import (
     LegendQLApiNonExecutableInputTdsFrame,
 )
-from pylegend.core.tds.abstract.frames.csv_tds_frame import CsvTdsFrame
+from pylegend.extensions.tds.abstract.csv_tds_frame import CsvInputFrameAbstract
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiCsvNonExecutableInputTdsFrame",
-    "LegendQLApiCsvTdsFrame"
 ]
 
 
-class LegendQLApiCsvTdsFrame(CsvTdsFrame):
-
-    def __init__(self, csv_string: str) -> None:
-        CsvTdsFrame.__init__(self, csv_string=csv_string)
-
-
 class LegendQLApiCsvNonExecutableInputTdsFrame(
-    LegendQLApiCsvTdsFrame,
+    CsvInputFrameAbstract,
     LegendQLApiNonExecutableInputTdsFrame
 ):
 
     def __init__(
             self,
             csv_string: str) -> None:
-        LegendQLApiCsvTdsFrame.__init__(self, csv_string=csv_string)
+        CsvInputFrameAbstract.__init__(self, csv_string=csv_string)
         LegendQLApiNonExecutableInputTdsFrame.__init__(self, columns=self.columns())
