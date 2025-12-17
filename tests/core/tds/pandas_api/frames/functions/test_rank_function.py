@@ -187,7 +187,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col" NULLS LAST)
                 END AS "val_col",
                 CASE
                     WHEN
@@ -195,7 +195,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col" NULLS LAST)
                 END AS "random_col"
             FROM
                 (
@@ -227,7 +227,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
                 END AS "val_col"
             FROM
                 (
@@ -242,7 +242,7 @@ class TestRankFunctionOnGroupbyFrame:
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
-    def test(self) -> None:
+    def test_groupby_rank_pct(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
@@ -251,7 +251,38 @@ class TestRankFunctionOnGroupbyFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col").rank(method='min', pct=True)
 
-    def test(self) -> None:
+        expected = '''
+            SELECT
+                CASE
+                    WHEN
+                        ("root"."val_col" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        PERCENT_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                END AS "val_col",
+                CASE
+                    WHEN
+                        ("root"."random_col" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        PERCENT_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
+                END AS "random_col"
+            FROM
+                (
+                    SELECT
+                        "root".group_col AS "group_col",
+                        "root".val_col AS "val_col",
+                        "root".random_col AS "random_col"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_groupby_rank_dense(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
@@ -260,14 +291,76 @@ class TestRankFunctionOnGroupbyFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col").rank(method='dense')
 
-    def test(self) -> None:
+        expected = '''
+            SELECT
+                CASE
+                    WHEN
+                        ("root"."val_col" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        DENSE_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                END AS "val_col",
+                CASE
+                    WHEN
+                        ("root"."random_col" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        DENSE_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
+                END AS "random_col"
+            FROM
+                (
+                    SELECT
+                        "root".group_col AS "group_col",
+                        "root".val_col AS "val_col",
+                        "root".random_col AS "random_col"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+    
+    def test_groupby_rank_first_subset(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.groupby("group_col")['val_col', 'random_col'].rank(method='first')
+        frame = frame.groupby("group_col")[['val_col', 'random_col']].rank(method='first')
+
+        expected = '''
+            SELECT
+                CASE
+                    WHEN
+                        ("root"."val_col" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        ROW_NUMBER() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                END AS "val_col",
+                CASE
+                    WHEN
+                        ("root"."random_col" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        ROW_NUMBER() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
+                END AS "random_col"
+            FROM
+                (
+                    SELECT
+                        "root".group_col AS "group_col",
+                        "root".val_col AS "val_col",
+                        "root".random_col AS "random_col"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
     def test_groupby_rank_pct_descending_na_top(self) -> None:
         columns = [
