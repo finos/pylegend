@@ -103,10 +103,17 @@ class PandasApiSortDirection(Enum):
 class PandasApiSortInfo:
     __column: str
     __direction: PandasApiSortDirection
+    __null_ordering: SortItemNullOrdering
 
-    def __init__(self, column_expr: PyLegendColumnExpression, direction: PandasApiSortDirection) -> None:
+    def __init__(
+            self,
+            column_expr: PyLegendColumnExpression,
+            direction: PandasApiSortDirection,
+            null_ordering: SortItemNullOrdering = SortItemNullOrdering.UNDEFINED
+    ) -> None:
         self.__column = column_expr.get_column()
         self.__direction = direction
+        self.__null_ordering = null_ordering
 
     def to_sql_node(
             self,
@@ -117,7 +124,7 @@ class PandasApiSortInfo:
             sortKey=self.__find_column_expression(query, config),
             ordering=(SortItemOrdering.ASCENDING if self.__direction == PandasApiSortDirection.ASC
                       else SortItemOrdering.DESCENDING),
-            nullOrdering=SortItemNullOrdering.UNDEFINED
+            nullOrdering=self.__null_ordering
         )
 
     def __find_column_expression(self, query: QuerySpecification, config: FrameToSqlConfig) -> Expression:

@@ -34,6 +34,7 @@ from pylegend.core.sql.metamodel import (
     SearchedCaseExpression,
     SingleColumn,
     SortItem,
+    SortItemNullOrdering,
     SortItemOrdering,
     WhenClause,
 )
@@ -62,11 +63,13 @@ class RankFunction(PandasApiAppliedFunction):
     __ascending: bool
     __pct: bool
 
-    __window: PandasApiWindow
-    __new_column_expressions: PyLegendList[
-        PyLegendUnion[
-            PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
-            PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+    __column_expression_and_window_tuples: PyLegendList[
+        PyLegendTuple[
+            PyLegendUnion[
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+            ],
+            PandasApiWindow
         ]
     ]
 
@@ -93,19 +96,22 @@ class RankFunction(PandasApiAppliedFunction):
         self.__pct = pct
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+
         base_query = self.base_frame().to_sql_query_object(config)
-        should_create_sub_query = True
+        should_create_sub_query: bool = True
         db_extension = config.sql_to_string_generator().get_db_extension()
 
-        new_query = (
-            create_sub_query(base_query, config, "root") if should_create_sub_query else
-            copy_query(base_query)
-        )
+        new_query: QuerySpecification
+        if should_create_sub_query == True:
+            new_query = create_sub_query(base_query, config, "root")
+        else:
+            new_query = copy_query(base_query)
 
         new_select_items: list[SingleColumn] = []
 
-        for c in self.__new_column_expressions:
+        for c, window in self.__column_expression_and_window_tuples:
             if len(c) == 2:
+
                 if isinstance(c[1], (bool, int, float, str, date, datetime)):
                     col_sql_expr = convert_literal_to_literal_expression(c[1]).to_sql_expression(
                         {"r": new_query},
@@ -113,9 +119,10 @@ class RankFunction(PandasApiAppliedFunction):
                     )
                 else:
                     col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
+
                 window_expr = WindowExpression(
                     nested=col_sql_expr,
-                    window=self.__window.to_sql_node(new_query, config),
+                    window=window.to_sql_node(new_query, config),
                 )
                 tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
                 if self.__na_option == 'keep':
@@ -136,7 +143,7 @@ class RankFunction(PandasApiAppliedFunction):
                 agg_sql_expr = c[2].to_sql_expression({"r": new_query}, config)
                 window_expr = WindowExpression(
                     nested=agg_sql_expr,
-                    window=self.__window.to_sql_node(new_query, config),
+                    window=window.to_sql_node(new_query, config),
                 )
                 new_select_items.append(
                     SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr))
@@ -158,9 +165,9 @@ class RankFunction(PandasApiAppliedFunction):
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
 
         def __validate_and_convert_column(col: TdsColumn) -> PyLegendOptional["TdsColumn"]:
-            if self.__numeric_only and col.get_type() not in ["Integer", "Float", "Number"]:
+            valid_column_types_for_numeric_only: list[str] = ["Integer", "Float", "Number"]
+            if self.__numeric_only and col.get_type() not in valid_column_types_for_numeric_only:
                 return None
-
             if self.__pct:
                 new_col = PrimitiveTdsColumn.float_column(col.get_name())
             else:
@@ -169,8 +176,10 @@ class RankFunction(PandasApiAppliedFunction):
 
         new_columns: PyLegendSequence["TdsColumn"] = []
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            grouping_column_names = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
             if self.__base_frame.get_selected_columns() is None:
-                new_columns = [__validate_and_convert_column(col) for col in self.base_frame().columns()]
+                new_columns = [__validate_and_convert_column(col) for col in self.base_frame().columns()
+                               if col.get_name() not in grouping_column_names]
             else:
                 new_columns = [__validate_and_convert_column(col) for col in self.__base_frame.get_selected_columns()]
         else:
@@ -180,63 +189,55 @@ class RankFunction(PandasApiAppliedFunction):
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:
             raise NotImplementedError(
-                f"The 'axis' parameter of the rank function must be 0 or 'index', but got: axis={self.__axis}")
+                f"The 'axis' parameter of the rank function must be 0 or 'index', but got: axis={self.__axis!r}")
 
         valid_methods: set[str] = {'min', 'first', 'dense'}
         if self.__method not in valid_methods:
             raise NotImplementedError(
-                f"The 'method' parameter of the rank function must be one of {list(valid_methods)},"
-                f" but got: method={self.__method}")
+                f"The 'method' parameter of the rank function must be one of {list(valid_methods)!r},"
+                f" but got: method={self.__method!r}")
         elif self.__pct is True and self.__method != 'min':
             raise NotImplementedError(
                 "The 'pct=True' parameter of the rank function is only supported with method='min',"
                 f" but got: method={self.__method!r}.")
 
-        valid_na_options = {'keep', 'top', 'bottom'}
+        valid_na_options = {'keep', 'bottom'}
         if self.__na_option not in valid_na_options:
-            raise ValueError(
-                f"The 'na_option' parameter of the rank function must be one of {valid_na_options},"
-                f" but got: na_option={self.__na_option}")
-
-        self.__window = self.__calculate_window()
-        self.__new_column_expressions = self.__calculate_new_column_expressions()
+            raise NotImplementedError(
+                f"The 'na_option' parameter of the rank function must be one of {valid_na_options!r},"
+                f" but got: na_option={self.__na_option!r}")
+        
+        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples()
 
         return True
 
-    def __calculate_window(self) -> PandasApiWindow:
-        partition_by: PyLegendOptional[PyLegendList[str]] = None
-        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
-
-        order_by: PyLegendOptional[PyLegendList[PandasApiSortInfo]] = []
-        tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
-        columns_to_order_by: PyLegendList[TdsColumn]
-        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            if self.__base_frame.get_selected_columns() is None:
-                grouping_column_names = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
-                columns_to_order_by = [
-                    col for col in self.base_frame().columns() if col.get_name() not in grouping_column_names]
-            else:
-                columns_to_order_by = self.__base_frame.get_selected_columns()
-        else:
-            columns_to_order_by = self.__base_frame.columns()
-        for col in columns_to_order_by:
-            col_expr: PyLegendColumnExpression = tds_row[col.get_name()].value()
-            sort_direction: PandasApiSortDirection = PandasApiSortDirection.ASC if self.__ascending \
-                                                        else PandasApiSortDirection.DESC
-            order_by.append(PandasApiSortInfo(col_expr, sort_direction))
-
-        return PandasApiWindow(partition_by, order_by, frame=None)
-
-    def __calculate_new_column_expressions(self) -> PyLegendList[
-        PyLegendUnion[
-            PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
-            PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+    def construct_column_expression_and_window_tuples(self) -> PyLegendList[
+        PyLegendTuple[
+            PyLegendUnion[
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+            ],
+            PandasApiWindow
         ]
     ]:
-        tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
-        partial_frame = PandasApiPartialFrame(base_frame=self.__base_frame, var_name="p")
-        window_ref = PandasApiWindowReference(window=self.__window, var_name="w")
+        column_names: list[str] = [col.get_name() for col in self.calculate_columns()]
+
+        lambda_func: PyLegendCallable[
+            [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow],
+            PyLegendPrimitiveOrPythonPrimitive
+        ]
+        if self.__method == 'min':
+            lambda_func = lambda p,w,r: p.rank(w,r)
+        elif self.__method == 'first':
+            lambda_func = lambda p,w,r: p.row_number(r)
+        elif self.__method == 'dense':
+            lambda_func = lambda p,w,r: p.dense_rank(w,r)
+        else:
+            raise ValueError(
+                f"Encountered unsupported method parameter (method={self.__method!r}) in rank function")  # pragma: no cover
+
+        if self.__pct == True:
+            lambda_func = lambda p,w,r: p.percent_rank(w,r)
 
         extend_columns: PyLegendList[
             PyLegendUnion[
@@ -256,46 +257,53 @@ class RankFunction(PandasApiAppliedFunction):
                     PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
                 ]
             ]
-        ] = self.__get_extend_columns()
+        ] = [(column_name, lambda_func) for column_name in column_names]
 
-        col_expressions: PyLegendList[
-            PyLegendUnion[
-                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
-                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+        tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+        partial_frame = PandasApiPartialFrame(base_frame=self.__base_frame, var_name="p")
+
+        column_expression_and_window_tuples: PyLegendList[
+            PyLegendTuple[
+                PyLegendUnion[
+                    PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
+                    PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+                ],
+                PandasApiWindow
             ]
         ] = []
 
-        for (i, extend_column) in enumerate(extend_columns):
+        for extend_column in extend_columns:
+            current_column_name: str = extend_column[0]
+
+            partition_by: PyLegendOptional[PyLegendList[str]] = None
+            if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+                partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
+            tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+            col_expr: PyLegendColumnExpression = tds_row[current_column_name].value()
+            sort_direction: PandasApiSortDirection
+            if self.__ascending is True:
+                sort_direction = PandasApiSortDirection.ASC
+            else:
+                sort_direction = PandasApiSortDirection.DESC
+            order_by: PandasApiSortInfo = PandasApiSortInfo(col_expr, sort_direction)
+
+            window: PandasApiWindow = PandasApiWindow(partition_by, [order_by], frame=None)
+            window_ref = PandasApiWindowReference(window=window, var_name="w")
+
             result = extend_column[1](partial_frame, window_ref, tds_row)
+
+            column_expression: PyLegendUnion[
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive],
+                PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
+            ]
+
             if len(extend_column) == 2:
-                col_expressions.append((extend_column[0], result))
+                column_expression = (current_column_name, result)
             else:
                 collection = create_primitive_collection(result)
                 agg_result = extend_column[2](collection)
-                col_expressions.append((extend_column[0], result, agg_result))
+                column_expression = (current_column_name, result, agg_result)
 
-        return col_expressions
+            column_expression_and_window_tuples.append((column_expression, window))
 
-    def __get_extend_columns(self):
-
-        column_names: list[str] = [col.get_name() for col in self.calculate_columns()]
-
-        lambda_func: PyLegendCallable[
-            [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow],
-            PyLegendPrimitiveOrPythonPrimitive
-        ]
-
-        if self.__method == 'min':
-            lambda_func = lambda p,w,r: p.rank(w,r)
-        elif self.__method == 'first':
-            lambda_func = lambda p,w,r: p.row_number(r)
-        elif self.__method == 'dense':
-            lambda_func = lambda p,w,r: p.dense_rank(w,r)
-
-        if self.__pct == True:
-            lambda_func = lambda p,w,r: p.percent_rank(w,r)
-
-        return [
-            (column_name, lambda_func)
-            for column_name in column_names
-        ]
+        return column_expression_and_window_tuples

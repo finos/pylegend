@@ -48,7 +48,7 @@ class TestRankFunctionOnBaseFrame:
                     THEN
                         null
                     ELSE
-                        rank() OVER (ORDER BY "root"."col1", "root"."col2")
+                        rank() OVER (ORDER BY "root"."col1")
                 END AS "col1",
                 CASE
                     WHEN
@@ -56,7 +56,7 @@ class TestRankFunctionOnBaseFrame:
                     THEN
                         null
                     ELSE
-                        rank() OVER (ORDER BY "root"."col1", "root"."col2")
+                        rank() OVER (ORDER BY "root"."col2")
                 END AS "col2"
             FROM
                 (
@@ -99,7 +99,7 @@ class TestRankFunctionOnBaseFrame:
     def test_rank_method_first(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.rank(method='first', na_option='top')
+        frame = frame.rank(method='first', na_option='bottom')
 
         expected = '''
             SELECT
@@ -187,7 +187,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col" NULLS LAST)
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
                 END AS "val_col",
                 CASE
                     WHEN
@@ -195,7 +195,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col" NULLS LAST)
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
                 END AS "random_col"
             FROM
                 (
@@ -259,7 +259,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        PERCENT_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
                 END AS "val_col",
                 CASE
                     WHEN
@@ -267,7 +267,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        PERCENT_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
+                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
                 END AS "random_col"
             FROM
                 (
@@ -299,7 +299,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        DENSE_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                        dense_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
                 END AS "val_col",
                 CASE
                     WHEN
@@ -307,7 +307,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        DENSE_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
+                        dense_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
                 END AS "random_col"
             FROM
                 (
@@ -339,7 +339,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        ROW_NUMBER() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
+                        row_number() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col")
                 END AS "val_col",
                 CASE
                     WHEN
@@ -347,7 +347,7 @@ class TestRankFunctionOnGroupbyFrame:
                     THEN
                         null
                     ELSE
-                        ROW_NUMBER() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
+                        row_number() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col")
                 END AS "random_col"
             FROM
                 (
@@ -369,12 +369,12 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("random_col")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.groupby("group_col").rank(method='min', ascending=False, na_option='top', pct=True)
+        frame = frame.groupby("group_col").rank(method='min', ascending=False, na_option='bottom', pct=True)
 
         expected = '''
             SELECT
-                PERCENT_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col" DESC NULLS FIRST) AS "val_col",
-                PERCENT_RANK() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col" DESC NULLS FIRST) AS "random_col"
+                percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col" DESC) AS "val_col",
+                percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col" DESC) AS "random_col"
             FROM
                 (
                     SELECT
