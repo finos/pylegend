@@ -17,7 +17,7 @@ from enum import Enum
 import json
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence,
+    PyLegendSequence
 )
 
 __all__: PyLegendSequence[str] = [

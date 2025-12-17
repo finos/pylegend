@@ -86,6 +86,7 @@ class TestTdsColumn:
         assert "TdsColumn(Name: C1_Copy, Type: my::EnumType)" == str(c1_copy)
 
     def test_tds_columns_from_json(self) -> None:
+
         s = """{
             "columns": []
         }"""
