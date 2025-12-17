@@ -86,18 +86,14 @@ def tds_columns_from_csv_string(
 
 
 def is_strict_date_or_datetime(col: pd.Series) -> bool:
-    s = col.dropna()
-    if s.empty:
-        return False
-
     try:
-        pd.to_datetime(s, format="%Y-%m-%d %H:%M:%S", exact=True, errors="raise")
+        pd.to_datetime(col, format="%Y-%m-%d %H:%M:%S", exact=True, errors="raise")
         return True
     except (ValueError, TypeError):
         pass
 
     try:
-        pd.to_datetime(s, format="%Y-%m-%d", exact=True, errors="raise")
+        pd.to_datetime(col, format="%Y-%m-%d", exact=True, errors="raise")
         return True
     except (ValueError, TypeError):
         return False

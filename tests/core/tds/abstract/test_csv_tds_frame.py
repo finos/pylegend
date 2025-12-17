@@ -32,7 +32,7 @@ class TestCsvTdsColumn:
         csv_string = (
             "id,name,is_active,created_at,grp,strict_date\n"
             "1,A,True,2025-12-16 10:30:45,1.0,2025-12-16\n"
-            "3,B,False,2025-12-17 10:30:45,2.0,2025-12-17"
+            "3,B,False,,2.0,2025-12-17"
         )
 
         columns = tds_columns_from_csv_string(
