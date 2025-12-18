@@ -13,6 +13,53 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from tests.test_helpers import generate_pure_query_and_compile
 
 
+class TestRankFunctionErrors:
+    def test_rank_error_invaild_axis(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.rank(axis=1)
+
+        expected_msg = "The 'axis' parameter of the rank function must be 0 or 'index', but got: axis=1"
+        assert v.value.args[0] == expected_msg
+
+    def test_rank_error_invalid_method(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # 'average' or 'max' are standard pandas methods but not in your valid_methods set
+        with pytest.raises(NotImplementedError) as v:
+            frame.rank(method="average")
+
+        expected_msg = f"The 'method' parameter of the rank function must be one of ['dense', 'first', 'min'], but got: method='average'"
+        assert v.value.args[0] == expected_msg
+
+    # 3. Test for PCT=True with unsupported method
+    def test_rank_error_pct_with_invalid_method(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # pct=True is only supported with method='min' in your code
+        with pytest.raises(NotImplementedError) as v:
+            frame.rank(pct=True, method='dense')
+
+        expected_msg = "The 'pct=True' parameter of the rank function is only supported with method='min', but got: method='dense'."
+        assert v.value.args[0] == expected_msg
+
+    # 4. Test for Invalid NA Option
+    def test_rank_error_invalid_na_option(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        invalid_na = "top"
+        with pytest.raises(NotImplementedError) as v:
+            frame.rank(na_option=invalid_na)
+
+        valid_na_options = {'keep', 'bottom'}
+        expected_msg = f"The 'na_option' parameter of the rank function must be one of {valid_na_options!r}, but got: na_option={invalid_na!r}"
+        assert v.value.args[0] == expected_msg
+
 class TestRankFunctionOnBaseFrame:
 
     # @pytest.fixture(autouse=True)

@@ -247,7 +247,7 @@ class RankFunction(PandasApiAppliedFunction):
         valid_methods: set[str] = {'min', 'first', 'dense'}
         if self.__method not in valid_methods:
             raise NotImplementedError(
-                f"The 'method' parameter of the rank function must be one of {list(valid_methods)!r},"
+                f"The 'method' parameter of the rank function must be one of {sorted(list(valid_methods))!r},"
                 f" but got: method={self.__method!r}")
         elif self.__pct is True and self.__method != 'min':
             raise NotImplementedError(

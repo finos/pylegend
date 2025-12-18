@@ -108,7 +108,7 @@ class PandasApiGroupbyTdsFrame:
                 f"The 'dropna' parameter of the groupby function must be False, "
                 f"but got: {self.__dropna} (type: {type(self.__dropna).__name__})"
             )
-
+        
         input_cols: PyLegendSet[str]
         if isinstance(self.__by, str):
             input_cols = set([self.__by])
@@ -119,11 +119,32 @@ class PandasApiGroupbyTdsFrame:
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
             )
+        # 1. Normalize input to a list to maintain order
+        group_by_names: list[str]
+        if isinstance(self.__by, str):
+            group_by_names = [self.__by]
+        elif isinstance(self.__by, list):
+            group_by_names = self.__by # Keep the list order
+        else:
+            raise TypeError(
+                f"The 'by' parameter in groupby function must be a string or a list of strings."
+                f"but got: {self.__by} (type: {type(self.__by).__name__})"
+            )
 
-        if len(input_cols) == 0:
+        if len(group_by_names) == 0:
             raise ValueError("The 'by' parameter in groupby function must contain at least one column name.")
 
-        self.__grouping_columns = [col for col in self.__base_frame.columns() if col.get_name() in input_cols]
+        # 2. Create a map of {column_name: column_object} for O(1) lookup
+        # This allows us to find the correct column object without looping repeatedly
+        base_col_map = {col.get_name(): col for col in self.__base_frame.columns()}
+
+        # 3. Build the result by iterating over the ORDERED input list
+        # We only append columns that actually exist in the base frame
+        self.__grouping_columns = [
+            base_col_map[name] 
+            for name in group_by_names
+            if name in base_col_map
+        ]
 
         if len(self.__grouping_columns) < len(input_cols):
             available_columns = {c.get_name() for c in self.__base_frame.columns()}
