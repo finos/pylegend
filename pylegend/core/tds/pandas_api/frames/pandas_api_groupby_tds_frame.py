@@ -229,7 +229,7 @@ class PandasApiGroupbyTdsFrame:
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
-        return self.aggregate(self, func, axis, *args, **kwargs)
+        return self.aggregate(func, axis, *args, **kwargs)
 
     def sum(
         self,

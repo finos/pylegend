@@ -23,15 +23,18 @@ from pylegend._typing import (
 )
 from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiPartialFrame, PandasApiSortDirection, PandasApiSortInfo, PandasApiWindow, PandasApiWindowReference
+from pylegend.core.language.shared.expression import PyLegendExpression
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection, create_primitive_collection
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.sql.metamodel import (
+    Expression,
     IsNullPredicate,
     NullLiteral,
     QualifiedName,
     QuerySpecification,
     SearchedCaseExpression,
+    SelectItem,
     SingleColumn,
     SortItem,
     SortItemNullOrdering,
@@ -108,7 +111,7 @@ class RankFunction(PandasApiAppliedFunction):
         else:
             new_query = copy_query(base_query)
 
-        new_select_items: list[SingleColumn] = []
+        new_select_items: list[SelectItem] = []
 
         for c, window in self.__column_expression_and_window_tuples:
             if len(c) == 2:
@@ -121,6 +124,7 @@ class RankFunction(PandasApiAppliedFunction):
                 else:
                     col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
 
+                window_expr: Expression
                 window_expr = WindowExpression(
                     nested=col_sql_expr,
                     window=window.to_sql_node(new_query, config),
@@ -206,17 +210,28 @@ class RankFunction(PandasApiAppliedFunction):
                 new_col = PrimitiveTdsColumn.integer_column(col.get_name())
             return new_col
 
-        new_columns: PyLegendSequence["TdsColumn"] = []
+        new_columns: PyLegendList["TdsColumn"] = []
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             grouping_column_names = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
-            if self.__base_frame.get_selected_columns() is None:
-                new_columns = [__validate_and_convert_column(col) for col in self.base_frame().columns()
-                               if col.get_name() not in grouping_column_names]
+            selected_columns: PyLegendOptional[PyLegendList[TdsColumn]] = self.__base_frame.get_selected_columns()
+            if selected_columns is None:
+                for col in self.base_frame().columns():
+                    if col.get_name() in grouping_column_names:
+                        continue
+                    validated_col = __validate_and_convert_column(col)
+                    if validated_col is not None:
+                        new_columns.append(validated_col)
             else:
-                new_columns = [__validate_and_convert_column(col) for col in self.__base_frame.get_selected_columns()]
+                for col in selected_columns:
+                    validated_col = __validate_and_convert_column(col)
+                    if validated_col is not None:
+                        new_columns.append(validated_col)
         else:
-            new_columns = [__validate_and_convert_column(col) for col in self.base_frame().columns()]
-        return [col for col in new_columns if col is not None]
+            for col in self.base_frame().columns():
+                validated_col = __validate_and_convert_column(col)
+                if validated_col is not None:
+                    new_columns.append(validated_col)
+        return new_columns
 
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:
@@ -292,7 +307,7 @@ class RankFunction(PandasApiAppliedFunction):
         ] = [(column_name, lambda_func) for column_name in column_names]
 
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
-        partial_frame = PandasApiPartialFrame(base_frame=self.__base_frame, var_name="p")
+        partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
 
         column_expression_and_window_tuples: PyLegendList[
             PyLegendTuple[
@@ -311,7 +326,7 @@ class RankFunction(PandasApiAppliedFunction):
             if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
                 partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
             tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
-            col_expr: PyLegendColumnExpression = tds_row[current_column_name].value()
+            col_expr: PyLegendColumnExpression = PyLegendColumnExpression(tds_row, current_column_name)
             sort_direction: PandasApiSortDirection
             if self.__ascending is True:
                 sort_direction = PandasApiSortDirection.ASC
