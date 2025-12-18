@@ -108,5 +108,11 @@ class LegendServiceInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
     def get_pattern(self) -> str:
         return self.__pattern
 
+    def get_project_coordinates(self) -> ProjectCoordinates:
+        return self.__project_coordinates
+
+    def get_initialized(self) -> bool:
+        return self.__initialized
+
     def set_initialized(self, val: bool) -> None:
         self.__initialized = val
