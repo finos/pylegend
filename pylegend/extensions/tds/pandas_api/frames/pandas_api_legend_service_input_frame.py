@@ -13,24 +13,12 @@
 # limitations under the License.
 
 from pylegend._typing import (
-    PyLegendSequence,
-    PyLegendList
+    PyLegendSequence
 )
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    TableFunction,
-    Select,
-    AllColumns,
-    FunctionCall,
-    QualifiedName,
-    NamedArgumentExpression,
-    StringLiteral,
-    AliasedRelation,
-    SingleColumn,
-    QualifiedNameReference,
-    Expression,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiExecutableInputTdsFrame
 from pylegend.core.tds.tds_frame import (
@@ -66,50 +54,7 @@ class PandasApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, PandasAp
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self._extra_frame is None:
-            db_extension = config.sql_to_string_generator().get_db_extension()
-            root_alias = db_extension.quote_identifier("root")
-            args: PyLegendList[Expression] = [
-                NamedArgumentExpression(
-                    name="pattern",
-                    expression=StringLiteral(value=self.get_pattern(), quoted=False)
-                )
-            ]
-            args += self.get_project_coordinates().sql_params()
-            func_call = FunctionCall(
-                name=QualifiedName(["service"]),
-                distinct=False,
-                filter_=None,
-                window=None,
-                arguments=args
-            )
-
-            return QuerySpecification(
-                select=Select(
-                    selectItems=[
-                        SingleColumn(
-                            alias=db_extension.quote_identifier(x.get_name()),
-                            expression=QualifiedNameReference(
-                                name=QualifiedName(parts=[root_alias, db_extension.quote_identifier(x.get_name())])
-                            )
-                        )
-                        for x in self.columns()
-                    ] if self.get_initialized() else [AllColumns(prefix=root_alias)],
-                    distinct=False
-                ),
-                from_=[
-                    AliasedRelation(
-                        relation=TableFunction(functionCall=func_call),
-                        alias=root_alias,
-                        columnNames=[x.get_name() for x in self.columns()] if self.get_initialized() else []
-                    )
-                ],
-                where=None,
-                groupBy=[],
-                having=None,
-                orderBy=[],
-                limit=None,
-                offset=None
-            )
+            return LegendServiceInputFrameAbstract.to_sql_query_object(self, config)
         else:
             return self._extra_frame.to_sql_query_object(config)
 
