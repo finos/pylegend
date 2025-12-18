@@ -1,11 +1,24 @@
 from textwrap import dedent
+
+import pytest
+from pylegend._typing import (
+    PyLegendDict,
+    PyLegendUnion,
+)
+from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestRankFunctionOnBaseFrame:
+
+    # @pytest.fixture(autouse=True)
+    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
     def test_rank_method_simple_min(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
@@ -34,11 +47,12 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
-        '''
+              ->extend(over([ascending(~col1)]), ~col1__internal_pure_col_name__:{p,w,r | if($r.col1->isEmpty(), | [], | $p->rank($w, $r))})
+              ->project(~[col1:p|$p.col1__internal_pure_col_name__])
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_rank_method_multiple(self) -> None:
         columns = [
@@ -80,10 +94,10 @@ class TestRankFunctionOnBaseFrame:
         
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->extend(over([ascending(~col2)]), ~'col2__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->project(['col1':p|$p.'col1__internal_pure_col_name', 'col2':p|$p.'col2__internal_pure_col_name'])
-        '''
+              ->extend(over([ascending(~col1)]), ~col1__internal_pure_col_name__:{p,w,r | if($r.col1->isEmpty(), | [], | $p->rank($w, $r))})
+              ->extend(over([ascending(~col2)]), ~col2__internal_pure_col_name__:{p,w,r | if($r.col2->isEmpty(), | [], | $p->rank($w, $r))})
+              ->project(~[col1:p|$p.col1__internal_pure_col_name__, col2:p|$p.col2__internal_pure_col_name__])
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
 
@@ -115,9 +129,9 @@ class TestRankFunctionOnBaseFrame:
         
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([descending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->denseRank($w, $r)})
-              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
-        '''
+              ->extend(over([descending(~col1)]), ~col1__internal_pure_col_name__:{p,w,r | if($r.col1->isEmpty(), | [], | $p->denseRank($w, $r))})
+              ->project(~[col1:p|$p.col1__internal_pure_col_name__])
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
 
@@ -142,8 +156,8 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->rowNumber($r)})
-              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
+              ->extend(over([ascending(~col1)]), ~col1__internal_pure_col_name__:{p,w,r | $p->rowNumber($r)})
+              ->project(~[col1:p|$p.col1__internal_pure_col_name__])
         '''
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -176,9 +190,9 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
-              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
-        '''
+              ->extend(over([ascending(~col1)]), ~col1__internal_pure_col_name__:{p,w,r | if($r.col1->isEmpty(), | [], | $p->percentRank($w, $r))})
+              ->project(~[col1:p|$p.col1__internal_pure_col_name__])
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
 
@@ -224,9 +238,9 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~int_col)]), ~'int_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->extend(over([ascending(~float_col)]), ~'float_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->project(['int_col':p|$p.'int_col__internal_pure_col_name', 'float_col':p|$p.'float_col__internal_pure_col_name'])
+              ->extend(over([ascending(~int_col)]), ~int_col__internal_pure_col_name__:{p,w,r | if($r.int_col->isEmpty(), | [], | $p->rank($w, $r))})
+              ->extend(over([ascending(~float_col)]), ~float_col__internal_pure_col_name__:{p,w,r | if($r.float_col->isEmpty(), | [], | $p->rank($w, $r))})
+              ->project(~[int_col:p|$p.int_col__internal_pure_col_name__, float_col:p|$p.float_col__internal_pure_col_name__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -276,10 +290,10 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
-        '''
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__internal_pure_col_name__:{p,w,r | if($r.val_col->isEmpty(), | [], | $p->rank($w, $r))})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__internal_pure_col_name__:{p,w,r | if($r.random_col->isEmpty(), | [], | $p->rank($w, $r))})
+              ->project(~[val_col:p|$p.val_col__internal_pure_col_name__, random_col:p|$p.random_col__internal_pure_col_name__])
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
 
@@ -317,9 +331,9 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
-              ->project(['val_col':p|$p.'val_col__internal_pure_col_name'])
-        '''
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__internal_pure_col_name__:{p,w,r | if($r.val_col->isEmpty(), | [], | $p->rank($w, $r))})
+              ->project(~[val_col:p|$p.val_col__internal_pure_col_name__])
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
 
@@ -365,9 +379,9 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
-              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__internal_pure_col_name__:{p,w,r | if($r.val_col->isEmpty(), | [], | $p->percentRank($w, $r))})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__internal_pure_col_name__:{p,w,r | if($r.random_col->isEmpty(), | [], | $p->percentRank($w, $r))})
+              ->project(~[val_col:p|$p.val_col__internal_pure_col_name__, random_col:p|$p.random_col__internal_pure_col_name__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -414,9 +428,9 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->denseRank($w, $r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->denseRank($w, $r)})
-              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__internal_pure_col_name__:{p,w,r | if($r.val_col->isEmpty(), | [], | $p->denseRank($w, $r))})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__internal_pure_col_name__:{p,w,r | if($r.random_col->isEmpty(), | [], | $p->denseRank($w, $r))})
+              ->project(~[val_col:p|$p.val_col__internal_pure_col_name__, random_col:p|$p.random_col__internal_pure_col_name__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -463,9 +477,9 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->rowNumber($r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->rowNumber($r)})
-              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__internal_pure_col_name__:{p,w,r | if($r.val_col->isEmpty(), | [], | $p->rowNumber($r))})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__internal_pure_col_name__:{p,w,r | if($r.random_col->isEmpty(), | [], | $p->rowNumber($r))})
+              ->project(~[val_col:p|$p.val_col__internal_pure_col_name__, random_col:p|$p.random_col__internal_pure_col_name__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -498,9 +512,9 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [descending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
-              ->extend(over(~[group_col], [descending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
-              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__internal_pure_col_name__:{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over(~[group_col], [descending(~random_col)]), ~random_col__internal_pure_col_name__:{p,w,r | $p->percentRank($w, $r)})
+              ->project(~[val_col:p|$p.val_col__internal_pure_col_name__, random_col:p|$p.random_col__internal_pure_col_name__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
