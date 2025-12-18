@@ -30,7 +30,7 @@ def generate_pure_query_and_compile(
     assert isinstance(frame, BaseTdsFrame)
     tds_frames = frame.get_all_tds_frames()
     input_frames = [x for x in tds_frames if isinstance(x, InputTdsFrame)]
-    table_input_frames: PyLegendList[PyLegendUnion[TableSpecInputFrameAbstract, PandasApiTableSpecInputFrame]] = []
+    table_input_frames: PyLegendList[TableSpecInputFrameAbstract] = []
     for x in input_frames:
         assert isinstance(x, (TableSpecInputFrameAbstract, PandasApiTableSpecInputFrame))
         table_input_frames.append(x)
