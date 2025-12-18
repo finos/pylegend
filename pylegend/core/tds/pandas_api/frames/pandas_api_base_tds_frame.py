@@ -753,22 +753,9 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             max_cols: PyLegendOptional[int] = None,
             memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
             show_counts: PyLegendOptional[bool] = None
-    ) -> None:
-        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
-            PandasApiAppliedFunctionTdsFrame
-        )
-        from pylegend.core.tds.pandas_api.frames.functions.info import PandasApiInfoFunction
+    ) -> str:
 
-        return PandasApiAppliedFunctionTdsFrame(
-            PandasApiInfoFunction(
-                base_frame=self,
-                verbose=verbose,
-                buf=buf,
-                max_cols=max_cols,
-                memory_usage=memory_usage,
-                show_counts=show_counts
-            )
-        )
+
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self._cached_sql is not None:
