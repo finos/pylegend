@@ -102,56 +102,34 @@ class RankFunction(PandasApiAppliedFunction):
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
 
         base_query = self.base_frame().to_sql_query_object(config)
-        should_create_sub_query: bool = True
         db_extension = config.sql_to_string_generator().get_db_extension()
 
-        new_query: QuerySpecification
-        if should_create_sub_query == True:
-            new_query = create_sub_query(base_query, config, "root")
-        else:
-            new_query = copy_query(base_query)
+        new_query: QuerySpecification = create_sub_query(base_query, config, "root")
 
         new_select_items: list[SelectItem] = []
 
         for c, window in self.__column_expression_and_window_tuples:
-            if len(c) == 2:
+            col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
 
-                if isinstance(c[1], (bool, int, float, str, date, datetime)):
-                    col_sql_expr = convert_literal_to_literal_expression(c[1]).to_sql_expression(
-                        {"r": new_query},
-                        config
-                    )
-                else:
-                    col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
-
-                window_expr: Expression
-                window_expr = WindowExpression(
-                    nested=col_sql_expr,
-                    window=window.to_sql_node(new_query, config),
+            window_expr: Expression
+            window_expr = WindowExpression(
+                nested=col_sql_expr,
+                window=window.to_sql_node(new_query, config),
+            )
+            tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
+            if self.__na_option == 'keep':
+                curr_col_expr = (lambda x: x[c[0]])(tds_row).to_sql_expression({"root": new_query}, config)
+                window_expr = SearchedCaseExpression(
+                    whenClauses=[
+                        WhenClause(
+                            operand=IsNullPredicate(curr_col_expr),
+                            result=NullLiteral()
+                        )
+                    ],
+                    defaultValue=window_expr
                 )
-                tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
-                if self.__na_option == 'keep':
-                    curr_col_expr = (lambda x: x[c[0]])(tds_row).to_sql_expression({"root": new_query}, config)
-                    window_expr = SearchedCaseExpression(
-                        whenClauses=[
-                            WhenClause(
-                                operand=IsNullPredicate(curr_col_expr),
-                                result=NullLiteral()
-                            )
-                        ],
-                        defaultValue=window_expr
-                    )
-                new_select_items.append(
-                    SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr))
-
-            else:
-                agg_sql_expr = c[2].to_sql_expression({"r": new_query}, config)
-                window_expr = WindowExpression(
-                    nested=agg_sql_expr,
-                    window=window.to_sql_node(new_query, config),
-                )
-                new_select_items.append(
-                    SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr))
+            new_select_items.append(
+                SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr))
 
         new_query.select.selectItems = new_select_items
         return new_query
@@ -174,13 +152,7 @@ class RankFunction(PandasApiAppliedFunction):
                         convert_literal_to_literal_expression(c[1]).to_pure_expression(config))
             if self.__na_option == 'keep':
                 expr_str = wrap_expr_str_with_if_statement(expr_str, c[0])
-            if len(c) == 2:
-                return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
-            else:
-                agg_expr_str = c[2].to_pure_expression(config).replace(expr_str, "$c")
-                return (f"{escaped_col_name}:"
-                        f"{generate_pure_lambda('p,w,r', expr_str)}:"
-                        f"{generate_pure_lambda('c', agg_expr_str)}")
+            return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
 
         extend_strs: PyLegendList[str] = []
         for c, window in self.__column_expression_and_window_tuples:
@@ -350,13 +322,7 @@ class RankFunction(PandasApiAppliedFunction):
                 PyLegendTuple[str, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitive]
             ]
 
-            if len(extend_column) == 2:
-                column_expression = (current_column_name, result)
-            else:
-                collection = create_primitive_collection(result)
-                agg_result = extend_column[2](collection)
-                column_expression = (current_column_name, result, agg_result)
-
+            column_expression = (current_column_name, result)
             column_expression_and_window_tuples.append((column_expression, window))
 
         return column_expression_and_window_tuples

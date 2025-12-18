@@ -28,26 +28,22 @@ class TestRankFunctionErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        # 'average' or 'max' are standard pandas methods but not in your valid_methods set
         with pytest.raises(NotImplementedError) as v:
             frame.rank(method="average")
 
         expected_msg = f"The 'method' parameter of the rank function must be one of ['dense', 'first', 'min'], but got: method='average'"
         assert v.value.args[0] == expected_msg
 
-    # 3. Test for PCT=True with unsupported method
     def test_rank_error_pct_with_invalid_method(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        # pct=True is only supported with method='min' in your code
         with pytest.raises(NotImplementedError) as v:
             frame.rank(pct=True, method='dense')
 
         expected_msg = "The 'pct=True' parameter of the rank function is only supported with method='min', but got: method='dense'."
         assert v.value.args[0] == expected_msg
 
-    # 4. Test for Invalid NA Option
     def test_rank_error_invalid_na_option(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
