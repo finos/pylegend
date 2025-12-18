@@ -2,7 +2,7 @@ from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 
 class TestRankFunctionOnBaseFrame:
@@ -31,6 +31,14 @@ class TestRankFunctionOnBaseFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
 
     def test_rank_method_multiple(self) -> None:
         columns = [
@@ -69,6 +77,15 @@ class TestRankFunctionOnBaseFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+        
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~col2)]), ~'col2__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->project(['col1':p|$p.'col1__internal_pure_col_name', 'col2':p|$p.'col2__internal_pure_col_name'])
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
 
     def test_rank_method_dense_descending(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -95,6 +112,14 @@ class TestRankFunctionOnBaseFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+        
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over([descending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->denseRank($w, $r)})
+              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
 
     def test_rank_method_first(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -114,6 +139,14 @@ class TestRankFunctionOnBaseFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->rowNumber($r)})
+              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
 
     def test_rank_pct_true(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -141,31 +174,62 @@ class TestRankFunctionOnBaseFrame:
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over([ascending(~col1)]), ~'col1__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
+              ->project(['col1':p|$p.'col1__internal_pure_col_name'])
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+
     def test_rank_na_option_keep_default(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        columns = [PrimitiveTdsColumn.integer_column("int_col"),
+                   PrimitiveTdsColumn.string_column("str_col"),
+                   PrimitiveTdsColumn.date_column("date_col"),
+                   PrimitiveTdsColumn.float_column("float_col")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.rank(method='min', na_option='keep')
+        frame = frame.rank(method='min', numeric_only=True)
 
         expected = '''
             SELECT
                 CASE
                     WHEN
-                        ("root"."col1" IS NULL)
+                        ("root"."int_col" IS NULL)
                     THEN
                         null
                     ELSE
-                        rank() OVER (ORDER BY "root"."col1")
-                END AS "col1"
+                        rank() OVER (ORDER BY "root"."int_col")
+                END AS "int_col",
+                CASE
+                    WHEN
+                        ("root"."float_col" IS NULL)
+                    THEN
+                        null
+                    ELSE
+                        rank() OVER (ORDER BY "root"."float_col")
+                END AS "float_col"
             FROM
                 (
                     SELECT
-                        "root".col1 AS "col1"
+                        "root".int_col AS "int_col",
+                        "root".str_col AS "str_col",
+                        "root".date_col AS "date_col",
+                        "root".float_col AS "float_col"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over([ascending(~int_col)]), ~'int_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~float_col)]), ~'float_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->project(['int_col':p|$p.'int_col__internal_pure_col_name', 'float_col':p|$p.'float_col__internal_pure_col_name'])
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
 
 
 class TestRankFunctionOnGroupbyFrame:
@@ -210,6 +274,15 @@ class TestRankFunctionOnGroupbyFrame:
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+
     def test_groupby_rank_min_subset(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
@@ -242,6 +315,14 @@ class TestRankFunctionOnGroupbyFrame:
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->rank($w, $r)})
+              ->project(['val_col':p|$p.'val_col__internal_pure_col_name'])
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+
     def test_groupby_rank_pct(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
@@ -249,7 +330,7 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("random_col")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.groupby("group_col").rank(method='min', pct=True)
+        frame = frame.groupby("group_col")[["val_col", "random_col"]].rank(method='min', pct=True)
 
         expected = '''
             SELECT
@@ -281,6 +362,15 @@ class TestRankFunctionOnGroupbyFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
+              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
 
     def test_groupby_rank_dense(self) -> None:
         columns = [
@@ -321,6 +411,15 @@ class TestRankFunctionOnGroupbyFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->denseRank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->denseRank($w, $r)})
+              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
     
     def test_groupby_rank_first_subset(self) -> None:
         columns = [
@@ -362,7 +461,16 @@ class TestRankFunctionOnGroupbyFrame:
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
-    def test_groupby_rank_pct_descending_na_top(self) -> None:
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->rowNumber($r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->rowNumber($r)})
+              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+
+    def test_groupby_rank_pct_descending_na_bottom(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
@@ -387,3 +495,12 @@ class TestRankFunctionOnGroupbyFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], [descending(~val_col)]), ~'val_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over(~[group_col], [descending(~random_col)]), ~'random_col__internal_pure_col_name':{p,w,r | $p->percentRank($w, $r)})
+              ->project(['val_col':p|$p.'val_col__internal_pure_col_name', 'random_col':p|$p.'random_col__internal_pure_col_name'])
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected

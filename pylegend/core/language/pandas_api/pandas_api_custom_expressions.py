@@ -203,14 +203,14 @@ class PandasApiWindow:
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         partitions_str = (
-            "[]" if self.__partition_by is None or len(self.__partition_by) == 0
-            else "~[" + (', '.join(map(escape_column_name, self.__partition_by))) + "]"
+            "" if self.__partition_by is None or len(self.__partition_by) == 0
+            else "~[" + (', '.join(map(escape_column_name, self.__partition_by))) + "], "
         )
         sorts_str = (
             "[]" if self.__order_by is None or len(self.__order_by) == 0
             else "[" + (', '.join([s.to_pure_expression(config) for s in self.__order_by])) + "]"
         )
-        return f"over({partitions_str}, {sorts_str})"
+        return f"over({partitions_str}{sorts_str})"
 
 
 class PandasApiPartialFrame:
