@@ -22,15 +22,9 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
-from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
-from pylegend.core.language.shared.primitives.float import PyLegendFloat
-from pylegend.core.language.shared.primitives.integer import PyLegendInteger
-from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
-from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn, TdsColumn
+from pylegend.core.tds.tds_column import TdsColumn
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -108,7 +102,7 @@ class PandasApiGroupbyTdsFrame:
                 f"The 'dropna' parameter of the groupby function must be False, "
                 f"but got: {self.__dropna} (type: {type(self.__dropna).__name__})"
             )
-        
+
         input_cols: PyLegendSet[str]
         if isinstance(self.__by, str):
             input_cols = set([self.__by])
@@ -119,12 +113,11 @@ class PandasApiGroupbyTdsFrame:
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
             )
-        # 1. Normalize input to a list to maintain order
         group_by_names: list[str]
         if isinstance(self.__by, str):
             group_by_names = [self.__by]
         elif isinstance(self.__by, list):
-            group_by_names = self.__by # Keep the list order
+            group_by_names = self.__by
         else:
             raise TypeError(
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
@@ -134,14 +127,10 @@ class PandasApiGroupbyTdsFrame:
         if len(group_by_names) == 0:
             raise ValueError("The 'by' parameter in groupby function must contain at least one column name.")
 
-        # 2. Create a map of {column_name: column_object} for O(1) lookup
-        # This allows us to find the correct column object without looping repeatedly
         base_col_map = {col.get_name(): col for col in self.__base_frame.columns()}
 
-        # 3. Build the result by iterating over the ORDERED input list
-        # We only append columns that actually exist in the base frame
         self.__grouping_columns = [
-            base_col_map[name] 
+            base_col_map[name]
             for name in group_by_names
             if name in base_col_map
         ]
@@ -170,7 +159,7 @@ class PandasApiGroupbyTdsFrame:
 
         if len(columns_to_select) == 0:
             raise ValueError("When performing column selection after groupby, at least one column must be selected.")
-        
+
         selected_columns: PyLegendList[TdsColumn] = [
             col for col in self.__base_frame.columns() if col.get_name() in columns_to_select]
 
@@ -247,8 +236,6 @@ class PandasApiGroupbyTdsFrame:
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> "PandasApiTdsFrame":
-        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
-        from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
         return self.aggregate(func, axis, *args, **kwargs)
 
@@ -353,7 +340,7 @@ class PandasApiGroupbyTdsFrame:
 
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
-    
+
     def rank(
             self,
             method: str = 'average',
@@ -366,7 +353,7 @@ class PandasApiGroupbyTdsFrame:
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-        
+
         return PandasApiAppliedFunctionTdsFrame(RankFunction(
             base_frame=self,
             axis=axis,

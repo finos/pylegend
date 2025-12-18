@@ -35,7 +35,18 @@ from pylegend._typing import (
 from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
 from pylegend.core.language.shared.expression import PyLegendExpressionFloatReturn, PyLegendExpressionIntegerReturn
 from pylegend.core.language.shared.helpers import escape_column_name
-from pylegend.core.sql.metamodel import Expression, FunctionCall, IntegerLiteral, QualifiedName, QuerySpecification, SingleColumn, SortItem, SortItemNullOrdering, SortItemOrdering, Window
+from pylegend.core.sql.metamodel import (
+    Expression,
+    FunctionCall,
+    IntegerLiteral,
+    QualifiedName,
+    QuerySpecification,
+    SingleColumn,
+    SortItem,
+    SortItemNullOrdering,
+    SortItemOrdering,
+    Window
+)
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
@@ -310,6 +321,7 @@ class PandasApiPartialFrame:
 
     def get_base_frame(self) -> "PandasApiBaseTdsFrame":
         return self.__base_frame
+
 
 class PandasApiWindowReference:
     __window: PandasApiWindow

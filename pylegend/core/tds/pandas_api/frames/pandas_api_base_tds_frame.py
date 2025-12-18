@@ -422,7 +422,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             observed=observed,
             dropna=dropna
         )
-    
+
     def rank(
             self,
             axis: PyLegendUnion[int, str] = 0,

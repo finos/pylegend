@@ -16,7 +16,8 @@ from tests.test_helpers import generate_pure_query_and_compile
 class TestRankFunctionErrors:
     def test_rank_error_invaild_axis(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ["test_schema", "test_table"], columns)
 
         with pytest.raises(NotImplementedError) as v:
             frame.rank(axis=1)
@@ -26,45 +27,50 @@ class TestRankFunctionErrors:
 
     def test_rank_error_invalid_method(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = PandasApiTableSpecInputFrame(
+            ["test_schema", "test_table"], columns)
 
         with pytest.raises(NotImplementedError) as v:
             frame.rank(method="average")
 
-        expected_msg = f"The 'method' parameter of the rank function must be one of ['dense', 'first', 'min'], but got: method='average'"
+        expected_msg = "The 'method' parameter of the rank function must be one of ['dense', 'first', 'min'], but got: method='average'"  # noqa: E501
         assert v.value.args[0] == expected_msg
 
     def test_rank_error_pct_with_invalid_method(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = PandasApiTableSpecInputFrame(
+            ["test_schema", "test_table"], columns)
 
         with pytest.raises(NotImplementedError) as v:
             frame.rank(pct=True, method='dense')
 
-        expected_msg = "The 'pct=True' parameter of the rank function is only supported with method='min', but got: method='dense'."
+        expected_msg = "The 'pct=True' parameter of the rank function is only supported with method='min', but got: method='dense'."  # noqa: E501
         assert v.value.args[0] == expected_msg
 
     def test_rank_error_invalid_na_option(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = PandasApiTableSpecInputFrame(
+            ["test_schema", "test_table"], columns)
 
         invalid_na = "top"
         with pytest.raises(NotImplementedError) as v:
             frame.rank(na_option=invalid_na)
 
         valid_na_options = {'keep', 'bottom'}
-        expected_msg = f"The 'na_option' parameter of the rank function must be one of {valid_na_options!r}, but got: na_option={invalid_na!r}"
+        expected_msg = f"The 'na_option' parameter of the rank function must be one of {valid_na_options!r}, but got: na_option={invalid_na!r}"  # noqa: E501
         assert v.value.args[0] == expected_msg
+
 
 class TestRankFunctionOnBaseFrame:
 
-    # @pytest.fixture(autouse=True)
-    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_rank_method_simple_min(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.rank(method='min')
 
         expected = '''
@@ -95,14 +101,15 @@ class TestRankFunctionOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_rank_method_multiple(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.number_column("col2")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.rank(method='min')
 
         expected = '''
@@ -134,7 +141,7 @@ class TestRankFunctionOnBaseFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
-        
+
         expected = '''
             #Table(test_schema.test_table)#
               ->extend(over([ascending(~col1)]), ~col1__internal_pure_col_name__:{p,w,r | if($r.col1->isEmpty(), | [], | $p->rank($w, $r))})
@@ -143,10 +150,12 @@ class TestRankFunctionOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_rank_method_dense_descending(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.rank(method='dense', ascending=False)
 
         expected = '''
@@ -169,7 +178,7 @@ class TestRankFunctionOnBaseFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
-        
+
         expected = '''
             #Table(test_schema.test_table)#
               ->extend(over([descending(~col1)]), ~col1__internal_pure_col_name__:{p,w,r | if($r.col1->isEmpty(), | [], | $p->denseRank($w, $r))})
@@ -177,10 +186,12 @@ class TestRankFunctionOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_rank_method_first(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.rank(method='first', na_option='bottom')
 
         expected = '''
@@ -204,10 +215,12 @@ class TestRankFunctionOnBaseFrame:
         '''
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_rank_pct_true(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.rank(pct=True)
 
         expected = '''
@@ -238,13 +251,15 @@ class TestRankFunctionOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_rank_na_option_keep_default(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("int_col"),
                    PrimitiveTdsColumn.string_column("str_col"),
                    PrimitiveTdsColumn.date_column("date_col"),
                    PrimitiveTdsColumn.float_column("float_col")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.rank(method='min', numeric_only=True)
 
         expected = '''
@@ -287,17 +302,19 @@ class TestRankFunctionOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
 
 class TestRankFunctionOnGroupbyFrame:
-    
+
     def test_groupby_rank_min(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col").rank(method='min')
 
         expected = '''
@@ -339,6 +356,7 @@ class TestRankFunctionOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_groupby_rank_min_subset(self) -> None:
         columns = [
@@ -346,7 +364,8 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col")["val_col"].rank(method='min')
 
         expected = '''
@@ -379,6 +398,7 @@ class TestRankFunctionOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_groupby_rank_pct(self) -> None:
         columns = [
@@ -386,8 +406,10 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.groupby("group_col")[["val_col", "random_col"]].rank(method='min', pct=True)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col")[["val_col", "random_col"]].rank(
+            method='min', pct=True)
 
         expected = '''
             SELECT
@@ -428,6 +450,7 @@ class TestRankFunctionOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_groupby_rank_dense(self) -> None:
         columns = [
@@ -435,7 +458,8 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col").rank(method='dense')
 
         expected = '''
@@ -477,15 +501,18 @@ class TestRankFunctionOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-    
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+
     def test_groupby_rank_first_subset(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.groupby("group_col")[['val_col', 'random_col']].rank(method='first')
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col")[
+            ['val_col', 'random_col']].rank(method='first')
 
         expected = '''
             SELECT
@@ -526,6 +553,7 @@ class TestRankFunctionOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_groupby_rank_pct_descending_na_bottom(self) -> None:
         columns = [
@@ -533,8 +561,10 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.groupby("group_col").rank(method='min', ascending=False, na_option='bottom', pct=True)
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(
+            ['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col").rank(
+            method='min', ascending=False, na_option='bottom', pct=True)
 
         expected = '''
             SELECT
@@ -561,3 +591,4 @@ class TestRankFunctionOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
