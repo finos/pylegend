@@ -32,7 +32,7 @@ def generate_pure_query_and_compile(
     input_frames = [x for x in tds_frames if isinstance(x, InputTdsFrame)]
     table_input_frames: PyLegendList[TableSpecInputFrameAbstract] = []
     for x in input_frames:
-        assert isinstance(x, (TableSpecInputFrameAbstract, PandasApiTableSpecInputFrame))
+        assert isinstance(x, TableSpecInputFrameAbstract)
         table_input_frames.append(x)
 
     input_text_replacement_map = {}
