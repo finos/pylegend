@@ -16,13 +16,17 @@ from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
+    PyLegendOptional,
+    PyLegendTypeVar
 )
 from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 
+R = PyLegendTypeVar('R')
 
 __all__: PyLegendSequence[str] = [
     "PandasApiAppliedFunctionTdsFrame",
@@ -81,3 +85,13 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
             for x in [self.__applied_function.base_frame()] + self.__applied_function.tds_frame_parameters()
             for y in x.get_all_tds_frames()
         ] + [self]
+
+    def execute_frame(
+            self,
+            result_handler: "ResultHandler[R]",
+            chunk_size: PyLegendOptional[int] = None
+    ) -> "R":
+        if hasattr(self.__applied_function, 'execute_frame'):
+            return self.__applied_function.execute_frame(self, result_handler, chunk_size)
+        return super().execute_frame(result_handler, chunk_size)
+

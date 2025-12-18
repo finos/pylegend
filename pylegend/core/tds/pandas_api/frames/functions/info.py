@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+import json
 from io import StringIO
 from typing import TYPE_CHECKING
 
@@ -82,10 +83,11 @@ class PandasApiInfoFunction(PandasApiAppliedFunction):
 
     def execute_frame(
             self,
+            frame: PandasApiBaseTdsFrame,
             result_handler: ResultHandler[R],
             chunk_size: PyLegendOptional[int] = None
     ) -> R:
-        tds_frames = self.get_all_tds_frames()
+        tds_frames = frame.get_all_tds_frames()
         input_frames = [x for x in tds_frames if isinstance(x, PandasApiInputTdsFrame)]
         non_exec_frames = [x for x in input_frames if not isinstance(x, PandasApiExecutableInputTdsFrame)]
         if non_exec_frames:
@@ -95,43 +97,41 @@ class PandasApiInfoFunction(PandasApiAppliedFunction):
             )
 
         exec_frames = [x for x in input_frames if isinstance(x, PandasApiExecutableInputTdsFrame)]
-        all_legend_clients = [e.get_legend_client() for e in exec_frames if e.get_legend_client()]
-        if not all_legend_clients:
-            raise ValueError("No legend client found to execute query.")
-        if len(set(all_legend_clients)) > 1:
+        all_legend_clients = []
+        for e in exec_frames:
+            c = e.get_legend_client()
+            if c not in all_legend_clients:
+                all_legend_clients.append(c)
+        if len(all_legend_clients) > 1:
             raise ValueError(
                 "Found tds frames with multiple legend_clients (which is not supported): [" +
-                (", ".join([str(c) for c in set(all_legend_clients)]) + "]")
+                (", ".join([str(f) for f in all_legend_clients]) + "]")
             )
         legend_client = all_legend_clients[0]
 
-        sql_query = self.to_sql_query(FrameToSqlConfig())
+        sql_query = frame.to_sql_query(FrameToSqlConfig())
         response_reader = legend_client.execute_sql_string(sql_query, chunk_size=chunk_size)
         result_bytes = b"".join(response_reader)
-        result_text = result_bytes.decode("utf-8")
+        result_json = json.loads(result_bytes.decode("utf-8"))
+        result_data = result_json["result"]
 
-        result_rows = result_text.strip().splitlines()
+        print(f"Result data:\n{result_data}\n")
+
         columns = self.__base_frame.columns()
         col_names = [c.get_name() for c in columns]
+        data_rows = result_data.get('rows', [])
+        total_rows = len(data_rows)
+        header_indices = {h.strip(): i for i, h in enumerate(result_data.get('columns', []))}
+        non_null_counts = {name: 0 for name in col_names}
 
-        if not result_rows or len(result_rows) <= 1:
-            total_rows = 0
-            non_null_counts = {name: 0 for name in col_names}
-        else:
-            header = result_rows[0].split(',')
-            data_rows = result_rows[1:]
-            total_rows = len(data_rows)
-            header_indices = {h.strip(): i for i, h in enumerate(header)}
-            non_null_counts = {name: 0 for name in col_names}
-
-            for row_str in data_rows:
-                row_values = row_str.split(',')
-                for col_name in col_names:
-                    col_index = header_indices.get(col_name)
-                    if col_index is not None and col_index < len(row_values):
-                        value = row_values[col_index]
-                        if value is not None and value != '':
-                            non_null_counts[col_name] += 1
+        for row in data_rows:
+            row_values = row.get('values', [])
+            for col_name in col_names:
+                col_index = header_indices.get(col_name)
+                if col_index is not None and col_index < len(row_values):
+                    value = row_values[col_index]
+                    if value is not None and str(value) != '':
+                        non_null_counts[col_name] += 1
 
         show_counts = self.__show_counts if self.__show_counts is not None else True
 
@@ -177,4 +177,4 @@ class PandasApiInfoFunction(PandasApiAppliedFunction):
             output.write("memory usage: ? (disabled)\n")
 
         print(f"Output:\n{output.getvalue()}\n")
-        return result_handler.handle_result(self.__base_frame, output.getvalue())
+        return output.getvalue()
