@@ -19,7 +19,6 @@ from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 from pylegend.core.tds.tds_frame import FrameToPureConfig, PyLegendTdsFrame
 from pylegend._typing import PyLegendList, PyLegendUnion
 from pylegend.extensions.tds.abstract.table_spec_input_frame import TableSpecInputFrameAbstract
-from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 
 
 def generate_pure_query_and_compile(
