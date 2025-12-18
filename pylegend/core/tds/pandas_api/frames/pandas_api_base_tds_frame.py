@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 from typing import TYPE_CHECKING
+
 from typing_extensions import Concatenate
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -88,11 +91,12 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             cols = "[" + ", ".join([str(c) for c in columns]) + "]"
             raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
         self.__columns = [c.copy() for c in columns]
-        self._cached_sql = None
-        self._cached_pure = None
+        self._extra_frame = None
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
-        return [c.copy() for c in self.__columns]
+        if self._extra_frame is None:
+            return [c.copy() for c in self.__columns]
+        return self._extra_frame.columns()
 
     def __getitem__(
             self,
@@ -214,29 +218,11 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         else:
             col_def[key] = lambda row: value
 
-        assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=col_def))
-        self._replace_with(assign_applied)
+        working_frame = copy.deepcopy(self)
+        assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(working_frame, col_definitions=col_def))
 
-    def _replace_with(self, new_frame: "PandasApiBaseTdsFrame") -> None:
-        """
-        Internal: replace this frame's state with another frame to emulate in-place operations.
-        """
-        from pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame import \
-            PandasApiLegendServiceInputFrame
-
-        # Check if executable
-        frames = new_frame.get_all_tds_frames()
-        is_exec_chain = False
-        is_exec_chain = any(isinstance(f, PandasApiLegendServiceInputFrame) for f in frames)
-
-        # Copy SQL and Pure
-        if hasattr(new_frame, "to_sql_query_object"):
-            self._cached_sql = new_frame.to_sql_query_object(FrameToSqlConfig())  # type: ignore
-        if hasattr(new_frame, "to_pure") and not is_exec_chain:
-            print()
-            self._cached_pure = new_frame.to_pure(FrameToPureConfig())  # type: ignore
-
-        self.__columns = new_frame.columns()
+        self._extra_frame = assign_applied  # type: ignore
+        self.__columns = assign_applied.columns()
 
     def assign(
             self,
@@ -730,15 +716,13 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
 
+    @abstractmethod
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        if self._cached_sql is not None:
-            return self._cached_sql
-        return self._build_sql_query_object(config)  # type: ignore
+        pass  # pragma: no cover
 
+    @abstractmethod
     def to_pure(self, config: FrameToPureConfig) -> str:
-        if self._cached_pure is not None:
-            return self._cached_pure
-        return self._build_to_pure(config)  # type: ignore
+        pass  # pragma: no cover
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         return self.to_pure(config)
