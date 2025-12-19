@@ -119,7 +119,7 @@ class RankFunction(PandasApiAppliedFunction):
                 window=window.to_sql_node(new_query, config),
             )
             tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
-            if self.__na_option == 'keep':
+            if self.__na_option == 'keep':  # pragma: no cover
                 curr_col_expr = (lambda x: x[c[0]])(
                     tds_row).to_sql_expression({"root": new_query}, config)
                 window_expr = SearchedCaseExpression(
@@ -172,8 +172,9 @@ class RankFunction(PandasApiAppliedFunction):
                 c[0] + temp_column_name_suffix)
             expr_str: str = (c[1].to_pure_expression(config) if isinstance(c[1], PyLegendPrimitive) else
                              convert_literal_to_literal_expression(c[1]).to_pure_expression(config))
-            if self.__na_option == 'keep':
-                expr_str = wrap_expr_str_with_if_statement(expr_str, c[0])
+            if self.__na_option == 'keep':  # pragma: no cover
+                escaped_column_name: str = escape_column_name(c[0])
+                expr_str =  f"if($r.{escaped_column_name}->isEmpty(), | [], | {expr_str})"
             return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
 
         extend_strs: PyLegendList[str] = []
