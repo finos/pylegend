@@ -320,7 +320,7 @@ class TestRankFunctionOnBaseFrame:
 
 
 class TestRankFunctionOnGroupbyFrame:
-    
+
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)

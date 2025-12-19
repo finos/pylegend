@@ -263,13 +263,37 @@ class RankFunction(PandasApiAppliedFunction):
         ]
 
         if self.__pct:
-            def lambda_func(p, w, r): return p.percent_rank(w, r)
+            def lambda_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+            ) -> PyLegendPrimitive:
+                return p.percent_rank(w, r)
+
         elif self.__method == 'min':
-            def lambda_func(p, w, r): return p.rank(w, r)
+            def lambda_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+            ) -> PyLegendPrimitive:
+                return p.rank(w, r)
+
         elif self.__method == 'first':
-            def lambda_func(p, w, r): return p.row_number(r)
+            def lambda_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+            ) -> PyLegendPrimitive:
+                return p.row_number(r)
+
         elif self.__method == 'dense':
-            def lambda_func(p, w, r): return p.dense_rank(w, r)
+            def lambda_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+            ) -> PyLegendPrimitive:
+                return p.dense_rank(w, r)
+
         else:
             raise ValueError(
                 f"Encountered unsupported method parameter (method={self.__method!r}) in rank function")  # pragma: no cover
