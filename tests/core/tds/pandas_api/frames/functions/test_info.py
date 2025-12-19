@@ -43,9 +43,23 @@ class TestInfoFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
+        # memory
+        with pytest.raises(NotImplementedError) as n:
+            frame.info(memory_usage=True)
+        assert n.value.args[0] == "memory_usage parameter is not implemented yet in Pandas API"
+
+        # max_cols
+        with pytest.raises(TypeError) as t:
+            frame.info(max_cols='10')
+        assert t.value.args[0] == "max_cols must be an integer, but got <class 'str'>"
+
+        # buffer
+        with pytest.raises(TypeError) as t:
+            frame.info(buf="not a buffer")
+        assert t.value.args[0] == "buf is not a writable buffer"
+
     def test_e2e_info_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        frame = frame.info()
-        res = frame.execute_frame_to_string()
-        print(f"Result is:\n{res}\n")
+        res = frame.info(verbose=False)
+
