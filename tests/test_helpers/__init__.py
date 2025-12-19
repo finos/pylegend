@@ -17,7 +17,7 @@ from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.abstract.frames.input_tds_frame import InputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 from pylegend.core.tds.tds_frame import FrameToPureConfig, PyLegendTdsFrame
-from pylegend._typing import PyLegendList, PyLegendUnion
+from pylegend._typing import PyLegendList
 from pylegend.extensions.tds.abstract.table_spec_input_frame import TableSpecInputFrameAbstract
 
 
