@@ -142,11 +142,12 @@ class RankFunction(PandasApiAppliedFunction):
 
         new_query = create_sub_query(new_query, config, "root")
 
-        final_select_items: list[SingleColumn] = []
+        final_select_items: list[SelectItem] = []
         tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
         for col in self.calculate_columns():
             col_name = col.get_name()
-            col_expr = QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), db_extension.quote_identifier(col_name + temp_column_name_suffix)]))
+            col_expr = QualifiedNameReference(QualifiedName([
+                db_extension.quote_identifier("root"), db_extension.quote_identifier(col_name + temp_column_name_suffix)]))
             final_select_items.append(
                 SingleColumn(
                     alias=db_extension.quote_identifier(col_name),
