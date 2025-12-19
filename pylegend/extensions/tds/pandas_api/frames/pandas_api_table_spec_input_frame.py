@@ -14,7 +14,8 @@
 
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendType
 )
 from pylegend.core.sql.metamodel import (
     QualifiedName
@@ -39,5 +40,5 @@ class PandasApiTableSpecInputFrame(PandasApiNonExecutableInputTdsFrame, TableSpe
     def __str__(self) -> str:
         return f"PandasApiTableSpecInputFrame({'.'.join(self.table.parts)})"  # pragma: no cover
 
-    def get_super_type(self) -> PyLegendTdsFrame:
-        return TableSpecInputFrameAbstract  # type: ignore
+    def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
+        return TableSpecInputFrameAbstract
