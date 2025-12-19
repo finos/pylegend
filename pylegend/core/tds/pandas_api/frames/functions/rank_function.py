@@ -174,7 +174,7 @@ class RankFunction(PandasApiAppliedFunction):
                              convert_literal_to_literal_expression(c[1]).to_pure_expression(config))
             if self.__na_option == 'keep':  # pragma: no cover
                 escaped_column_name: str = escape_column_name(c[0])
-                expr_str =  f"if($r.{escaped_column_name}->isEmpty(), | [], | {expr_str})"
+                expr_str = f"if($r.{escaped_column_name}->isEmpty(), | [], | {expr_str})"
             return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
 
         extend_strs: PyLegendList[str] = []
