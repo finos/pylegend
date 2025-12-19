@@ -17,13 +17,9 @@ from pylegend._typing import (
 )
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-)
 from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiExecutableInputTdsFrame
 from pylegend.core.tds.tds_frame import (
-    FrameToSqlConfig,
-    FrameToPureConfig,
+    PyLegendTdsFrame
 )
 from pylegend.extensions.tds.abstract.legend_service_input_frame import LegendServiceInputFrameAbstract
 
@@ -32,7 +28,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class PandasApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, PandasApiExecutableInputTdsFrame):
+class PandasApiLegendServiceInputFrame(PandasApiExecutableInputTdsFrame, LegendServiceInputFrameAbstract):
 
     def __init__(
             self,
@@ -41,7 +37,7 @@ class PandasApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, PandasAp
             legend_client: LegendClient,
     ) -> None:
         LegendServiceInputFrameAbstract.__init__(self, pattern=pattern, project_coordinates=project_coordinates)
-        self._extra_frame = None
+        self._transformed_frame = None
         PandasApiExecutableInputTdsFrame.__init__(
             self,
             legend_client=legend_client,
@@ -52,11 +48,5 @@ class PandasApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, PandasAp
     def __str__(self) -> str:
         return f"PandasApiLegendServiceInputFrame({'.'.join(self.get_pattern())})"  # pragma: no cover
 
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        if self._extra_frame is None:
-            return LegendServiceInputFrameAbstract.to_sql_query_object(self, config)
-        else:
-            return self._extra_frame.to_sql_query_object(config)
-
-    def to_pure(self, config: FrameToPureConfig) -> str:
-        raise RuntimeError("to_pure is not supported for LegendServiceInputFrame")  # pragma: no cover
+    def get_super_type(self) -> PyLegendTdsFrame:
+        return LegendServiceInputFrameAbstract  # type: ignore
