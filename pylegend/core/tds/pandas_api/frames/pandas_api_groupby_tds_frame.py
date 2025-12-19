@@ -18,11 +18,13 @@ from pylegend._typing import (
     PyLegendUnion,
     PyLegendList,
     PyLegendDict,
+    PyLegendSet,
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.tds_column import TdsColumn
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -38,8 +40,8 @@ class PandasApiGroupbyTdsFrame:
     __observed: bool
     __dropna: bool
 
-    __grouping_column_name_list: PyLegendList[str]
-    __selected_columns: PyLegendOptional[PyLegendList[str]]
+    __grouping_columns: PyLegendList[TdsColumn]
+    __selected_columns: PyLegendOptional[PyLegendList[TdsColumn]]
 
     @classmethod
     def name(cls) -> str:
@@ -101,39 +103,54 @@ class PandasApiGroupbyTdsFrame:
                 f"but got: {self.__dropna} (type: {type(self.__dropna).__name__})"
             )
 
-        input_cols: PyLegendList[str] = []
+        input_cols: PyLegendSet[str]
         if isinstance(self.__by, str):
-            input_cols = [self.__by]
+            input_cols = set([self.__by])
         elif isinstance(self.__by, list):
-            input_cols = self.__by
+            input_cols = set(self.__by)
+        else:
+            raise TypeError(
+                f"The 'by' parameter in groupby function must be a string or a list of strings."
+                f"but got: {self.__by} (type: {type(self.__by).__name__})"
+            )
+        group_by_names: list[str]
+        if isinstance(self.__by, str):
+            group_by_names = [self.__by]
+        elif isinstance(self.__by, list):
+            group_by_names = self.__by
         else:
             raise TypeError(
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
             )
 
-        if len(input_cols) == 0:
+        if len(group_by_names) == 0:
             raise ValueError("The 'by' parameter in groupby function must contain at least one column name.")
 
-        available_columns = {c.get_name() for c in self.__base_frame.columns()}
-        missing_cols = [col for col in input_cols if col not in available_columns]
+        base_col_map = {col.get_name(): col for col in self.__base_frame.columns()}
 
-        if len(missing_cols) > 0:
+        self.__grouping_columns = [
+            base_col_map[name]
+            for name in group_by_names
+            if name in base_col_map
+        ]
+
+        if len(self.__grouping_columns) < len(input_cols):
+            available_columns = {c.get_name() for c in self.__base_frame.columns()}
+            missing_cols = [col for col in input_cols if col not in available_columns]
             raise KeyError(
                 f"Column(s) {missing_cols} in groupby function's provided columns list "
                 f"do not exist in the current frame. "
                 f"Current frame columns: {sorted(available_columns)}"
             )
 
-        self.__grouping_column_name_list = input_cols.copy()
-
     def __getitem__(self, item: PyLegendUnion[str, PyLegendList[str]]) -> "PandasApiGroupbyTdsFrame":
-        columns_to_select: PyLegendList[str] = []
+        columns_to_select: PyLegendSet[str]
 
         if isinstance(item, str):
-            columns_to_select = [item]
+            columns_to_select = set([item])
         elif isinstance(item, list):
-            columns_to_select = item
+            columns_to_select = set(item)
         else:
             raise TypeError(
                 f"Column selection after groupby function must be a string or a list of strings, "
@@ -143,10 +160,12 @@ class PandasApiGroupbyTdsFrame:
         if len(columns_to_select) == 0:
             raise ValueError("When performing column selection after groupby, at least one column must be selected.")
 
-        available_columns = {c.get_name() for c in self.__base_frame.columns()}
-        missing_cols = [col for col in columns_to_select if col not in available_columns]
+        selected_columns: PyLegendList[TdsColumn] = [
+            col for col in self.__base_frame.columns() if col.get_name() in columns_to_select]
 
-        if len(missing_cols) > 0:
+        if len(selected_columns) < len(columns_to_select):
+            available_columns = {c.get_name() for c in self.__base_frame.columns()}
+            missing_cols = [col for col in columns_to_select if col not in available_columns]
             raise KeyError(
                 f"Column(s) {missing_cols} selected after groupby do not exist in the current frame. "
                 f"Current frame columns: {sorted(available_columns)}"
@@ -163,16 +182,16 @@ class PandasApiGroupbyTdsFrame:
             dropna=self.__dropna,
         )
 
-        new_frame.__selected_columns = columns_to_select.copy()
+        new_frame.__selected_columns = selected_columns
         return new_frame
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
 
-    def grouping_column_name_list(self) -> PyLegendList[str]:
-        return self.__grouping_column_name_list.copy()
+    def get_grouping_columns(self) -> PyLegendList[TdsColumn]:
+        return self.__grouping_columns.copy()
 
-    def selected_columns(self) -> PyLegendOptional[PyLegendList[str]]:
+    def get_selected_columns(self) -> PyLegendOptional[PyLegendList[TdsColumn]]:
         if self.__selected_columns is None:
             return None
         return self.__selected_columns.copy()
@@ -197,7 +216,7 @@ class PandasApiGroupbyTdsFrame:
             aggregated_result = PandasApiAppliedFunctionTdsFrame(
                 SortValuesFunction(
                     base_frame=aggregated_result,
-                    by=self.grouping_column_name_list(),
+                    by=[col.get_name() for col in self.get_grouping_columns()],
                     axis=0,
                     ascending=True,
                     inplace=False,
@@ -217,10 +236,8 @@ class PandasApiGroupbyTdsFrame:
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> "PandasApiTdsFrame":
-        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
-        from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
-        return PandasApiAppliedFunctionTdsFrame(AggregateFunction(self, func, axis, *args, **kwargs))
+        return self.aggregate(func, axis, *args, **kwargs)
 
     def sum(
         self,
@@ -323,3 +340,26 @@ class PandasApiGroupbyTdsFrame:
 
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
+
+    def rank(
+            self,
+            method: str = 'min',
+            ascending: bool = True,
+            na_option: str = 'keep',
+            pct: bool = False,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=axis,
+            method=method,
+            numeric_only=False,
+            na_option=na_option,
+            ascending=ascending,
+            pct=pct
+        ))
