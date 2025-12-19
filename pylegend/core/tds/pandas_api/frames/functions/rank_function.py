@@ -29,7 +29,6 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindowReference
 )
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
-from pylegend.core.language.shared.primitive_collection import PyLegendPrimitiveCollection
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -72,10 +71,7 @@ class RankFunction(PandasApiAppliedFunction):
 
     __column_expression_and_window_tuples: PyLegendList[
         PyLegendTuple[
-            PyLegendUnion[
-                PyLegendTuple[str, PyLegendPrimitive],
-                PyLegendTuple[str, PyLegendPrimitive, PyLegendPrimitive]
-            ],
+            PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
         ]
     ]
@@ -206,8 +202,7 @@ class RankFunction(PandasApiAppliedFunction):
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
 
         def __validate_and_convert_column(col: TdsColumn) -> PyLegendOptional["TdsColumn"]:
-            valid_column_types_for_numeric_only: list[str] = [
-                "Integer", "Float", "Number"]
+            valid_column_types_for_numeric_only: list[str] = ["Integer", "Float", "Number"]
             if self.__numeric_only and col.get_type() not in valid_column_types_for_numeric_only:
                 return None
             if self.__pct:
@@ -256,10 +251,10 @@ class RankFunction(PandasApiAppliedFunction):
                 "The 'pct=True' parameter of the rank function is only supported with method='min',"
                 f" but got: method={self.__method!r}.")
 
-        valid_na_options = {'keep', 'bottom'}
+        valid_na_options = {'bottom'}
         if self.__na_option not in valid_na_options:
             raise NotImplementedError(
-                f"The 'na_option' parameter of the rank function must be one of {valid_na_options!r},"
+                f"The 'na_option' parameter of the rank function must be one of {sorted(list(valid_na_options))!r},"
                 f" but got: na_option={self.__na_option!r}")
 
         self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples()
@@ -268,15 +263,11 @@ class RankFunction(PandasApiAppliedFunction):
 
     def construct_column_expression_and_window_tuples(self) -> PyLegendList[
         PyLegendTuple[
-            PyLegendUnion[
-                PyLegendTuple[str, PyLegendPrimitive],
-                PyLegendTuple[str, PyLegendPrimitive, PyLegendPrimitive]
-            ],
+            PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
         ]
     ]:
-        column_names: list[str] = [col.get_name()
-                                   for col in self.calculate_columns()]
+        column_names: list[str] = [col.get_name() for col in self.calculate_columns()]
 
         lambda_func: PyLegendCallable[
             [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow],
@@ -320,24 +311,11 @@ class RankFunction(PandasApiAppliedFunction):
                 f"Encountered unsupported method parameter (method={self.__method!r}) in rank function")  # pragma: no cover
 
         extend_columns: PyLegendList[
-            PyLegendUnion[
-                PyLegendTuple[
-                    str,
-                    PyLegendCallable[
-                        [PandasApiPartialFrame,
-                            PandasApiWindowReference, PandasApiTdsRow],
-                        PyLegendPrimitive
-                    ]
-                ],
-                PyLegendTuple[
-                    str,
-                    PyLegendCallable[
-                        [PandasApiPartialFrame,
-                            PandasApiWindowReference, PandasApiTdsRow],
-                        PyLegendPrimitive
-                    ],
-                    PyLegendCallable[[
-                        PyLegendPrimitiveCollection], PyLegendPrimitive]
+            PyLegendTuple[
+                str,
+                PyLegendCallable[
+                    [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow],
+                    PyLegendPrimitive
                 ]
             ]
         ] = [(column_name, lambda_func) for column_name in column_names]
@@ -348,10 +326,7 @@ class RankFunction(PandasApiAppliedFunction):
 
         column_expression_and_window_tuples: PyLegendList[
             PyLegendTuple[
-                PyLegendUnion[
-                    PyLegendTuple[str, PyLegendPrimitive],
-                    PyLegendTuple[str, PyLegendPrimitive, PyLegendPrimitive]
-                ],
+                PyLegendTuple[str, PyLegendPrimitive],
                 PandasApiWindow
             ]
         ] = []
@@ -363,16 +338,15 @@ class RankFunction(PandasApiAppliedFunction):
             if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
                 partition_by = [col.get_name()
                                 for col in self.__base_frame.get_grouping_columns()]
+
             tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
-            col_expr: PyLegendColumnExpression = PyLegendColumnExpression(
-                tds_row, current_column_name)
+            col_expr: PyLegendColumnExpression = PyLegendColumnExpression(tds_row, current_column_name)
             sort_direction: PandasApiSortDirection
             if self.__ascending is True:
                 sort_direction = PandasApiSortDirection.ASC
             else:
                 sort_direction = PandasApiSortDirection.DESC
-            order_by: PandasApiSortInfo = PandasApiSortInfo(
-                col_expr, sort_direction)
+            order_by: PandasApiSortInfo = PandasApiSortInfo(col_expr, sort_direction)
 
             window: PandasApiWindow = PandasApiWindow(
                 partition_by, [order_by], frame=None)
@@ -380,13 +354,7 @@ class RankFunction(PandasApiAppliedFunction):
 
             result = extend_column[1](partial_frame, window_ref, tds_row)
 
-            column_expression: PyLegendUnion[
-                PyLegendTuple[str, PyLegendPrimitive],
-                PyLegendTuple[str, PyLegendPrimitive, PyLegendPrimitive]
-            ]
-
-            column_expression = (current_column_name, result)
-            column_expression_and_window_tuples.append(
-                (column_expression, window))
+            column_expression: PyLegendTuple[str, PyLegendPrimitive] = (current_column_name, result)
+            column_expression_and_window_tuples.append((column_expression, window))
 
         return column_expression_and_window_tuples

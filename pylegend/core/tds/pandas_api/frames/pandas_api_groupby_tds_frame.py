@@ -345,7 +345,7 @@ class PandasApiGroupbyTdsFrame:
             self,
             method: str = 'min',
             ascending: bool = True,
-            na_option: str = 'keep',
+            na_option: str = 'bottom',
             pct: bool = False,
             axis: PyLegendUnion[int, str] = 0
     ) -> "PandasApiTdsFrame":
