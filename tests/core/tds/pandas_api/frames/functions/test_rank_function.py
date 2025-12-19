@@ -617,7 +617,7 @@ class TestRankFunctionOnGroupbyFrame:
 class TestRankFunctionEndtoEnd:
     def test_e2e_rank_no_arguments(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.rank()
+        frame = frame.rank(na_option='bottom')
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -635,7 +635,7 @@ class TestRankFunctionEndtoEnd:
 
     def test_e2e_dense_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.rank(method='dense')
+        frame = frame.rank(method='dense', na_option='bottom')
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -653,7 +653,7 @@ class TestRankFunctionEndtoEnd:
 
     def test_e2e_pct_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.rank(method='min', pct=True, ascending=False)
+        frame = frame.rank(method='min', pct=True, ascending=False, na_option='bottom')
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -678,7 +678,7 @@ class TestRankFunctionEndtoEnd:
 
     def test_e2e_groupby_no_selection(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.groupby("Firm/Legal Name").rank()
+        frame = frame.groupby("Firm/Legal Name").rank(na_option='bottom')
         expected = {
             "columns": ["First Name", "Last Name", "Age"],
             "rows": [
@@ -696,7 +696,7 @@ class TestRankFunctionEndtoEnd:
 
     def test_e2e_groupby_with_selection(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.groupby("Firm/Legal Name")[["Age", "Last Name"]].rank()
+        frame = frame.groupby("Firm/Legal Name")[["Age", "Last Name"]].rank(na_option='bottom')
         expected = {
             "columns": ["Age", "Last Name"],
             "rows": [
