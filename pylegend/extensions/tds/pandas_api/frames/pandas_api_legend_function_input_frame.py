@@ -15,18 +15,18 @@
 from pylegend._typing import (
     PyLegendSequence
 )
-from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiExecutableInputTdsFrame
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiExecutableInputTdsFrame
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.extensions.tds.abstract.legend_function_input_frame import LegendFunctionInputFrameAbstract
-
 
 __all__: PyLegendSequence[str] = [
     "PandasApiLegendFunctionInputFrame"
 ]
 
 
-class PandasApiLegendFunctionInputFrame(LegendFunctionInputFrameAbstract, PandasApiExecutableInputTdsFrame):
+class PandasApiLegendFunctionInputFrame(PandasApiExecutableInputTdsFrame, LegendFunctionInputFrameAbstract):
 
     def __init__(
             self,
@@ -35,6 +35,7 @@ class PandasApiLegendFunctionInputFrame(LegendFunctionInputFrameAbstract, Pandas
             legend_client: LegendClient,
     ) -> None:
         LegendFunctionInputFrameAbstract.__init__(self, path=path, project_coordinates=project_coordinates)
+        self._transformed_frame = None
         PandasApiExecutableInputTdsFrame.__init__(
             self,
             legend_client=legend_client,
@@ -44,3 +45,6 @@ class PandasApiLegendFunctionInputFrame(LegendFunctionInputFrameAbstract, Pandas
 
     def __str__(self) -> str:
         return f"PandasApiLegendFunctionInputFrame({'.'.join(self.get_path())})"
+
+    def get_super_type(self) -> PyLegendTdsFrame:
+        return LegendFunctionInputFrameAbstract  # type: ignore
