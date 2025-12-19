@@ -14,23 +14,31 @@
 
 from pylegend._typing import (
     PyLegendList,
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendType
+)
+from pylegend.core.sql.metamodel import (
+    QualifiedName
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiNonExecutableInputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.extensions.tds.abstract.table_spec_input_frame import TableSpecInputFrameAbstract
-
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTableSpecInputFrame"
 ]
 
 
-class PandasApiTableSpecInputFrame(TableSpecInputFrameAbstract, PandasApiNonExecutableInputTdsFrame):
+class PandasApiTableSpecInputFrame(PandasApiNonExecutableInputTdsFrame, TableSpecInputFrameAbstract):
+    table: QualifiedName
 
     def __init__(self, table_name_parts: PyLegendList[str], columns: PyLegendSequence[TdsColumn]) -> None:
         TableSpecInputFrameAbstract.__init__(self, table_name_parts=table_name_parts)
         PandasApiNonExecutableInputTdsFrame.__init__(self, columns=columns)
 
     def __str__(self) -> str:
-        return f"PandasApiTableSpecInputFrame({'.'.join(self.table.parts)})"
+        return f"PandasApiTableSpecInputFrame({'.'.join(self.table.parts)})"  # pragma: no cover
+
+    def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
+        return TableSpecInputFrameAbstract

@@ -101,9 +101,13 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
             new_cols_with_index: PyLegendList[PyLegendTuple[int, SelectItem]] = []
             for col in base_query.select.selectItems:
                 if not isinstance(col, SingleColumn):
-                    raise ValueError("Select operation not supported for queries with columns other than SingleColumn")
+                    raise ValueError(
+                        "Select operation not supported for queries with columns other than SingleColumn"
+                    )  # pragma: no cover
                 if col.alias is None:
-                    raise ValueError("Select operation not supported for queries with SingleColumns with missing alias")
+                    raise ValueError(
+                        "Select operation not supported for queries with SingleColumns with missing alias"
+                    )  # pragma: no cover
                 if col.alias in columns_to_retain:
                     new_cols_with_index.append((columns_to_retain.index(col.alias), col))
 
@@ -130,10 +134,11 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         base_cols = [c.copy() for c in self.__base_frame.columns()]
         desired_col_names = self.__get_desired_columns([c.get_name() for c in base_cols])
+        base_col_map = {c.get_name(): c for c in base_cols}
         return [
-            base_col.copy()
-            for base_col in base_cols
-            if base_col.get_name() in desired_col_names
+            base_col_map[name].copy()
+            for name in desired_col_names
+            if name in base_col_map
         ]
 
     def validate(self) -> bool:

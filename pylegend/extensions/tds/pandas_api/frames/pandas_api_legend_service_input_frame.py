@@ -13,20 +13,23 @@
 # limitations under the License.
 
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendType
 )
-from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiExecutableInputTdsFrame
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiExecutableInputTdsFrame
+from pylegend.core.tds.tds_frame import (
+    PyLegendTdsFrame
+)
 from pylegend.extensions.tds.abstract.legend_service_input_frame import LegendServiceInputFrameAbstract
-
 
 __all__: PyLegendSequence[str] = [
     "PandasApiLegendServiceInputFrame"
 ]
 
 
-class PandasApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, PandasApiExecutableInputTdsFrame):
+class PandasApiLegendServiceInputFrame(PandasApiExecutableInputTdsFrame, LegendServiceInputFrameAbstract):
 
     def __init__(
             self,
@@ -35,6 +38,7 @@ class PandasApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, PandasAp
             legend_client: LegendClient,
     ) -> None:
         LegendServiceInputFrameAbstract.__init__(self, pattern=pattern, project_coordinates=project_coordinates)
+        self._transformed_frame = None
         PandasApiExecutableInputTdsFrame.__init__(
             self,
             legend_client=legend_client,
@@ -43,4 +47,7 @@ class PandasApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, PandasAp
         LegendServiceInputFrameAbstract.set_initialized(self, True)
 
     def __str__(self) -> str:
-        return f"PandasApiLegendServiceInputFrame({'.'.join(self.get_pattern())})"
+        return f"PandasApiLegendServiceInputFrame({'.'.join(self.get_pattern())})"  # pragma: no cover
+
+    def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
+        return LegendServiceInputFrameAbstract

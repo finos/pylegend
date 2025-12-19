@@ -113,8 +113,8 @@ class TestDropFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         with pytest.raises(NotImplementedError) as v:
-            frame = frame.drop(columns=["col1", "col2"], inplace=False)
-        assert v.value.args[0] == "Only inplace=True is supported. Got inplace=False"
+            frame = frame.drop(columns=["col1", "col2"], inplace=True)
+        assert v.value.args[0] == "Only inplace=False is supported. Got inplace=True"
 
     def test_drop_function_error_on_axis_parameter(self) -> None:
         columns = [
@@ -248,7 +248,7 @@ class TestDropFunction:
                "#Table(test_schema.test_table)#->select(~[col1])"
 
         # With inplace (multiple columns)
-        newframe = frame.drop(labels=["col2", "col3"], axis=1, inplace=True)
+        newframe = frame.drop(labels=["col2", "col3"], axis=1, inplace=False)
         expected = '''\
                    SELECT
                        "root".col1 AS "col1"
@@ -304,7 +304,7 @@ class TestDropFunction:
                "#Table(test_schema.test_table)#->select(~[col1])"
 
         # With inplace (multiple columns)
-        newframe = frame.drop(columns=["col2", "col3"], axis=1, inplace=True)
+        newframe = frame.drop(columns=["col2", "col3"], axis=1, inplace=False)
         expected = '''\
                    SELECT
                        "root".col1 AS "col1"

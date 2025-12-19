@@ -15,6 +15,11 @@
 from abc import abstractmethod
 from datetime import date, datetime
 from typing import TYPE_CHECKING
+from typing_extensions import Concatenate
+try:
+    from typing import ParamSpec
+except Exception:
+    from typing_extensions import ParamSpec  # type: ignore
 
 from pylegend._typing import (
     PyLegendCallable,
@@ -45,6 +50,8 @@ __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
 ]
 
+P = ParamSpec("P")
+
 
 class PandasApiTdsFrame(PyLegendTdsFrame):
 
@@ -53,6 +60,14 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             self,
             key: PyLegendUnion[str, PyLegendList[str], PyLegendBoolean]
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def __setitem__(
+            self,
+            key: str,
+            value: PyLegendUnion["Series", PyLegendPrimitiveOrPythonPrimitive]
+    ) -> None:
         pass  # pragma: no cover
 
     @abstractmethod
@@ -107,7 +122,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             index: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
             columns: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
             level: PyLegendOptional[PyLegendUnion[int, PyLegendInteger, str]] = None,
-            inplace: PyLegendUnion[bool, PyLegendBoolean] = True,
+            inplace: PyLegendUnion[bool, PyLegendBoolean] = False,
             errors: str = "raise",
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -183,14 +198,14 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
     @abstractmethod
     def groupby(
-        self,
-        by: PyLegendUnion[str, PyLegendList[str]],
-        level: PyLegendOptional[PyLegendUnion[str, int, PyLegendList[str]]] = None,
-        as_index: bool = False,
-        sort: bool = True,
-        group_keys: bool = False,
-        observed: bool = False,
-        dropna: bool = False,
+            self,
+            by: PyLegendUnion[str, PyLegendList[str]],
+            level: PyLegendOptional[PyLegendUnion[str, int, PyLegendList[str]]] = None,
+            as_index: bool = False,
+            sort: bool = True,
+            group_keys: bool = False,
+            observed: bool = False,
+            dropna: bool = False,
     ) -> "PandasApiGroupbyTdsFrame":
         pass  # pragma: no cover
 
@@ -262,6 +277,24 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             self,
             axis: PyLegendUnion[int, str] = 0,
             numeric_only: bool = False,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def apply(
+            self,
+            func: PyLegendUnion[
+                PyLegendCallable[Concatenate["Series", P], PyLegendPrimitiveOrPythonPrimitive],
+                str
+            ],
+            axis: PyLegendUnion[int, str] = 0,
+            raw: bool = False,
+            result_type: PyLegendOptional[str] = None,
+            args: PyLegendTuple[PyLegendPrimitiveOrPythonPrimitive, ...] = (),
+            by_row: PyLegendUnion[bool, str] = "compat",
+            engine: str = "python",
+            engine_kwargs: PyLegendOptional[PyLegendDict[str, PyLegendPrimitiveOrPythonPrimitive]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

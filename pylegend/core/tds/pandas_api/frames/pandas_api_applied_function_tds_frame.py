@@ -13,16 +13,17 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
+    PyLegendType
 )
 from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-
+from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToSqlConfig, PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiAppliedFunctionTdsFrame",
@@ -68,6 +69,9 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
         applied_function.validate()
         super().__init__(columns=applied_function.calculate_columns())
         self.__applied_function = applied_function
+
+    def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
+        return type(self)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)

@@ -179,7 +179,7 @@ class TestFilterFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        print("PURE = ", frame.to_pure_query())
+
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -402,6 +402,51 @@ class TestFilterFunction:
             "#Table(test_schema.test_table)#->select(~[col1, pol5, col2])"
             "->select(~[col1, col2])->select(~[col1])"
         )
+
+    def test_filter_function_subquery(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame = frame.groupby('col1')['col2'].sum()
+        frame = frame.filter(items=['col1'])
+
+        expected_sql = dedent("""\
+            SELECT
+                "root"."col1" AS "col1"
+            FROM
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        SUM("root".col2) AS "col2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "root".col1
+                    ORDER BY
+                        "root".col1
+                ) AS "root\"""")
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+
+        expected_pure_pretty = dedent("""\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[col2:{r | $r.col2}:{c | $c->sum()}]
+              )
+              ->sort([~col1->ascending()])
+              ->select(~[col1])""")
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure_pretty
+
+        expected_pure_compact = ("#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->sum()}])"
+                                 "->sort([~col1->ascending()])->select(~[col1])")
+        assert generate_pure_query_and_compile(
+            frame,
+            FrameToPureConfig(pretty=False),
+            self.legend_client
+        ) == expected_pure_compact
 
     def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) \
             -> None:
