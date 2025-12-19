@@ -171,15 +171,3 @@ def simple_relation_person_service_frame_pandas_api(engine_port: int) -> PandasA
         ),
         legend_client=LegendClient("localhost", engine_port, secure_http=False)
     )
-
-
-def simple_relation_trade_service_frame_pandas_api(engine_port: int) -> PandasApiLegendServiceInputFrame:
-    return PandasApiLegendServiceInputFrame(
-        pattern="/simpleRelationTradeService",
-        project_coordinates=VersionedProjectCoordinates(
-            group_id="org.finos.legend.pylegend",
-            artifact_id="pylegend-test-models",
-            version="0.0.1-SNAPSHOT"
-        ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
-    )

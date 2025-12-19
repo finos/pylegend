@@ -173,15 +173,6 @@ class PandasApiWindow:
         self.__order_by = order_by
         self.__frame = frame
 
-    def get_partition_by(self) -> PyLegendOptional[PyLegendList[str]]:
-        return self.__partition_by
-
-    def get_order_by(self) -> PyLegendOptional[PyLegendList[PandasApiSortInfo]]:
-        return self.__order_by
-
-    def get_frame(self) -> PyLegendOptional[PandasApiWindowFrame]:
-        return self.__frame
-
     def to_sql_node(
             self,
             query: QuerySpecification,
@@ -263,64 +254,8 @@ class PandasApiPartialFrame:
     ) -> PyLegendFloat:
         return PyLegendFloat(PandasApiPercentRankExpression(self, window, row))
 
-    def cume_dist(
-            self,
-            window: "PandasApiWindowReference",
-            row: "PandasApiTdsRow"
-    ) -> PyLegendFloat:
-        return PyLegendFloat(PandasApiCumeDistExpression(self, window, row))
-
-    def ntile(
-            self,
-            row: "PandasApiTdsRow",
-            num_buckets: int
-    ) -> PyLegendInteger:
-        return PyLegendInteger(PandasApiNtileExpression(self, row, num_buckets))
-
-    def lead(
-            self,
-            row: "PandasApiTdsRow"
-    ) -> "PandasApiTdsRow":
-        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLeadRow
-        return PandasApiLeadRow(self, row)
-
-    def lag(
-            self,
-            row: "PandasApiTdsRow"
-    ) -> "PandasApiTdsRow":
-        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLagRow
-        return PandasApiLagRow(self, row)
-
-    def first(
-            self,
-            window: "PandasApiWindowReference",
-            row: "PandasApiTdsRow"
-    ) -> "PandasApiTdsRow":
-        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiFirstRow
-        return PandasApiFirstRow(self, window, row)
-
-    def last(
-            self,
-            window: "PandasApiWindowReference",
-            row: "PandasApiTdsRow"
-    ) -> "PandasApiTdsRow":
-        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLastRow
-        return PandasApiLastRow(self, window, row)
-
-    def nth(
-            self,
-            window: "PandasApiWindowReference",
-            row: "PandasApiTdsRow",
-            offset: int
-    ) -> "PandasApiTdsRow":
-        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiNthRow
-        return PandasApiNthRow(self, window, row, offset)
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__var_name}"
-
-    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
-        return self.__base_frame
 
 
 class PandasApiWindowReference:
@@ -457,71 +392,3 @@ class PandasApiPercentRankExpression(PyLegendExpressionFloatReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->percentRank("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
-
-
-class PandasApiCumeDistExpression(PyLegendExpressionFloatReturn):
-    if TYPE_CHECKING:
-        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-
-    __partial_frame: PandasApiPartialFrame
-    __window_ref: "PandasApiWindowReference"
-    __row: "PandasApiTdsRow"
-
-    def __init__(
-            self,
-            partial_frame: PandasApiPartialFrame,
-            window_ref: "PandasApiWindowReference",
-            row: "PandasApiTdsRow"
-    ) -> None:
-        self.__partial_frame = partial_frame
-        self.__window_ref = window_ref
-        self.__row = row
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["cume_dist"]), distinct=False, arguments=[], filter_=None, window=None
-        )
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return (f"{self.__partial_frame.to_pure_expression(config)}->cumulativeDistribution("
-                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
-
-
-class PandasApiNtileExpression(PyLegendExpressionIntegerReturn):
-    if TYPE_CHECKING:
-        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-
-    __partial_frame: PandasApiPartialFrame
-    __row: "PandasApiTdsRow"
-    __num_buckets: int
-
-    def __init__(
-            self,
-            partial_frame: PandasApiPartialFrame,
-            row: "PandasApiTdsRow",
-            num_buckets: int
-    ) -> None:
-        self.__partial_frame = partial_frame
-        self.__row = row
-        self.__num_buckets = num_buckets
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["ntile"]),
-            distinct=False,
-            arguments=[IntegerLiteral(self.__num_buckets)],
-            filter_=None,
-            window=None
-        )
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return (f"{self.__partial_frame.to_pure_expression(config)}->ntile({self.__row.to_pure_expression(config)}, "
-                f"{self.__num_buckets})")
