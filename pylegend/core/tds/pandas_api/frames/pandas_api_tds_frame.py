@@ -316,7 +316,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             method: str = 'min',
             numeric_only: bool = False,
-            na_option: str = 'keep',
+            na_option: str = 'bottom',
             ascending: bool = True,
             pct: bool = False
     ) -> "PandasApiTdsFrame":
