@@ -17,6 +17,7 @@ from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
+    PyLegendType
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -69,8 +70,8 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
         super().__init__(columns=applied_function.calculate_columns())
         self.__applied_function = applied_function
 
-    def get_super_type(self) -> PyLegendTdsFrame:
-        return self  # pragma: no cover
+    def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
+        return type(self)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
