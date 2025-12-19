@@ -133,7 +133,7 @@ class RankFunction(PandasApiAppliedFunction):
                     defaultValue=window_expr
                 )
             new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr))
+                SingleColumn(alias=db_extension.quote_identifier(c[0] + "__new_column"), expression=window_expr))
 
         new_query.select.selectItems = new_select_items
         return new_query
