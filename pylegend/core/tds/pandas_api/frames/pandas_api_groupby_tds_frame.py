@@ -343,7 +343,7 @@ class PandasApiGroupbyTdsFrame:
 
     def rank(
             self,
-            method: str = 'average',
+            method: str = 'min',
             ascending: bool = True,
             na_option: str = 'keep',
             pct: bool = False,
