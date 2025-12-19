@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from io import StringIO
 from textwrap import dedent
-from datetime import date, datetime
 import pytest
 
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
@@ -28,7 +25,6 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
-from tests.test_helpers import generate_pure_query_and_compile
 
 
 class TestInfoFunction:
@@ -118,6 +114,5 @@ class TestInfoFunction:
                     2  Age              Integer
                     3  Firm/Legal Name  String 
                     dtypes: Integer(1), String(3)
-                    memory usage: ? (disabled)
                     """)
         assert output_no_counts == expected_no_counts

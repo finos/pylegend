@@ -743,7 +743,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if n < 0:
             raise NotImplementedError("Negative n is not supported yet in Pandas API head")
 
-        print(f"after is {max(n - 1, -1)}\n")
         return self.truncate(before=None, after=max(n - 1, -1), axis=0, copy=True)
 
     def info(
@@ -753,7 +752,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             max_cols: PyLegendOptional[int] = None,
             memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
             show_counts: PyLegendOptional[bool] = None
-    ) -> str:
+    ) -> None:
         """
         Print a concise summary of a TdsFrame.
 
@@ -868,7 +867,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             sys.stdout.write(info_str)
         else:
             buf.write(info_str)
-
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         if self._cached_sql is not None:

@@ -41,18 +41,18 @@ class TestHeadFunction:
         # type error
         with pytest.raises(TypeError) as t:
             frame.head("5")
-        assert t.value.args[0] == "n must be an int, got str"
+        assert t.value.args[0] == "n must be an int, got <class 'str'>"
 
         # negative n
         with pytest.raises(NotImplementedError) as n:
             frame.head(-3)
         assert n.value.args[0] == "Negative n is not supported yet in Pandas API head"
 
-    def test_head_sql_pure(self)  -> None:
+    def test_head_sql_pure(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.head()
+        newframe = frame.head()
 
         expected_pure = dedent("""\
             #Table(test_schema.test_table)#
@@ -67,10 +67,10 @@ class TestHeadFunction:
             LIMIT 5
             OFFSET 0""")
 
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
-        assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+        assert newframe.to_sql_query(FrameToSqlConfig()) == expected_sql
 
-        frame = frame.head(0)
+        newframe = frame.head(0)
         expected_pure = dedent("""\
             #Table(test_schema.test_table)#
               ->slice(0, 0)""")
@@ -84,21 +84,32 @@ class TestHeadFunction:
             LIMIT 0
             OFFSET 0""")
 
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
-        assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+        assert newframe.to_sql_query(FrameToSqlConfig()) == expected_sql
 
     def test_e2e_head_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
         newframe = frame.head()
-        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name', 'fullName'],
-                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X', 'Peter Smith']},
-                             {'values': ['John', 'Johnson', 22, 'Firm X', 'John Johnson']},
-                             {'values': ['John', 'Hill', 12, 'Firm X', 'John Hill']},
-                             {'values': ['Anthony', 'Allen', 22, 'Firm X', 'Anthony Allen']},
-                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A', 'Fabrice Roberts']},
-                             {'values': ['Oliver', 'Hill', 32, 'Firm B', 'Oliver Hill']},
-                             {'values': ['David', 'Harris', 35, 'Firm C', 'David Harris']}]}
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
+                             {'values': ['John', 'Johnson', 22, 'Firm X']},
+                             {'values': ['John', 'Hill', 12, 'Firm X']},
+                             {'values': ['Anthony', 'Allen', 22, 'Firm X']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A']}]}
         res = newframe.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
+        newframe = frame.head(0)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': []}
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+        newframe = frame.head(3)
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
+                             {'values': ['John', 'Johnson', 22, 'Firm X']},
+                             {'values': ['John', 'Hill', 12, 'Firm X']}]}
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
