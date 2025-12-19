@@ -158,10 +158,6 @@ class RankFunction(PandasApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         temp_column_name_suffix: str = "__internal_pure_col_name__"
 
-        def wrap_expr_str_with_if_statement(expr_str: str, original_column_name: str) -> str:
-            escaped_column_name: str = escape_column_name(original_column_name)
-            return f"if($r.{escaped_column_name}->isEmpty(), | [], | {expr_str})"
-
         def render_single_column_expression(
                 c: PyLegendUnion[
                     PyLegendTuple[str, PyLegendPrimitive],
