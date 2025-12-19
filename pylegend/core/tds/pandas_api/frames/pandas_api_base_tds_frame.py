@@ -795,8 +795,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         result_json = json.loads(result_string)
         result_data = result_json["result"]
 
-        # print(f"Result data:\n{result_data}\n")
-
         columns = self.columns()
         col_names = [c.get_name() for c in columns]
         data_rows = result_data.get('rows', [])
@@ -834,15 +832,19 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
             output.write(f"Data columns (total {total_cols} columns):\n")
 
-            headers = ["#", "Column", "Non-Null Count", "Dtype"]
-            col_data = []
             should_show_counts = show_counts if show_counts is not None else True
-            for i, col in enumerate(columns):
-                non_null_count_str = ""
-                if should_show_counts:
+            if should_show_counts:
+                headers = ["#", "Column", "Non-Null Count", "Dtype"]
+                col_data = []
+                for i, col in enumerate(columns):
                     non_null_count = non_null_counts.get(col.get_name(), 0)
                     non_null_count_str = f"{non_null_count} non-null"
-                col_data.append([str(i), col.get_name(), non_null_count_str, col.get_type()])
+                    col_data.append([str(i), col.get_name(), non_null_count_str, col.get_type()])
+            else:
+                headers = ["#", "Column", "Dtype"]
+                col_data = []
+                for i, col in enumerate(columns):
+                    col_data.append([str(i), col.get_name(), col.get_type()])
 
             widths = [max(len(str(item)) for item in col) for col in zip(*([headers] + col_data))]
             header_line = "  ".join(f"{h:<{w}}" for h, w in zip(headers, widths))
@@ -861,7 +863,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         output.write(f"dtypes: {dtype_summary}\n")
 
-        # print(f"Output:\n{output.getvalue()}\n")
         info_str = output.getvalue()
         if buf is None:
             sys.stdout.write(info_str)
@@ -928,7 +929,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             )
         legend_client = all_legend_clients[0]
         result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
-        print(f"Result is:\n{result}\n")
         return result_handler.handle_result(self, result)
 
     def execute_frame_to_string(

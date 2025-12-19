@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import json
+from io import StringIO
 from textwrap import dedent
 from datetime import date, datetime
 import pytest
@@ -61,5 +62,62 @@ class TestInfoFunction:
     def test_e2e_info_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        res = frame.info(verbose=False)
+        # verbose True
+        buffer_verbose = StringIO()
+        frame.info(buf=buffer_verbose)
+        output_verbose = buffer_verbose.getvalue()
+        expected_verbose = dedent("""\
+                    <class 'pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame.PandasApiLegendServiceInputFrame'>
+                    RangeIndex: 7 entries
+                    Data columns (total 4 columns):
+                    #  Column           Non-Null Count  Dtype  
+                    -  ---------------  --------------  -------
+                    0  First Name       7 non-null      String 
+                    1  Last Name        7 non-null      String 
+                    2  Age              7 non-null      Integer
+                    3  Firm/Legal Name  7 non-null      String 
+                    dtypes: Integer(1), String(3)
+                    """)
+        assert output_verbose == expected_verbose
 
+        # max_cols
+        buffer_concise = StringIO()
+        frame.info(verbose=False, buf=buffer_concise)
+        output_concise = buffer_concise.getvalue()
+
+        buffer_cols = StringIO()
+        frame.info(max_cols=2, buf=buffer_cols)
+        output_cols = buffer_cols.getvalue()
+        assert output_cols == output_concise
+
+        expected_concise = dedent("""\
+                    <class 'pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame.PandasApiLegendServiceInputFrame'>
+                    RangeIndex: 7 entries
+                    Columns: 4 entries, First Name to Firm/Legal Name
+                    dtypes: Integer(1), String(3)
+                    """)
+        assert output_concise == expected_concise
+
+        buffer_comb = StringIO()
+        frame.info(verbose=True, max_cols=2, buf=buffer_comb)
+        output_comb = buffer_comb.getvalue()
+        assert output_comb == output_verbose
+
+        # show counts
+        buffer_no_counts = StringIO()
+        frame.info(show_counts=False, buf=buffer_no_counts)
+        output_no_counts = buffer_no_counts.getvalue()
+        expected_no_counts = dedent("""\
+                    <class 'pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame.PandasApiLegendServiceInputFrame'>
+                    RangeIndex: 7 entries
+                    Data columns (total 4 columns):
+                    #  Column           Dtype  
+                    -  ---------------  -------
+                    0  First Name       String 
+                    1  Last Name        String 
+                    2  Age              Integer
+                    3  Firm/Legal Name  String 
+                    dtypes: Integer(1), String(3)
+                    memory usage: ? (disabled)
+                    """)
+        assert output_no_counts == expected_no_counts

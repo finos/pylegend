@@ -87,3 +87,18 @@ class TestHeadFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
         assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
 
+    def test_e2e_head_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        newframe = frame.head()
+        expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name', 'fullName'],
+                    'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X', 'Peter Smith']},
+                             {'values': ['John', 'Johnson', 22, 'Firm X', 'John Johnson']},
+                             {'values': ['John', 'Hill', 12, 'Firm X', 'John Hill']},
+                             {'values': ['Anthony', 'Allen', 22, 'Firm X', 'Anthony Allen']},
+                             {'values': ['Fabrice', 'Roberts', 34, 'Firm A', 'Fabrice Roberts']},
+                             {'values': ['Oliver', 'Hill', 32, 'Firm B', 'Oliver Hill']},
+                             {'values': ['David', 'Harris', 35, 'Firm C', 'David Harris']}]}
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
