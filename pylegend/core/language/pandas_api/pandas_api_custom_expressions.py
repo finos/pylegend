@@ -38,7 +38,6 @@ from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     Expression,
     FunctionCall,
-    IntegerLiteral,
     QualifiedName,
     QuerySpecification,
     SingleColumn,
