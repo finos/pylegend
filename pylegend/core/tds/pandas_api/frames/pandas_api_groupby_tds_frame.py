@@ -112,7 +112,7 @@ class PandasApiGroupbyTdsFrame:
             raise TypeError(
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
-            )
+            )  # pragma: no cover
         group_by_names: list[str]
         if isinstance(self.__by, str):
             group_by_names = [self.__by]
@@ -122,7 +122,7 @@ class PandasApiGroupbyTdsFrame:
             raise TypeError(
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
-            )
+            )  # pragma: no cover
 
         if len(group_by_names) == 0:
             raise ValueError("The 'by' parameter in groupby function must contain at least one column name.")
