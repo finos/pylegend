@@ -26,7 +26,7 @@ from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from tests.test_helpers import generate_pure_query_and_compile
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api, simple_relation_person_service_frame_pandas_api
+from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
 
 class TestRankFunctionErrors:
@@ -634,7 +634,7 @@ class TestRankFunctionEndtoEnd:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_dense_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.rank(method='dense')
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
@@ -652,29 +652,23 @@ class TestRankFunctionEndtoEnd:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_pct_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.rank(method='min', pct=True, ascending=False)
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
                 # Peter (0.0), Smith (0.0), 23 (3/6=0.5), Firm X (0.0)
                 {"values": [0.0, 0.0, 0.5, 0.0]},
-                
                 # John (2/6=0.33..), Johnson (2/6=0.33..), 22 (4/6=0.66..), Firm X (0.0)
                 {"values": [0.3333333333333333, 0.3333333333333333, 0.6666666666666666, 0.0]},
-                
                 # John (0.33..), Hill (3/6=0.5), 12 (6/6=1.0), Firm X (0.0)
                 {"values": [0.3333333333333333, 0.5, 1.0, 0.0]},
-                
                 # Anthony (6/6=1.0), Allen (6/6=1.0), 22 (4/6=0.66..), Firm X (0.0)
                 {"values": [1.0, 1.0, 0.6666666666666666, 0.0]},
-                
                 # Fabrice (4/6=0.66..), Roberts (1/6=0.16..), 34 (1/6=0.16..), Firm A (6/6=1.0)
                 {"values": [0.6666666666666666, 0.16666666666666666, 0.16666666666666666, 1.0]},
-                
                 # Oliver (1/6=0.16..), Hill (3/6=0.5), 32 (2/6=0.33..), Firm B (5/6=0.83..)
                 {"values": [0.16666666666666666, 0.5, 0.3333333333333333, 0.8333333333333334]},
-                
                 # David (5/6=0.83..), Harris (5/6=0.83..), 35 (0.0), Firm C (4/6=0.66..)
                 {"values": [0.8333333333333334, 0.8333333333333334, 0.0, 0.6666666666666666]},
             ],
@@ -683,7 +677,7 @@ class TestRankFunctionEndtoEnd:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_groupby_no_selection(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Firm/Legal Name").rank()
         expected = {
             "columns": ["First Name", "Last Name", "Age"],
@@ -701,7 +695,7 @@ class TestRankFunctionEndtoEnd:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_groupby_with_selection(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Firm/Legal Name")[["Age", "Last Name"]].rank()
         expected = {
             "columns": ["Age", "Last Name"],
