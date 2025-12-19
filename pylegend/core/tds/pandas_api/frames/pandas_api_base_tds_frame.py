@@ -29,6 +29,7 @@ import pandas as pd
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
+    PyLegendType,
     PyLegendList,
     PyLegendTuple,
     PyLegendSet,
@@ -675,7 +676,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def get_super_type(self) -> PyLegendTdsFrame:
+    def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
         pass  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
