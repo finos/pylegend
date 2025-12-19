@@ -13,7 +13,8 @@
 # limitations under the License.
 
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendType
 )
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
@@ -46,5 +47,5 @@ class PandasApiLegendFunctionInputFrame(PandasApiExecutableInputTdsFrame, Legend
     def __str__(self) -> str:
         return f"PandasApiLegendFunctionInputFrame({'.'.join(self.get_path())})"
 
-    def get_super_type(self) -> PyLegendTdsFrame:
-        return LegendFunctionInputFrameAbstract  # type: ignore
+    def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
+        return LegendFunctionInputFrameAbstract
