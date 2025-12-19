@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 from textwrap import dedent
 
 import pytest
@@ -25,6 +26,7 @@ from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from tests.test_helpers import generate_pure_query_and_compile
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
 
 
 class TestRankFunctionErrors:
@@ -610,3 +612,41 @@ class TestRankFunctionOnGroupbyFrame:
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+
+
+class TestRankFunctionEndtoEnd:
+    def test_e2e_rank_no_arguments(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.rank()
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+            "rows": [
+                {"values": [7, 7, 4, 4]},  # Peter, Smith, 23, Firm X
+                {"values": [4, 5, 2, 4]},  # John, Johnson, 22, Firm X
+                {"values": [4, 3, 1, 4]},  # John, Hill, 12, Firm X
+                {"values": [1, 1, 2, 4]},  # Anthony, Allen, 22, Firm X
+                {"values": [3, 6, 6, 1]},  # Fabrice, Roberts, 34, Firm A
+                {"values": [6, 3, 5, 2]},  # Oliver, Hill, 32, Firm B
+                {"values": [2, 2, 7, 3]},  # David, Harris, 35, Firm C
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_groupby_no_selection(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.groupby("Firm/Legal Name").rank()
+        expected = {
+            "columns": ["First Name", "Last Name", "Age"],
+            "rows": [
+                {"values": [4, 4, 4]},  # Peter, Smith, 23 (Firm X)
+                {"values": [2, 3, 2]},  # John, Johnson, 22 (Firm X)
+                {"values": [2, 2, 1]},  # John, Hill, 12 (Firm X)
+                {"values": [1, 1, 2]},  # Anthony, Allen, 22 (Firm X)
+                {"values": [1, 1, 1]},  # Fabrice, Roberts, 34 (Firm A)
+                {"values": [1, 1, 1]},  # Oliver, Hill, 32 (Firm B)
+                {"values": [1, 1, 1]},  # David, Harris, 35 (Firm C)
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
