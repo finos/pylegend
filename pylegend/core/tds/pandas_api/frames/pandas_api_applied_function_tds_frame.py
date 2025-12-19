@@ -70,7 +70,7 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
         self.__applied_function = applied_function
 
     def get_super_type(self) -> PyLegendTdsFrame:
-        return self
+        return self  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return self.__applied_function.to_sql(config)
