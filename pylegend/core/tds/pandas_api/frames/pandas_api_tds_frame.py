@@ -309,3 +309,15 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def shape(self) -> PyLegendTuple[int, int]:
         pass  # pragma: no cover
+
+    @abstractmethod
+    def rank(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            method: str = 'min',
+            numeric_only: bool = False,
+            na_option: str = 'keep',
+            ascending: bool = True,
+            pct: bool = False
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover

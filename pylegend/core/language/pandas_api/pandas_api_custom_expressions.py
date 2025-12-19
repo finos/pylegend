@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from abc import ABCMeta
+from enum import Enum
+from typing import TYPE_CHECKING
 from pylegend.core.language import (
     PyLegendPrimitive,
     PyLegendBoolean,
@@ -26,7 +28,26 @@ from pylegend.core.language import (
 )
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendOptional,
+    PyLegendList,
+    PyLegendDict,
 )
+from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
+from pylegend.core.language.shared.expression import PyLegendExpressionFloatReturn, PyLegendExpressionIntegerReturn
+from pylegend.core.language.shared.helpers import escape_column_name
+from pylegend.core.sql.metamodel import (
+    Expression,
+    FunctionCall,
+    IntegerLiteral,
+    QualifiedName,
+    QuerySpecification,
+    SingleColumn,
+    SortItem,
+    SortItemNullOrdering,
+    SortItemOrdering,
+    Window
+)
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "PandasApiPrimitive",
@@ -83,3 +104,424 @@ class PandasApiDateTime(PandasApiPrimitive, PyLegendDateTime):
 class PandasApiStrictDate(PandasApiPrimitive, PyLegendStrictDate):
     def __init__(self, expr: PyLegendStrictDate):
         PyLegendStrictDate.__init__(self, expr.value())
+
+
+class PandasApiSortDirection(Enum):
+    ASC = 1,
+    DESC = 2
+
+
+class PandasApiSortInfo:
+    __column: str
+    __direction: PandasApiSortDirection
+    __null_ordering: SortItemNullOrdering
+
+    def __init__(
+            self,
+            column_expr: PyLegendColumnExpression,
+            direction: PandasApiSortDirection,
+            null_ordering: SortItemNullOrdering = SortItemNullOrdering.UNDEFINED
+    ) -> None:
+        self.__column = column_expr.get_column()
+        self.__direction = direction
+        self.__null_ordering = null_ordering
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig
+    ) -> SortItem:
+        return SortItem(
+            sortKey=self.__find_column_expression(query, config),
+            ordering=(SortItemOrdering.ASCENDING if self.__direction == PandasApiSortDirection.ASC
+                      else SortItemOrdering.DESCENDING),
+            nullOrdering=self.__null_ordering
+        )
+
+    def __find_column_expression(self, query: QuerySpecification, config: FrameToSqlConfig) -> Expression:
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        filtered = [
+            s for s in query.select.selectItems
+            if (isinstance(s, SingleColumn) and
+                s.alias == db_extension.quote_identifier(self.__column))
+        ]
+        if len(filtered) == 0:
+            raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
+        return filtered[0].expression
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        func = 'ascending' if self.__direction == PandasApiSortDirection.ASC else 'descending'
+        return f"{func}(~{escape_column_name(self.__column)})"
+
+
+class PandasApiWindowFrame(metaclass=ABCMeta):
+    pass
+
+
+class PandasApiWindow:
+    __partition_by: PyLegendOptional[PyLegendList[str]]
+    __order_by: PyLegendOptional[PyLegendList[PandasApiSortInfo]]
+    __frame: PyLegendOptional[PandasApiWindowFrame]
+
+    def __init__(
+            self,
+            partition_by: PyLegendOptional[PyLegendList[str]] = None,
+            order_by: PyLegendOptional[PyLegendList[PandasApiSortInfo]] = None,
+            frame: PyLegendOptional[PandasApiWindowFrame] = None
+    ) -> None:
+        self.__partition_by = partition_by
+        self.__order_by = order_by
+        self.__frame = frame
+
+    def get_partition_by(self) -> PyLegendOptional[PyLegendList[str]]:
+        return self.__partition_by
+
+    def get_order_by(self) -> PyLegendOptional[PyLegendList[PandasApiSortInfo]]:
+        return self.__order_by
+
+    def get_frame(self) -> PyLegendOptional[PandasApiWindowFrame]:
+        return self.__frame
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig
+    ) -> Window:
+        return Window(
+            windowRef=None,
+            partitions=(
+                [] if self.__partition_by is None else
+                [PandasApiWindow.__find_column_expression(query, col, config) for col in self.__partition_by]
+            ),
+            orderBy=(
+                [] if self.__order_by is None else
+                [sort_info.to_sql_node(query, config) for sort_info in self.__order_by]
+            ),
+            windowFrame=None
+        )
+
+    @staticmethod
+    def __find_column_expression(query: QuerySpecification, col: str, config: FrameToSqlConfig) -> Expression:
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        filtered = [
+            s for s in query.select.selectItems
+            if (isinstance(s, SingleColumn) and
+                s.alias == db_extension.quote_identifier(col))
+        ]
+        if len(filtered) == 0:
+            raise RuntimeError("Cannot find column: " + col)  # pragma: no cover
+        return filtered[0].expression
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        partitions_str = (
+            "" if self.__partition_by is None or len(self.__partition_by) == 0
+            else "~[" + (', '.join(map(escape_column_name, self.__partition_by))) + "], "
+        )
+        sorts_str = (
+            "[]" if self.__order_by is None or len(self.__order_by) == 0
+            else "[" + (', '.join([s.to_pure_expression(config) for s in self.__order_by])) + "]"
+        )
+        return f"over({partitions_str}{sorts_str})"
+
+
+class PandasApiPartialFrame:
+    if TYPE_CHECKING:
+        from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+    __base_frame: "PandasApiBaseTdsFrame"
+    __var_name: str
+
+    def __init__(self, base_frame: "PandasApiBaseTdsFrame", var_name: str) -> None:
+        self.__base_frame = base_frame
+        self.__var_name = var_name
+
+    def row_number(
+            self,
+            row: "PandasApiTdsRow"
+    ) -> PyLegendInteger:
+        return PyLegendInteger(PandasApiRowNumberExpression(self, row))
+
+    def rank(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> PyLegendInteger:
+        return PyLegendInteger(PandasApiRankExpression(self, window, row))
+
+    def dense_rank(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> PyLegendInteger:
+        return PyLegendInteger(PandasApiDenseRankExpression(self, window, row))
+
+    def percent_rank(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> PyLegendFloat:
+        return PyLegendFloat(PandasApiPercentRankExpression(self, window, row))
+
+    def cume_dist(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> PyLegendFloat:
+        return PyLegendFloat(PandasApiCumeDistExpression(self, window, row))
+
+    def ntile(
+            self,
+            row: "PandasApiTdsRow",
+            num_buckets: int
+    ) -> PyLegendInteger:
+        return PyLegendInteger(PandasApiNtileExpression(self, row, num_buckets))
+
+    def lead(
+            self,
+            row: "PandasApiTdsRow"
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLeadRow
+        return PandasApiLeadRow(self, row)
+
+    def lag(
+            self,
+            row: "PandasApiTdsRow"
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLagRow
+        return PandasApiLagRow(self, row)
+
+    def first(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiFirstRow
+        return PandasApiFirstRow(self, window, row)
+
+    def last(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLastRow
+        return PandasApiLastRow(self, window, row)
+
+    def nth(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow",
+            offset: int
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiNthRow
+        return PandasApiNthRow(self, window, row, offset)
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"${self.__var_name}"
+
+    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
+        return self.__base_frame
+
+
+class PandasApiWindowReference:
+    __window: PandasApiWindow
+    __var_name: str
+
+    def __init__(self, window: PandasApiWindow, var_name: str) -> None:
+        self.__window = window
+        self.__var_name = var_name
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"${self.__var_name}"
+
+
+class PandasApiRowNumberExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+    __partial_frame: PandasApiPartialFrame
+    __row: "PandasApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            row: "PandasApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["row_number"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"{self.__partial_frame.to_pure_expression(config)}->rowNumber({self.__row.to_pure_expression(config)})"
+
+
+class PandasApiRankExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+    __partial_frame: PandasApiPartialFrame
+    __window_ref: "PandasApiWindowReference"
+    __row: "PandasApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            window_ref: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["rank"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->rank("
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
+
+
+class PandasApiDenseRankExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+    __partial_frame: PandasApiPartialFrame
+    __window_ref: "PandasApiWindowReference"
+    __row: "PandasApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            window_ref: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["dense_rank"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->denseRank("
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
+
+
+class PandasApiPercentRankExpression(PyLegendExpressionFloatReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+    __partial_frame: PandasApiPartialFrame
+    __window_ref: "PandasApiWindowReference"
+    __row: "PandasApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            window_ref: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["percent_rank"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->percentRank("
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
+
+
+class PandasApiCumeDistExpression(PyLegendExpressionFloatReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+    __partial_frame: PandasApiPartialFrame
+    __window_ref: "PandasApiWindowReference"
+    __row: "PandasApiTdsRow"
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            window_ref: "PandasApiWindowReference",
+            row: "PandasApiTdsRow"
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__window_ref = window_ref
+        self.__row = row
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["cume_dist"]), distinct=False, arguments=[], filter_=None, window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->cumulativeDistribution("
+                f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
+
+
+class PandasApiNtileExpression(PyLegendExpressionIntegerReturn):
+    if TYPE_CHECKING:
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+    __partial_frame: PandasApiPartialFrame
+    __row: "PandasApiTdsRow"
+    __num_buckets: int
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            row: "PandasApiTdsRow",
+            num_buckets: int
+    ) -> None:
+        self.__partial_frame = partial_frame
+        self.__row = row
+        self.__num_buckets = num_buckets
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["ntile"]),
+            distinct=False,
+            arguments=[IntegerLiteral(self.__num_buckets)],
+            filter_=None,
+            window=None
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (f"{self.__partial_frame.to_pure_expression(config)}->ntile({self.__row.to_pure_expression(config)}, "
+                f"{self.__num_buckets})")
