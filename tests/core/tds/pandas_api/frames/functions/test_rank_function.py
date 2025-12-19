@@ -29,7 +29,7 @@ from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
 
-USE_LEGEND_ENGINE: bool = False
+USE_LEGEND_ENGINE: bool = True
 
 
 class TestRankFunctionErrors:
