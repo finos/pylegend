@@ -17,12 +17,11 @@ from pylegend._typing import (
     PyLegendSequence
 )
 from pylegend.core.sql.metamodel import (
-    QualifiedName,
-    QuerySpecification
+    QualifiedName
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import PandasApiNonExecutableInputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.extensions.tds.abstract.table_spec_input_frame import TableSpecInputFrameAbstract
 
 __all__: PyLegendSequence[str] = [
@@ -30,7 +29,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class PandasApiTableSpecInputFrame(TableSpecInputFrameAbstract, PandasApiNonExecutableInputTdsFrame):
+class PandasApiTableSpecInputFrame(PandasApiNonExecutableInputTdsFrame, TableSpecInputFrameAbstract):
     table: QualifiedName
 
     def __init__(self, table_name_parts: PyLegendList[str], columns: PyLegendSequence[TdsColumn]) -> None:
@@ -40,14 +39,5 @@ class PandasApiTableSpecInputFrame(TableSpecInputFrameAbstract, PandasApiNonExec
     def __str__(self) -> str:
         return f"PandasApiTableSpecInputFrame({'.'.join(self.table.parts)})"  # pragma: no cover
 
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        if self._extra_frame is None:
-            return TableSpecInputFrameAbstract.to_sql_query_object(self, config)
-        else:
-            return self._extra_frame.to_sql_query_object(config)
-
-    def to_pure(self, config: FrameToPureConfig) -> str:
-        if self._extra_frame is None:
-            return f"#Table({'.'.join(self.table.parts)})#"
-        else:
-            return self._extra_frame.to_pure(config)
+    def get_super_type(self) -> PyLegendTdsFrame:
+        return TableSpecInputFrameAbstract  # type: ignore
