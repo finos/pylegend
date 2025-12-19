@@ -35,6 +35,8 @@ from pylegend.core.sql.metamodel import (
     Expression,
     IsNullPredicate,
     NullLiteral,
+    QualifiedName,
+    QualifiedNameReference,
     QuerySpecification,
     SearchedCaseExpression,
     SelectItem,
@@ -101,6 +103,7 @@ class RankFunction(PandasApiAppliedFunction):
         self.__pct = pct
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        temp_column_name_suffix: str = "__internal_sql_column_name__"
 
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
@@ -133,9 +136,26 @@ class RankFunction(PandasApiAppliedFunction):
                     defaultValue=window_expr
                 )
             new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(c[0] + "__new_column"), expression=window_expr))
+                SingleColumn(alias=db_extension.quote_identifier(c[0] + temp_column_name_suffix), expression=window_expr))
 
         new_query.select.selectItems = new_select_items
+
+        new_query = create_sub_query(new_query, config, "root")
+
+        final_select_items: list[SingleColumn] = []
+        tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
+        for col in self.calculate_columns():
+            col_name = col.get_name()
+            col_expr = QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), db_extension.quote_identifier(col_name + temp_column_name_suffix)]))
+            final_select_items.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(col_name),
+                    expression=col_expr
+                )
+            )
+
+        new_query.select.selectItems = final_select_items
+
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
