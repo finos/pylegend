@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language import (
     PyLegendBoolean,
@@ -28,7 +27,6 @@ from pylegend.core.language import (
 )
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiBoolean,
-    PandasApiPartialFrame,
     PandasApiString,
     PandasApiInteger,
     PandasApiFloat,
@@ -37,11 +35,9 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDateTime,
     PandasApiDate,
     PandasApiPrimitive,
-    PandasApiWindowReference,
 )
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.sql.metamodel import Expression, FunctionCall, IntegerLiteral, QualifiedName, QuerySpecification
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyLegendTdsFrame
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsRow",
