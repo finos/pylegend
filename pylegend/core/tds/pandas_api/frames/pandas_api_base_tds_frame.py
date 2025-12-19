@@ -44,11 +44,6 @@ from pylegend.core.database.sql_to_string import (
 from pylegend.core.language import (
     PyLegendPrimitive,
     PyLegendInteger,
-    PyLegendFloat,
-    PyLegendString,
-    PyLegendDate,
-    PyLegendStrictDate,
-    PyLegendDateTime,
     PyLegendBoolean,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -64,7 +59,7 @@ from pylegend.core.tds.result_handler import (
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToSqlConfig, PyLegendTdsFrame
 from pylegend.extensions.tds.result_handler import (
     ToPandasDfResultHandler,
     PandasDfReadConfig,
@@ -91,12 +86,12 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             cols = "[" + ", ".join([str(c) for c in columns]) + "]"
             raise ValueError(f"TdsFrame cannot have duplicated column names. Passed columns: {cols}")
         self.__columns = [c.copy() for c in columns]
-        self._extra_frame = None
+        self._transformed_frame = None
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
-        if self._extra_frame is None:
+        if self._transformed_frame is None:
             return [c.copy() for c in self.__columns]
-        return self._extra_frame.columns()
+        return self._transformed_frame.columns()
 
     def __getitem__(
             self,
@@ -162,8 +157,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
-        from pylegend.core.language.pandas_api.pandas_api_series import Series, IntegerSeries, FloatSeries, \
-            StringSeries, BooleanSeries, DateSeries, DateTimeSeries, StrictDateSeries
+        from pylegend.core.language.pandas_api.pandas_api_series import Series
 
         # Type Check
         if not isinstance(key, str):
@@ -175,42 +169,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             if origin is not None and origin is not self:
                 raise ValueError("Assignment from a different frame is not allowed")
 
-        # Column Type check
-        def _validate_type(expr: PyLegendUnion["Series", PyLegendPrimitiveOrPythonPrimitive], col_type: str) -> bool:
-            if callable(expr):
-                return True  # Cannot validate at this time
-            if col_type.lower() == 'integer':
-                return isinstance(expr, (PyLegendInteger, int, IntegerSeries))
-            elif col_type.lower() == 'float':
-                return isinstance(expr, (PyLegendFloat, float, FloatSeries))
-            elif col_type.lower() == 'string':
-                return isinstance(expr, (PyLegendString, str, StringSeries))
-            elif col_type.lower() == 'boolean':  # pragma: no cover (Boolean column not supported in PURE)
-                return isinstance(expr, (PyLegendBoolean, bool,
-                                         BooleanSeries))  # pragma: no cover (Boolean column not supported in PURE)
-            elif col_type.lower() == 'date':
-                return isinstance(expr, (PyLegendDate, PyLegendStrictDate, PyLegendDateTime, date, datetime, DateSeries,
-                                         DateTimeSeries, StrictDateSeries))
-            elif col_type.lower() == 'strictdate':
-                return isinstance(expr, (PyLegendStrictDate, date, StrictDateSeries))
-            elif col_type.lower() == 'datetime':
-                return isinstance(expr, (PyLegendDateTime, datetime, DateTimeSeries))
-            else:
-                raise ValueError(f"Unsupported column type: {col_type}")  # pragma: no cover
-
-        existing_cols = [c.get_name() for c in self.columns()]
-        existing_set = set(existing_cols)
-
-        if key in existing_set:
-            col_type = None
-            for c in self.columns():
-                if c.get_name() == key:
-                    col_type = c.get_type()
-                    break
-
-            if not _validate_type(value, col_type):  # type: ignore
-                raise TypeError(f"Assigned value type does not match column '{key}' type '{col_type}'")
-
         # Normalize the assignment value
         col_def = {}
         if callable(value):
@@ -221,7 +179,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         working_frame = copy.deepcopy(self)
         assign_applied = PandasApiAppliedFunctionTdsFrame(AssignFunction(working_frame, col_definitions=col_def))
 
-        self._extra_frame = assign_applied  # type: ignore
+        self._transformed_frame = assign_applied  # type: ignore
         self.__columns = assign_applied.columns()
 
     def assign(
@@ -717,12 +675,20 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
+    def get_super_type(self) -> PyLegendTdsFrame:
         pass  # pragma: no cover
 
-    @abstractmethod
+    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
+        if self._transformed_frame is None:
+            return self.get_super_type().to_sql_query_object(self, config)  # type: ignore
+        else:
+            return self._transformed_frame.to_sql_query_object(config)
+
     def to_pure(self, config: FrameToPureConfig) -> str:
-        pass  # pragma: no cover
+        if self._transformed_frame is None:
+            return self.get_super_type().to_pure(self, config)  # type: ignore
+        else:
+            return self._transformed_frame.to_pure(config)
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         return self.to_pure(config)
