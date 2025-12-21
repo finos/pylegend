@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import abstractmethod
+from io import StringIO
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 from typing_extensions import Concatenate
@@ -297,4 +298,19 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             engine_kwargs: PyLegendOptional[PyLegendDict[str, PyLegendPrimitiveOrPythonPrimitive]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def info(
+            self,
+            verbose: PyLegendOptional[bool] = None,
+            buf: PyLegendOptional[StringIO] = None,
+            max_cols: PyLegendOptional[int] = None,
+            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
+            show_counts: PyLegendOptional[bool] = None
+    ) -> None:
         pass  # pragma: no cover

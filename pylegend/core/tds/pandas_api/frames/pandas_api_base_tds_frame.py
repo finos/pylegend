@@ -675,6 +675,141 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
 
+    def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        """
+        Return the first `n` rows by calling truncate on rows.
+        Negative `n` is not supported.
+        """
+        if not isinstance(n, int):
+            raise TypeError(f"n must be an int, got {type(n)}")
+        if n < 0:
+            raise NotImplementedError("Negative n is not supported yet in Pandas API head")
+
+        return self.truncate(before=None, after=max(n - 1, -1), axis=0, copy=True)
+
+    def info(
+            self,
+            verbose: PyLegendOptional[bool] = None,
+            buf: PyLegendOptional[StringIO] = None,
+            max_cols: PyLegendOptional[int] = None,
+            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
+            show_counts: PyLegendOptional[bool] = None
+    ) -> None:
+        """
+        Print a concise summary of a TdsFrame.
+
+        This method prints information about a TdsFrame including the columns and
+        non-null values.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            Whether to print the full summary.
+        buf : Writable, optional
+            Not implemented yet.
+        max_cols : int, optional
+            When to switch from the verbose to the truncated output.
+        memory_usage : bool, str, optional
+            Not implemented yet.
+        show_counts : bool, optional
+            Whether to show the non-null counts.
+        """
+        import json
+        import sys
+
+        # Parameter validation
+        if verbose is not None and not isinstance(verbose, bool):
+            verbose = None
+        if buf is not None and not hasattr(buf, 'write'):
+            raise TypeError("buf is not a writable buffer")
+        if max_cols is not None:
+            if not isinstance(max_cols, int):
+                raise TypeError(f"max_cols must be an integer, but got {type(max_cols)}")
+            if max_cols < 0:
+                max_cols = None
+        if memory_usage is not None:
+            raise NotImplementedError("memory_usage parameter is not implemented yet in Pandas API")
+        if show_counts is not None and not isinstance(show_counts, bool):
+            show_counts = None
+
+        result_string = self.execute_frame_to_string()
+        result_json = json.loads(result_string)
+        result_data = result_json["result"]
+
+        columns = self.columns()
+        col_names = [c.get_name() for c in columns]
+        data_rows = result_data.get('rows', [])
+        total_rows = len(data_rows)
+        total_cols = len(columns)
+
+        output = StringIO()
+        class_name = f"{self.__class__.__module__}.{self.__class__.__name__}"
+        output.write(f"<class '{class_name}'>\n")
+        output.write(f"RangeIndex: {total_rows} entries\n")
+
+        show_full_info = False
+        if verbose is True:
+            show_full_info = True
+        elif verbose is None:
+            threshold = max_cols
+            if threshold is None or total_cols <= threshold:
+                show_full_info = True
+
+        dtypes = [c.get_type() for c in columns]
+        dtype_summary = ", ".join(f"{d}({dtypes.count(d)})" for d in sorted(set(dtypes)))
+
+        if show_full_info:
+            header_indices = {h.strip(): i for i, h in enumerate(result_data.get('columns', []))}
+            non_null_counts = {name: 0 for name in col_names}
+
+            for row in data_rows:
+                row_values = row.get('values', [])
+                for col_name in col_names:
+                    col_index = header_indices.get(col_name)
+                    if col_index is not None and col_index < len(row_values):
+                        value = row_values[col_index]
+                        if value is not None and str(value) != '':
+                            non_null_counts[col_name] += 1
+
+            output.write(f"Data columns (total {total_cols} columns):\n")
+
+            should_show_counts = show_counts if show_counts is not None else True
+            if should_show_counts:
+                headers = ["#", "Column", "Non-Null Count", "Dtype"]
+                col_data = []
+                for i, col in enumerate(columns):
+                    non_null_count = non_null_counts.get(col.get_name(), 0)
+                    non_null_count_str = f"{non_null_count} non-null"
+                    col_data.append([str(i), col.get_name(), non_null_count_str, col.get_type()])
+            else:
+                headers = ["#", "Column", "Dtype"]
+                col_data = []
+                for i, col in enumerate(columns):
+                    col_data.append([str(i), col.get_name(), col.get_type()])
+
+            widths = [max(len(str(item)) for item in col) for col in zip(*([headers] + col_data))]
+            header_line = "  ".join(f"{h:<{w}}" for h, w in zip(headers, widths))
+            separator_line = "  ".join("-" * w for w in widths)
+            output.write(header_line + "\n")
+            output.write(separator_line + "\n")
+
+            for row in col_data:
+                output.write("  ".join(f"{item:<{w}}" for item, w in zip(row, widths)) + "\n")
+
+        else:
+            col_range = ""
+            if total_cols > 0:
+                col_range = f", {columns[0].get_name()} to {columns[-1].get_name()}"
+            output.write(f"Columns: {total_cols} entries{col_range}\n")
+
+        output.write(f"dtypes: {dtype_summary}\n")
+
+        info_str = output.getvalue()
+        if buf is None:
+            sys.stdout.write(info_str)
+        else:
+            buf.write(info_str)
+
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
         pass  # pragma: no cover
