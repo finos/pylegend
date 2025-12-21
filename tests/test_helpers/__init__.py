@@ -14,12 +14,12 @@
 
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
+from pylegend.extensions.tds.abstract.csv_tds_frame import CsvInputFrameAbstract
 from pylegend.core.tds.abstract.frames.input_tds_frame import InputTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 from pylegend.core.tds.tds_frame import FrameToPureConfig, PyLegendTdsFrame
 from pylegend._typing import PyLegendList, PyLegendUnion
 from pylegend.extensions.tds.abstract.table_spec_input_frame import TableSpecInputFrameAbstract
-from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 
 
 def generate_pure_query_and_compile(
@@ -30,9 +30,9 @@ def generate_pure_query_and_compile(
     assert isinstance(frame, BaseTdsFrame)
     tds_frames = frame.get_all_tds_frames()
     input_frames = [x for x in tds_frames if isinstance(x, InputTdsFrame)]
-    table_input_frames: PyLegendList[PyLegendUnion[TableSpecInputFrameAbstract, PandasApiTableSpecInputFrame]] = []
+    table_input_frames: PyLegendList[PyLegendUnion[TableSpecInputFrameAbstract, CsvInputFrameAbstract]] = []
     for x in input_frames:
-        assert isinstance(x, (TableSpecInputFrameAbstract, PandasApiTableSpecInputFrame))
+        assert isinstance(x, (TableSpecInputFrameAbstract, CsvInputFrameAbstract))
         table_input_frames.append(x)
 
     input_text_replacement_map = {}

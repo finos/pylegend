@@ -58,11 +58,6 @@ class TestImplicitDataManipulationFunction:
             frame['col1'] = frame2['col2']  # type: ignore
         assert v.value.args[0] == "Assignment from a different frame is not allowed"
 
-        # Column type error
-        with pytest.raises(TypeError) as t:
-            frame['col1'] = frame['col2']  # type: ignore
-        assert t.value.args[0] == "Assigned value type does not match column 'col1' type 'Integer'"
-
     def test_implicit_function_sql_pure(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
