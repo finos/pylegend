@@ -810,6 +810,171 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         else:
             buf.write(info_str)
 
+    def describe(
+            self,
+            percentiles: PyLegendOptional[PyLegendList[float]] = None,
+            include: PyLegendOptional[PyLegendUnion[str, PyLegendList[str]]] = None,
+            exclude: PyLegendOptional[PyLegendList[str]] = None
+    ) -> None:
+        """
+        Generate descriptive statistics.
+
+        Descriptive statistics include those that summarize the central tendency, dispersion and shape of a
+        dataset’s distribution, excluding NaN values.
+
+        Analyzes both numeric and object series, as well as DataFrame column sets of mixed data types.
+        The output will vary depending on what is provided.
+
+        Parameters
+        ----------
+        percentiles : list-like of numbers, optional
+            Not implemented yet. The default is [.25, .5, .75], which returns the 25th, 50th, and 75th percentiles.
+        include : ‘all’, list-like of dtypes or None (default), optional
+            A white list of data types to include in the result.
+        exclude : list-like of dtypes or None (default), optional,
+            A black list of data types to omit from the result.
+        """
+        import json
+        import sys
+        import math
+        from collections import Counter
+
+        if percentiles is None:
+            percentiles_to_calc = [0.25, 0.5, 0.75]
+        else:
+            if not isinstance(percentiles, list) or not all(
+                    isinstance(p, (int, float)) and 0 <= p <= 1 for p in percentiles):
+                raise ValueError("percentiles must be a list of numbers between 0 and 1.")
+            percentiles_to_calc = sorted(list(set(percentiles)))
+
+        result_string = self.execute_frame_to_string()
+        result_json = json.loads(result_string)
+        result_data = result_json["result"]
+        data_rows = result_data.get('rows', [])
+        header_list = [c.strip() for c in result_data.get('columns', [])]
+        header_indices = {h: i for i, h in enumerate(header_list)}
+
+        all_columns = self.columns()
+        if not all_columns:
+            return "No columns to describe.\n"
+
+        numeric_types = ['Integer', 'Float', 'Number', 'Decimal']
+        string_types = ['String', 'Date', 'DateTime', 'StrictDate']
+
+        if include is None and exclude is None:
+            selected_columns = [c for c in all_columns if c.get_type() in numeric_types]
+        elif include == 'all':
+            selected_columns = all_columns
+        elif isinstance(include, list):
+            selected_columns = [c for c in all_columns if c.get_type() in include]
+        elif isinstance(exclude, list):
+            selected_columns = [c for c in all_columns if c.get_type() not in exclude]
+        else:
+            selected_columns = [c for c in all_columns if c.get_type() in numeric_types]
+
+        if not selected_columns:
+            return "No columns to describe.\n"
+
+        numeric_stats = {}
+        object_stats = {}
+
+        for col in selected_columns:
+            col_name = col.get_name()
+            col_type = col.get_type()
+            col_index = header_indices.get(col_name)
+            if col_index is None:
+                continue
+
+            if col_type in numeric_types:
+                values = [
+                    float(row['values'][col_index])
+                    for row in data_rows
+                    if col_index < len(row['values']) and row['values'][col_index] is not None
+                ]
+                count = len(values)
+                base_stats = ['count', 'mean', 'std', 'min', 'max']
+                percentile_stat_names = [f"{p * 100:.0f}%" if (p * 100).is_integer() else f"{p * 100}%" for p in
+                                         percentiles_to_calc]
+                all_stat_names = base_stats + percentile_stat_names
+
+                if count == 0:
+                    numeric_stats[col_name] = {s: float('nan') for s in all_stat_names}
+                    numeric_stats[col_name]['count'] = 0.0
+                else:
+                    values.sort()
+                    mean = sum(values) / count
+                    std_dev = math.sqrt(sum([(x - mean) ** 2 for x in values]) / (count - 1)) if count > 1 else 0.0
+                    min_val, max_val = values[0], values[-1]
+
+                    def get_percentile(p: float) -> float:
+                        k = (count - 1) * p
+                        f, c = math.floor(k), math.ceil(k)
+                        if f == c:
+                            return values[int(k)]
+                        return values[int(f)] * (c - k) + values[int(c)] * (k - f)
+
+                    stats = {
+                        'count': float(count), 'mean': mean, 'std': std_dev, 'min': min_val, 'max': max_val
+                    }
+                    for p, name in zip(percentiles_to_calc, percentile_stat_names):
+                        stats[name] = get_percentile(p)
+                    numeric_stats[col_name] = stats
+
+            elif col_type in string_types:
+                values = [
+                    row['values'][col_index]
+                    for row in data_rows
+                    if col_index < len(row['values']) and row['values'][col_index] is not None and str(
+                        row['values'][col_index]) != ''
+                ]
+                count = len(values)
+                if count == 0:
+                    object_stats[col_name] = {'count': 0, 'unique': 0, 'top': float('nan'), 'freq': float('nan')}
+                else:
+                    counts = Counter(values)
+                    unique = len(counts)
+                    top, freq = counts.most_common(1)[0]
+                    object_stats[col_name] = {'count': count, 'unique': unique, 'top': top, 'freq': freq}
+
+        percentile_row_names = [f"{p * 100:.0f}%" if (p * 100).is_integer() else f"{p * 100}%" for p in
+                                percentiles_to_calc]
+        stat_rows_order = ['count', 'unique', 'top', 'freq', 'mean', 'std', 'min'] + percentile_row_names + ['max']
+        table_data = []
+        for stat_name in stat_rows_order:
+            row_data = [stat_name]
+            for col in selected_columns:
+                col_name = col.get_name()
+                val = float('nan')
+                if col.get_type() in numeric_types:
+                    if stat_name in numeric_stats.get(col_name, {}):
+                        val = numeric_stats[col_name][stat_name]
+                elif col.get_type() in string_types:
+                    if stat_name in object_stats.get(col_name, {}):
+                        val = object_stats[col_name][stat_name]
+                row_data.append(val)
+            table_data.append(row_data)
+
+        def format_val(v) -> str:
+            if isinstance(v, float):
+                if math.isnan(v):
+                    return "NaN"
+                if v.is_integer():
+                    return str(int(v))
+                return f"{v:.6f}"
+            return str(v)
+
+        formatted_rows = [[r[0]] + [format_val(v) for v in r[1:]] for r in table_data]
+        headers = [''] + [c.get_name() for c in selected_columns]
+        widths = [max(len(str(item)) for item in col) for col in zip(*([headers] + formatted_rows))]
+
+        output_parts = []
+        header_line = "  ".join(f"{h:<{w}}" for h, w in zip(headers, widths))
+        output_parts.append(header_line + "\n")
+        for row in formatted_rows:
+            output_parts.append("  ".join(f"{item:>{w}}" for item, w in zip(row, widths)) + "\n")
+
+        return "".join(output_parts)
+
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
         pass  # pragma: no cover
