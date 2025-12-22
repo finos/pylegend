@@ -15,7 +15,7 @@
 from abc import abstractmethod
 from datetime import date, datetime
 from io import StringIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TextIO
 
 from typing_extensions import Concatenate
 
@@ -315,7 +315,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     def info(
             self,
             verbose: PyLegendOptional[bool] = None,
-            buf: PyLegendOptional[StringIO] = None,
+            buf: PyLegendOptional[PyLegendUnion[StringIO, TextIO]] = None,
             max_cols: PyLegendOptional[int] = None,
             memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
             show_counts: PyLegendOptional[bool] = None
