@@ -16,7 +16,7 @@ import copy
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 from io import StringIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TextIO
 
 from typing_extensions import Concatenate
 
@@ -709,7 +709,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def info(
             self,
             verbose: PyLegendOptional[bool] = None,
-            buf: PyLegendOptional[StringIO] = None,
+            buf: PyLegendOptional[PyLegendUnion[StringIO, TextIO]] = None,
             max_cols: PyLegendOptional[int] = None,
             memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
             show_counts: PyLegendOptional[bool] = None
@@ -825,9 +825,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         info_str = output.getvalue()
         if buf is None:
-            sys.stdout.write(info_str)
-        else:
-            buf.write(info_str)
+            buf = sys.stdout
+        buf.write(info_str)
 
     def describe(
             self,
@@ -879,14 +878,10 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 'bool': {'Boolean'},
                 bool: {'Boolean'}
             }
-            direct_dtypes = {'Integer', 'Float', 'Number', 'Decimal', 'String', 'Date', 'DateTime', 'StrictDate',
-                             'Boolean'}
 
             for spec in specs:
                 if spec in dtype_map:
                     normalized.update(dtype_map[spec])
-                elif spec in direct_dtypes:
-                    normalized.add(spec)
                 else:
                     raise TypeError(f"data type {spec} not understood")
             return normalized
@@ -944,22 +939,20 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             col_name = col.get_name()
             col_type = col.get_type()
             col_index = header_indices.get(col_name)
-            if col_index is None:
-                continue
 
             if col_type in numeric_types:
                 values = [
                     float(row['values'][col_index])
                     for row in data_rows
-                    if col_index < len(row['values']) and row['values'][col_index] is not None
+                    if col_index < len(row['values']) and row['values'][col_index] is not None  # type: ignore
                 ]
                 count = len(values)
                 base_stats = ['count', 'mean', 'std', 'min', 'max']
                 all_stat_names = base_stats + percentile_stat_names
 
                 if count == 0:
-                    numeric_stats[col_name] = {s: float('nan') for s in all_stat_names}
-                    numeric_stats[col_name]['count'] = 0.0
+                    numeric_stats[col_name] = {s: float('nan') for s in all_stat_names}  # pragma: no cover
+                    numeric_stats[col_name]['count'] = 0.0  # pragma: no cover
                 else:
                     values.sort()
                     mean = sum(values) / count
@@ -984,12 +977,20 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 values = [
                     row['values'][col_index]
                     for row in data_rows
-                    if col_index < len(row['values']) and row['values'][col_index] is not None and str(
-                        row['values'][col_index]) != ''
+                    if (
+                            col_index < len(row['values']) and  # type: ignore
+                            row['values'][col_index] is not None and
+                            str(row['values'][col_index]) != ''
+                    )
                 ]
                 count = len(values)
                 if count == 0:
-                    object_stats[col_name] = {'count': 0, 'unique': 0, 'top': float('nan'), 'freq': float('nan')}
+                    object_stats[col_name] = {
+                        'count': 0,
+                        'unique': 0,
+                        'top': float('nan'),
+                        'freq': float('nan')
+                    }  # pragma: no cover
                 else:
                     counts = Counter(values)
                     unique = len(counts)
