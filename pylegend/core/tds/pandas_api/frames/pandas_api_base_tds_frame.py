@@ -14,8 +14,8 @@
 
 import copy
 from abc import ABCMeta, abstractmethod
-from io import StringIO
 from datetime import date, datetime
+from io import StringIO
 from typing import TYPE_CHECKING
 
 from typing_extensions import Concatenate
@@ -115,7 +115,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 if col.get_name() == key:
                     col_type = col.get_type()
                     if col_type == "Boolean":
-                        from pylegend.core.language.pandas_api.pandas_api_series import BooleanSeries  # pragma: no cover
+                        from pylegend.core.language.pandas_api.pandas_api_series import \
+                            BooleanSeries  # pragma: no cover
                         return BooleanSeries(self, key)  # pragma: no cover (Boolean column not supported in PURE)
                     elif col_type == "String":
                         from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
@@ -812,10 +813,10 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def describe(
             self,
-            percentiles: PyLegendOptional[PyLegendList[float]] = None,
-            include: PyLegendOptional[PyLegendUnion[str, PyLegendList[str]]] = None,
-            exclude: PyLegendOptional[PyLegendList[str]] = None
-    ) -> None:
+            percentiles: PyLegendOptional[PyLegendUnion[PyLegendSequence[float], PyLegendSet[float]]] = None,
+            include: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
+            exclude: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None
+    ) -> str:
         """
         Generate descriptive statistics.
 
@@ -835,17 +836,79 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             A black list of data types to omit from the result.
         """
         import json
-        import sys
         import math
         from collections import Counter
+
+        def _normalize_dtypes(
+                dtypes_spec: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]]
+        ) -> PyLegendOptional[PyLegendSet[str]]:
+            if dtypes_spec is None:
+                return None
+
+            specs = dtypes_spec if isinstance(dtypes_spec, list) else [dtypes_spec]
+            normalized = set()
+            dtype_map = {
+                'number': {'Integer', 'Float', 'Number', 'Decimal'},
+                object: {'String', 'Date', 'DateTime', 'StrictDate'},
+                'object': {'String', 'Date', 'DateTime', 'StrictDate'},
+                'O': {'String', 'Date', 'DateTime', 'StrictDate'},
+                'integer': {'Integer'},
+                'int': {'Integer'},
+                int: {'Integer'},
+                'float': {'Float', 'Decimal'},
+                float: {'Float', 'Decimal'},
+                'double': {'Float', 'Decimal'},
+                'bool': {'Boolean'},
+                bool: {'Boolean'}
+            }
+            direct_dtypes = {'Integer', 'Float', 'Number', 'Decimal', 'String', 'Date', 'DateTime', 'StrictDate',
+                             'Boolean'}
+
+            for spec in specs:
+                if spec in dtype_map:
+                    normalized.update(dtype_map[spec])
+                elif spec in direct_dtypes:
+                    normalized.add(spec)
+                else:
+                    raise TypeError(f"data type {spec} not understood")
+            return normalized
 
         if percentiles is None:
             percentiles_to_calc = [0.25, 0.5, 0.75]
         else:
-            if not isinstance(percentiles, list) or not all(
-                    isinstance(p, (int, float)) and 0 <= p <= 1 for p in percentiles):
-                raise ValueError("percentiles must be a list of numbers between 0 and 1.")
-            percentiles_to_calc = sorted(list(set(percentiles)))
+            if not isinstance(percentiles, (list, tuple, set)):
+                raise TypeError("percentiles must be a list, tuple, or set of numbers")
+            if not all(isinstance(p, (int, float)) and 0 <= p <= 1 for p in percentiles):
+                raise ValueError("percentiles must all be in the interval [0, 1].")
+
+            percentiles_set = set(percentiles)
+            percentiles_set.add(0.5)
+            percentiles_to_calc = sorted(list(percentiles_set))
+
+        all_columns = self.columns()
+        if not all_columns:
+            raise ValueError("Cannot describe a DataFrame without columns")  # pragma: no cover
+
+        numeric_types = ['Integer', 'Float', 'Number', 'Decimal']
+        string_types = ['String', 'Date', 'DateTime', 'StrictDate', 'Boolean']
+
+        if include == 'all':
+            selected_columns = all_columns
+        else:
+            include_dtypes = _normalize_dtypes(include)
+            exclude_dtypes = _normalize_dtypes(exclude)
+
+            if include_dtypes is None and exclude_dtypes is None:
+                selected_columns = [c for c in all_columns if c.get_type() in numeric_types]
+            else:
+                selected_columns = all_columns
+                if include_dtypes is not None:
+                    selected_columns = [c for c in selected_columns if c.get_type() in include_dtypes]
+                if exclude_dtypes is not None:
+                    selected_columns = [c for c in selected_columns if c.get_type() not in exclude_dtypes]
+
+        if not selected_columns:
+            raise ValueError("No objects to concatenate")
 
         result_string = self.execute_frame_to_string()
         result_json = json.loads(result_string)
@@ -854,29 +917,10 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         header_list = [c.strip() for c in result_data.get('columns', [])]
         header_indices = {h: i for i, h in enumerate(header_list)}
 
-        all_columns = self.columns()
-        if not all_columns:
-            return "No columns to describe.\n"
-
-        numeric_types = ['Integer', 'Float', 'Number', 'Decimal']
-        string_types = ['String', 'Date', 'DateTime', 'StrictDate']
-
-        if include is None and exclude is None:
-            selected_columns = [c for c in all_columns if c.get_type() in numeric_types]
-        elif include == 'all':
-            selected_columns = all_columns
-        elif isinstance(include, list):
-            selected_columns = [c for c in all_columns if c.get_type() in include]
-        elif isinstance(exclude, list):
-            selected_columns = [c for c in all_columns if c.get_type() not in exclude]
-        else:
-            selected_columns = [c for c in all_columns if c.get_type() in numeric_types]
-
-        if not selected_columns:
-            return "No columns to describe.\n"
-
         numeric_stats = {}
         object_stats = {}
+        percentile_stat_names = [f"{p * 100:.0f}%" if (p * 100).is_integer() else f"{p * 100}%" for p in
+                                 percentiles_to_calc]
 
         for col in selected_columns:
             col_name = col.get_name()
@@ -893,8 +937,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 ]
                 count = len(values)
                 base_stats = ['count', 'mean', 'std', 'min', 'max']
-                percentile_stat_names = [f"{p * 100:.0f}%" if (p * 100).is_integer() else f"{p * 100}%" for p in
-                                         percentiles_to_calc]
                 all_stat_names = base_stats + percentile_stat_names
 
                 if count == 0:
@@ -936,12 +978,19 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                     top, freq = counts.most_common(1)[0]
                     object_stats[col_name] = {'count': count, 'unique': unique, 'top': top, 'freq': freq}
 
-        percentile_row_names = [f"{p * 100:.0f}%" if (p * 100).is_integer() else f"{p * 100}%" for p in
-                                percentiles_to_calc]
-        stat_rows_order = ['count', 'unique', 'top', 'freq', 'mean', 'std', 'min'] + percentile_row_names + ['max']
+        has_numeric = any(c.get_type() in numeric_types for c in selected_columns)
+        has_object = any(c.get_type() in string_types for c in selected_columns)
+
+        if has_numeric and not has_object:
+            stat_rows_order = ['count', 'mean', 'std', 'min'] + percentile_stat_names + ['max']
+        elif not has_numeric and has_object:
+            stat_rows_order = ['count', 'unique', 'top', 'freq']
+        else:
+            stat_rows_order = ['count', 'unique', 'top', 'freq', 'mean', 'std', 'min'] + percentile_stat_names + ['max']
+
         table_data = []
         for stat_name in stat_rows_order:
-            row_data = [stat_name]
+            row_data: PyLegendList[PyLegendUnion[str, float, int]] = [stat_name]
             for col in selected_columns:
                 col_name = col.get_name()
                 val = float('nan')
@@ -954,14 +1003,14 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 row_data.append(val)
             table_data.append(row_data)
 
-        def format_val(v) -> str:
+        def format_val(v: PyLegendUnion[str, float, int]) -> str:
             if isinstance(v, float):
                 if math.isnan(v):
                     return "NaN"
-                if v.is_integer():
-                    return str(int(v))
                 return f"{v:.6f}"
             return str(v)
+
+        table_data = [row for row in table_data if any(not (isinstance(v, float) and math.isnan(v)) for v in row[1:])]
 
         formatted_rows = [[r[0]] + [format_val(v) for v in r[1:]] for r in table_data]
         headers = [''] + [c.get_name() for c in selected_columns]

@@ -40,7 +40,7 @@ class TestHeadFunction:
 
         # type error
         with pytest.raises(TypeError) as t:
-            frame.head("5")
+            frame.head("5")  # type: ignore
         assert t.value.args[0] == "n must be an int, got <class 'str'>"
 
         # negative n

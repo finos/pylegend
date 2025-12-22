@@ -47,14 +47,15 @@ class TestInfoFunction:
 
         # max_cols
         with pytest.raises(TypeError) as t:
-            frame.info(max_cols='10')
+            frame.info(max_cols='10')  # type: ignore
         assert t.value.args[0] == "max_cols must be an integer, but got <class 'str'>"
 
         # buffer
         with pytest.raises(TypeError) as t:
-            frame.info(buf="not a buffer")
+            frame.info(buf="not a buffer")  # type: ignore
         assert t.value.args[0] == "buf is not a writable buffer"
 
+    # flake8: noqa
     def test_e2e_info_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 

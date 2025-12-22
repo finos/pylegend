@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from io import StringIO
-from textwrap import dedent
 import pytest
 
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -40,39 +38,95 @@ class TestDescribeFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        # memory
-        with pytest.raises(NotImplementedError) as n:
-            frame.info(memory_usage=True)
-        assert n.value.args[0] == "memory_usage parameter is not implemented yet in Pandas API"
-
-        # max_cols
+        # percentiles
         with pytest.raises(TypeError) as t:
-            frame.info(max_cols='10')
-        assert t.value.args[0] == "max_cols must be an integer, but got <class 'str'>"
+            frame.describe(percentiles='not a list')  # type: ignore
+        assert t.value.args[0] == "percentiles must be a list, tuple, or set of numbers"
 
-        # buffer
+        with pytest.raises(ValueError) as v:
+            frame.describe(percentiles=[-0.1, 1.1])
+        assert v.value.args[0] == "percentiles must all be in the interval [0, 1]."
+
+        # include, exclude
         with pytest.raises(TypeError) as t:
-            frame.info(buf="not a buffer")
-        assert t.value.args[0] == "buf is not a writable buffer"
+            frame.describe(include=123)  # type: ignore
+        assert t.value.args[0] == "data type 123 not understood"
 
-    def test_e2e_describe_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        with pytest.raises(TypeError) as t:
+            frame.describe(exclude='str')
+        assert t.value.args[0] == "data type str not understood"
+
+        with pytest.raises(ValueError) as v:
+            frame.describe(include=float)  # type: ignore
+        assert v.value.args[0] == "No objects to concatenate"
+
+    # flake8: noqa
+    def test_e2e_describe_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:  # noqa
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
         res = frame.describe(include='all')
-        print(res)
+        expected = (
+            '        First Name  Last Name  Age        Firm/Legal Name\n'
+ ' count           7          7   7.000000                7\n'
+ 'unique           6          6        NaN                4\n'
+ '   top        John       Hill        NaN           Firm X\n'
+ '  freq           2          2        NaN                4\n'
+ '  mean         NaN        NaN  25.714286              NaN\n'
+ '   std         NaN        NaN   8.340949              NaN\n'
+ '   min         NaN        NaN  12.000000              NaN\n'
+ '   25%         NaN        NaN  22.000000              NaN\n'
+ '   50%         NaN        NaN  23.000000              NaN\n'
+ '   75%         NaN        NaN  33.000000              NaN\n'
+ '   max         NaN        NaN  35.000000              NaN\n'
+        )
+        assert res == expected
 
-        expected_verbose = dedent("""\
-                    <class 'pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame.PandasApiLegendServiceInputFrame'>
-                    RangeIndex: 7 entries
-                    Data columns (total 4 columns):
-                    #  Column           Non-Null Count  Dtype  
-                    -  ---------------  --------------  -------
-                    0  First Name       7 non-null      String 
-                    1  Last Name        7 non-null      String 
-                    2  Age              7 non-null      Integer
-                    3  Firm/Legal Name  7 non-null      String 
-                    dtypes: Integer(1), String(3)
-                    """)
-        assert res == expected_verbose
+        res = frame.describe()
+        exp_num = (
+            '       Age      \n'
+ 'count   7.000000\n'
+ ' mean  25.714286\n'
+ '  std   8.340949\n'
+ '  min  12.000000\n'
+ '  25%  22.000000\n'
+ '  50%  23.000000\n'
+ '  75%  33.000000\n'
+ '  max  35.000000\n'
+        )
+        assert res == exp_num
 
+        res = frame.describe(percentiles=(0.1, 0.9))
+        exp_per = (
+            '       Age      \n'
+ 'count   7.000000\n'
+ ' mean  25.714286\n'
+ '  std   8.340949\n'
+ '  min  12.000000\n'
+ '  10%  18.000000\n'
+ '  50%  23.000000\n'
+ '  90%  34.400000\n'
+ '  max  35.000000\n'
+        )
+        assert res == exp_per
 
+        # Include only object columns
+        res = frame.describe(include=['O'])
+        exp_exc_num = (
+            '        First Name  Last Name  Firm/Legal Name\n'
+            ' count           7          7                7\n'
+            'unique           6          6                4\n'
+            '   top        John       Hill           Firm X\n'
+            '  freq           2          2                4\n'
+        )
+        assert res == exp_exc_num
+
+        # Exclude integer columns
+        res = frame.describe(exclude=['integer'])
+        assert res == exp_exc_num
+
+        # Other types
+        res = frame.describe(include=[int])  # type: ignore
+        assert res == exp_num
+
+        res = frame.describe(include=object)  # type: ignore
+        assert res == exp_exc_num

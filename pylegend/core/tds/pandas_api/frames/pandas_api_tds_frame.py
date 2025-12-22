@@ -13,10 +13,12 @@
 # limitations under the License.
 
 from abc import abstractmethod
-from io import StringIO
 from datetime import date, datetime
+from io import StringIO
 from typing import TYPE_CHECKING
+
 from typing_extensions import Concatenate
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -313,4 +315,13 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
             show_counts: PyLegendOptional[bool] = None
     ) -> None:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def describe(
+            self,
+            percentiles: PyLegendOptional[PyLegendUnion[PyLegendSequence[float], PyLegendSet[float]]] = None,
+            include: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
+            exclude: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None
+    ) -> str:
         pass  # pragma: no cover
