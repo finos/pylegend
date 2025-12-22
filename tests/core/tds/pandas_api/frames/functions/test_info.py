@@ -117,3 +117,6 @@ class TestInfoFunction:
                     dtypes: Integer(1), String(3)
                     """)
         assert output_no_counts == expected_no_counts
+
+        # others
+        frame.info(max_cols=-2, verbose=123, show_counts=345)  # type: ignore
