@@ -41,7 +41,7 @@ class TestDescribeFunction:
         # percentiles
         with pytest.raises(TypeError) as t:
             frame.describe(percentiles='not a list')  # type: ignore
-        assert t.value.args[0] == "percentiles must be a list, tuple, or set of numbers"
+        assert t.value.args[0] == "percentiles must be a list, tuple, or set of numbers. Got class<str>"
 
         with pytest.raises(ValueError) as v:
             frame.describe(percentiles=[-0.1, 1.1])

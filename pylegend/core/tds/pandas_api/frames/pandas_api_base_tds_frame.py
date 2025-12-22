@@ -895,7 +895,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             percentiles_to_calc = [0.25, 0.5, 0.75]
         else:
             if not isinstance(percentiles, (list, tuple, set)):
-                raise TypeError("percentiles must be a list, tuple, or set of numbers")
+                raise TypeError(f"percentiles must be a list, tuple, or set of numbers. Got {type(percentiles)}")
             if not all(isinstance(p, (int, float)) and 0 <= p <= 1 for p in percentiles):
                 raise ValueError("percentiles must all be in the interval [0, 1].")
 
@@ -1041,6 +1041,59 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             output_parts.append("  ".join(f"{item:>{w}}" for item, w in zip(row, widths)) + "\n")
 
         return "".join(output_parts)
+
+    def dropna(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            how: str = "any",
+            thresh: PyLegendOptional[int] = None,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            inplace: bool = False,
+            ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        """
+        Remove missing values.
+
+        Parameters
+        ----------
+        axis : {0 or 'index'}, default 0
+            Determine if rows or columns which contain missing values are removed.
+            * 0, or 'index' : Drop rows which contain missing values.
+            Currently, only `axis=0` is supported.
+        how : {'any', 'all'}, default 'any'
+            Determine if row is removed from TdsFrame, when we have at least one NA or all NA.
+            * 'any' : If any NA values are present, drop that row.
+            * 'all' : If all values are NA, drop that row.
+        thresh : int, optional
+            Not implemented yet.
+        subset : list-like, optional
+            Labels along other axis to consider, e.g. if you are dropping rows
+            these would be a list of columns to include.
+        inplace : bool, default False
+            Not implemented yet.
+        ignore_index : bool, default False
+            Not implemented yet.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            TdsFrame with NA entries dropped.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.dropna import PandasApiDropnaFunction
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiDropnaFunction(
+                base_frame=self,
+                axis=axis,
+                how=how,
+                thresh=thresh,
+                subset=subset,
+                inplace=inplace,
+                ignore_index=ignore_index
+            )
+        )
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
