@@ -43,9 +43,43 @@ class TestDropnaFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        with pytest.raises(RuntimeError) as r:
-            frame.assign(newcol=lambda x: [1, 2])  # type: ignore
-        assert r.value.args[0] == "Type not supported"
+        # axis
+        with pytest.raises(NotImplementedError) as n:
+            frame.dropna(axis=1)
+        assert n.value.args[0] == "axis=1 is not supported yet in Pandas API dropna"
+
+        with pytest.raises(ValueError) as v:
+            frame.dropna(axis=2)
+        assert v.value.args[0] == "No axis named 2 for object type TdsFrame"
+
+        # how
+        with pytest.raises(ValueError) as v:
+            frame.dropna(how="one")
+        assert v.value.args[0] == "invalid how option: one"
+
+        # thresh
+        with pytest.raises(NotImplementedError) as n:
+            frame.dropna(thresh=1)
+        assert n.value.args[0] == "thresh parameter is not supported yet in Pandas API dropna"
+
+        # subset
+        with pytest.raises(TypeError) as t:
+            frame.dropna(subset=5)  # type: ignore
+        assert t.value.args[0] == "subset must be a list, tuple or set of column names. Got <class 'int'>"
+
+        with pytest.raises(KeyError) as k:
+            frame.dropna(subset=["col3"])
+        assert k.value.args[0] == "['col3']"
+
+        # inplace
+        with pytest.raises(NotImplementedError) as n:
+            frame.dropna(inplace=True)
+        assert n.value.args[0] == "inplace=True is not supported yet in Pandas API dropna"
+
+        # ignore_index
+        with pytest.raises(NotImplementedError) as n:
+            frame.dropna(ignore_index=True)
+        assert n.value.args[0] == "ignore_index=True is not supported yet in Pandas API dropna"
 
     def test_drop(self) -> None:
         columns = [
@@ -53,38 +87,74 @@ class TestDropnaFunction:
             PrimitiveTdsColumn.integer_column("col2")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.assign(sumColumn=lambda x: x.get_integer("col1") + x.get_integer("col2"))
 
-        expected = '''\
+        # basic
+        newframe = frame.dropna()
+        expected_sql = '''\
             SELECT
                 "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                ("root".col1 + "root".col2) AS "sumColumn"
+                "root".col2 AS "col2"
             FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+                test_schema.test_table AS "root"
+            WHERE
+                (("root".col1 IS NOT NULL) AND ("root".col2 IS NOT NULL))'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
-        expected_pure = (
-            "#Table(test_schema.test_table)#\n"
-            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, sumColumn:c|(toOne($c.col1) + toOne($c.col2))])"
-        )
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+        expected_pure = '''\
+                    #Table(test_schema.test_table)#
+                      ->filter(c|($c.col1->isNotEmpty() && $c.col2->isNotEmpty()))'''
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
+            expected_pure)
 
-        frame = frame.assign(col1=lambda x: x['col2']+5)  # type: ignore
-        expected_pure = (
-            "#Table(test_schema.test_table)#\n"
-            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, sumColumn:c|(toOne($c.col1) + "
-            "toOne($c.col2))])\n"
-            "  ->project(~[col1:c|(toOne($c.col2) + 5), "
-            "col2:c|$c.col2, sumColumn:c|$c.sumColumn])"
-        )
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
-        expected_sql = (
-            'SELECT\n'
-            '    ("root".col2 + 5) AS "col1",\n'
-            '    "root".col2 AS "col2",\n'
-            '    ("root".col1 + "root".col2) AS "sumColumn"\n'
-            'FROM\n'
-            '    test_schema.test_table AS "root"'
-        )
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        # how = all
+        newframe = frame.dropna(how='all')
+        expected_sql = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            WHERE
+                (("root".col1 IS NOT NULL) OR ("root".col2 IS NOT NULL))'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+
+        expected_pure = '''\
+            #Table(test_schema.test_table)#
+              ->filter(c|($c.col1->isNotEmpty() || $c.col2->isNotEmpty()))'''
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
+        # subset
+        newframe = frame.dropna(subset=['col1'])
+
+        expected_sql = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            WHERE
+                ("root".col1 IS NOT NULL)'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+
+        expected_pure = '''\
+            #Table(test_schema.test_table)#
+              ->filter(c|$c.col1->isNotEmpty())'''
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
+        # subset with how = all
+        newframe = frame.dropna(subset=[], how='all')
+        expected_sql = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            WHERE
+                false'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        expected_pure = '''\
+            #Table(test_schema.test_table)#
+              ->filter(c|1!=1)'''
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
+

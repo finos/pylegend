@@ -24,7 +24,7 @@ from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     LogicalBinaryType,
-    LogicalBinaryExpression,
+    LogicalBinaryExpression, BooleanLiteral,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
     PandasApiAppliedFunction,
@@ -74,8 +74,14 @@ class PandasApiDropnaFunction(PandasApiAppliedFunction):
         base_query = self.__base_frame.to_sql_query_object(config)
         new_query = copy_query(base_query)
 
-        cols_to_check = self.__subset or [c.get_name() for c in self.__base_frame.columns()]
+        if self.__subset is not None:
+            cols_to_check = self.__subset
+        else:
+            cols_to_check = [c.get_name() for c in self.__base_frame.columns()]
+
         if not cols_to_check:
+            if self.__how == 'all':
+                new_query.where = BooleanLiteral(value=False)
             return new_query
 
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
@@ -102,8 +108,14 @@ class PandasApiDropnaFunction(PandasApiAppliedFunction):
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         base_pure = self.__base_frame.to_pure(config)
-        cols_to_check = self.__subset or [c.get_name() for c in self.__base_frame.columns()]
+        if self.__subset is not None:
+            cols_to_check = self.__subset
+        else:
+            cols_to_check = [c.get_name() for c in self.__base_frame.columns()]
+
         if not cols_to_check:
+            if self.__how == 'all':
+                return f"{base_pure}{config.separator(1)}->filter(c|1!=1)"
             return base_pure
 
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
