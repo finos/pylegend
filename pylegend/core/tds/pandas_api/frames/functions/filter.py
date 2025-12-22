@@ -95,8 +95,8 @@ class PandasApiFilterFunction(PandasApiAppliedFunction):
         )
 
         if sub_query_required:
-            new_query = create_sub_query(base_query, config, "root", columns_to_retain=columns_to_retain)  # pragma: no cover
-            return new_query  # pragma: no cover
+            new_query = create_sub_query(base_query, config, "root", columns_to_retain=columns_to_retain)
+            return new_query
         else:
             new_cols_with_index: PyLegendList[PyLegendTuple[int, SelectItem]] = []
             for col in base_query.select.selectItems:
