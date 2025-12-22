@@ -14,8 +14,11 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
+from io import StringIO
 from typing import TYPE_CHECKING
+
 from typing_extensions import Concatenate
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -297,4 +300,33 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             engine_kwargs: PyLegendOptional[PyLegendDict[str, PyLegendPrimitiveOrPythonPrimitive]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def shape(self) -> PyLegendTuple[int, int]:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def info(
+            self,
+            verbose: PyLegendOptional[bool] = None,
+            buf: PyLegendOptional[StringIO] = None,
+            max_cols: PyLegendOptional[int] = None,
+            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
+            show_counts: PyLegendOptional[bool] = None
+    ) -> None:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def describe(
+            self,
+            percentiles: PyLegendOptional[PyLegendUnion[PyLegendSequence[float], PyLegendSet[float]]] = None,
+            include: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
+            exclude: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None
+    ) -> str:
         pass  # pragma: no cover
