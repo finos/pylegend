@@ -688,6 +688,24 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         return self.truncate(before=None, after=max(n - 1, -1), axis=0, copy=True)
 
+    @property
+    def shape(self) -> PyLegendTuple[int, int]:
+        """
+        Return a tuple representing the dimensionality of the TdsFrame
+        as (number of rows, number of columns).
+        """
+        import json
+
+        result_string = self.execute_frame_to_string()
+        result_json = json.loads(result_string)
+        result_data = result_json["result"]
+
+        data_rows = result_data.get('rows', [])
+        total_rows = len(data_rows)
+        total_cols = len(self.columns())
+
+        return (total_rows, total_cols)
+
     def info(
             self,
             verbose: PyLegendOptional[bool] = None,

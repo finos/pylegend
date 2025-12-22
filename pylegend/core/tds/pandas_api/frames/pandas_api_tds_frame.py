@@ -306,6 +306,11 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
+    @property
+    @abstractmethod
+    def shape(self) -> PyLegendTuple[int, int]:
+        pass  # pragma: no cover
+
     @abstractmethod
     def info(
             self,
