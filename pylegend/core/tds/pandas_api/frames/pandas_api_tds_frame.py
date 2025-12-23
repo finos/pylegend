@@ -14,8 +14,7 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
-from io import StringIO
-from typing import TYPE_CHECKING, TextIO
+from typing import TYPE_CHECKING
 
 from typing_extensions import Concatenate
 
@@ -309,24 +308,4 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @property
     @abstractmethod
     def shape(self) -> PyLegendTuple[int, int]:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def info(
-            self,
-            verbose: PyLegendOptional[bool] = None,
-            buf: PyLegendOptional[PyLegendUnion[StringIO, TextIO]] = None,
-            max_cols: PyLegendOptional[int] = None,
-            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
-            show_counts: PyLegendOptional[bool] = None
-    ) -> None:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def describe(
-            self,
-            percentiles: PyLegendOptional[PyLegendUnion[PyLegendSequence[float], PyLegendSet[float]]] = None,
-            include: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
-            exclude: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None
-    ) -> str:
         pass  # pragma: no cover
