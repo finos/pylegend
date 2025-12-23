@@ -330,3 +330,15 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             exclude: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None
     ) -> str:
         pass  # pragma: no cover
+
+    @abstractmethod
+    def dropna(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            how: str = "any",
+            thresh: PyLegendOptional[int] = None,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            inplace: bool = False,
+            ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover

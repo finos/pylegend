@@ -21,7 +21,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api, simple_trade_service_frame_pandas_api
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -81,7 +81,7 @@ class TestDropnaFunction:
             frame.dropna(ignore_index=True)
         assert n.value.args[0] == "ignore_index=True is not supported yet in Pandas API dropna"
 
-    def test_drop(self) -> None:
+    def test_dropna(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.integer_column("col2")
@@ -157,4 +157,224 @@ class TestDropnaFunction:
               ->filter(c|1!=1)'''
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
+    # flake8: noqa
+    def test_e2e_dropna(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
 
+        # basic
+        newframe = frame.dropna()
+        expected = {'columns': ['Id',
+             'Date',
+             'Quantity',
+             'Settlement Date Time',
+             'Product/Name',
+             'Account/Name'],
+ 'rows': [{'values': [1,
+                      '2014-12-01',
+                      25.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm X',
+                      'Account 1']},
+          {'values': [2,
+                      '2014-12-01',
+                      320.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm X',
+                      'Account 2']},
+          {'values': [3,
+                      '2014-12-01',
+                      11.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 1']},
+          {'values': [4,
+                      '2014-12-02',
+                      23.0,
+                      '2014-12-03T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 2']},
+          {'values': [5,
+                      '2014-12-02',
+                      32.0,
+                      '2014-12-03T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 1']},
+          {'values': [6,
+                      '2014-12-03',
+                      27.0,
+                      '2014-12-04T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 1']},
+          {'values': [7,
+                      '2014-12-03',
+                      44.0,
+                      '2014-12-04T15:22:23.123456789+0000',
+                      'Firm C',
+                      'Account 1']},
+          {'values': [8,
+                      '2014-12-04',
+                      22.0,
+                      '2014-12-05T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 2']},
+          {'values': [9,
+                      '2014-12-04',
+                      45.0,
+                      '2014-12-05T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 2']}
+          ]}
+
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+        # how = all
+        newframe = frame.dropna(how='all')
+        expected_all = {'columns': ['Id',
+             'Date',
+             'Quantity',
+             'Settlement Date Time',
+             'Product/Name',
+             'Account/Name'],
+ 'rows': [{'values': [1,
+                      '2014-12-01',
+                      25.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm X',
+                      'Account 1']},
+          {'values': [2,
+                      '2014-12-01',
+                      320.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm X',
+                      'Account 2']},
+          {'values': [3,
+                      '2014-12-01',
+                      11.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 1']},
+          {'values': [4,
+                      '2014-12-02',
+                      23.0,
+                      '2014-12-03T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 2']},
+          {'values': [5,
+                      '2014-12-02',
+                      32.0,
+                      '2014-12-03T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 1']},
+          {'values': [6,
+                      '2014-12-03',
+                      27.0,
+                      '2014-12-04T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 1']},
+          {'values': [7,
+                      '2014-12-03',
+                      44.0,
+                      '2014-12-04T15:22:23.123456789+0000',
+                      'Firm C',
+                      'Account 1']},
+          {'values': [8,
+                      '2014-12-04',
+                      22.0,
+                      '2014-12-05T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 2']},
+          {'values': [9,
+                      '2014-12-04',
+                      45.0,
+                      '2014-12-05T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 2']},
+          {'values': [10, '2014-12-04', 38.0, None, 'Firm C', 'Account 2']},
+          {'values': [11, '2014-12-05', 5.0, None, None, None]}]}
+
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_all
+
+        # subset
+        newframe = frame.dropna(subset=['Product/Name', 'Id'])
+        expected_sub = {'columns': ['Id',
+             'Date',
+             'Quantity',
+             'Settlement Date Time',
+             'Product/Name',
+             'Account/Name'],
+ 'rows': [{'values': [1,
+                      '2014-12-01',
+                      25.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm X',
+                      'Account 1']},
+          {'values': [2,
+                      '2014-12-01',
+                      320.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm X',
+                      'Account 2']},
+          {'values': [3,
+                      '2014-12-01',
+                      11.0,
+                      '2014-12-02T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 1']},
+          {'values': [4,
+                      '2014-12-02',
+                      23.0,
+                      '2014-12-03T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 2']},
+          {'values': [5,
+                      '2014-12-02',
+                      32.0,
+                      '2014-12-03T21:00:00.000000000+0000',
+                      'Firm A',
+                      'Account 1']},
+          {'values': [6,
+                      '2014-12-03',
+                      27.0,
+                      '2014-12-04T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 1']},
+          {'values': [7,
+                      '2014-12-03',
+                      44.0,
+                      '2014-12-04T15:22:23.123456789+0000',
+                      'Firm C',
+                      'Account 1']},
+          {'values': [8,
+                      '2014-12-04',
+                      22.0,
+                      '2014-12-05T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 2']},
+          {'values': [9,
+                      '2014-12-04',
+                      45.0,
+                      '2014-12-05T21:00:00.000000000+0000',
+                      'Firm C',
+                      'Account 2']},
+          {'values': [10, '2014-12-04', 38.0, None, 'Firm C', 'Account 2']},
+          ]}
+
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_sub
+
+        newframe = frame.dropna(subset=[])
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_all
+
+        newframe = frame.dropna(subset=[], how='all')
+        expected_emp = {'columns': ['Id',
+             'Date',
+             'Quantity',
+             'Settlement Date Time',
+             'Product/Name',
+             'Account/Name'],
+ 'rows': []}
+        res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected_emp
