@@ -12,23 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+frome datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
     PyLegendList,
     PyLegendUnion,
-    PyLegendDict,
-    PyLegendPrimitive,
+    PyLegendDict
 )
 from pylegend.core.language import (
     PyLegendColumnExpression,
+    convert_literal_to_literal_expression
 )
-from pylegend.core.language.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     Expression,
-    SingleColumn,
+    SingleColumn, FunctionCall, QualifiedName,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
     PandasApiAppliedFunction,
@@ -45,7 +45,10 @@ __all__: PyLegendSequence[str] = ["PandasApiFillnaFunction"]
 
 class PandasApiFillnaFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
-    __value: PyLegendUnion[PyLegendPrimitive, PyLegendDict[str, PyLegendPrimitive]]
+    __value: PyLegendUnion[
+        int, float, str, bool, date, datetime,
+        PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
+    ]
     __axis: PyLegendOptional[PyLegendUnion[int, str]]
     __inplace: bool
     __limit: PyLegendOptional[int]
@@ -57,7 +60,10 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_frame: PandasApiBaseTdsFrame,
-            value: PyLegendUnion[PyLegendPrimitive, PyLegendDict[str, PyLegendPrimitive]],
+            value: PyLegendUnion[
+                int, float, str, bool, date, datetime,
+                PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
+            ],
             axis: PyLegendOptional[PyLegendUnion[int, str]],
             inplace: bool,
             limit: PyLegendOptional[int]
@@ -72,22 +78,25 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
         base_query = self.__base_frame.to_sql_query_object(config)
         new_query = create_sub_query(base_query, config, "root")
 
-        tds_row = PandasApiTdsRow.from_tds_frame("root", self.__base_frame)
+        tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         db_extension = config.sql_to_string_generator().get_db_extension()
-        select_items: PyLegendList[Expression] = []
+        select_items = []
 
         for col in self.__base_frame.columns():
             col_name = col.get_name()
             fill_value = self.__value if not isinstance(self.__value, dict) else self.__value.get(col_name)
-            col_expr = PyLegendColumnExpression(tds_row, col_name)
-            col_sql_expr = col_expr.to_sql_expression({"root": new_query}, config)
+            col_expr = tds_row[col_name]
+            col_sql_expr = col_expr.to_sql_expression({"c": new_query}, config)
 
             if fill_value is not None:
                 fill_expr = convert_literal_to_literal_expression(fill_value)
-                fill_sql_expr = fill_expr.to_sql_expression({"root": new_query}, config)
-                sql_expr = SearchedCaseExpression(
-                    whenClauses=[WhenClause(IsNotNullPredicate(col_sql_expr), col_sql_expr)],
-                    defaultValue=fill_sql_expr
+                fill_sql_expr = fill_expr.to_sql_expression({"c": new_query}, config)
+                sql_expr = FunctionCall(
+                    name=QualifiedName(parts=['coalesce']),
+                    distinct=False,
+                    arguments=[col_sql_expr, fill_sql_expr],
+                    filter_=None,
+                    window=None
                 )
             else:
                 sql_expr = col_sql_expr
@@ -99,8 +108,7 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         base_pure = self.__base_frame.to_pure(config)
-        tds_row = PandasApiTdsRow.from_tds_frame("x", self.__base_frame)
-        projections: PyLegendList[str] = []
+        projections = []
 
         for col in self.__base_frame.columns():
             col_name = col.get_name()
@@ -108,15 +116,13 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
 
             if fill_value is not None:
                 fill_expr = convert_literal_to_literal_expression(fill_value)
-                is_not_null_expr = tds_row[col_name].is_not_null()
-                if_expr = is_not_null_expr.if_else(tds_row[col_name], fill_expr)
-                pure_expr = if_expr.to_pure_expression(config)
-                projections.append(f"'{col_name}':x|{pure_expr}")
+                fill_pure_expr = fill_expr.to_pure_expression(config)
+                projections.append(f"'{col_name}':c|coalesce($c.{col_name}, {fill_pure_expr})")
             else:
-                projections.append(f"'{col_name}':x|x.{col_name}")
+                projections.append(f"'{col_name}':c|$c.{col_name}")
 
         projection_string = ", ".join(projections)
-        return f"{base_pure}{config.separator(1)}->project([x|{projection_string}])"
+        return f"{base_pure}{config.separator(1)}->project(~[{projection_string}])"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
@@ -131,16 +137,15 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
         if isinstance(self.__value, list):
             raise TypeError("Unsupported 'value' type: <class 'list'>")
 
-        if self.__axis not in (None, 0, "index"):
-            raise NotImplementedError("fillna only supports axis=0 (or 'index')")
+        if self.__axis not in (0, 1, "index", "columns"):
+            raise ValueError(f"No axis named {self.__axis} for object type TdsFrame")
+        if self.__axis in (1, "columns"):
+            raise NotImplementedError("axis=1 is not supported yet in Pandas API fillna")
 
         if self.__inplace:
             raise NotImplementedError("inplace=True is not supported yet in Pandas API fillna")
 
         if self.__limit is not None:
             raise NotImplementedError("limit parameter is not supported yet in Pandas API fillna")
-
-        if self.__downcast is not None:
-            raise NotImplementedError("downcast parameter is not supported yet in Pandas API fillna")
 
         return True

@@ -1095,6 +1095,18 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             )
         )
 
+    def fillna(
+            self,
+            base_frame: PandasApiBaseTdsFrame,
+            value: PyLegendUnion[
+                int, float, str, bool, date, datetime,
+                PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
+            ] = None,
+            axis: PyLegendOptional[PyLegendUnion[int, str]],
+            inplace: bool,
+            limit: PyLegendOptional[int]
+    ):
+
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
         pass  # pragma: no cover
