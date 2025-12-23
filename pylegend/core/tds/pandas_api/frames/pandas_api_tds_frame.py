@@ -15,7 +15,9 @@
 from abc import abstractmethod
 from datetime import date, datetime
 from typing import TYPE_CHECKING
+
 from typing_extensions import Concatenate
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -297,4 +299,13 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             engine_kwargs: PyLegendOptional[PyLegendDict[str, PyLegendPrimitiveOrPythonPrimitive]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def shape(self) -> PyLegendTuple[int, int]:
         pass  # pragma: no cover
