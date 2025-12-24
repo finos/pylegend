@@ -38,6 +38,7 @@ from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     Expression,
     FunctionCall,
+    IntegerLiteral,
     QualifiedName,
     QuerySpecification,
     SingleColumn,
@@ -153,6 +154,30 @@ class PandasApiSortInfo:
         return f"{func}(~{escape_column_name(self.__column)})"
 
 
+class PandasApiNoSortInfo(PandasApiSortInfo):
+    __order_by_num: int
+
+    def __init__(
+            self,
+            order_by_num: int = 0
+    ) -> None:
+        self.__order_by_num = order_by_num
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig
+    ) -> SortItem:
+        return SortItem(
+            sortKey=IntegerLiteral(self.__order_by_num),
+            ordering=SortItemOrdering.ASCENDING,
+            nullOrdering=SortItemNullOrdering.UNDEFINED
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        func = 'ascending' if self.__direction == PandasApiSortDirection.ASC else 'descending'
+        return f"{func}(~{self.__order_by_num})"
+
 class PandasApiWindowFrame(metaclass=ABCMeta):
     pass
 
@@ -252,9 +277,26 @@ class PandasApiPartialFrame:
             row: "PandasApiTdsRow"
     ) -> PyLegendFloat:
         return PyLegendFloat(PandasApiPercentRankExpression(self, window, row))
+    
+    def lead(
+            self,
+            row: "PandasApiTdsRow"
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLeadRow
+        return PandasApiLeadRow(self, row)
+
+    def lag(
+            self,
+            row: "PandasApiTdsRow"
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLagRow
+        return PandasApiLagRow(self, row)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__var_name}"
+    
+    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
+        return self.__base_frame
 
 
 class PandasApiWindowReference:

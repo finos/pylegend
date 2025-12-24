@@ -36,7 +36,8 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
-    PyLegendDict
+    PyLegendDict,
+    PyLegendHashable
 )
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
@@ -725,6 +726,27 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             na_option=na_option,
             ascending=ascending,
             pct=pct
+        ))
+    
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(
+            base_frame=self,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
         ))
 
     @abstractmethod
