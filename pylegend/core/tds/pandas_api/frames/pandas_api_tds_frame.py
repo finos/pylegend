@@ -311,6 +311,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             ascending: bool = True,
             pct: bool = False
     ) -> "PandasApiTdsFrame":
+        pass
+
+    @abstractmethod
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 

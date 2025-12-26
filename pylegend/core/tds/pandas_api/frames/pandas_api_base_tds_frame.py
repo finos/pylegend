@@ -697,6 +697,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending=ascending,
             pct=pct
         ))
+
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         """
         Return the first `n` rows by calling truncate on rows.
