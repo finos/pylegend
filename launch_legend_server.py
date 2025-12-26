@@ -14,6 +14,10 @@ from fastapi import FastAPI, Body, HTTPException, Query
 from fastapi.responses import JSONResponse, PlainTextResponse
 from tabulate import tabulate 
 
+from pylegend.core.project_cooridnates import VersionedProjectCoordinates
+from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame import PandasApiLegendServiceInputFrame
 from tests.test_helpers.dynamic_port_generator import generate_dynamic_port
 import tests
 
@@ -40,6 +44,11 @@ def legend_test_server():
     jar_path = relative_path / "resources/legend/server/pylegend-sql-server/target/pylegend-sql-server-1.0-shaded.jar"
     config_path = relative_path / "resources/legend/server/pylegend_sql_server_config.json"
 
+    if not jar_path.is_file():
+        raise FileNotFoundError(f"jar file not found at path: {jar_path}")
+    if not config_path.is_file():
+        raise FileNotFoundError(f"config file not found at path: {config_path}")
+
     cmd = (
         f"{java_executable.as_posix()} -jar "
         f"-Duser.timezone=UTC "
@@ -49,7 +58,7 @@ def legend_test_server():
         f"{config_path.as_posix()}"
     )
 
-    print(f"Launching Legend Engine server on port {engine_port}...")
+    print(f"Starting Legend Engine server on port {engine_port}...")
     engine_process = subprocess.Popen(
         shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, shell=False
     )
@@ -94,7 +103,7 @@ def legend_test_server():
 
     yield {"engine_port": engine_port}
 
-    print("Stopping Legend Server...")
+    print("Stopping Legend Engine Server...")
     engine_process.terminate()
     engine_process.wait()
 
@@ -104,24 +113,24 @@ app = FastAPI(title="Legend Engine Tester")
 
 example_sql: str = '''
     SELECT
-        "First Name" AS "First Name",
-        "Last Name" AS "Last Name",
-        "Age" AS "Age",
-        "Firm/Legal Name" AS "Firm/Legal Name"
+        "root"."First Name" AS "First Name",
+        "root"."Last Name" AS "Last Name",
+        "root"."Age" AS "Age",
+        "root"."Firm/Legal Name" AS "Firm/Legal Name"
     FROM
-        func(
-            path => 'pylegend::test::function::SimplePersonFunction__TabularDataSet_1_',
+        service(
+            pattern => '/simpleRelationPersonService',
             coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'
         ) AS "root"
 '''
 example_sql = dedent(example_sql).strip()
 
 
-@app.post("/execute-sql-query-string", summary="Execute SQL query on Legend Engine server")
+@app.post("/execute-sql-query", summary="Execute SQL Query on Legend Engine Server")
 def execute_sql(
     sql: str = Body(..., media_type="text/plain", example=example_sql),
     output_format: str = Query(
-        "table", enum=["table", "json-with-extracted-column-data", "json-with-raw-data"])
+        "table", enum=["table", "json-with-extracted-column-data", "json-with-raw-legend-engine-output"])
 ):
 
     if LEGEND_ENGINE_PORT is None:
@@ -137,7 +146,10 @@ def execute_sql(
         )
 
         if response.status_code != 200:
-            return JSONResponse(status_code=response.status_code, content=response.text)
+            try:
+                return JSONResponse(status_code=response.status_code, content=response.json())
+            except ValueError:
+                return PlainTextResponse(status_code=response.status_code, content=response.text)
 
         raw_data = response.json()
 
@@ -152,13 +164,27 @@ def execute_sql(
                 return PlainTextResponse(table_str)
             elif output_format == "json-with-extracted-column-data":
                 return formatted_data
-            elif output_format == "json-with-raw-data":
+            elif output_format == "json-with-raw-legend-engine-output":
                 return raw_data
 
         return raw_data
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def run_test():
+    frame = PandasApiLegendServiceInputFrame(
+        pattern="/simpleRelationPersonService",
+        project_coordinates=VersionedProjectCoordinates(
+            group_id="org.finos.legend.pylegend",
+            artifact_id="pylegend-test-models",
+            version="0.0.1-SNAPSHOT"
+        ),
+        legend_client=LegendClient("localhost", LEGEND_ENGINE_PORT, secure_http=False)
+    )
+    sql = frame.to_sql_query(FrameToSqlConfig())
+    print(f"sql = {sql}")
 
 
 def main():
@@ -169,13 +195,16 @@ def main():
     try:
         server_info = next(server_generator)
         LEGEND_ENGINE_PORT = server_info['engine_port']
-        
+        SWAGGER_PORT = 42069
+
         print("\n" + "="*60)
-        print(f"Legend Engine server is running on port: {LEGEND_ENGINE_PORT}")
-        print(f"Swagger page is available at: http://127.0.0.1:8000/docs")
+        print(f"Legend Engine Server is running on port: {LEGEND_ENGINE_PORT}")
+        print(f"Swagger page is available at: http://127.0.0.1:{SWAGGER_PORT}/docs")
         print("="*60 + "\n")
 
-        uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+        # run_test()
+
+        uvicorn.run(app, host="127.0.0.1", port=SWAGGER_PORT, log_level="warning")
 
     except KeyboardInterrupt:
         pass
@@ -183,7 +212,7 @@ def main():
         try:
             next(server_generator)
         except StopIteration:
-            print("Legend Engine server successfully stopped")
+            print("Legend Engine Server successfully stopped")
 
 
 if __name__ == "__main__":
