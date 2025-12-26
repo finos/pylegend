@@ -27,7 +27,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
-    PandasApiNoSortInfo,
+    PandasApiDirectSortInfo,
     PandasApiPartialFrame,
     PandasApiSortDirection,
     PandasApiSortInfo,
@@ -38,6 +38,7 @@ from pylegend.core.language.shared.literal_expressions import convert_literal_to
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
+    IntegerLiteral,
     IsNullPredicate,
     NullLiteral,
     QualifiedName,
@@ -74,6 +75,7 @@ class ShiftFunction(PandasApiAppliedFunction):
             PandasApiWindow
         ]
     ]
+    temp_column_name: str
 
     @classmethod
     def name(cls) -> str:
@@ -95,11 +97,15 @@ class ShiftFunction(PandasApiAppliedFunction):
         self.__fill_value = fill_value
         self.__suffix = suffix
 
+        self.temp_column_name = "__internal_sql_column_name__"
+
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix: str = "__internal_sql_column_name__"
 
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
+
+        base_query.select.selectItems.append(
+            SingleColumn(alias=self.temp_column_name, expression=IntegerLiteral(0)))
 
         new_query: QuerySpecification = create_sub_query(base_query, config, "root")
 
@@ -114,23 +120,9 @@ class ShiftFunction(PandasApiAppliedFunction):
                 window=window.to_sql_node(new_query, config))
 
             new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(c[0] + temp_column_name_suffix), expression=window_expr))
+                SingleColumn(alias=db_extension.quote_identifier(self.temp_column_name), expression=window_expr))
 
         new_query.select.selectItems = new_select_items
-
-        new_query = create_sub_query(new_query, config, "root")
-
-        final_select_items: list[SelectItem] = []
-        for col in self.calculate_columns():
-            col_name = col.get_name()
-            col_expr = QualifiedNameReference(QualifiedName([
-                db_extension.quote_identifier("root"), db_extension.quote_identifier(col_name + temp_column_name_suffix)]))
-            final_select_items.append(
-                SingleColumn(
-                    alias=db_extension.quote_identifier(col_name),
-                    expression=col_expr))
-
-        new_query.select.selectItems = final_select_items
 
         return new_query
 
@@ -289,14 +281,13 @@ class ShiftFunction(PandasApiAppliedFunction):
 
             partition_by: PyLegendOptional[PyLegendList[str]] = None
 
-            tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
-            order_by = PandasApiNoSortInfo()
+            order_by = PandasApiDirectSortInfo(self.temp_column_name, PandasApiSortDirection.ASC)
 
             window = PandasApiWindow(partition_by, [order_by], frame=None)
 
             window_ref = PandasApiWindowReference(window=window, var_name="w")
-            result = extend_column[1](partial_frame, window_ref, tds_row)
-            column_expression: PyLegendTuple[str, PyLegendPrimitive] = (current_column_name, result)
+            result: PyLegendPrimitive = extend_column[1](partial_frame, window_ref, tds_row)
+            column_expression = (current_column_name, result)
 
             column_expression_and_window_tuples.append((column_expression, window))
 

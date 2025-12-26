@@ -112,9 +112,9 @@ class PandasApiSortDirection(Enum):
 
 
 class PandasApiSortInfo:
-    __column: str
-    __direction: PandasApiSortDirection
-    __null_ordering: SortItemNullOrdering
+    _column: str
+    _direction: PandasApiSortDirection
+    _null_ordering: SortItemNullOrdering
 
     def __init__(
             self,
@@ -122,9 +122,9 @@ class PandasApiSortInfo:
             direction: PandasApiSortDirection,
             null_ordering: SortItemNullOrdering = SortItemNullOrdering.UNDEFINED
     ) -> None:
-        self.__column = column_expr.get_column()
-        self.__direction = direction
-        self.__null_ordering = null_ordering
+        self._column = column_expr.get_column()
+        self._direction = direction
+        self._null_ordering = null_ordering
 
     def to_sql_node(
             self,
@@ -133,50 +133,43 @@ class PandasApiSortInfo:
     ) -> SortItem:
         return SortItem(
             sortKey=self.__find_column_expression(query, config),
-            ordering=(SortItemOrdering.ASCENDING if self.__direction == PandasApiSortDirection.ASC
+            ordering=(SortItemOrdering.ASCENDING if self._direction == PandasApiSortDirection.ASC
                       else SortItemOrdering.DESCENDING),
-            nullOrdering=self.__null_ordering
+            nullOrdering=self._null_ordering
         )
 
     def __find_column_expression(self, query: QuerySpecification, config: FrameToSqlConfig) -> Expression:
         db_extension = config.sql_to_string_generator().get_db_extension()
+        print(f"query.select.selectItems = {query.select.selectItems}")
         filtered = [
             s for s in query.select.selectItems
             if (isinstance(s, SingleColumn) and
-                s.alias == db_extension.quote_identifier(self.__column))
+                s.alias == db_extension.quote_identifier(self._column))
         ]
         if len(filtered) == 0:
-            raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
+            raise RuntimeError("Cannot find column: " + self._column)  # pragma: no cover
         return filtered[0].expression
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        func = 'ascending' if self.__direction == PandasApiSortDirection.ASC else 'descending'
-        return f"{func}(~{escape_column_name(self.__column)})"
+        func = 'ascending' if self._direction == PandasApiSortDirection.ASC else 'descending'
+        return f"{func}(~{escape_column_name(self._column)})"
 
 
-class PandasApiNoSortInfo(PandasApiSortInfo):
-    __order_by_num: int
+class PandasApiDirectSortInfo(PandasApiSortInfo):
+    _column: str
+    _direction: PandasApiSortDirection
+    _null_ordering: SortItemNullOrdering
 
     def __init__(
             self,
-            order_by_num: int = 0
+            column_name: str,
+            direction: PandasApiSortDirection,
+            null_ordering: SortItemNullOrdering = SortItemNullOrdering.UNDEFINED
     ) -> None:
-        self.__order_by_num = order_by_num
+        self._column = column_name
+        self._direction = direction
+        self._null_ordering = null_ordering
 
-    def to_sql_node(
-            self,
-            query: QuerySpecification,
-            config: FrameToSqlConfig
-    ) -> SortItem:
-        return SortItem(
-            sortKey=IntegerLiteral(self.__order_by_num),
-            ordering=SortItemOrdering.ASCENDING,
-            nullOrdering=SortItemNullOrdering.UNDEFINED
-        )
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        func = 'ascending' if self.__direction == PandasApiSortDirection.ASC else 'descending'
-        return f"{func}(~{self.__order_by_num})"
 
 class PandasApiWindowFrame(metaclass=ABCMeta):
     pass

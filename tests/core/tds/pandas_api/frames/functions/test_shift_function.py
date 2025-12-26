@@ -181,18 +181,14 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__internal_sql_column_name__" AS "col1"
+                lag("root"."col1") OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1"
             FROM
                 (
                     SELECT
-                        lag("root"."col1") OVER (ORDER BY 0) AS "col1__internal_sql_column_name__"
+                        "root".col1 AS "col1",
+                        0 AS "__internal_sql_column_name__"
                     FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
+                        test_schema.test_table AS "root"
                 ) AS "root"
         '''
         expected = dedent(expected).strip()
