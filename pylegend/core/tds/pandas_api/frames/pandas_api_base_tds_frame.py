@@ -697,6 +697,34 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending=ascending,
             pct=pct
         ))
+    def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        """
+        Return the first `n` rows by calling truncate on rows.
+        Negative `n` is not supported.
+        """
+        if not isinstance(n, int):
+            raise TypeError(f"n must be an int, got {type(n)}")
+        if n < 0:
+            raise NotImplementedError("Negative n is not supported yet in Pandas API head")
+
+        return self.truncate(before=None, after=max(n - 1, -1), axis=0, copy=True)
+
+    @property
+    def shape(self) -> PyLegendTuple[int, int]:
+        """
+        Return a tuple representing the dimensionality of the TdsFrame
+        as (number of rows, number of columns).
+        """
+
+        col_name = self.columns()[0].get_name()
+        newframe = self.aggregate(func={col_name: "count"}, axis=0)
+
+        df = newframe.execute_frame_to_pandas_df()
+
+        total_rows = df.iloc[0, 0]
+        total_cols = len(self.columns())
+
+        return (total_rows, total_cols)  # type: ignore
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
