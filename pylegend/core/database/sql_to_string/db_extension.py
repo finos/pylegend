@@ -72,6 +72,9 @@ from pylegend.core.sql.metamodel import (
     Window,
     TableFunction,
     Union,
+    WindowFrame,
+    WindowFrameMode,
+    FrameBound
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -864,14 +867,27 @@ def window_processor(
     if window.windowRef:
         return window.windowRef
 
-    partitions = "PARTITION BY " + (", ".join([extension.process_expression(e, config) for e in window.partitions])) \
-        if window.partitions else ""
+    clauses: list[str] = []
 
-    order_by = "ORDER BY " + (", ".join([extension.process_sort_item(o, config) for o in window.orderBy])) \
-        if window.orderBy else ""
+    if window.partitions:
+        partition_clause = ", ".join(
+            extension.process_expression(expr, config)
+            for expr in window.partitions
+        )
+        clauses.append(f"PARTITION BY {partition_clause}")
 
-    # TODO: Handle window frame
-    return f"OVER ({partitions}{' ' if (partitions != '') and (order_by != '') else ''}{order_by}){''}"
+    if window.orderBy:
+        order_clause = ", ".join(
+            extension.process_sort_item(item, config)
+            for item in window.orderBy
+        )
+        clauses.append(f"ORDER BY {order_clause}")
+
+    if window.windowFrame:
+        frame_clause = extension.process_window_frame(window.windowFrame, config)
+        clauses.append(frame_clause)
+
+    return f"OVER ({' '.join(clauses)})"
 
 
 def table_function_processor(
@@ -899,6 +915,32 @@ def union_processor(
     union_str = "UNION" if union.distinct else "UNION ALL"
     right = extension.process_relation(union.right, config)
     return f"{left}{sep0}{union_str}{sep0}{right}"
+
+
+def window_frame_processor(
+        frame: WindowFrame,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig,
+) -> str:
+    mode = "ROWS" if frame.mode == WindowFrameMode.ROWS else "RANGE"
+
+    def render_bound(bound: FrameBound) -> str:
+        bound_sql = bound.type_.to_sql_string()
+
+        if bound.value is None:
+            return bound_sql
+
+        offset = extension.process_expression(bound.value, config)
+
+        if bound.duration_unit:
+            offset = f"INTERVAL '{offset} {bound.duration_unit.name}'"
+
+        return f"{offset} {bound_sql}"
+
+    start = render_bound(frame.start)
+    end = render_bound(frame.end) if frame.end else "UNBOUNDED FOLLOWING"
+
+    return f"{mode} BETWEEN {start} AND {end}"
 
 
 class SqlToStringDbExtension:
@@ -1260,3 +1302,6 @@ class SqlToStringDbExtension:
 
     def process_union(self, union: Union, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
         return union_processor(union, self, config, nested_subquery)
+
+    def process_window_frame(self, frame: WindowFrame, config: SqlToStringConfig) -> str:
+        return window_frame_processor(frame, self, config)

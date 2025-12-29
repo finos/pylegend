@@ -30,6 +30,9 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiWindow,
     LegendQLApiPartialFrame,
     LegendQLApiWindowReference,
+    LegendQLApiWindowFrame,
+    LegendQLApiWindowFrameMode,
+    LegendQLApiDurationInput
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
@@ -304,6 +307,50 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiGroupByFunction(self, grouping_columns, aggregate_specifications)
         )
 
+    @staticmethod
+    def rows(
+            start: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            end: PyLegendOptional[PyLegendUnion[str, int]] = None) -> LegendQLApiWindowFrame:
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import \
+            infer_window_frame_bound
+
+        return LegendQLApiWindowFrame(
+            LegendQLApiWindowFrameMode.ROWS,
+            infer_window_frame_bound(start),
+            infer_window_frame_bound(end)
+        )
+
+    @staticmethod
+    def range(
+            start: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            end: PyLegendOptional[PyLegendUnion[str, int]] = None) -> LegendQLApiWindowFrame:
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import \
+            infer_window_frame_bound
+
+        return LegendQLApiWindowFrame(
+            LegendQLApiWindowFrameMode.RANGE,
+            infer_window_frame_bound(start),
+            infer_window_frame_bound(end)
+        )
+
+    @staticmethod
+    def duration_range(
+            start: PyLegendOptional[PyLegendUnion[str, LegendQLApiDurationInput]] = None,
+            end: PyLegendOptional[PyLegendUnion[str, LegendQLApiDurationInput]] = None
+    ) -> LegendQLApiWindowFrame:
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import \
+            infer_window_frame_bound
+
+        return LegendQLApiWindowFrame(
+            LegendQLApiWindowFrameMode.RANGE,
+            infer_window_frame_bound(start),
+            infer_window_frame_bound(end)
+        )
+
+    @staticmethod
+    def duration_range_boundary(value: int, unit: str) -> LegendQLApiDurationInput:
+        return LegendQLApiDurationInput(value, unit)
+
     def window(
             self,
             partition_by: PyLegendOptional[
@@ -329,7 +376,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                         ]
                     ]
                 ]
-            ] = None
+            ] = None,
+            frame: PyLegendOptional[LegendQLApiWindowFrame] = None
     ) -> "LegendQLApiWindow":
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import (
             infer_columns_from_frame,
@@ -344,7 +392,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                 None if order_by is None else
                 infer_sorts_from_frame(self, order_by, "'window' function order_by")
             ),
-            frame=None
+            frame=frame
         )
 
     def window_extend(

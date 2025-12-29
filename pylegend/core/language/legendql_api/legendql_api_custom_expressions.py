@@ -27,12 +27,14 @@ from pylegend.core.language import (
     PyLegendColumnExpression,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    convert_literal_to_literal_expression,
 )
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
     PyLegendList,
     PyLegendDict,
+    PyLegendUnion,
 )
 from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
@@ -44,7 +46,13 @@ from pylegend.core.sql.metamodel import (
     SortItemNullOrdering,
     Window,
     FunctionCall,
-    QualifiedName, IntegerLiteral
+    QualifiedName,
+    IntegerLiteral,
+    WindowFrame,
+    WindowFrameMode,
+    FrameBound,
+    FrameBoundType,
+    DurationUnit
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from typing import TYPE_CHECKING
@@ -64,6 +72,12 @@ __all__: PyLegendSequence[str] = [
     "LegendQLApiWindow",
     "LegendQLApiPartialFrame",
     "LegendQLApiWindowReference",
+    "LegendQLApiFrameBound",
+    "LegendQLApiWindowFrameMode",
+    "LegendQLApiWindowFrame",
+    "LegendQLApiDurationInput",
+    "LegendQLApiDurationUnit",
+    "LegendQLApiWindowFrameBoundType"
 ]
 
 
@@ -168,8 +182,208 @@ class LegendQLApiSortInfo:
         return f"{func}(~{escape_column_name(self.__column)})"
 
 
-class LegendQLApiWindowFrame(metaclass=ABCMeta):
-    pass
+class LegendQLApiWindowFrameMode(Enum):
+    ROWS = 1,
+    RANGE = 2
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return "rows" if self == LegendQLApiWindowFrameMode.ROWS else "_range"
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig
+    ) -> WindowFrameMode:
+        return WindowFrameMode.ROWS if self == LegendQLApiWindowFrameMode.ROWS else WindowFrameMode.RANGE
+
+
+class LegendQLApiWindowFrameBoundType(Enum):
+    UNBOUNDED = 1
+    PRECEDING = 2
+    CURRENT_ROW = 3
+    FOLLOWING = 4
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig,
+            is_start_bound: bool
+    ) -> FrameBoundType:
+        if self is LegendQLApiWindowFrameBoundType.UNBOUNDED:
+            return (
+                FrameBoundType.UNBOUNDED_PRECEDING
+                if is_start_bound
+                else FrameBoundType.UNBOUNDED_FOLLOWING
+            )
+
+        mapping = {
+            LegendQLApiWindowFrameBoundType.PRECEDING: FrameBoundType.PRECEDING,
+            LegendQLApiWindowFrameBoundType.CURRENT_ROW: FrameBoundType.CURRENT_ROW,
+            LegendQLApiWindowFrameBoundType.FOLLOWING: FrameBoundType.FOLLOWING,
+        }
+
+        try:
+            return mapping[self]
+        except KeyError:
+            raise ValueError(f"Unsupported frame bound type: {self}")
+
+
+class LegendQLApiDurationUnit(Enum):
+    YEARS = 1
+    MONTHS = 2
+    WEEKS = 3
+    DAYS = 4
+    HOURS = 5
+    MINUTES = 6
+    SECONDS = 7
+    MILLISECONDS = 8
+    MICROSECONDS = 9
+    NANOSECONDS = 10
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return self.name
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig
+    ) -> DurationUnit:
+        mapping = {
+            LegendQLApiDurationUnit.YEARS: DurationUnit.YEAR,
+            LegendQLApiDurationUnit.MONTHS: DurationUnit.MONTH,
+            LegendQLApiDurationUnit.WEEKS: DurationUnit.WEEK,
+            LegendQLApiDurationUnit.DAYS: DurationUnit.DAY,
+            LegendQLApiDurationUnit.HOURS: DurationUnit.HOUR,
+            LegendQLApiDurationUnit.MINUTES: DurationUnit.MINUTE,
+            LegendQLApiDurationUnit.SECONDS: DurationUnit.SECOND,
+            LegendQLApiDurationUnit.MILLISECONDS: DurationUnit.MILLISECOND,
+            LegendQLApiDurationUnit.MICROSECONDS: DurationUnit.MICROSECOND,
+            LegendQLApiDurationUnit.NANOSECONDS: DurationUnit.NANOSECOND,
+        }
+
+        try:
+            return mapping[self]
+        except KeyError:
+            raise ValueError(f"Unsupported duration unit: {self}")
+
+    @classmethod
+    def from_string(cls, value: str) -> "LegendQLApiDurationUnit":
+        try:
+            return cls[value.upper()]
+        except KeyError:
+            raise ValueError(
+                f"Invalid duration unit '{value}'. "
+                f"Supported values: {[u.name.lower() for u in cls]}"
+            )
+
+
+class LegendQLApiDurationInput:
+    __offset: int
+    __unit: str
+
+    def __init__(self, offset: int, unit: str) -> None:
+        self.__offset = offset
+        self.__unit = unit
+
+    def get_offset(self) -> int:
+        return self.__offset
+
+    def get_unit(self) -> str:
+        return self.__unit
+
+
+class LegendQLApiFrameBound:
+    __bound_type: LegendQLApiWindowFrameBoundType
+    __row_offset: PyLegendOptional[PyLegendUnion[int, float]]
+    __duration_unit: PyLegendOptional[LegendQLApiDurationUnit]
+
+    def __init__(
+            self,
+            bound_type: LegendQLApiWindowFrameBoundType,
+            row_offset: PyLegendOptional[PyLegendUnion[int, float]] = None,
+            duration_unit: PyLegendOptional[LegendQLApiDurationUnit] = None,
+    ) -> None:
+        if bound_type in (
+                LegendQLApiWindowFrameBoundType.PRECEDING,
+                LegendQLApiWindowFrameBoundType.FOLLOWING,
+        ) and row_offset is None:
+            raise ValueError(f"row_offset must be provided for bound_type {bound_type.name}")
+
+        if bound_type not in (
+                LegendQLApiWindowFrameBoundType.PRECEDING,
+                LegendQLApiWindowFrameBoundType.FOLLOWING,
+        ) and row_offset is not None:
+            raise ValueError(f"row_offset is not allowed for bound_type {bound_type.name}")
+
+        self.__bound_type = bound_type
+        self.__row_offset = row_offset
+        self.__duration_unit = duration_unit
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        if self.__bound_type == LegendQLApiWindowFrameBoundType.UNBOUNDED:
+            return "unbounded()"
+
+        elif self.__bound_type == LegendQLApiWindowFrameBoundType.CURRENT_ROW:
+            expr = "0"
+
+        else:
+            expr = convert_literal_to_literal_expression(
+                self.__row_offset
+            ).to_pure_expression(config) if self.__row_offset is not None else ""
+
+        if self.__duration_unit is not None:
+            expr += f", DurationUnit.{self.__duration_unit.to_pure_expression(config)}"
+
+        return expr
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig,
+            is_start_bound: bool,
+    ) -> FrameBound:
+        value = (convert_literal_to_literal_expression(abs(self.__row_offset))
+                 .to_sql_expression({"w": query}, config)) \
+            if self.__row_offset is not None else None
+        frame_bound_type = self.__bound_type.to_sql_node(query, config, is_start_bound)
+        duration_unit = self.__duration_unit.to_sql_node(
+            query,
+            config) if self.__duration_unit is not None else None
+        return FrameBound(frame_bound_type, value, duration_unit)
+
+
+class LegendQLApiWindowFrame:
+    __mode: LegendQLApiWindowFrameMode
+    __start_bound: LegendQLApiFrameBound
+    __end_bound: LegendQLApiFrameBound
+
+    def __init__(
+            self,
+            mode: LegendQLApiWindowFrameMode,
+            start_bound: LegendQLApiFrameBound,
+            end_bound: LegendQLApiFrameBound,
+    ) -> None:
+        self.__mode = mode
+        self.__start_bound = start_bound
+        self.__end_bound = end_bound
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        mode_str = self.__mode.to_pure_expression(config)
+        start_expr = self.__start_bound.to_pure_expression(config)
+        end_expr = self.__end_bound.to_pure_expression(config)
+
+        return f"{mode_str}({start_expr}, {end_expr})"
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig
+    ) -> WindowFrame:
+        return WindowFrame(
+            mode=self.__mode.to_sql_node(query, config),
+            start=self.__start_bound.to_sql_node(query, config, True),
+            end=self.__end_bound.to_sql_node(query, config, False) if self.__end_bound is not None else None,
+        )
 
 
 class LegendQLApiWindow:
@@ -211,7 +425,10 @@ class LegendQLApiWindow:
                 [] if self.__order_by is None else
                 [sort_info.to_sql_node(query, config) for sort_info in self.__order_by]
             ),
-            windowFrame=None
+            windowFrame=(
+                None if self.__frame is None else
+                self.__frame.to_sql_node(query, config)
+            ),
         )
 
     @staticmethod
@@ -235,7 +452,10 @@ class LegendQLApiWindow:
             "[]" if self.__order_by is None or len(self.__order_by) == 0
             else "[" + (', '.join([s.to_pure_expression(config) for s in self.__order_by])) + "]"
         )
-        return f"over({partitions_str}, {sorts_str})"
+
+        frame_str = f", {self.__frame.to_pure_expression(config)}" if self.__frame else ""
+
+        return f"over({partitions_str}, {sorts_str}{frame_str})"
 
 
 class LegendQLApiPartialFrame:
