@@ -727,7 +727,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending=ascending,
             pct=pct
         ))
-    
+
     def shift(
             self,
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,

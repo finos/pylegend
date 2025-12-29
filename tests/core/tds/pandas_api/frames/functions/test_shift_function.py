@@ -29,8 +29,8 @@ from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
 
-USE_LEGEND_ENGINE: bool = False
 TEST_PURE: bool = False
+USE_LEGEND_ENGINE: bool = False
 
 
 class TestErrorsOnBaseFrame:
@@ -181,16 +181,21 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             SELECT
-                lag("root"."col1") OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1"
+                "root"."col1__internal_sql_column_name__" AS "col1"
             FROM
                 (
                     SELECT
-                        "root".col1 AS "col1",
-                        0 AS "__internal_sql_column_name__"
+                        lag("root"."col1") OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__"
                     FROM
-                        test_schema.test_table AS "root"
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
                 ) AS "root"
-        '''
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
@@ -213,13 +218,13 @@ class TestEndToEndUsage:
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
+                {"values": [None, None, None, None]},
                 {"values": ["Peter", "Smith", 23, "Firm X"]},
                 {"values": ["John", "Johnson", 22, "Firm X"]},
                 {"values": ["John", "Hill", 12, "Firm X"]},
                 {"values": ["Anthony", "Allen", 22, "Firm X"]},
                 {"values": ["Fabrice", "Roberts", 34, "Firm A"]},
                 {"values": ["Oliver", "Hill", 32, "Firm B"]},
-                {"values": ["David", "Harris", 35, "Firm C"]},
             ],
         }
         res = frame.execute_frame_to_string()

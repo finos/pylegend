@@ -140,7 +140,6 @@ class PandasApiSortInfo:
 
     def __find_column_expression(self, query: QuerySpecification, config: FrameToSqlConfig) -> Expression:
         db_extension = config.sql_to_string_generator().get_db_extension()
-        print(f"query.select.selectItems = {query.select.selectItems}")
         filtered = [
             s for s in query.select.selectItems
             if (isinstance(s, SingleColumn) and

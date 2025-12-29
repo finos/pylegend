@@ -76,6 +76,7 @@ class ShiftFunction(PandasApiAppliedFunction):
         ]
     ]
     temp_column_name: str
+    temp_column_name_suffix: str
 
     @classmethod
     def name(cls) -> str:
@@ -98,6 +99,7 @@ class ShiftFunction(PandasApiAppliedFunction):
         self.__suffix = suffix
 
         self.temp_column_name = "__internal_sql_column_name__"
+        self.temp_column_name_suffix = "__internal_sql_column_name__"
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
 
@@ -105,24 +107,38 @@ class ShiftFunction(PandasApiAppliedFunction):
         db_extension = config.sql_to_string_generator().get_db_extension()
 
         base_query.select.selectItems.append(
-            SingleColumn(alias=self.temp_column_name, expression=IntegerLiteral(0)))
+            SingleColumn(alias=db_extension.quote_identifier(self.temp_column_name), expression=IntegerLiteral(0)))
 
         new_query: QuerySpecification = create_sub_query(base_query, config, "root")
-
         new_select_items: list[SelectItem] = []
 
         for c, window in self.__column_expression_and_window_tuples:
             col_sql_expr: Expression = c[1].to_sql_expression({"r": new_query}, config)
-
-            window_expr: Expression
             window_expr = WindowExpression(
                 nested=col_sql_expr,
                 window=window.to_sql_node(new_query, config))
 
             new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(self.temp_column_name), expression=window_expr))
+                SingleColumn(alias=db_extension.quote_identifier(c[0] + self.temp_column_name_suffix), expression=window_expr))
 
         new_query.select.selectItems = new_select_items
+
+        new_query = create_sub_query(new_query, config, "root")
+
+        final_select_items: list[SelectItem] = []
+        for col in self.calculate_columns():
+            col_name = col.get_name()
+            col_expr = QualifiedNameReference(QualifiedName([
+                db_extension.quote_identifier("root"),
+                db_extension.quote_identifier(col_name + self.temp_column_name_suffix)]))
+            final_select_items.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(col_name),
+                    expression=col_expr
+                )
+            )
+
+        new_query.select.selectItems = final_select_items
 
         return new_query
 
@@ -254,15 +270,17 @@ class ShiftFunction(PandasApiAppliedFunction):
                         p: PandasApiPartialFrame,
                         w: PandasApiWindowReference,
                         r: PandasApiTdsRow,
+                        col=column_name
                 ) -> PyLegendPrimitive:
-                    return p.lag(r)[column_name]
+                    return p.lag(r)[col]
             else:
                 def lambda_func(
                         p: PandasApiPartialFrame,
                         w: PandasApiWindowReference,
                         r: PandasApiTdsRow,
+                        col=column_name
                 ) -> PyLegendPrimitive:
-                    return p.lead(r)[column_name]
+                    return p.lead(r)[col]
 
             extend_columns.append((column_name, lambda_func))
 

@@ -19,6 +19,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendDict,
     PyLegendSet,
+    PyLegendHashable,
+    PyLegendSequence,
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -362,4 +364,25 @@ class PandasApiGroupbyTdsFrame:
             na_option=na_option,
             ascending=ascending,
             pct=pct
+        ))
+
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(
+            base_frame=self,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
         ))
