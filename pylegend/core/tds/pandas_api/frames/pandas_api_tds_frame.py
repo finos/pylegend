@@ -306,31 +306,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
-    @property
-    @abstractmethod
-    def shape(self) -> PyLegendTuple[int, int]:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def info(
-            self,
-            verbose: PyLegendOptional[bool] = None,
-            buf: PyLegendOptional[StringIO] = None,
-            max_cols: PyLegendOptional[int] = None,
-            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
-            show_counts: PyLegendOptional[bool] = None
-    ) -> None:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def describe(
-            self,
-            percentiles: PyLegendOptional[PyLegendUnion[PyLegendSequence[float], PyLegendSet[float]]] = None,
-            include: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None,
-            exclude: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str], PyLegendSet[str]]] = None
-    ) -> str:
-        pass  # pragma: no cover
-
     @abstractmethod
     def dropna(
             self,
@@ -340,5 +315,18 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             subset: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             inplace: bool = False,
             ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def fillna(
+            self,
+            value: PyLegendUnion[
+                int, float, str, bool, date, datetime,
+                PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
+            ] = None,
+            axis: PyLegendOptional[PyLegendUnion[int, str]] = 0,
+            inplace: bool = False,
+            limit: PyLegendOptional[int] = None
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

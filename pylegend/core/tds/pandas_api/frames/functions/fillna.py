@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-frome datetime import date, datetime
+from datetime import date, datetime
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
@@ -21,13 +22,11 @@ from pylegend._typing import (
     PyLegendDict
 )
 from pylegend.core.language import (
-    PyLegendColumnExpression,
     convert_literal_to_literal_expression
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    Expression,
     SingleColumn, FunctionCall, QualifiedName,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
@@ -36,7 +35,7 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame i
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import (
     PandasApiBaseTdsFrame,
 )
-from pylegend.core.tds.sql_query_helpers import create_sub_query
+from pylegend.core.tds.sql_query_helpers import copy_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 
@@ -76,7 +75,7 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.__base_frame.to_sql_query_object(config)
-        new_query = create_sub_query(base_query, config, "root")
+        new_query = copy_query(base_query)
 
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         db_extension = config.sql_to_string_generator().get_db_extension()
@@ -134,8 +133,11 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
-        if isinstance(self.__value, list):
-            raise TypeError("Unsupported 'value' type: <class 'list'>")
+        if self.__value is None:
+            raise ValueError("Must specify a fill 'value'")
+
+        if not isinstance(self.__value, (int, float, str, bool, date, datetime, dict)):
+            raise TypeError(f"'value' parameter must be a scalar or dict, but you passed a {type(self.__value)}")
 
         if self.__axis not in (0, 1, "index", "columns"):
             raise ValueError(f"No axis named {self.__axis} for object type TdsFrame")
