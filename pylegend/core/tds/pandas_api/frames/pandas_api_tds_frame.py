@@ -328,7 +328,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             value: PyLegendUnion[
                 int, float, str, bool, date, datetime,
                 PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
-            ] = None,
+            ] = None,  # type: ignore
             axis: PyLegendOptional[PyLegendUnion[int, str]] = 0,
             inplace: bool = False,
             limit: PyLegendOptional[int] = None

@@ -54,7 +54,7 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "fillna"
+        return "fillna"  # pragma: no cover
 
     def __init__(
             self,
@@ -98,11 +98,11 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
                     window=None
                 )
             else:
-                sql_expr = col_sql_expr
+                sql_expr = col_sql_expr  # type: ignore
 
             select_items.append(SingleColumn(alias=db_extension.quote_identifier(col_name), expression=sql_expr))
 
-        new_query.select.selectItems = select_items
+        new_query.select.selectItems = select_items  # type: ignore
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:

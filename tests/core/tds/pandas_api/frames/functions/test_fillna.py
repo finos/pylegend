@@ -45,7 +45,7 @@ class TestFillnaFunction:
 
         # value
         with pytest.raises(TypeError) as t:
-            frame.fillna(value=[5])
+            frame.fillna(value=[5])  # type: ignore
         assert t.value.args[0] == "'value' parameter must be a scalar or dict, but you passed a <class 'list'>"
 
         with pytest.raises(ValueError) as v:

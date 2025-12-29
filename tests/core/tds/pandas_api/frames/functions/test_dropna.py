@@ -157,6 +157,43 @@ class TestDropnaFunction:
               ->filter(c|1!=1)'''
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
+        # subset with unkown columns
+        newframe = frame.dropna(subset=[])
+        expected_sql = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        expected_pure = '''\
+            #Table(test_schema.test_table)#'''
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
+    def test_dropna_chained(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        # filter
+        newframe = frame[frame['col1'] > 5].dropna()  # type: ignore
+        expected_sql = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            WHERE
+                (("root".col1 > 5) AND (("root".col1 IS NOT NULL) AND ("root".col2 IS NOT NULL)))'''
+        assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        expected_pure = '''\
+            #Table(test_schema.test_table)#
+              ->filter(c|($c.col1 > 5))
+              ->filter(c|($c.col1->isNotEmpty() && $c.col2->isNotEmpty()))'''
+        assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
     # flake8: noqa
     def test_e2e_dropna(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
