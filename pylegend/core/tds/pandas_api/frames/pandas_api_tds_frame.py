@@ -14,7 +14,6 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
-from io import StringIO
 from typing import TYPE_CHECKING
 
 from typing_extensions import Concatenate
@@ -304,6 +303,11 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
     @abstractmethod
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def shape(self) -> PyLegendTuple[int, int]:
         pass  # pragma: no cover
 
     @abstractmethod

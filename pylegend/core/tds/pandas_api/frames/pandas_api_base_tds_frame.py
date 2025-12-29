@@ -15,7 +15,6 @@
 import copy
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
-from io import StringIO
 from typing import TYPE_CHECKING
 
 from typing_extensions import Concatenate
@@ -687,6 +686,23 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             raise NotImplementedError("Negative n is not supported yet in Pandas API head")
 
         return self.truncate(before=None, after=max(n - 1, -1), axis=0, copy=True)
+
+    @property
+    def shape(self) -> PyLegendTuple[int, int]:
+        """
+        Return a tuple representing the dimensionality of the TdsFrame
+        as (number of rows, number of columns).
+        """
+
+        col_name = self.columns()[0].get_name()
+        newframe = self.aggregate(func={col_name: "count"}, axis=0)
+
+        df = newframe.execute_frame_to_pandas_df()
+
+        total_rows = df.iloc[0, 0]
+        total_cols = len(self.columns())
+
+        return (total_rows, total_cols)  # type: ignore
 
     def dropna(
             self,
