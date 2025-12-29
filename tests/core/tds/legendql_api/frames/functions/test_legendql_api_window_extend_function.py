@@ -334,7 +334,9 @@ class TestWindowExtendAppliedFunction:
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
                                 "root".col3 AS "col3"
-                         FROM test_schema.test_table AS "root") AS "root"'''
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -372,7 +374,9 @@ class TestWindowExtendAppliedFunction:
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
                                 "root".col3 AS "col3"
-                         FROM test_schema.test_table AS "root") AS "root"'''
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
