@@ -581,7 +581,7 @@ class TestWindowExtendAppliedFunction:
                     "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND INTERVAL '1 MONTH' FOLLOWING",
             ),
             (
-                    lambda f: f.range(0, f.duration_range_boundary(1, "HOURS")),
+                    lambda f: f.duration_range(0, f.duration_range_boundary(1, "HOURS")),
                     "_range(0, 1, DurationUnit.HOURS)",
                     "RANGE BETWEEN CURRENT ROW AND INTERVAL '1 HOUR' FOLLOWING",
             ),

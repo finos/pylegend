@@ -150,7 +150,7 @@ def infer_window_frame_bound(
 ) -> LegendQLApiFrameBound:
     def bound_from_offset(
             offset: PyLegendUnion[int, float],
-            duration_unit: LegendQLApiDurationUnit | None = None,
+            duration_unit: PyLegendOptional[LegendQLApiDurationUnit] = None,
     ) -> LegendQLApiFrameBound:
         if offset == 0:
             return LegendQLApiFrameBound(
