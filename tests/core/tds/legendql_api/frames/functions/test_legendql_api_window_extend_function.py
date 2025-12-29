@@ -508,7 +508,7 @@ class TestWindowExtendAppliedFunction:
                 'col13:{p,w,r | $p->last($w, $r).col1}, col14:{p,w,r | $p->nth($w, $r, 10).col1}])')
 
     @pytest.mark.parametrize(
-        "frame_builder, pure_expression, sql_expression",
+        "frame_builder, pure_expr, sql_expression",
         [
             (
                     lambda f: f.rows(),
@@ -589,7 +589,7 @@ class TestWindowExtendAppliedFunction:
                     [LegendQLApiTableSpecInputFrame],
                     LegendQLApiWindowFrame
             ],
-            pure_expression: str,
+            pure_expr: str,
             sql_expression: str,
     ) -> None:
         columns = [
@@ -609,26 +609,24 @@ class TestWindowExtendAppliedFunction:
         )
 
         expected_pure = f'''\
-                            #Table(test_schema.test_table)#
-                              ->extend(over(~[col2], [ascending(~col3)], {pure_expression}),\
-                               ~col4:{{p,w,r | $r.col1}}:{{c | $c->sum()}})'''
+        #Table(test_schema.test_table)#
+          ->extend(over(~[col2], [ascending(~col3)], {pure_expr}), ~col4:{{p,w,r | $r.col1}}:{{c | $c->sum()}})'''
 
-        expected_sql = dedent(f'''\
-                            SELECT
-                                "root"."col1" AS "col1",
-                                "root"."col2" AS "col2",
-                                "root"."col3" AS "col3",
-                                SUM("root"."col1") OVER \
-                                (PARTITION BY "root"."col2" ORDER BY "root"."col3" {sql_expression}) AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2",
-                                        "root".col3 AS "col3"
-                                    FROM
-                                        test_schema.test_table AS "root"
-                                ) AS "root"''')
+        expected_sql = f'''\
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                SUM("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3" {sql_expression}) AS "col4"
+            FROM
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2",
+                        "root".col3 AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
 
         assert generate_pure_query_and_compile(
             frame2,
