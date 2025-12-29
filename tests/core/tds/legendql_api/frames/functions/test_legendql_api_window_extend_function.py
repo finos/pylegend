@@ -605,7 +605,7 @@ class TestWindowExtendAppliedFunction:
                 order_by="col3",
                 frame=frame_builder(frame),
             ),
-            [("col4", lambda p, w, r: r.col1, lambda c: c.sum())],
+            [("col4", lambda p, w, r: r.col1, lambda c: c.sum())],  # type: ignore
         )
 
         expected_pure = f'''\
