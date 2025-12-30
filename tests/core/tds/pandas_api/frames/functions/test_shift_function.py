@@ -19,6 +19,7 @@ import pandas as pd
 import pytest
 from pylegend._typing import (
     PyLegendDict,
+    PyLegendList,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
@@ -360,23 +361,20 @@ class TestUsageOnBaseFrame:
 
 
 @pytest.fixture(scope="class")
-def pandas_df_simple_person():
-    data = {
-        "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
-        "rows": [
-            {"values": ["Peter", "Smith", 23, "Firm X"]},
-            {"values": ["John", "Johnson", 22, "Firm X"]},
-            {"values": ["John", "Hill", 12, "Firm X"]},
-            {"values": ["Anthony", "Allen", 22, "Firm X"]},
-            {"values": ["Fabrice", "Roberts", 34, "Firm A"]},
-            {"values": ["Oliver", "Hill", 32, "Firm B"]},
-            {"values": ["David", "Harris", 35, "Firm C"]},
-        ],
-    }
+def pandas_df_simple_person() -> pd.DataFrame:
+    rows: PyLegendList[PyLegendDict[str, PyLegendList[PyLegendUnion[str, int]]]] = [
+        {"values": ["Peter", "Smith", 23, "Firm X"]},
+        {"values": ["John", "Johnson", 22, "Firm X"]},
+        {"values": ["John", "Hill", 12, "Firm X"]},
+        {"values": ["Anthony", "Allen", 22, "Firm X"]},
+        {"values": ["Fabrice", "Roberts", 34, "Firm A"]},
+        {"values": ["Oliver", "Hill", 32, "Firm B"]},
+        {"values": ["David", "Harris", 35, "Firm C"]},
+    ]
 
     return pd.DataFrame(
-        [row["values"] for row in data["rows"]],
-        columns=data["columns"],
+        [row["values"] for row in rows],
+        columns=["First Name", "Last Name", "Age", "Firm/Legal Name"],
     )
 
 
@@ -436,6 +434,6 @@ class TestEndToEndUsageOnBaseFrame:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
         pylegend_output = frame.shift(periods=[1, -1], suffix="_shifted").execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")
+        pandas_output = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")  # type: ignore[call-arg]
 
         assert_frame_equal(left = pylegend_output, right = pandas_output)

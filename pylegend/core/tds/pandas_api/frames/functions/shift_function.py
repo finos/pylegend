@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import date, datetime
-import datetime
-from typing import Type
 from pylegend._typing import (
     PyLegendUnion,
     PyLegendList,
@@ -62,7 +59,6 @@ from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_c
 
 class ShiftFunction(PandasApiAppliedFunction):
     __base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
-    __axis: PyLegendUnion[str, int]
     __periods: PyLegendUnion[int, PyLegendSequence[int]]
     __freq: PyLegendOptional[PyLegendUnion[str, int]]
     __axis: PyLegendUnion[int, str]
@@ -143,37 +139,7 @@ class ShiftFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix: str = "__internal_pure_col_name__"
-
-        def render_single_column_expression(
-                c: PyLegendUnion[
-                    PyLegendTuple[str, PyLegendPrimitive],
-                    PyLegendTuple[str, PyLegendPrimitive, PyLegendPrimitive]
-                ]
-        ) -> str:
-            escaped_col_name: str = escape_column_name(
-                c[0] + temp_column_name_suffix)
-            expr_str: str = (c[1].to_pure_expression(config) if isinstance(c[1], PyLegendPrimitive) else
-                             convert_literal_to_literal_expression(c[1]).to_pure_expression(config))
-            if self.__na_option == 'keep':  # pragma: no cover
-                escaped_column_name: str = escape_column_name(c[0])
-                expr_str = f"if($r.{escaped_column_name}->isEmpty(), | [], | {expr_str})"
-            return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
-
-        extend_strs: PyLegendList[str] = []
-        for c, window in self.__column_expression_and_window_tuples:
-            window_expression: str = window.to_pure_expression(config)
-            extend_strs.append(
-                f"->extend({window_expression}, ~{render_single_column_expression(c)})")
-        extend_str: str = f"{config.separator(1)}".join(extend_strs)
-
-        project_str: str = "->project(~[" + \
-            ", ".join([f"{escape_column_name(c[0])}:p|$p.{escape_column_name(c[0] + temp_column_name_suffix)}"
-                       for c, _ in self.__column_expression_and_window_tuples]) + \
-            "])"
-
-        return f"{self.base_frame().to_pure(config)}{config.separator(1)}" + \
-            f"{extend_str}{config.separator(1)}{project_str}"
+        return f"{self.base_frame().to_pure(config)}{config.separator(1)}"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
@@ -250,7 +216,7 @@ class ShiftFunction(PandasApiAppliedFunction):
     ]:
         column_names: list[str] = [col.get_name() for col in self.base_frame().columns()]
 
-        periods_list: PyLegendList[int] = [self.__periods] if isinstance(self.__periods, int) else self.__periods
+        periods_list: PyLegendList[int] = [self.__periods] if isinstance(self.__periods, int) else PyLegendList(self.__periods)
 
         extend_columns: PyLegendList[
             PyLegendTuple[
