@@ -15,6 +15,7 @@
 import json
 from textwrap import dedent
 
+import pandas as pd
 import pytest
 from pylegend._typing import (
     PyLegendDict,
@@ -64,7 +65,7 @@ class TestErrorsOnBaseFrame:
         expected_msg = "Cannot specify the 'suffix' argument of the shift function if the 'periods' argument is an int."
         assert v.value.args[0] == expected_msg
 
-    def test_fill_value_with_incompatible_types(self) -> None:
+    def test_fill_value_argument(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("int_col"),
                    PrimitiveTdsColumn.string_column("str_col"),
                    PrimitiveTdsColumn.boolean_column("bool_col"),
@@ -79,20 +80,50 @@ class TestErrorsOnBaseFrame:
             frame.shift(fill_value="default_fill")
 
         expected_msg = (
-            "Invalid 'fill_value' argument for the shift function. fill_value argument: default_fill (type: str) "
-            "cannot be applied to the following column(s): "
-            "['TdsColumn(Name: int_col, Type: Integer)', 'TdsColumn(Name: bool_col, Type: Boolean)', 'TdsColumn(Name: date_col, Type: Date)', 'TdsColumn(Name: datetime_col, Type: DateTime)', 'TdsColumn(Name: strictdate_col, Type: StrictDate)', 'TdsColumn(Name: float_col, Type: Float)', 'TdsColumn(Name: num_col, Type: Number)']"
-            " because of type mismatch.")  # noqa: E501
+            "The 'fill_value' argument of the shift function is not supported, but got: fill_value='default_fill'")
         assert v.value.args[0] == expected_msg
 
         with pytest.raises(NotImplementedError) as v:
             frame.shift(fill_value=-1)
 
         expected_msg = (
-            "Invalid 'fill_value' argument for the shift function. fill_value argument: -1 (type: int) "
-            "cannot be applied to the following column(s): "
-            "['TdsColumn(Name: str_col, Type: String)', 'TdsColumn(Name: bool_col, Type: Boolean)', 'TdsColumn(Name: date_col, Type: Date)', 'TdsColumn(Name: datetime_col, Type: DateTime)', 'TdsColumn(Name: strictdate_col, Type: StrictDate)']"
-            " because of type mismatch.")  # noqa: E501
+            "The 'fill_value' argument of the shift function is not supported, but got: fill_value=-1")
+        assert v.value.args[0] == expected_msg
+    
+    def test_periods_argument_as_unsupported_int(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.shift(periods=0)
+
+        expected_msg = (
+            "The 'periods' argument of the shift function is only supported for the values of [1, -1]"
+            " or a list of these, but got: periods=0")
+        assert v.value.args[0] == expected_msg
+
+    def test_periods_argument_as_unsupported_list(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.shift(periods=[1, -1, 2])
+
+        expected_msg = (
+            "The 'periods' argument of the shift function is only supported for the values of [1, -1]"
+            " or a list of these, but got: periods=[1, -1, 2]")
+        assert v.value.args[0] == expected_msg
+    
+    def test_periods_list_with_repitition(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as v:
+            frame.shift(periods=[1, -1, 1])
+
+        expected_msg = (
+            "The 'periods' argument of the shift function cannot contain duplicate values, but got: "
+            "periods=[1, -1, 1]")
         assert v.value.args[0] == expected_msg
 
 
@@ -210,33 +241,36 @@ class TestUsageOnBaseFrame:
             if USE_LEGEND_ENGINE:
                 assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
-    def test_with_periods_argument(self) -> None:
-        columns = [PrimitiveTdsColumn.number_column("col1")]
+    def test_periods_argument_multiple_columns(self) -> None:
+        columns = [PrimitiveTdsColumn.number_column("col1"), PrimitiveTdsColumn.boolean_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.shift(periods=2)
+        frame = frame.shift(periods=1)
 
         expected = '''
             SELECT
-                "root"."col1__internal_sql_column_name__" AS "col1"
+                "root"."col1__internal_sql_column_name__" AS "col1",
+                "root"."col2__internal_sql_column_name__" AS "col2"
             FROM
                 (
                     SELECT
-                        lag("root"."col1", 2) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__"
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__",
+                        lag("root"."col2", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col2__internal_sql_column_name__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
+                                "root".col2 AS "col2",
                                 0 AS "__internal_sql_column_name__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
                 ) AS "root"
-        '''
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
-    def test_with_negative_periods_argument(self) -> None:
-        columns = [PrimitiveTdsColumn.boolean_column("col1")]
+    def test_negative_periods_argument(self) -> None:
+        columns = [PrimitiveTdsColumn.date_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.shift(periods=-1)
 
@@ -260,20 +294,56 @@ class TestUsageOnBaseFrame:
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
-    def test_with_fill_value(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.float_column("col2")]
+    def test_list_periods_no_suffix(self) -> None:
+        columns = [PrimitiveTdsColumn.strictdate_column("col1"), PrimitiveTdsColumn.datetime_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.shift(periods=-3, fill_value=0)
+        frame = frame.shift(periods=[1, -1])
 
         expected = '''
             SELECT
-                "root"."col1__internal_sql_column_name__" AS "col1",
-                "root"."col2__internal_sql_column_name__" AS "col2"
+                "root"."col1_1__internal_sql_column_name__" AS "col1_1",
+                "root"."col2_1__internal_sql_column_name__" AS "col2_1",
+                "root"."col1_-1__internal_sql_column_name__" AS "col1_-1",
+                "root"."col2_-1__internal_sql_column_name__" AS "col2_-1"
             FROM
                 (
                     SELECT
-                        lead("root"."col1", 3, 0) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__",
-                        lead("root"."col2", 3, 0) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col2__internal_sql_column_name__"
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1_1__internal_sql_column_name__",
+                        lag("root"."col2", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col2_1__internal_sql_column_name__",
+                        lead("root"."col1", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1_-1__internal_sql_column_name__",
+                        lead("root"."col2", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col2_-1__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_list_periods_with_suffix(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.shift(periods=[-1, 1], suffix="_custom_suffix")
+
+        expected = '''
+            SELECT
+                "root"."col1_custom_suffix_-1__internal_sql_column_name__" AS "col1_custom_suffix_-1",
+                "root"."col2_custom_suffix_-1__internal_sql_column_name__" AS "col2_custom_suffix_-1",
+                "root"."col1_custom_suffix_1__internal_sql_column_name__" AS "col1_custom_suffix_1",
+                "root"."col2_custom_suffix_1__internal_sql_column_name__" AS "col2_custom_suffix_1"
+            FROM
+                (
+                    SELECT
+                        lead("root"."col1", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1_custom_suffix_-1__internal_sql_column_name__",
+                        lead("root"."col2", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col2_custom_suffix_-1__internal_sql_column_name__",
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1_custom_suffix_1__internal_sql_column_name__",
+                        lag("root"."col2", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col2_custom_suffix_1__internal_sql_column_name__"
                     FROM
                         (
                             SELECT
@@ -289,21 +359,83 @@ class TestUsageOnBaseFrame:
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
 
-class TestEndToEndUsage:
-    def test_simple_usage(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]):
+@pytest.fixture(scope="class")
+def pandas_df_simple_person():
+    data = {
+        "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+        "rows": [
+            {"values": ["Peter", "Smith", 23, "Firm X"]},
+            {"values": ["John", "Johnson", 22, "Firm X"]},
+            {"values": ["John", "Hill", 12, "Firm X"]},
+            {"values": ["Anthony", "Allen", 22, "Firm X"]},
+            {"values": ["Fabrice", "Roberts", 34, "Firm A"]},
+            {"values": ["Oliver", "Hill", 32, "Firm B"]},
+            {"values": ["David", "Harris", 35, "Firm C"]},
+        ],
+    }
+
+    return pd.DataFrame(
+        [row["values"] for row in data["rows"]],
+        columns=data["columns"],
+    )
+
+
+def assert_frame_equal(left: pd.DataFrame, right: pd.DataFrame) -> None:
+    pd.testing.assert_frame_equal(
+        left=left,
+        right=right, 
+        check_dtype=False,
+        check_exact=False,
+        check_like=True
+    )
+
+
+class TestEndToEndUsageOnBaseFrame:
+
+    def test_no_arguments(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.shift()
-        expected = {
-            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
-            "rows": [
-                {"values": [None, None, None, None]},
-                {"values": ["Peter", "Smith", 23, "Firm X"]},
-                {"values": ["John", "Johnson", 22, "Firm X"]},
-                {"values": ["John", "Hill", 12, "Firm X"]},
-                {"values": ["Anthony", "Allen", 22, "Firm X"]},
-                {"values": ["Fabrice", "Roberts", 34, "Firm A"]},
-                {"values": ["Oliver", "Hill", 32, "Firm B"]},
-            ],
-        }
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+
+        pylegend_output = frame.shift().execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.shift()
+
+        assert_frame_equal(left = pylegend_output, right = pandas_output)
+
+    def test_negative_periods(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        pylegend_output = frame.shift(periods=-1).execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.shift(periods=-1)
+
+        assert_frame_equal(left = pylegend_output, right = pandas_output)
+
+    def test_list_periods(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        pylegend_output = frame.shift(periods=[1, -1]).execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.shift(periods=[1, -1])
+
+        assert_frame_equal(left = pylegend_output, right = pandas_output)
+
+    def test_list_periods_with_suffix(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        pylegend_output = frame.shift(periods=[1, -1], suffix="_shifted").execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")
+
+        assert_frame_equal(left = pylegend_output, right = pandas_output)

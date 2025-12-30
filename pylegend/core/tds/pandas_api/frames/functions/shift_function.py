@@ -23,14 +23,12 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendCallable,
     PyLegendHashable,
-    PyLegendDict,
 )
 from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDirectSortInfo,
     PandasApiPartialFrame,
     PandasApiSortDirection,
-    PandasApiSortInfo,
     PandasApiWindow,
     PandasApiWindowReference
 )
@@ -45,15 +43,11 @@ from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import (
     Expression,
     IntegerLiteral,
-    IsNullPredicate,
-    NullLiteral,
     QualifiedName,
     QualifiedNameReference,
     QuerySpecification,
-    SearchedCaseExpression,
     SelectItem,
     SingleColumn,
-    WhenClause,
 )
 from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
@@ -195,53 +189,54 @@ class ShiftFunction(PandasApiAppliedFunction):
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             pass
         else:
-            for col in self.base_frame().columns():
-                new_columns.append(col)
+            base_columns = self.base_frame().columns()
+
+            if isinstance(self.__periods, int):
+                for col in base_columns:
+                    new_columns.append(col)
+            else:
+                for period in self.__periods:
+                    for col in base_columns:
+                        suffix = self.__suffix if self.__suffix is not None else ""
+                        new_name = f"{col.get_name()}{suffix}_{period}"
+                        new_columns.append(col.copy_with_changed_name(new_name))
+
         return new_columns
 
     def validate(self) -> bool:
-        if self.__axis not in [0, "index"]:
-            raise NotImplementedError(
-                f"The 'axis' argument of the shift function must be 0 or 'index', but got: axis={self.__axis!r}")
+
+        valid_periods: PyLegendList[int] = [1, -1]
+        if isinstance(self.__periods, int):
+            if self.__periods not in valid_periods:
+                raise NotImplementedError(
+                    f"The 'periods' argument of the shift function is only supported for the values of {valid_periods}"
+                    f" or a list of these, but got: periods={self.__periods!r}")
+        else:
+            for period in self.__periods:
+                if period not in valid_periods:
+                    raise NotImplementedError(
+                        f"The 'periods' argument of the shift function is only supported for the values of {valid_periods}"
+                        f" or a list of these, but got: periods={self.__periods!r}")
+            if len(self.__periods) != len(set(self.__periods)):
+                raise ValueError(
+                    f"The 'periods' argument of the shift function cannot contain duplicate values, but got: "
+                    f"periods={self.__periods!r}")
 
         if self.__freq is not None:
             raise NotImplementedError(
                 f"The 'freq' argument of the shift function is not supported, but got: freq={self.__freq!r}")
+        
+        if self.__axis not in [0, "index"]:
+            raise NotImplementedError(
+                f"The 'axis' argument of the shift function must be 0 or 'index', but got: axis={self.__axis!r}")
+        
+        if self.__fill_value is not None:
+            raise NotImplementedError(
+                f"The 'fill_value' argument of the shift function is not supported, but got: fill_value={self.__fill_value!r}")
 
         if self.__suffix is not None and isinstance(self.__periods, int):
             raise ValueError(
                 "Cannot specify the 'suffix' argument of the shift function if the 'periods' argument is an int.")
-
-        if self.__fill_value is not None:
-            valid_fill_value_mapping: PyLegendDict[str, PyLegendList[Type]] = {
-                "Boolean": [bool],
-                "StrictDate": [date],
-                "Number": [int, float],
-                "String": [str],
-                "LatestDate": [date],
-                "Float": [float, int],
-                "DateTime": [datetime],
-                "Date": [date],
-                "Integer": [int],
-                "Decimal": [float]
-            }
-
-            mismatched_columns = []
-            fill_value_type = type(self.__fill_value)
-
-            for tds_column in self.calculate_columns():
-                col_type_name = tds_column.get_type()
-                valid_types_for_col = valid_fill_value_mapping.get(col_type_name, [])
-                if fill_value_type not in valid_types_for_col:
-                    mismatched_columns.append(str(tds_column))
-
-            if mismatched_columns:
-                raise NotImplementedError(
-                    "Invalid 'fill_value' argument for the shift function. "
-                    f"fill_value argument: {self.__fill_value} (type: {fill_value_type.__name__}) "
-                    f"cannot be applied to the following column(s): {mismatched_columns} "
-                    "because of type mismatch."
-                )
 
         self.__column_expression_and_window_tuples = self.__construct_column_expression_and_window_tuples()
 
@@ -253,12 +248,9 @@ class ShiftFunction(PandasApiAppliedFunction):
             PandasApiWindow
         ]
     ]:
-        column_names: list[str] = [col.get_name() for col in self.calculate_columns()]
+        column_names: list[str] = [col.get_name() for col in self.base_frame().columns()]
 
-        lambda_func: PyLegendCallable[
-            [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow],
-            PyLegendPrimitive
-        ]
+        periods_list: PyLegendList[int] = [self.__periods] if isinstance(self.__periods, int) else self.__periods
 
         extend_columns: PyLegendList[
             PyLegendTuple[
@@ -270,35 +262,34 @@ class ShiftFunction(PandasApiAppliedFunction):
             ]
         ] = []
 
-        for column_name in column_names:
-            if self.__periods > 0:
-                def lambda_func(
-                        p: PandasApiPartialFrame,
-                        w: PandasApiWindowReference,
-                        r: PandasApiTdsRow,
-                        column_name: str = column_name
-                ) -> PyLegendPrimitive:
-                    if self.__fill_value is not None:
-                        fill_value_primitive: PyLegendPrimitive = \
-                            self.__convert_hashable_to_pylegend_primitive(self.__fill_value)
-                        return p.lag(r, self.__periods, fill_value_primitive)[column_name]
-                    else:
-                        return p.lag(r, self.__periods)[column_name]
-            else:
-                def lambda_func(
-                        p: PandasApiPartialFrame,
-                        w: PandasApiWindowReference,
-                        r: PandasApiTdsRow,
-                        column_name: str = column_name
-                ) -> PyLegendPrimitive:
-                    if self.__fill_value is not None:
-                        fill_value_primitive: PyLegendPrimitive = \
-                            self.__convert_hashable_to_pylegend_primitive(self.__fill_value)
-                        return p.lead(r, -self.__periods, fill_value_primitive)[column_name]
-                    else:
-                        return p.lead(r, -self.__periods)[column_name]
+        for period in periods_list:
+            for column_name in column_names:
+                if isinstance(self.__periods, int):
+                    current_col_name = column_name
+                else:
+                    suffix = self.__suffix if self.__suffix is not None else ""
+                    current_col_name = f"{column_name}{suffix}_{period}"
 
-            extend_columns.append((column_name, lambda_func))
+                if period > 0:
+                    def lambda_func(
+                            p: PandasApiPartialFrame,
+                            w: PandasApiWindowReference,
+                            r: PandasApiTdsRow,
+                            column_name: str = column_name,
+                            period: int = period
+                    ) -> PyLegendPrimitive:
+                        return p.lag(r, period)[column_name]
+                else:
+                    def lambda_func(
+                            p: PandasApiPartialFrame,
+                            w: PandasApiWindowReference,
+                            r: PandasApiTdsRow,
+                            column_name: str = column_name,
+                            period: int = period
+                    ) -> PyLegendPrimitive:
+                        return p.lead(r, -period)[column_name]
+
+                extend_columns.append((current_col_name, lambda_func))
 
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
@@ -326,24 +317,3 @@ class ShiftFunction(PandasApiAppliedFunction):
             column_expression_and_window_tuples.append((column_expression, window))
 
         return column_expression_and_window_tuples
-
-    @staticmethod
-    def __convert_hashable_to_pylegend_primitive(value: PyLegendHashable) -> PyLegendPrimitive:
-        if isinstance(value, PyLegendPrimitive):
-            return value
-        elif isinstance(value, int):
-            return PyLegendInteger(value)
-        elif isinstance(value, float):
-            return PyLegendFloat(value)
-        elif isinstance(value, str):
-            return PyLegendString(value)
-        elif isinstance(value, bool):
-            return PyLegendBoolean(value)
-        elif isinstance(value, date):
-            return PyLegendStrictDate(value)
-        elif isinstance(value, datetime):
-            return PyLegendDateTime(value)
-        else:
-            raise ValueError(
-                f"Cannot convert value of type {type(value).__name__} to PyLegendPrimitive: {value!r}"
-            )
