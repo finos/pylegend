@@ -62,14 +62,23 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
     def limit(self, row_count: int = 5) -> "LegendQLApiTdsFrame":
         return self.head(row_count=row_count)
 
-    def distinct(self) -> "LegendQLApiTdsFrame":
+    def distinct(
+            self,
+            columns: PyLegendOptional[PyLegendUnion[
+                str,
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ]] = None) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_distinct_function import (
             LegendQLApiDistinctFunction
         )
-        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiDistinctFunction(self))
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiDistinctFunction(self,columns))
 
     def select(
             self,

@@ -66,6 +66,20 @@ class TestDistinctAppliedFunction:
         assert generate_pure_query_and_compile(distinct_frame, FrameToPureConfig(False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->distinct()')
 
+        distinct_col1_frame = frame.distinct(["col1"])
+
+        expected = '''\
+                SELECT DISTINCT
+                    "root".col1 AS "col1"
+                FROM
+                    test_schema.test_table AS "root"'''
+        assert distinct_col1_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(distinct_col1_frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->distinct(~[col1])'''
+        )
+
     def test_query_gen_distinct_function_existing_top(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),

@@ -60,7 +60,17 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
-    def distinct(self) -> "LegendQLApiTdsFrame":
+    def distinct(
+            self,
+            columns: PyLegendOptional[PyLegendUnion[
+                str,
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ]] = None
+    ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod
