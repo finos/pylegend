@@ -78,7 +78,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_distinct_function import (
             LegendQLApiDistinctFunction
         )
-        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiDistinctFunction(self,columns))
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiDistinctFunction(self, columns))
 
     def select(
             self,
