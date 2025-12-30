@@ -15,6 +15,7 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendOptional,
 )
 from pylegend.core.language import (
     PyLegendBoolean,
@@ -38,8 +39,9 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDate,
     PandasApiPrimitive,
 )
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.sql.metamodel import Expression, FunctionCall, QualifiedName, QuerySpecification
+from pylegend.core.sql.metamodel import Expression, FunctionCall, IntegerLiteral, QualifiedName, QuerySpecification
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
@@ -80,15 +82,21 @@ class PandasApiTdsRow(AbstractTdsRow):
 class PandasApiLeadRow(PandasApiTdsRow):
     __partial_frame: PandasApiPartialFrame
     __row: "PandasApiTdsRow"
+    __num_rows_to_lead_by: int
+    __fill_value: PyLegendOptional[PyLegendPrimitive]
 
     def __init__(
             self,
             partial_frame: PandasApiPartialFrame,
-            row: "PandasApiTdsRow"
+            row: "PandasApiTdsRow",
+            num_rows_to_lead_by: int = 1,
+            fill_value: PyLegendOptional[PyLegendPrimitive] = None
     ) -> None:
         super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
         self.__partial_frame = partial_frame
         self.__row = row
+        self.__num_rows_to_lead_by = num_rows_to_lead_by
+        self.__fill_value = fill_value
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__partial_frame.to_pure_expression(config)}->lead({self.__row.to_pure_expression(config)})"
@@ -99,10 +107,16 @@ class PandasApiLeadRow(PandasApiTdsRow):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
+        arguments: list[Expression] = [
+            super().column_sql_expression(column, frame_name_to_base_query_map, config),
+            IntegerLiteral(self.__num_rows_to_lead_by)]
+        if self.__fill_value is not None:   
+            arguments.append(self.__fill_value.to_sql_expression(frame_name_to_base_query_map, config))
+
         return FunctionCall(
             name=QualifiedName(parts=["lead"]),
             distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
+            arguments=arguments,
             filter_=None,
             window=None
         )
@@ -111,15 +125,21 @@ class PandasApiLeadRow(PandasApiTdsRow):
 class PandasApiLagRow(PandasApiTdsRow):
     __partial_frame: PandasApiPartialFrame
     __row: "PandasApiTdsRow"
+    __num_rows_to_lag_by: int
+    __fill_value: PyLegendOptional[PyLegendPrimitive]
 
     def __init__(
             self,
             partial_frame: PandasApiPartialFrame,
-            row: "PandasApiTdsRow"
+            row: "PandasApiTdsRow",
+            num_rows_to_lag_by: int = 1,
+            fill_value: PyLegendOptional[PyLegendPrimitive] = None
     ) -> None:
         super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
         self.__partial_frame = partial_frame
         self.__row = row
+        self.__num_rows_to_lag_by = num_rows_to_lag_by
+        self.__fill_value = fill_value
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__partial_frame.to_pure_expression(config)}->lag({self.__row.to_pure_expression(config)})"
@@ -130,10 +150,16 @@ class PandasApiLagRow(PandasApiTdsRow):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
+        arguments: list[Expression] = [
+            super().column_sql_expression(column, frame_name_to_base_query_map, config),
+            IntegerLiteral(self.__num_rows_to_lag_by)]
+        if self.__fill_value is not None:   
+            arguments.append(self.__fill_value.to_sql_expression(frame_name_to_base_query_map, config))
+
         return FunctionCall(
             name=QualifiedName(parts=["lag"]),
             distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
+            arguments=arguments,
             filter_=None,
             window=None
         )

@@ -35,7 +35,13 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindowReference
 )
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
+from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import (
     Expression,
     IntegerLiteral,
@@ -237,11 +243,11 @@ class ShiftFunction(PandasApiAppliedFunction):
                     "because of type mismatch."
                 )
 
-        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples()
+        self.__column_expression_and_window_tuples = self.__construct_column_expression_and_window_tuples()
 
         return True
 
-    def construct_column_expression_and_window_tuples(self) -> PyLegendList[
+    def __construct_column_expression_and_window_tuples(self) -> PyLegendList[
         PyLegendTuple[
             PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
@@ -270,17 +276,27 @@ class ShiftFunction(PandasApiAppliedFunction):
                         p: PandasApiPartialFrame,
                         w: PandasApiWindowReference,
                         r: PandasApiTdsRow,
-                        col=column_name
+                        column_name: str = column_name
                 ) -> PyLegendPrimitive:
-                    return p.lag(r)[col]
+                    if self.__fill_value is not None:
+                        fill_value_primitive: PyLegendPrimitive = \
+                            self.__convert_hashable_to_pylegend_primitive(self.__fill_value)
+                        return p.lag(r, self.__periods, fill_value_primitive)[column_name]
+                    else:
+                        return p.lag(r, self.__periods)[column_name]
             else:
                 def lambda_func(
                         p: PandasApiPartialFrame,
                         w: PandasApiWindowReference,
                         r: PandasApiTdsRow,
-                        col=column_name
+                        column_name: str = column_name
                 ) -> PyLegendPrimitive:
-                    return p.lead(r)[col]
+                    if self.__fill_value is not None:
+                        fill_value_primitive: PyLegendPrimitive = \
+                            self.__convert_hashable_to_pylegend_primitive(self.__fill_value)
+                        return p.lead(r, -self.__periods, fill_value_primitive)[column_name]
+                    else:
+                        return p.lead(r, -self.__periods)[column_name]
 
             extend_columns.append((column_name, lambda_func))
 
@@ -310,3 +326,24 @@ class ShiftFunction(PandasApiAppliedFunction):
             column_expression_and_window_tuples.append((column_expression, window))
 
         return column_expression_and_window_tuples
+
+    @staticmethod
+    def __convert_hashable_to_pylegend_primitive(value: PyLegendHashable) -> PyLegendPrimitive:
+        if isinstance(value, PyLegendPrimitive):
+            return value
+        elif isinstance(value, int):
+            return PyLegendInteger(value)
+        elif isinstance(value, float):
+            return PyLegendFloat(value)
+        elif isinstance(value, str):
+            return PyLegendString(value)
+        elif isinstance(value, bool):
+            return PyLegendBoolean(value)
+        elif isinstance(value, date):
+            return PyLegendStrictDate(value)
+        elif isinstance(value, datetime):
+            return PyLegendDateTime(value)
+        else:
+            raise ValueError(
+                f"Cannot convert value of type {type(value).__name__} to PyLegendPrimitive: {value!r}"
+            )

@@ -185,7 +185,7 @@ class TestUsageOnBaseFrame:
             FROM
                 (
                     SELECT
-                        lag("root"."col1") OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__"
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__"
                     FROM
                         (
                             SELECT
@@ -209,6 +209,84 @@ class TestUsageOnBaseFrame:
             assert frame.to_pure_query(FrameToPureConfig()) == expected
             if USE_LEGEND_ENGINE:
                 assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+
+    def test_with_periods_argument(self) -> None:
+        columns = [PrimitiveTdsColumn.number_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.shift(periods=2)
+
+        expected = '''
+            SELECT
+                "root"."col1__internal_sql_column_name__" AS "col1"
+            FROM
+                (
+                    SELECT
+                        lag("root"."col1", 2) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_with_negative_periods_argument(self) -> None:
+        columns = [PrimitiveTdsColumn.boolean_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.shift(periods=-1)
+
+        expected = '''
+            SELECT
+                "root"."col1__internal_sql_column_name__" AS "col1"
+            FROM
+                (
+                    SELECT
+                        lead("root"."col1", 1) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_with_fill_value(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.float_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.shift(periods=-3, fill_value=0)
+
+        expected = '''
+            SELECT
+                "root"."col1__internal_sql_column_name__" AS "col1",
+                "root"."col2__internal_sql_column_name__" AS "col2"
+            FROM
+                (
+                    SELECT
+                        lead("root"."col1", 3, 0) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col1__internal_sql_column_name__",
+                        lead("root"."col2", 3, 0) OVER (ORDER BY "root"."__internal_sql_column_name__") AS "col2__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
 
 class TestEndToEndUsage:

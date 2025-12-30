@@ -272,17 +272,21 @@ class PandasApiPartialFrame:
     
     def lead(
             self,
-            row: "PandasApiTdsRow"
+            row: "PandasApiTdsRow",
+            num_rows_to_lead_by: int = 1,
+            fill_value: PyLegendOptional[PyLegendPrimitive] = None
     ) -> "PandasApiTdsRow":
         from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLeadRow
-        return PandasApiLeadRow(self, row)
+        return PandasApiLeadRow(self, row, num_rows_to_lead_by, fill_value)
 
     def lag(
             self,
-            row: "PandasApiTdsRow"
+            row: "PandasApiTdsRow",
+            num_rows_to_lag_by: int = 1,
+            fill_value: PyLegendOptional[PyLegendPrimitive] = None
     ) -> "PandasApiTdsRow":
         from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLagRow
-        return PandasApiLagRow(self, row)
+        return PandasApiLagRow(self, row, num_rows_to_lag_by, fill_value)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__var_name}"
