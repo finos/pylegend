@@ -110,7 +110,7 @@ class PandasApiLeadRow(PandasApiTdsRow):
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
             IntegerLiteral(self.__num_rows_to_lead_by)]
-        if self.__fill_value is not None:   
+        if self.__fill_value is not None:
             arguments.append(self.__fill_value.to_sql_expression(frame_name_to_base_query_map, config))
 
         return FunctionCall(
@@ -153,7 +153,7 @@ class PandasApiLagRow(PandasApiTdsRow):
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
             IntegerLiteral(self.__num_rows_to_lag_by)]
-        if self.__fill_value is not None:   
+        if self.__fill_value is not None:
             arguments.append(self.__fill_value.to_sql_expression(frame_name_to_base_query_map, config))
 
         return FunctionCall(

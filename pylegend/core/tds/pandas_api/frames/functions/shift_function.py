@@ -21,7 +21,6 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendHashable,
 )
-from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDirectSortInfo,
     PandasApiPartialFrame,
@@ -29,14 +28,7 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindow,
     PandasApiWindowReference
 )
-from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
-from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
-from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
-from pylegend.core.language.shared.primitives.float import PyLegendFloat
-from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
-from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import (
     Expression,
     IntegerLiteral,
@@ -52,9 +44,8 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import Pandas
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.sql_query_helpers import create_sub_query
-from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 
 
 class ShiftFunction(PandasApiAppliedFunction):
@@ -191,11 +182,11 @@ class ShiftFunction(PandasApiAppliedFunction):
         if self.__freq is not None:
             raise NotImplementedError(
                 f"The 'freq' argument of the shift function is not supported, but got: freq={self.__freq!r}")
-        
+
         if self.__axis not in [0, "index"]:
             raise NotImplementedError(
                 f"The 'axis' argument of the shift function must be 0 or 'index', but got: axis={self.__axis!r}")
-        
+
         if self.__fill_value is not None:
             raise NotImplementedError(
                 f"The 'fill_value' argument of the shift function is not supported, but got: fill_value={self.__fill_value!r}")
@@ -216,7 +207,7 @@ class ShiftFunction(PandasApiAppliedFunction):
     ]:
         column_names: list[str] = [col.get_name() for col in self.base_frame().columns()]
 
-        periods_list: PyLegendList[int] = [self.__periods] if isinstance(self.__periods, int) else PyLegendList(self.__periods)
+        periods_list: PyLegendList[int] = [self.__periods] if isinstance(self.__periods, int) else list(self.__periods)
 
         extend_columns: PyLegendList[
             PyLegendTuple[

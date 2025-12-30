@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 from textwrap import dedent
 
 import pandas as pd
@@ -90,7 +89,7 @@ class TestErrorsOnBaseFrame:
         expected_msg = (
             "The 'fill_value' argument of the shift function is not supported, but got: fill_value=-1")
         assert v.value.args[0] == expected_msg
-    
+
     def test_periods_argument_as_unsupported_int(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
@@ -114,7 +113,7 @@ class TestErrorsOnBaseFrame:
             "The 'periods' argument of the shift function is only supported for the values of [1, -1]"
             " or a list of these, but got: periods=[1, -1, 2]")
         assert v.value.args[0] == expected_msg
-    
+
     def test_periods_list_with_repitition(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
@@ -153,7 +152,7 @@ class TestErrorsOnGroupbyFrame:
         expected_msg = "The 'freq' argument of the shift function is not supported, but got: freq='D'"
         assert v.value.args[0] == expected_msg
 
-    def test_fill_value_with_incompatible_types(self) -> None:
+    def test_fill_value_not_none(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("group_col"),
                    PrimitiveTdsColumn.integer_column("val_col"),
                    PrimitiveTdsColumn.integer_column("random_col")]
@@ -163,40 +162,7 @@ class TestErrorsOnGroupbyFrame:
             frame.groupby("group_col")["val_col"].shift(fill_value="default_fill")
 
         expected_msg = (
-            "Invalid 'fill_value' argument for the shift function. "
-            "fill_value argument: 'default_fill' (type: str) cannot be applied to the column: 'val_col' (type: Integer)"
-            " because of type mismatch")
-        assert v.value.args[0] == expected_msg
-    
-    def test_fill_value_with_incompatible_types_without_column_selection(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("group_col"),
-                   PrimitiveTdsColumn.integer_column("val_col"),
-                   PrimitiveTdsColumn.integer_column("random_col")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(NotImplementedError) as v:
-            frame.groupby("group_col").shift(fill_value="default_fill")
-
-        expected_msg = (
-            "Invalid 'fill_value' argument for the shift function. "
-            "fill_value argument: 'default_fill' (type: str) cannot be applied to the columns: "
-            "['val_col' (type: Integer), 'random_col' (type: Integer)]"
-            " because of type mismatch")
-        assert v.value.args[0] == expected_msg
-
-    def test_fill_value_with_incompatible_types_with_selected_groupby(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("group_col"),
-                   PrimitiveTdsColumn.integer_column("val_col"),
-                   PrimitiveTdsColumn.integer_column("random_col")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(NotImplementedError) as v:
-            frame.groupby("group_col")["group_col"].shift(fill_value="default_fill")
-
-        expected_msg = (
-            "Invalid 'fill_value' argument for the shift function. "
-            "fill_value argument: 'default_fill' (type: str) cannot be applied to the column: 'group_col' (type: Integer)"
-            " because of type mismatch")
+            "The 'fill_value' argument of the shift function is not supported, but got: fill_value='default_fill'")
         assert v.value.args[0] == expected_msg
 
 
@@ -381,7 +347,7 @@ def pandas_df_simple_person() -> pd.DataFrame:
 def assert_frame_equal(left: pd.DataFrame, right: pd.DataFrame) -> None:
     pd.testing.assert_frame_equal(
         left=left,
-        right=right, 
+        right=right,
         check_dtype=False,
         check_exact=False,
         check_like=True
@@ -400,7 +366,7 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift().execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift()
 
-        assert_frame_equal(left = pylegend_output, right = pandas_output)
+        assert_frame_equal(left=pylegend_output, right=pandas_output)
 
     def test_negative_periods(
             self,
@@ -412,7 +378,7 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift(periods=-1).execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift(periods=-1)
 
-        assert_frame_equal(left = pylegend_output, right = pandas_output)
+        assert_frame_equal(left=pylegend_output, right=pandas_output)
 
     def test_list_periods(
             self,
@@ -424,7 +390,7 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift(periods=[1, -1]).execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift(periods=[1, -1])
 
-        assert_frame_equal(left = pylegend_output, right = pandas_output)
+        assert_frame_equal(left=pylegend_output, right=pandas_output)
 
     def test_list_periods_with_suffix(
             self,
@@ -436,4 +402,4 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift(periods=[1, -1], suffix="_shifted").execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")  # type: ignore[call-arg]
 
-        assert_frame_equal(left = pylegend_output, right = pandas_output)
+        assert_frame_equal(left=pylegend_output, right=pandas_output)

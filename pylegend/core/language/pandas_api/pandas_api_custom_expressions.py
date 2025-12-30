@@ -38,7 +38,6 @@ from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     Expression,
     FunctionCall,
-    IntegerLiteral,
     QualifiedName,
     QuerySpecification,
     SingleColumn,
@@ -269,7 +268,7 @@ class PandasApiPartialFrame:
             row: "PandasApiTdsRow"
     ) -> PyLegendFloat:
         return PyLegendFloat(PandasApiPercentRankExpression(self, window, row))
-    
+
     def lead(
             self,
             row: "PandasApiTdsRow",
@@ -290,7 +289,7 @@ class PandasApiPartialFrame:
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__var_name}"
-    
+
     def get_base_frame(self) -> "PandasApiBaseTdsFrame":
         return self.__base_frame
 
