@@ -917,28 +917,35 @@ def union_processor(
     return f"{left}{sep0}{union_str}{sep0}{right}"
 
 
+def frame_bound_processor(
+        frame_bound: FrameBound,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig,
+) -> str:
+    bound_sql = frame_bound.type_.to_sql_string()
+
+    if frame_bound.value is None:
+        return bound_sql
+
+    offset_expr = extension.process_expression(frame_bound.value, config)
+
+    offset_sql = (
+        f"INTERVAL '{offset_expr} {frame_bound.duration_unit.name}'"
+        if frame_bound.duration_unit
+        else offset_expr
+    )
+
+    return f"{offset_sql} {bound_sql}"
+
+
 def window_frame_processor(
         frame: WindowFrame,
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig,
 ) -> str:
     mode = "ROWS" if frame.mode == WindowFrameMode.ROWS else "RANGE"
-
-    def render_bound(bound: FrameBound) -> str:
-        bound_sql = bound.type_.to_sql_string()
-
-        if bound.value is None:
-            return bound_sql
-
-        offset = extension.process_expression(bound.value, config)
-
-        if bound.duration_unit:
-            offset = f"INTERVAL '{offset} {bound.duration_unit.name}'"
-
-        return f"{offset} {bound_sql}"
-
-    start = render_bound(frame.start)
-    end = render_bound(frame.end) if frame.end else "UNBOUNDED FOLLOWING"
+    start = extension.process_frame_bound(frame.start, config)
+    end = extension.process_frame_bound(frame.end, config) if frame.end else "UNBOUNDED FOLLOWING"
 
     return f"{mode} BETWEEN {start} AND {end}"
 
@@ -1305,3 +1312,6 @@ class SqlToStringDbExtension:
 
     def process_window_frame(self, frame: WindowFrame, config: SqlToStringConfig) -> str:
         return window_frame_processor(frame, self, config)
+
+    def process_frame_bound(self, frame_bound: FrameBound, config: SqlToStringConfig) -> str:
+        return frame_bound_processor(frame_bound, self, config)

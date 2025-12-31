@@ -148,24 +148,6 @@ def infer_window_frame_bound(
             PyLegendUnion[str, int, float, LegendQLApiDurationInput]
         ] = None,
 ) -> LegendQLApiWindowFrameBound:
-    def bound_from_offset(
-            offset: PyLegendUnion[int, float],
-            duration_unit: PyLegendOptional[LegendQLApiDurationUnit] = None,
-    ) -> LegendQLApiWindowFrameBound:
-        if offset == 0:
-            return LegendQLApiWindowFrameBound(
-                LegendQLApiWindowFrameBoundType.CURRENT_ROW,
-                duration_unit=duration_unit,
-            )
-
-        return LegendQLApiWindowFrameBound(
-            LegendQLApiWindowFrameBoundType.FOLLOWING
-            if offset > 0
-            else LegendQLApiWindowFrameBoundType.PRECEDING,
-            offset,
-            duration_unit=duration_unit,
-        )
-
     if value is None:
         return LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
 
@@ -181,10 +163,10 @@ def infer_window_frame_bound(
         return LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
 
     if isinstance(value, (int, float)):
-        return bound_from_offset(value)
+        return window_frame_bound_from_offset(value)
 
     if isinstance(value, LegendQLApiDurationInput):
-        return bound_from_offset(
+        return window_frame_bound_from_offset(
             value.get_offset(),
             duration_unit=LegendQLApiDurationUnit.from_string(value.get_unit()),
         )
@@ -194,4 +176,23 @@ def infer_window_frame_bound(
         "Expected one of: "
         "'unbounded' (str), numeric offset (int | float), "
         "or LegendQLApiDurationBoundaryInput."
+    )
+
+
+def window_frame_bound_from_offset(
+        offset: PyLegendUnion[int, float],
+        duration_unit: PyLegendOptional[LegendQLApiDurationUnit] = None,
+) -> LegendQLApiWindowFrameBound:
+    if offset == 0:
+        return LegendQLApiWindowFrameBound(
+            LegendQLApiWindowFrameBoundType.CURRENT_ROW,
+            duration_unit=duration_unit,
+        )
+
+    return LegendQLApiWindowFrameBound(
+        LegendQLApiWindowFrameBoundType.FOLLOWING
+        if offset > 0
+        else LegendQLApiWindowFrameBoundType.PRECEDING,
+        offset,
+        duration_unit=duration_unit,
     )
