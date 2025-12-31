@@ -659,9 +659,9 @@ class TestWindowExtendAppliedFunction:
             "and 0 means CURRENT ROW."
         )
 
-        with pytest.raises(TypeError) as r:
+        with pytest.raises(TypeError) as t:
             frame.range(datetime.datetime.now())  # type: ignore
-        assert r.value.args[0] == (
+        assert t.value.args[0] == (
             "Invalid type for window frame boundary: datetime. "
             "Expected one of: "
             "'unbounded' (str), numeric offset (int | float), "
