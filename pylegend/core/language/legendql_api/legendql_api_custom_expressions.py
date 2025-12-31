@@ -183,18 +183,8 @@ class LegendQLApiSortInfo:
 
 
 class LegendQLApiWindowFrameMode(Enum):
-    ROWS = 1,
+    ROWS = 1
     RANGE = 2
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return "rows" if self == LegendQLApiWindowFrameMode.ROWS else "_range"
-
-    def to_sql_node(
-            self,
-            query: QuerySpecification,
-            config: FrameToSqlConfig
-    ) -> WindowFrameMode:
-        return WindowFrameMode.ROWS if self == LegendQLApiWindowFrameMode.ROWS else WindowFrameMode.RANGE
 
 
 class LegendQLApiWindowFrameBoundType(Enum):
@@ -327,9 +317,8 @@ class LegendQLApiWindowFrameBound:
             expr = "0"
 
         else:
-            expr = convert_literal_to_literal_expression(
-                self.__row_offset
-            ).to_pure_expression(config) if self.__row_offset is not None else ""
+            expr = convert_literal_to_literal_expression(self.__row_offset).to_pure_expression(
+                config) if self.__row_offset is not None else ""
 
         if self.__duration_unit is not None:
             expr += f", DurationUnit.{self.__duration_unit.to_pure_expression(config)}"
@@ -345,10 +334,13 @@ class LegendQLApiWindowFrameBound:
         value = (convert_literal_to_literal_expression(abs(self.__row_offset))
                  .to_sql_expression({"w": query}, config)) \
             if self.__row_offset is not None else None
+
         frame_bound_type = self.__bound_type.to_sql_node(query, config, is_start_bound)
+
         duration_unit = self.__duration_unit.to_sql_node(
             query,
             config) if self.__duration_unit is not None else None
+
         return FrameBound(frame_bound_type, value, duration_unit)
 
 
@@ -368,7 +360,7 @@ class LegendQLApiWindowFrame:
         self.__end_bound = end_bound
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        mode_str = self.__mode.to_pure_expression(config)
+        mode_str = "rows" if self.__mode == LegendQLApiWindowFrameMode.ROWS else "_range"
         start_expr = self.__start_bound.to_pure_expression(config)
         end_expr = self.__end_bound.to_pure_expression(config)
 
@@ -380,9 +372,9 @@ class LegendQLApiWindowFrame:
             config: FrameToSqlConfig
     ) -> WindowFrame:
         return WindowFrame(
-            mode=self.__mode.to_sql_node(query, config),
+            mode=WindowFrameMode.ROWS if self.__mode == LegendQLApiWindowFrameMode.ROWS else WindowFrameMode.RANGE,
             start=self.__start_bound.to_sql_node(query, config, True),
-            end=self.__end_bound.to_sql_node(query, config, False) if self.__end_bound is not None else None,
+            end=self.__end_bound.to_sql_node(query, config, False),
         )
 
 
