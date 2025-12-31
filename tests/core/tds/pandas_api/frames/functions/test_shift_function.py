@@ -504,7 +504,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
-    
+
     def test_multiple_grouping(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("group_col"),
@@ -514,7 +514,9 @@ class TestUsageOnGroupbyFrame:
             PrimitiveTdsColumn.float_column("random_col_2")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.groupby(["group_col", "group_col_2"])[["group_col", "val_col", "random_col"]].shift([1, -1], suffix="_sfx")
+        frame = (
+            frame.groupby(["group_col", "group_col_2"])[["group_col", "val_col", "random_col"]]
+            .shift([1, -1], suffix="_sfx"))
 
         expected = '''
             SELECT
@@ -591,7 +593,7 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift().execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift()
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
+        assert_frame_equal(pylegend_output, pandas_output)
 
     def test_negative_periods(
             self,
@@ -603,7 +605,7 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift(periods=-1).execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift(periods=-1)
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
+        assert_frame_equal(pylegend_output, pandas_output)
 
     def test_list_periods(
             self,
@@ -615,7 +617,7 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift(periods=[1, -1]).execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift(periods=[1, -1])
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
+        assert_frame_equal(pylegend_output, pandas_output)
 
     def test_list_periods_with_suffix(
             self,
@@ -627,7 +629,7 @@ class TestEndToEndUsageOnBaseFrame:
         pylegend_output = frame.shift(periods=[1, -1], suffix="_shifted").execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")  # type: ignore[call-arg]
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
+        assert_frame_equal(pylegend_output, pandas_output)
 
 
 class TestEndToEndUsageOnGroupbyFrame:
@@ -642,8 +644,8 @@ class TestEndToEndUsageOnGroupbyFrame:
         pylegend_output = frame.groupby("Firm/Legal Name").shift().execute_frame_to_pandas_df()
         pandas_output = pandas_df_simple_person.groupby("Firm/Legal Name").shift()
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
-    
+        assert_frame_equal(pylegend_output, pandas_output)
+
     def test_negative_periods_with_selection(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
@@ -651,11 +653,20 @@ class TestEndToEndUsageOnGroupbyFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.groupby("Firm/Legal Name")[["First Name", "Last Name"]].shift(-1).execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.groupby("Firm/Legal Name")[["First Name", "Last Name"]].shift(-1)
+        pylegend_output = (
+            frame
+            .groupby("Firm/Legal Name")[["First Name", "Last Name"]]
+            .shift(-1)
+            .execute_frame_to_pandas_df()
+        )
+        pandas_output = (
+            pandas_df_simple_person
+            .groupby("Firm/Legal Name")[["First Name", "Last Name"]]
+            .shift(-1)
+        )
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
-    
+        assert_frame_equal(pylegend_output, pandas_output)
+
     def test_list_periods_with_groupby_column_selected(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
@@ -663,11 +674,20 @@ class TestEndToEndUsageOnGroupbyFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.groupby("Firm/Legal Name")["Firm/Legal Name"].shift([-1, 1]).execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.groupby("Firm/Legal Name")["Firm/Legal Name"].shift([-1, 1])
+        pylegend_output = (
+            frame
+            .groupby("Firm/Legal Name")["Firm/Legal Name"]
+            .shift([-1, 1])
+            .execute_frame_to_pandas_df()
+        )
+        pandas_output = pd.DataFrame(
+            pandas_df_simple_person
+            .groupby("Firm/Legal Name")["Firm/Legal Name"]
+            .shift([-1, 1])
+        )
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
-    
+        assert_frame_equal(pylegend_output, pandas_output)
+
     def test_list_periods_with_multiple_groupby_and_suffix(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
@@ -675,12 +695,16 @@ class TestEndToEndUsageOnGroupbyFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.groupby(
-            ["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]].shift(
-                [-1, 1], suffix="_shifted").execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.groupby(
-            ["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]].shift(
-                [-1, 1], suffix="_shifted")
+        pylegend_output = (
+            frame
+            .groupby(["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]]
+            .shift([-1, 1], suffix="_shifted")
+            .execute_frame_to_pandas_df()
+        )
+        pandas_output = (
+            pandas_df_simple_person
+            .groupby(["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]]
+            .shift([-1, 1], suffix="_shifted")
+        )
 
-        assert_frame_equal(left=pylegend_output, right=pandas_output)
-
+        assert_frame_equal(pylegend_output, pandas_output)
