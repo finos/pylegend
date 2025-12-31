@@ -326,6 +326,231 @@ class TestUsageOnBaseFrame:
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
 
+class TestUsageOnGroupbyFrame:
+    if USE_LEGEND_ENGINE:
+        @pytest.fixture(autouse=True)
+        def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+            self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_no_selection(self) -> None:
+        columns = columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col").shift(1)
+
+        expected = '''
+            SELECT
+                "root"."val_col__internal_sql_column_name__" AS "val_col",
+                "root"."random_col__internal_sql_column_name__" AS "random_col"
+            FROM
+                (
+                    SELECT
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "val_col__internal_sql_column_name__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "random_col__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_single_selection(self) -> None:
+        columns = columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col")[["val_col"]].shift(1)
+
+        expected = '''
+            SELECT
+                "root"."val_col__internal_sql_column_name__" AS "val_col"
+            FROM
+                (
+                    SELECT
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "val_col__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_selection_same_as_groupby(self) -> None:
+        columns = columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col")[["group_col"]].shift(1)
+
+        expected = '''
+            SELECT
+                "root"."group_col__internal_sql_column_name__" AS "group_col"
+            FROM
+                (
+                    SELECT
+                        lag("root"."group_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "group_col__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_multiple_periods(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col"),
+            PrimitiveTdsColumn.float_column("random_col_2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col")[["val_col", "random_col"]].shift([1, -1])
+
+        expected = '''
+            SELECT
+                "root"."val_col_1__internal_sql_column_name__" AS "val_col_1",
+                "root"."random_col_1__internal_sql_column_name__" AS "random_col_1",
+                "root"."val_col_-1__internal_sql_column_name__" AS "val_col_-1",
+                "root"."random_col_-1__internal_sql_column_name__" AS "random_col_-1"
+            FROM
+                (
+                    SELECT
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "val_col_1__internal_sql_column_name__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "random_col_1__internal_sql_column_name__",
+                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "val_col_-1__internal_sql_column_name__",
+                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "random_col_-1__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col",
+                                "root".random_col_2 AS "random_col_2",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+    def test_suffix(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col"),
+            PrimitiveTdsColumn.float_column("random_col_2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.groupby("group_col")[["val_col", "random_col"]].shift([1, -1], suffix="_sfx")
+
+        expected = '''
+            SELECT
+                "root"."val_col_sfx_1__internal_sql_column_name__" AS "val_col_sfx_1",
+                "root"."random_col_sfx_1__internal_sql_column_name__" AS "random_col_sfx_1",
+                "root"."val_col_sfx_-1__internal_sql_column_name__" AS "val_col_sfx_-1",
+                "root"."random_col_sfx_-1__internal_sql_column_name__" AS "random_col_sfx_-1"
+            FROM
+                (
+                    SELECT
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "val_col_sfx_1__internal_sql_column_name__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "random_col_sfx_1__internal_sql_column_name__",
+                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "val_col_sfx_-1__internal_sql_column_name__",
+                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__internal_sql_column_name__") AS "random_col_sfx_-1__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col",
+                                "root".random_col_2 AS "random_col_2",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+    
+    def test_multiple_grouping(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.string_column("group_col_2"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col"),
+            PrimitiveTdsColumn.float_column("random_col_2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.groupby(["group_col", "group_col_2"])[["group_col", "val_col", "random_col"]].shift([1, -1], suffix="_sfx")
+
+        expected = '''
+            SELECT
+                "root"."group_col_sfx_1__internal_sql_column_name__" AS "group_col_sfx_1",
+                "root"."val_col_sfx_1__internal_sql_column_name__" AS "val_col_sfx_1",
+                "root"."random_col_sfx_1__internal_sql_column_name__" AS "random_col_sfx_1",
+                "root"."group_col_sfx_-1__internal_sql_column_name__" AS "group_col_sfx_-1",
+                "root"."val_col_sfx_-1__internal_sql_column_name__" AS "val_col_sfx_-1",
+                "root"."random_col_sfx_-1__internal_sql_column_name__" AS "random_col_sfx_-1"
+            FROM
+                (
+                    SELECT
+                        lag("root"."group_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__internal_sql_column_name__") AS "group_col_sfx_1__internal_sql_column_name__",
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__internal_sql_column_name__") AS "val_col_sfx_1__internal_sql_column_name__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__internal_sql_column_name__") AS "random_col_sfx_1__internal_sql_column_name__",
+                        lead("root"."group_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__internal_sql_column_name__") AS "group_col_sfx_-1__internal_sql_column_name__",
+                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__internal_sql_column_name__") AS "val_col_sfx_-1__internal_sql_column_name__",
+                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__internal_sql_column_name__") AS "random_col_sfx_-1__internal_sql_column_name__"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".group_col_2 AS "group_col_2",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col",
+                                "root".random_col_2 AS "random_col_2",
+                                0 AS "__internal_sql_column_name__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+
 @pytest.fixture(scope="class")
 def pandas_df_simple_person() -> pd.DataFrame:
     rows: PyLegendList[PyLegendDict[str, PyLegendList[PyLegendUnion[str, int]]]] = [
@@ -403,3 +628,59 @@ class TestEndToEndUsageOnBaseFrame:
         pandas_output = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")  # type: ignore[call-arg]
 
         assert_frame_equal(left=pylegend_output, right=pandas_output)
+
+
+class TestEndToEndUsageOnGroupbyFrame:
+
+    def test_no_arguments(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        pylegend_output = frame.groupby("Firm/Legal Name").shift().execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.groupby("Firm/Legal Name").shift()
+
+        assert_frame_equal(left=pylegend_output, right=pandas_output)
+    
+    def test_negative_periods_with_selection(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        pylegend_output = frame.groupby("Firm/Legal Name")[["First Name", "Last Name"]].shift(-1).execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.groupby("Firm/Legal Name")[["First Name", "Last Name"]].shift(-1)
+
+        assert_frame_equal(left=pylegend_output, right=pandas_output)
+    
+    def test_list_periods_with_groupby_column_selected(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        pylegend_output = frame.groupby("Firm/Legal Name")["Firm/Legal Name"].shift([-1, 1]).execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.groupby("Firm/Legal Name")["Firm/Legal Name"].shift([-1, 1])
+
+        assert_frame_equal(left=pylegend_output, right=pandas_output)
+    
+    def test_list_periods_with_multiple_groupby_and_suffix(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]],
+            pandas_df_simple_person: pd.DataFrame
+    ) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        pylegend_output = frame.groupby(
+            ["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]].shift(
+                [-1, 1], suffix="_shifted").execute_frame_to_pandas_df()
+        pandas_output = pandas_df_simple_person.groupby(
+            ["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]].shift(
+                [-1, 1], suffix="_shifted")
+
+        assert_frame_equal(left=pylegend_output, right=pandas_output)
+

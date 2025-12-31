@@ -143,20 +143,32 @@ class ShiftFunction(PandasApiAppliedFunction):
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
 
         new_columns: PyLegendList["TdsColumn"] = []
-        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            pass
-        else:
-            base_columns = self.base_frame().columns()
+        source_columns: PyLegendSequence["TdsColumn"]
 
-            if isinstance(self.__periods, int):
-                for col in base_columns:
-                    new_columns.append(col)
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            grouping_column_names = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
+            selected_columns: PyLegendOptional[PyLegendList[TdsColumn]] = self.__base_frame.get_selected_columns()
+
+            if selected_columns is None:
+                source_columns = []
+                for col in self.base_frame().columns():
+                    if col.get_name() in grouping_column_names:
+                        continue
+                    source_columns.append(col)
             else:
-                for period in self.__periods:
-                    for col in base_columns:
-                        suffix = self.__suffix if self.__suffix is not None else ""
-                        new_name = f"{col.get_name()}{suffix}_{period}"
-                        new_columns.append(col.copy_with_changed_name(new_name))
+                source_columns = selected_columns
+        else:
+            source_columns = self.base_frame().columns()
+
+        if isinstance(self.__periods, int):
+            for col in source_columns:
+                new_columns.append(col)
+        else:
+            for period in self.__periods:
+                for col in source_columns:
+                    suffix = self.__suffix if self.__suffix is not None else ""
+                    new_name = f"{col.get_name()}{suffix}_{period}"
+                    new_columns.append(col.copy_with_changed_name(new_name))
 
         return new_columns
 
@@ -205,7 +217,20 @@ class ShiftFunction(PandasApiAppliedFunction):
             PandasApiWindow
         ]
     ]:
-        column_names: list[str] = [col.get_name() for col in self.base_frame().columns()]
+        column_names: list[str] = []
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            grouping_column_names = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
+            selected_columns: PyLegendOptional[PyLegendList[TdsColumn]] = self.__base_frame.get_selected_columns()
+
+            if selected_columns is None:
+                for col in self.base_frame().columns():
+                    if col.get_name() in grouping_column_names:
+                        continue
+                    column_names.append(col.get_name())
+            else:
+                column_names = [col.get_name() for col in selected_columns]
+        else:
+            column_names = [col.get_name() for col in self.base_frame().columns()]
 
         periods_list: PyLegendList[int] = [self.__periods] if isinstance(self.__periods, int) else list(self.__periods)
 
@@ -262,6 +287,8 @@ class ShiftFunction(PandasApiAppliedFunction):
             current_column_name: str = extend_column[0]
 
             partition_by: PyLegendOptional[PyLegendList[str]] = None
+            if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+                partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
 
             order_by = PandasApiDirectSortInfo(self.temp_column_name, PandasApiSortDirection.ASC)
 
