@@ -15,7 +15,7 @@ import pytest
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiDurationUnit,
     LegendQLApiWindowFrameBoundType,
-    LegendQLApiFrameBound)
+    LegendQLApiWindowFrameBound)
 
 
 class TestLegendQLApiCustomExpressions:
@@ -30,13 +30,13 @@ class TestLegendQLApiCustomExpressions:
 
     def test_frame_bound_exceptions(self) -> None:
         with pytest.raises(ValueError) as r:
-            LegendQLApiFrameBound(LegendQLApiWindowFrameBoundType.PRECEDING)
+            LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.PRECEDING)
         assert r.value.args[0] == (
             "row_offset must be provided for bound_type PRECEDING"
         )
 
         with pytest.raises(ValueError) as r:
-            LegendQLApiFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED, 1)
+            LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED, 1)
         assert r.value.args[0] == (
             "row_offset is not allowed for bound_type UNBOUNDED"
         )

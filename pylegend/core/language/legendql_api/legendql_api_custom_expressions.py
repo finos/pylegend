@@ -72,7 +72,7 @@ __all__: PyLegendSequence[str] = [
     "LegendQLApiWindow",
     "LegendQLApiPartialFrame",
     "LegendQLApiWindowReference",
-    "LegendQLApiFrameBound",
+    "LegendQLApiWindowFrameBound",
     "LegendQLApiWindowFrameMode",
     "LegendQLApiWindowFrame",
     "LegendQLApiDurationInput",
@@ -292,7 +292,7 @@ class LegendQLApiDurationInput:
         return self.__unit
 
 
-class LegendQLApiFrameBound:
+class LegendQLApiWindowFrameBound:
     __bound_type: LegendQLApiWindowFrameBoundType
     __row_offset: PyLegendOptional[PyLegendUnion[int, float]]
     __duration_unit: PyLegendOptional[LegendQLApiDurationUnit]
@@ -354,14 +354,14 @@ class LegendQLApiFrameBound:
 
 class LegendQLApiWindowFrame:
     __mode: LegendQLApiWindowFrameMode
-    __start_bound: LegendQLApiFrameBound
-    __end_bound: LegendQLApiFrameBound
+    __start_bound: LegendQLApiWindowFrameBound
+    __end_bound: LegendQLApiWindowFrameBound
 
     def __init__(
             self,
             mode: LegendQLApiWindowFrameMode,
-            start_bound: LegendQLApiFrameBound,
-            end_bound: LegendQLApiFrameBound,
+            start_bound: LegendQLApiWindowFrameBound,
+            end_bound: LegendQLApiWindowFrameBound,
     ) -> None:
         self.__mode = mode
         self.__start_bound = start_bound

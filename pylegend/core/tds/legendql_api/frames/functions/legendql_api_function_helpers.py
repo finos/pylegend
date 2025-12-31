@@ -26,7 +26,7 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiSortDirection,
     LegendQLApiDurationUnit,
     LegendQLApiWindowFrameBoundType,
-    LegendQLApiFrameBound,
+    LegendQLApiWindowFrameBound,
     LegendQLApiDurationInput
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
@@ -147,18 +147,18 @@ def infer_window_frame_bound(
         value: PyLegendOptional[
             PyLegendUnion[str, int, float, LegendQLApiDurationInput]
         ] = None,
-) -> LegendQLApiFrameBound:
+) -> LegendQLApiWindowFrameBound:
     def bound_from_offset(
             offset: PyLegendUnion[int, float],
             duration_unit: PyLegendOptional[LegendQLApiDurationUnit] = None,
-    ) -> LegendQLApiFrameBound:
+    ) -> LegendQLApiWindowFrameBound:
         if offset == 0:
-            return LegendQLApiFrameBound(
+            return LegendQLApiWindowFrameBound(
                 LegendQLApiWindowFrameBoundType.CURRENT_ROW,
                 duration_unit=duration_unit,
             )
 
-        return LegendQLApiFrameBound(
+        return LegendQLApiWindowFrameBound(
             LegendQLApiWindowFrameBoundType.FOLLOWING
             if offset > 0
             else LegendQLApiWindowFrameBoundType.PRECEDING,
@@ -167,7 +167,7 @@ def infer_window_frame_bound(
         )
 
     if value is None:
-        return LegendQLApiFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
+        return LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
 
     if isinstance(value, str):
         if value.lower() != "unbounded":
@@ -178,7 +178,7 @@ def infer_window_frame_bound(
                 "positive means FOLLOWING, negative means PRECEDING, "
                 "and 0 means CURRENT ROW."
             )
-        return LegendQLApiFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
+        return LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
 
     if isinstance(value, (int, float)):
         return bound_from_offset(value)
