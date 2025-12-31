@@ -224,8 +224,8 @@ class LegendQLApiWindowFrameBoundType(Enum):
 
         try:
             return mapping[self]
-        except KeyError:
-            raise ValueError(f"Unsupported frame bound type: {self}")
+        except KeyError:  # pragma: no cover
+            raise ValueError(f"Unsupported frame bound type: {self}")  # pragma: no cover
 
 
 class LegendQLApiDurationUnit(Enum):
@@ -263,8 +263,8 @@ class LegendQLApiDurationUnit(Enum):
 
         try:
             return mapping[self]
-        except KeyError:
-            raise ValueError(f"Unsupported duration unit: {self}")
+        except KeyError:  # pragma: no cover
+            raise ValueError(f"Unsupported duration unit: {self}")  # pragma: no cover
 
     @classmethod
     def from_string(cls, value: str) -> "LegendQLApiDurationUnit":

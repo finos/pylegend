@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import datetime
 import json
 import pytest
 from textwrap import dedent
@@ -641,6 +641,32 @@ class TestWindowExtendAppliedFunction:
         assert frame2.to_sql_query(
             FrameToSqlConfig()
         ) == dedent(expected_sql)
+
+    def test_query_gen_window_frame_exceptions(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(ValueError) as r:
+            frame.range("invalid_range")
+        assert r.value.args[0] == (
+            "Invalid window frame boundary 'invalid_range'. "
+            "The only supported string value is 'unbounded'. "
+            "Otherwise, provide a numeric offset where "
+            "positive means FOLLOWING, negative means PRECEDING, "
+            "and 0 means CURRENT ROW."
+        )
+
+        with pytest.raises(TypeError) as r:
+            frame.range(datetime.datetime.now())  # type: ignore
+        assert r.value.args[0] == (
+            "Invalid type for window frame boundary: datetime. "
+            "Expected one of: "
+            "'unbounded' (str), numeric offset (int | float), "
+            "or LegendQLApiDurationBoundaryInput."
+        )
 
     def test_e2e_window_extend_function_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
