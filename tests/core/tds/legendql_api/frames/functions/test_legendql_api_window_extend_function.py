@@ -520,7 +520,7 @@ class TestWindowExtendAppliedFunction:
                     "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
-                    lambda f: f.rows(-1),
+                    lambda f: f.rows(-1, "unbounded"),
                     "rows(minus(1), unbounded())",
                     "ROWS BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING",
             ),
