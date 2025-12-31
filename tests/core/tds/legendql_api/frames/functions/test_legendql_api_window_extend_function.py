@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import datetime
 import json
 import pytest
 from textwrap import dedent
@@ -23,10 +23,12 @@ from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_f
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
+    PyLegendCallable,
 )
 from pylegend.core.request.legend_client import LegendClient
 from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_trade_service_frame_legendql_api
+from pylegend.core.language.legendql_api.legendql_api_custom_expressions import LegendQLApiWindowFrame
 
 
 class TestWindowExtendAppliedFunction:
@@ -508,6 +510,163 @@ class TestWindowExtendAppliedFunction:
                 'col9:{p,w,r | $p->ntile($r, 10)}, col10:{p,w,r | $p->lead($r).col1}, '
                 'col11:{p,w,r | toOne($p->lag($r).col1) + 1}, col12:{p,w,r | $p->first($w, $r).col1}, '
                 'col13:{p,w,r | $p->last($w, $r).col1}, col14:{p,w,r | $p->nth($w, $r, 10).col1}])')
+
+    @pytest.mark.parametrize(
+        "frame_builder, pure_expr, sql_expression",
+        [
+            (
+                    lambda f: f.rows(),
+                    "rows(unbounded(), unbounded())",
+                    "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
+            ),
+            (
+                    lambda f: f.rows(-1, "unbounded"),
+                    "rows(minus(1), unbounded())",
+                    "ROWS BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING",
+            ),
+            (
+                    lambda f: f.rows(-1, 0),
+                    "rows(minus(1), 0)",
+                    "ROWS BETWEEN 1 PRECEDING AND CURRENT ROW",
+            ),
+            (
+                    lambda f: f.rows(0, 1),
+                    "rows(0, 1)",
+                    "ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING",
+            ),
+            (
+                    lambda f: f.rows(-1, 1),
+                    "rows(minus(1), 1)",
+                    "ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
+            ),
+            (
+                    lambda f: f.range(),
+                    "_range(unbounded(), unbounded())",
+                    "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
+            ),
+            (
+                    lambda f: f.range(-1),
+                    "_range(minus(1), unbounded())",
+                    "RANGE BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING",
+            ),
+            (
+                    lambda f: f.range(-1, 0),
+                    "_range(minus(1), 0)",
+                    "RANGE BETWEEN 1 PRECEDING AND CURRENT ROW",
+            ),
+            (
+                    lambda f: f.range(0, 1),
+                    "_range(0, 1)",
+                    "RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING",
+            ),
+            (
+                    lambda f: f.range(-1, 1),
+                    "_range(minus(1), 1)",
+                    "RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING",
+            ),
+            (
+                    lambda f: f.duration_range(),
+                    "_range(unbounded(), unbounded())",
+                    "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
+            ),
+            (
+                    lambda f: f.duration_range(f.duration_range_boundary(-1, "DAYS")),
+                    "_range(minus(1), DurationUnit.DAYS, unbounded())",
+                    "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND UNBOUNDED FOLLOWING",
+            ),
+            (
+                    lambda f: f.duration_range(f.duration_range_boundary(-1, "DAYS"),
+                                               f.duration_range_boundary(1, "MONTHS")),
+                    "_range(minus(1), DurationUnit.DAYS, 1, DurationUnit.MONTHS)",
+                    "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND INTERVAL '1 MONTH' FOLLOWING",
+            ),
+            (
+                    lambda f: f.duration_range(0, f.duration_range_boundary(1, "HOURS")),
+                    "_range(0, 1, DurationUnit.HOURS)",
+                    "RANGE BETWEEN CURRENT ROW AND INTERVAL '1 HOUR' FOLLOWING",
+            ),
+        ],
+    )
+    def test_query_gen_window_extend_window_frame(
+            self,
+            frame_builder: PyLegendCallable[
+                    [LegendQLApiTableSpecInputFrame],
+                    LegendQLApiWindowFrame
+            ],
+            pure_expr: str,
+            sql_expression: str,
+    ) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame2 = frame.window_extend(
+            frame.window(
+                partition_by="col2",
+                order_by="col3",
+                frame=frame_builder(frame),
+            ),
+            [("col4", lambda p, w, r: r.col1, lambda c: c.sum())],  # type: ignore
+        )
+
+        expected_pure = f'''\
+        #Table(test_schema.test_table)#
+          ->extend(over(~[col2], [ascending(~col3)], {pure_expr}), ~col4:{{p,w,r | $r.col1}}:{{c | $c->sum()}})'''
+
+        expected_sql = f'''\
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                SUM("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3" {sql_expression}) AS "col4"
+            FROM
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        "root".col2 AS "col2",
+                        "root".col3 AS "col3"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
+
+        assert generate_pure_query_and_compile(
+            frame2,
+            FrameToPureConfig(),
+            self.legend_client,
+        ) == dedent(expected_pure)
+
+        assert frame2.to_sql_query(
+            FrameToSqlConfig()
+        ) == dedent(expected_sql)
+
+    def test_query_gen_window_frame_exceptions(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(ValueError) as r:
+            frame.range("invalid_range")
+        assert r.value.args[0] == (
+            "Invalid window frame boundary 'invalid_range'. "
+            "The only supported string value is 'unbounded'. "
+            "Otherwise, provide a numeric offset where "
+            "positive means FOLLOWING, negative means PRECEDING, "
+            "and 0 means CURRENT ROW."
+        )
+
+        with pytest.raises(TypeError) as t:
+            frame.range(datetime.datetime.now())  # type: ignore
+        assert t.value.args[0] == (
+            "Invalid type for window frame boundary: datetime. "
+            "Expected one of: "
+            "'unbounded' (str), numeric offset (int | float), "
+            "or LegendQLApiDurationBoundaryInput."
+        )
 
     def test_e2e_window_extend_function_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])

@@ -87,7 +87,8 @@ __all__: PyLegendSequence[str] = [
     'InPredicate',
     'Window',
     'WindowFrame',
-    'FrameBound'
+    'FrameBound',
+    'DurationUnit'
 ]
 
 
@@ -102,6 +103,9 @@ class FrameBoundType(Enum):
     CURRENT_ROW = 3,
     FOLLOWING = 4,
     UNBOUNDED_FOLLOWING = 5
+
+    def to_sql_string(self) -> str:
+        return self.name.replace("_", " ")
 
 
 class TrimMode(Enum):
@@ -915,15 +919,31 @@ class WindowFrame(Node):
         self.end = end
 
 
+class DurationUnit(Enum):
+    YEAR = 1
+    MONTH = 2
+    WEEK = 3
+    DAY = 4
+    HOUR = 5
+    MINUTE = 6
+    SECOND = 7
+    MILLISECOND = 8
+    MICROSECOND = 9
+    NANOSECOND = 10
+
+
 class FrameBound(Node):
     type_: "FrameBoundType"
     value: "PyLegendOptional[Expression]"
+    duration_unit: "PyLegendOptional[DurationUnit]"
 
     def __init__(
         self,
         type_: "FrameBoundType",
-        value: "PyLegendOptional[Expression]"
+        value: "PyLegendOptional[Expression]",
+        duration_unit: "PyLegendOptional[DurationUnit]" = None
     ) -> None:
         super().__init__(_type="frameBound")
         self.type_ = type_
         self.value = value
+        self.duration_unit = duration_unit
