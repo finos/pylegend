@@ -13,13 +13,13 @@
 # limitations under the License.
 
 from pylegend._typing import (
-    PyLegendUnion,
-    PyLegendList,
-    PyLegendSequence,
-    PyLegendTuple,
-    PyLegendOptional,
     PyLegendCallable,
     PyLegendHashable,
+    PyLegendList,
+    PyLegendOptional,
+    PyLegendSequence,
+    PyLegendTuple,
+    PyLegendUnion
 )
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDirectSortInfo,
@@ -28,6 +28,12 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindow,
     PandasApiWindowReference
 )
+from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.helpers import (
+    escape_column_name,
+    generate_pure_lambda,
+)
+from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -42,10 +48,9 @@ from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
-from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
-from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.sql_query_helpers import create_sub_query
+from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 
 class ShiftFunction(PandasApiAppliedFunction):
@@ -56,14 +61,14 @@ class ShiftFunction(PandasApiAppliedFunction):
     __fill_value: PyLegendOptional[PyLegendHashable]
     __suffix: PyLegendOptional[str]
 
-    __column_expression_and_window_tuples: PyLegendList[
+    _column_expression_and_window_tuples: PyLegendList[
         PyLegendTuple[
             PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
         ]
     ]
-    temp_column_name: str
-    temp_column_name_suffix: str
+    _temp_column_name: str
+    _temp_column_name_suffix: str
 
     @classmethod
     def name(cls) -> str:
@@ -85,8 +90,8 @@ class ShiftFunction(PandasApiAppliedFunction):
         self.__fill_value = fill_value
         self.__suffix = suffix
 
-        self.temp_column_name = "__internal_sql_column_name__"
-        self.temp_column_name_suffix = "__internal_sql_column_name__"
+        self._temp_column_name = "__pylegend_internal_column_name__"
+        self._temp_column_name_suffix = "__pylegend_internal_column_name__"
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
 
@@ -94,19 +99,21 @@ class ShiftFunction(PandasApiAppliedFunction):
         db_extension = config.sql_to_string_generator().get_db_extension()
 
         base_query.select.selectItems.append(
-            SingleColumn(alias=db_extension.quote_identifier(self.temp_column_name), expression=IntegerLiteral(0)))
+            SingleColumn(alias=db_extension.quote_identifier(self._temp_column_name), expression=IntegerLiteral(0)))
 
         new_query: QuerySpecification = create_sub_query(base_query, config, "root")
         new_select_items: list[SelectItem] = []
 
-        for c, window in self.__column_expression_and_window_tuples:
+        for c, window in self._column_expression_and_window_tuples:
             col_sql_expr: Expression = c[1].to_sql_expression({"r": new_query}, config)
             window_expr = WindowExpression(
                 nested=col_sql_expr,
                 window=window.to_sql_node(new_query, config))
 
             new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(c[0] + self.temp_column_name_suffix), expression=window_expr))
+                SingleColumn(
+                    alias=db_extension.quote_identifier(c[0] + self._temp_column_name_suffix),
+                    expression=window_expr))
 
         new_query.select.selectItems = new_select_items
 
@@ -117,7 +124,7 @@ class ShiftFunction(PandasApiAppliedFunction):
             col_name = col.get_name()
             col_expr = QualifiedNameReference(QualifiedName([
                 db_extension.quote_identifier("root"),
-                db_extension.quote_identifier(col_name + self.temp_column_name_suffix)]))
+                db_extension.quote_identifier(col_name + self._temp_column_name_suffix)]))
             final_select_items.append(
                 SingleColumn(
                     alias=db_extension.quote_identifier(col_name),
@@ -130,7 +137,34 @@ class ShiftFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        return f"{self.base_frame().to_pure(config)}{config.separator(1)}"
+
+        def render_single_column_expression(
+                c: PyLegendUnion[
+                    PyLegendTuple[str, PyLegendPrimitive],
+                    PyLegendTuple[str, PyLegendPrimitive, PyLegendPrimitive]
+                ]
+        ) -> str:
+            escaped_col_name: str = escape_column_name(c[0] + self._temp_column_name_suffix)
+            expr_str: str = (c[1].to_pure_expression(config) if isinstance(c[1], PyLegendPrimitive) else
+                             convert_literal_to_literal_expression(c[1]).to_pure_expression(config))
+            return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
+
+        extend_0_column = f"->extend(~{self._temp_column_name}:{{r|0}})"
+
+        extend_strs: PyLegendList[str] = []
+        for c, window in self._column_expression_and_window_tuples:
+            window_expression: str = window.to_pure_expression(config)
+            extend_strs.append(
+                f"->extend({window_expression}, ~{render_single_column_expression(c)})")
+        extend_str: str = f"{config.separator(1)}".join(extend_strs)
+
+        project_str: str = "->project(~[" + \
+            ", ".join([f"{escape_column_name(c[0])}:p|$p.{escape_column_name(c[0] + self._temp_column_name_suffix)}"
+                       for c, _ in self._column_expression_and_window_tuples]) + \
+            "])"
+
+        return f"{self.base_frame().to_pure(config)}{config.separator(1)}" + \
+            f"{extend_0_column}{config.separator(1)}{extend_str}{config.separator(1)}{project_str}"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
@@ -207,11 +241,11 @@ class ShiftFunction(PandasApiAppliedFunction):
             raise ValueError(
                 "Cannot specify the 'suffix' argument of the shift function if the 'periods' argument is an int.")
 
-        self.__column_expression_and_window_tuples = self.__construct_column_expression_and_window_tuples()
+        self._column_expression_and_window_tuples = self._construct_column_expression_and_window_tuples()
 
         return True
 
-    def __construct_column_expression_and_window_tuples(self) -> PyLegendList[
+    def _construct_column_expression_and_window_tuples(self) -> PyLegendList[
         PyLegendTuple[
             PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
@@ -290,7 +324,7 @@ class ShiftFunction(PandasApiAppliedFunction):
             if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
                 partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
 
-            order_by = PandasApiDirectSortInfo(self.temp_column_name, PandasApiSortDirection.ASC)
+            order_by = PandasApiDirectSortInfo(self._temp_column_name, PandasApiSortDirection.ASC)
 
             window = PandasApiWindow(partition_by, [order_by], frame=None)
 
