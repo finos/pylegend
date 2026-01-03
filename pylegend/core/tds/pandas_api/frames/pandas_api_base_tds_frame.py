@@ -36,7 +36,8 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
-    PyLegendDict
+    PyLegendDict,
+    PyLegendHashable
 )
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
@@ -703,6 +704,50 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         total_cols = len(self.columns())
 
         return (total_rows, total_cols)  # type: ignore
+
+    def rank(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            method: str = 'min',
+            numeric_only: bool = False,
+            na_option: str = 'bottom',
+            ascending: bool = True,
+            pct: bool = False
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=axis,
+            method=method,
+            numeric_only=numeric_only,
+            na_option=na_option,
+            ascending=ascending,
+            pct=pct
+        ))
+
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(
+            base_frame=self,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
+        ))
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
