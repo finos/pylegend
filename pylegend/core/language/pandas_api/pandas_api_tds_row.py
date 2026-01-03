@@ -15,7 +15,6 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
-    PyLegendOptional,
 )
 from pylegend.core.language import (
     PyLegendBoolean,
@@ -39,7 +38,6 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDate,
     PandasApiPrimitive,
 )
-from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.sql.metamodel import Expression, FunctionCall, IntegerLiteral, QualifiedName, QuerySpecification
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyLegendTdsFrame
