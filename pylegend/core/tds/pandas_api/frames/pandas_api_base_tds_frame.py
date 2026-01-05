@@ -675,6 +675,23 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
 
+    @property
+    def iloc(self) -> "PandasApiTdsFrame":
+        """
+        Purely integer-location based indexing for selection by position.
+        .iloc[] is primarily integer position based (from 0 to length-1 of the axis).
+
+        Allowed inputs are:
+        - An integer, e.g. 5.
+        - A slice object with ints, e.g. 1:7.
+        - A tuple of row and column indexes, e.g., (slice(1, 5), slice(0, 2))
+
+        Other pandas iloc features such as list of integers, boolean arrays, and callables
+        are not supported and will raise a NotImplementedError.
+        """
+        from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+        return PandasApiIlocIndexer(self)
+
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         """
         Return the first `n` rows by calling truncate on rows.
