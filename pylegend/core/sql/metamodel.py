@@ -87,7 +87,7 @@ __all__: PyLegendSequence[str] = [
     'InPredicate',
     'Window',
     'WindowFrame',
-    'FrameBound',
+    'FrameBound'
 ]
 
 
