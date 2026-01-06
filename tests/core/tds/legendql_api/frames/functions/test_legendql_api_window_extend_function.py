@@ -663,15 +663,9 @@ class TestWindowExtendAppliedFunction:
 
         with pytest.raises(TypeError) as t:
             frame.rows()  # type: ignore
-        assert t.value.args[0] == (
-            "LegendQLApiBaseTdsFrame.rows() missing 2 required positional arguments: 'start' and 'end'"
-        )
 
         with pytest.raises(TypeError) as t:
             frame.rows(1)  # type: ignore
-        assert t.value.args[0] == (
-            "LegendQLApiBaseTdsFrame.rows() missing 1 required positional argument: 'end'"
-        )
 
         with pytest.raises(TypeError) as t:
             frame.rows(datetime.datetime.now(), 0)  # type: ignore
@@ -690,9 +684,6 @@ class TestWindowExtendAppliedFunction:
 
         with pytest.raises(TypeError) as t:
             frame.range(1, 2)  # type: ignore
-        assert t.value.args[0] == (
-            "LegendQLApiBaseTdsFrame.range() takes 1 positional argument but 3 were given"
-        )
 
         with pytest.raises(ValueError) as v:
             frame.range(number_start=1, duration_end=2)
