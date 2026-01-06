@@ -69,6 +69,7 @@ from pylegend.extensions.tds.result_handler import (
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+    from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
 
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
@@ -676,7 +677,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
 
     @property
-    def iloc(self) -> "PandasApiTdsFrame":
+    def iloc(self) -> "PandasApiIlocIndexer":
         """
         Purely integer-location based indexing for selection by position.
         .iloc[] is primarily integer position based (from 0 to length-1 of the axis).

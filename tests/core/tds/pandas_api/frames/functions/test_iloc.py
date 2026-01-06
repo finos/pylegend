@@ -14,9 +14,8 @@
 
 import json
 from textwrap import dedent
-from datetime import date, datetime
+
 import pytest
-from mockito import expect
 
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
@@ -64,12 +63,15 @@ class TestIlocFunction:
         assert n.value.args[0] == "iloc with slice step other than 1 is not supported yet in Pandas Api"
 
         with pytest.raises(NotImplementedError) as n:
-            frame.iloc[:, [True, False]]
+            frame.iloc[:, [True, False]]  # type: ignore
         assert n.value.args[0] == "iloc supports integer, slice, or tuple of these, but got indexer of type: <class 'list'>"
 
         with pytest.raises(NotImplementedError) as n:
-            frame.iloc[lambda x: x%2 == 0, :]
-        assert n.value.args[0] == "iloc supports integer, slice, or tuple of these, but got indexer of type: <class 'function'>"
+            frame.iloc[lambda x: x % 2 == 0, :]  # type: ignore
+        assert n.value.args[0] == (
+            "iloc supports integer, slice, or tuple of these, "
+            "but got indexer of type: <class 'function'>"
+        )
 
     def test_iloc(self) -> None:
         columns = [

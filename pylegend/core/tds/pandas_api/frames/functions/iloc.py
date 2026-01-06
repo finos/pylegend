@@ -35,14 +35,17 @@ class PandasApiIlocIndexer:
     def __init__(self, frame: "PandasApiBaseTdsFrame") -> None:
         self._frame = frame
 
-    def __getitem__(
+    def __getitem__(  # type: ignore
             self,
-            key: PyLegendUnion[int, slice, PyLegendTuple[PyLegendUnion[int, slice], PyLegendUnion[int, slice]]]
+            key: PyLegendUnion[int, slice, PyLegendTuple[PyLegendUnion[int, slice], ...]]
     ) -> "PandasApiTdsFrame":
         if isinstance(key, tuple):
             if len(key) > 2:
                 raise IndexError("Too many indexers")
-            rows, cols = key
+            elif len(key) == 1:
+                rows, cols = key[0], slice(None, None, None)
+            else:
+                rows, cols = key  # type: ignore
         else:
             rows, cols = key, slice(None, None, None)
 
@@ -52,7 +55,7 @@ class PandasApiIlocIndexer:
         # Column selection
         return self._handle_column_selection(row_frame, cols)
 
-    def _handle_row_selection(self, rows: PyLegendUnion[int, slice]) -> "PandasApiTdsFrame":
+    def _handle_row_selection(self, rows: PyLegendUnion[int, slice]) -> "PandasApiTdsFrame":  # type: ignore
         if isinstance(rows, slice):
             if rows.step is not None and rows.step != 1:
                 raise NotImplementedError("iloc with slice step other than 1 is not supported yet in Pandas Api")
@@ -70,7 +73,7 @@ class PandasApiIlocIndexer:
                 f"iloc supports integer, slice, or tuple of these, but got indexer of type: {type(rows)}"
             )
 
-    def _handle_column_selection(
+    def _handle_column_selection(  # type: ignore
             self,
             frame: "PandasApiTdsFrame",
             cols: PyLegendUnion[int, slice]
