@@ -377,19 +377,13 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                 "Both duration_start and duration_end must be provided."
                 "(with duration_start_unit and duration_end_unit as needed).")
 
-        def requires_unit(value: object) -> bool:
-            if isinstance(value, str) and value.lower() == "unbounded":
-                return False
+        def is_unbounded(value: object) -> bool:
+            return isinstance(value, str) and value.lower() == "unbounded"
 
-            if isinstance(value, (int, float)) and value == 0:
-                return False
-
-            return True
-
-        if requires_unit(duration_start) and duration_start_unit is None:
+        if not is_unbounded(duration_start) and duration_start_unit is None:
             raise ValueError("duration_start_unit is required for bounded duration_start.")
 
-        if requires_unit(duration_end) and duration_end_unit is None:
+        if not is_unbounded(duration_end) and duration_end_unit is None:
             raise ValueError("duration_end_unit is required for bounded duration_end.")
 
         return LegendQLApiWindowFrame(
@@ -546,16 +540,18 @@ def infer_window_frame_bound(
             "Expected 'unbounded' (str) or numeric offset (int | float)."
         )
 
-    if value == 0:
-        return LegendQLApiWindowFrameBound(
-            LegendQLApiWindowFrameBoundType.CURRENT_ROW
-        )
-
     duration_unit_enum = (
         LegendQLApiDurationUnit.from_string(duration_unit)
         if duration_unit
         else None
     )
+
+    if value == 0:
+        return LegendQLApiWindowFrameBound(
+            LegendQLApiWindowFrameBoundType.CURRENT_ROW,
+            row_offset=None,
+            duration_unit=duration_unit_enum
+        )
 
     if value > 0:
         bound_type = LegendQLApiWindowFrameBoundType.FOLLOWING

@@ -591,11 +591,22 @@ class TestWindowExtendAppliedFunction:
             (
                     lambda f: f.range(
                         duration_start=0,
+                        duration_start_unit="DAYS",
                         duration_end=1,
                         duration_end_unit="HOURS"
                     ),
-                    "_range(0, 1, DurationUnit.HOURS)",
+                    "_range(0, DurationUnit.DAYS, 1, DurationUnit.HOURS)",
                     "RANGE BETWEEN CURRENT ROW AND INTERVAL '1 HOUR' FOLLOWING",
+            ),
+            (
+                    lambda f: f.range(
+                        duration_start=-1,
+                        duration_start_unit="DAYS",
+                        duration_end=0,
+                        duration_end_unit="HOURS"
+                    ),
+                    "_range(minus(1), DurationUnit.DAYS, 0, DurationUnit.HOURS)",
+                    "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND CURRENT ROW",
             ),
         ],
     )
