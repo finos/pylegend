@@ -74,7 +74,8 @@ from pylegend.core.sql.metamodel import (
     Union,
     WindowFrame,
     WindowFrameMode,
-    FrameBound
+    FrameBound,
+    FrameBoundType
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -922,7 +923,7 @@ def frame_bound_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig,
 ) -> str:
-    bound_sql = frame_bound.type_.to_sql_string()
+    bound_sql = extension.frame_bound_type_to_sql(frame_bound.type_)
 
     if frame_bound.value is None:
         return bound_sql
@@ -930,7 +931,7 @@ def frame_bound_processor(
     offset_expr = extension.process_expression(frame_bound.value, config)
 
     offset_sql = (
-        f"INTERVAL '{offset_expr} {frame_bound.duration_unit.name}'"
+        f"INTERVAL '{offset_expr} {frame_bound.duration_unit.value}'"
         if frame_bound.duration_unit
         else offset_expr
     )
@@ -981,6 +982,16 @@ class SqlToStringDbExtension:
                 return "'" + literal.value.replace("'", "''") + "'"
             raise RuntimeError("Unsupported literal type: " + str(type(literal)))
         return literal_process_function
+
+    @staticmethod
+    def frame_bound_type_to_sql(bound_type: FrameBoundType) -> str:
+        return {
+            FrameBoundType.UNBOUNDED_PRECEDING: "UNBOUNDED PRECEDING",
+            FrameBoundType.PRECEDING: "PRECEDING",
+            FrameBoundType.FOLLOWING: "FOLLOWING",
+            FrameBoundType.CURRENT_ROW: "CURRENT ROW",
+            FrameBoundType.UNBOUNDED_FOLLOWING: "UNBOUNDED FOLLOWING",
+        }[bound_type]
 
     def process_query_specification(self, query: QuerySpecification,
                                     config: SqlToStringConfig, nested_subquery: bool = False) -> str:

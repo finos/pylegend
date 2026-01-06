@@ -36,7 +36,7 @@ class TestLegendQLApiCustomExpressions:
         )
 
         with pytest.raises(ValueError) as r:
-            LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED, 1)
+            LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED_FOLLOWING, 1)
         assert r.value.args[0] == (
-            "row_offset is not allowed for bound_type UNBOUNDED"
+            "row_offset is not allowed for bound_type UNBOUNDED_FOLLOWING"
         )

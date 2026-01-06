@@ -17,17 +17,12 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendCallable,
     PyLegendUnion,
-    PyLegendOptional,
 )
 from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import (
     LegendQLApiPrimitive,
     LegendQLApiSortInfo,
     LegendQLApiSortDirection,
-    LegendQLApiDurationUnit,
-    LegendQLApiWindowFrameBoundType,
-    LegendQLApiWindowFrameBound,
-    LegendQLApiDurationInput
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
@@ -36,7 +31,6 @@ from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import Le
 __all__: PyLegendSequence[str] = [
     "infer_columns_from_frame",
     "infer_sorts_from_frame",
-    "infer_window_frame_bound"
 ]
 
 
@@ -141,58 +135,3 @@ def infer_sorts_from_frame(
                         "a lambda function which takes one argument (LegendQLApiTdsRow)")
 
     return sort_info_list
-
-
-def infer_window_frame_bound(
-        value: PyLegendOptional[
-            PyLegendUnion[str, int, float, LegendQLApiDurationInput]
-        ] = None,
-) -> LegendQLApiWindowFrameBound:
-    if value is None:
-        return LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
-
-    if isinstance(value, str):
-        if value.lower() != "unbounded":
-            raise ValueError(
-                f"Invalid window frame boundary '{value}'. "
-                "The only supported string value is 'unbounded'. "
-                "Otherwise, provide a numeric offset where "
-                "positive means FOLLOWING, negative means PRECEDING, "
-                "and 0 means CURRENT ROW."
-            )
-        return LegendQLApiWindowFrameBound(LegendQLApiWindowFrameBoundType.UNBOUNDED)
-
-    if isinstance(value, (int, float)):
-        return window_frame_bound_from_offset(value)
-
-    if isinstance(value, LegendQLApiDurationInput):
-        return window_frame_bound_from_offset(
-            value.get_offset(),
-            duration_unit=LegendQLApiDurationUnit.from_string(value.get_unit()),
-        )
-
-    raise TypeError(
-        f"Invalid type for window frame boundary: {type(value).__name__}. "
-        "Expected one of: "
-        "'unbounded' (str), numeric offset (int | float), "
-        "or LegendQLApiDurationBoundaryInput."
-    )
-
-
-def window_frame_bound_from_offset(
-        offset: PyLegendUnion[int, float],
-        duration_unit: PyLegendOptional[LegendQLApiDurationUnit] = None,
-) -> LegendQLApiWindowFrameBound:
-    if offset == 0:
-        return LegendQLApiWindowFrameBound(
-            LegendQLApiWindowFrameBoundType.CURRENT_ROW,
-            duration_unit=duration_unit,
-        )
-
-    return LegendQLApiWindowFrameBound(
-        LegendQLApiWindowFrameBoundType.FOLLOWING
-        if offset > 0
-        else LegendQLApiWindowFrameBoundType.PRECEDING,
-        offset,
-        duration_unit=duration_unit,
-    )

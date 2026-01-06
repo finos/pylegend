@@ -515,7 +515,7 @@ class TestWindowExtendAppliedFunction:
         "frame_builder, pure_expr, sql_expression",
         [
             (
-                    lambda f: f.rows(),
+                    lambda f: f.rows("unbounded", "unbounded"),
                     "rows(unbounded(), unbounded())",
                     "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
             ),
@@ -540,48 +540,60 @@ class TestWindowExtendAppliedFunction:
                     "ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
             ),
             (
-                    lambda f: f.range(),
+                    lambda f: f.range(number_start="unbounded", number_end="unbounded"),
                     "_range(unbounded(), unbounded())",
                     "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
-                    lambda f: f.range(-1),
+                    lambda f: f.range(number_start="unbounded", number_end=-1),
+                    "_range(unbounded(), minus(1))",
+                    "RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING",
+            ),
+            (
+                    lambda f: f.range(number_start=-1, number_end="unbounded"),
                     "_range(minus(1), unbounded())",
                     "RANGE BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
-                    lambda f: f.range(-1, 0),
+                    lambda f: f.range(number_start=-1, number_end=0),
                     "_range(minus(1), 0)",
                     "RANGE BETWEEN 1 PRECEDING AND CURRENT ROW",
             ),
             (
-                    lambda f: f.range(0, 1),
+                    lambda f: f.range(number_start=0, number_end=1),
                     "_range(0, 1)",
                     "RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING",
             ),
             (
-                    lambda f: f.range(-1, 1),
+                    lambda f: f.range(number_start=-1, number_end=1),
                     "_range(minus(1), 1)",
                     "RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING",
             ),
             (
-                    lambda f: f.duration_range(),
+                    lambda f: f.range(duration_start="unbounded", duration_end="unbounded"),
                     "_range(unbounded(), unbounded())",
                     "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
-                    lambda f: f.duration_range(f.duration_range_boundary(-1, "DAYS")),
+                    lambda f: f.range(duration_start=-1, duration_start_unit="DAYS", duration_end="unbounded"),
                     "_range(minus(1), DurationUnit.DAYS, unbounded())",
                     "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
-                    lambda f: f.duration_range(f.duration_range_boundary(-1, "DAYS"),
-                                               f.duration_range_boundary(1, "MONTHS")),
+                    lambda f: f.range(
+                        duration_start=-1,
+                        duration_start_unit="DAYS",
+                        duration_end=1,
+                        duration_end_unit="MONTHS"),
                     "_range(minus(1), DurationUnit.DAYS, 1, DurationUnit.MONTHS)",
                     "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND INTERVAL '1 MONTH' FOLLOWING",
             ),
             (
-                    lambda f: f.duration_range(0, f.duration_range_boundary(1, "HOURS")),
+                    lambda f: f.range(
+                        duration_start=0,
+                        duration_end=1,
+                        duration_end_unit="HOURS"
+                    ),
                     "_range(0, 1, DurationUnit.HOURS)",
                     "RANGE BETWEEN CURRENT ROW AND INTERVAL '1 HOUR' FOLLOWING",
             ),
@@ -590,8 +602,8 @@ class TestWindowExtendAppliedFunction:
     def test_query_gen_window_extend_window_frame(
             self,
             frame_builder: PyLegendCallable[
-                    [LegendQLApiTableSpecInputFrame],
-                    LegendQLApiWindowFrame
+                [LegendQLApiTableSpecInputFrame],
+                LegendQLApiWindowFrame
             ],
             pure_expr: str,
             sql_expression: str,
@@ -649,26 +661,96 @@ class TestWindowExtendAppliedFunction:
         ]
         frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        with pytest.raises(ValueError) as r:
-            frame.range("invalid_range")
-        assert r.value.args[0] == (
-            "Invalid window frame boundary 'invalid_range'. "
-            "The only supported string value is 'unbounded'. "
-            "Otherwise, provide a numeric offset where "
-            "positive means FOLLOWING, negative means PRECEDING, "
-            "and 0 means CURRENT ROW."
+        with pytest.raises(TypeError) as t:
+            frame.rows()  # type: ignore
+        assert t.value.args[0] == (
+            "LegendQLApiBaseTdsFrame.rows() missing 2 required positional arguments: 'start' and 'end'"
         )
 
         with pytest.raises(TypeError) as t:
-            frame.range(datetime.datetime.now())  # type: ignore
+            frame.rows(1)  # type: ignore
         assert t.value.args[0] == (
-            "Invalid type for window frame boundary: datetime. "
-            "Expected one of: "
-            "'unbounded' (str), numeric offset (int | float), "
-            "or LegendQLApiDurationBoundaryInput."
+            "LegendQLApiBaseTdsFrame.rows() missing 1 required positional argument: 'end'"
         )
 
-    def test_e2e_window_extend_function_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        with pytest.raises(TypeError) as t:
+            frame.rows(datetime.datetime.now(), 0)  # type: ignore
+        assert t.value.args[0] == (
+            "Invalid type for window frame boundary: datetime. "
+            "Expected 'unbounded' (str) or numeric offset (int | float)."
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range()
+        assert v.value.args[0] == (
+            "Either numeric range or duration range must be provided. "
+            "Specify number_start and number_end, or duration_start and duration_end "
+            "(with duration_start_unit and duration_end_unit as needed)."
+        )
+
+        with pytest.raises(TypeError) as t:
+            frame.range(1, 2)  # type: ignore
+        assert t.value.args[0] == (
+            "LegendQLApiBaseTdsFrame.range() takes 1 positional argument but 3 were given"
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range(number_start=1, duration_end=2)
+        assert v.value.args[0] == (
+            "Numeric range and duration range cannot be used together. "
+            "Use either (number_start, number_end) or (duration_start, duration_end)."
+            "(with duration_start_unit and duration_end_unit as needed)."
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range(number_start=1)
+        assert v.value.args[0] == (
+            "Both number_start and number_end must be provided together."
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range(number_end=1)
+        assert v.value.args[0] == (
+            "Both number_start and number_end must be provided together."
+        )
+
+        with pytest.raises(TypeError) as t:
+            frame.range(number_start=datetime.datetime.now(), number_end=0)  # type: ignore
+        assert t.value.args[0] == (
+            "Invalid type for window frame boundary: datetime. "
+            "Expected 'unbounded' (str) or numeric offset (int | float)."
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range(number_start="invalid", number_end=0)
+        assert v.value.args[0] == (
+            "Invalid window frame boundary 'invalid'. "
+            "Only 'unbounded' is supported as a string. "
+            "Otherwise, provide a numeric offset where "
+            "positive = FOLLOWING, negative = PRECEDING, "
+            "and 0 = CURRENT ROW."
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range(duration_start=1, duration_end=1)
+        assert v.value.args[0] == (
+            "duration_start_unit is required for bounded duration_start."
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range(duration_start="unbounded", duration_end=1)
+        assert v.value.args[0] == (
+            "duration_end_unit is required for bounded duration_end."
+        )
+
+        with pytest.raises(ValueError) as v:
+            frame.range(duration_start=1)
+        assert v.value.args[0] == (
+            "Both duration_start and duration_end must be provided."
+            "(with duration_start_unit and duration_end_unit as needed)."
+        )
+
+    def test_e2e_window_extend_function_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.select([
             "Id",
@@ -707,7 +789,7 @@ class TestWindowExtendAppliedFunction:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    def test_e2e_window_extend_function_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_window_extend_function_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.select([
             "Id",
@@ -754,7 +836,7 @@ class TestWindowExtendAppliedFunction:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    def test_e2e_window_extend_function_rows(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+    def test_e2e_window_extend_function_rows(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
         frame = frame.select([
             "Id",
@@ -789,5 +871,80 @@ class TestWindowExtendAppliedFunction:
                              {'values': [9, '2014-12-04', 10, 8, 1, 9]},
                              {'values': [10, '2014-12-04', 11, 9, 1, 10]},
                              {'values': [11, '2014-12-05', None, 10, 1, 11]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_window_extend_function_window_frame_rows_agg(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
+    ) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select([
+            "Id",
+            "Date",
+            "Quantity",
+            "Product/Name",
+            "Account/Name",
+        ])
+        frame = frame.window_extend(
+            frame.window(partition_by='Date', frame=frame.rows("unbounded", 0)),
+            [
+                ("Cnt", lambda p, w, r: r['Id'], lambda c: c.count())
+            ]
+        )
+        assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
+                "[TdsColumn(Name: Id, Type: Integer), TdsColumn(Name: Date, Type: StrictDate), "
+                "TdsColumn(Name: Quantity, Type: Float), TdsColumn(Name: Product/Name, Type: String), "
+                "TdsColumn(Name: Account/Name, Type: String), TdsColumn(Name: Cnt, Type: Integer)]")
+
+        expected = {'columns': ['Id', 'Date', 'Quantity', 'Product/Name', 'Account/Name', 'Cnt'],
+                    'rows': [{'values': [1, '2014-12-01', 25.0, 'Firm X', 'Account 1', 1]},
+                             {'values': [2, '2014-12-01', 320.0, 'Firm X', 'Account 2', 2]},
+                             {'values': [3, '2014-12-01', 11.0, 'Firm A', 'Account 1', 3]},
+                             {'values': [4, '2014-12-02', 23.0, 'Firm A', 'Account 2', 1]},
+                             {'values': [5, '2014-12-02', 32.0, 'Firm A', 'Account 1', 2]},
+                             {'values': [6, '2014-12-03', 27.0, 'Firm C', 'Account 1', 1]},
+                             {'values': [7, '2014-12-03', 44.0, 'Firm C', 'Account 1', 2]},
+                             {'values': [8, '2014-12-04', 22.0, 'Firm C', 'Account 2', 1]},
+                             {'values': [9, '2014-12-04', 45.0, 'Firm C', 'Account 2', 2]},
+                             {'values': [10, '2014-12-04', 38.0, 'Firm C', 'Account 2', 3]},
+                             {'values': [11, '2014-12-05', 5.0, None, None, 1]}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_window_extend_function_window_frame_range_agg(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select([
+            "Id",
+            "Date",
+            "Quantity",
+            "Product/Name",
+            "Account/Name",
+        ])
+        frame = frame.window_extend(
+            frame.window(partition_by='Date', order_by=["Id"], frame=frame.range(number_start="unbounded", number_end=-1)),
+            [
+                ("Cnt", lambda p, w, r: r['Id'], lambda c: c.count())
+            ]
+        )
+        assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
+                "[TdsColumn(Name: Id, Type: Integer), TdsColumn(Name: Date, Type: StrictDate), "
+                "TdsColumn(Name: Quantity, Type: Float), TdsColumn(Name: Product/Name, Type: String), "
+                "TdsColumn(Name: Account/Name, Type: String), TdsColumn(Name: Cnt, Type: Integer)]")
+
+        expected = {'columns': ['Id', 'Date', 'Quantity', 'Product/Name', 'Account/Name', 'Cnt'],
+                    'rows': [{'values': [1, '2014-12-01', 25.0, 'Firm X', 'Account 1', 0]},
+                             {'values': [2, '2014-12-01', 320.0, 'Firm X', 'Account 2', 1]},
+                             {'values': [3, '2014-12-01', 11.0, 'Firm A', 'Account 1', 2]},
+                             {'values': [4, '2014-12-02', 23.0, 'Firm A', 'Account 2', 0]},
+                             {'values': [5, '2014-12-02', 32.0, 'Firm A', 'Account 1', 1]},
+                             {'values': [6, '2014-12-03', 27.0, 'Firm C', 'Account 1', 0]},
+                             {'values': [7, '2014-12-03', 44.0, 'Firm C', 'Account 1', 1]},
+                             {'values': [8, '2014-12-04', 22.0, 'Firm C', 'Account 2', 0]},
+                             {'values': [9, '2014-12-04', 45.0, 'Firm C', 'Account 2', 1]},
+                             {'values': [10, '2014-12-04', 38.0, 'Firm C', 'Account 2', 2]},
+                             {'values': [11, '2014-12-05', 5.0, None, None, 0]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected

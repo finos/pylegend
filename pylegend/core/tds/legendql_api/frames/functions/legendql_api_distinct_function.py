@@ -24,6 +24,8 @@ from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
+    QualifiedNameReference,
+    QualifiedName,
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -74,15 +76,16 @@ class LegendQLApiDistinctFunction(LegendQLApiAppliedFunction):
         new_query.select.distinct = True
         if self.__column_name_list:
             db_extension = config.sql_to_string_generator().get_db_extension()
-            quoted_cols = {
-                db_extension.quote_identifier(col)
-                for col in self.__column_name_list
-            }
+            table_alias = db_extension.quote_identifier("root")
 
             new_query.select.selectItems = [
-                item
-                for item in new_query.select.selectItems
-                if isinstance(item, SingleColumn) and item.alias in quoted_cols
+                SingleColumn(
+                    alias=db_extension.quote_identifier(col),
+                    expression=QualifiedNameReference(
+                        name=QualifiedName(parts=[table_alias, db_extension.quote_identifier(col)])
+                    )
+                )
+                for col in self.__column_name_list
             ]
         return new_query
 
@@ -101,7 +104,18 @@ class LegendQLApiDistinctFunction(LegendQLApiAppliedFunction):
         return []
 
     def calculate_columns(self) -> PyLegendSequence[TdsColumn]:
-        return [c.copy() for c in self.__base_frame.columns()]
+        if not self.__column_name_list:
+            return [c.copy() for c in self.__base_frame.columns()]
+
+        base_columns = self.__base_frame.columns()
+        new_columns = []
+        for name in self.__column_name_list:
+            for col in base_columns:
+                if col.get_name() == name:
+                    new_columns.append(col.copy())
+                    break
+
+        return new_columns
 
     def validate(self) -> bool:
         return True

@@ -69,11 +69,6 @@ from pylegend.core.sql.metamodel import (
     Window,
     TableFunction,
     Union,
-    WindowFrame,
-    WindowFrameMode,
-    FrameBound,
-    FrameBoundType,
-    DurationUnit,
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -1702,31 +1697,3 @@ class TestSqlToStringDbExtensionProcessing:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
         assert (extension.process_expression(ConstantExpression('CURRENT_USER'), config) == "CURRENT_USER")
-
-    def test_process_window_frame_expression(self) -> None:
-        extension = SqlToStringDbExtension()
-        config = SqlToStringConfig(SqlToStringFormat(pretty=False))
-
-        frame = WindowFrame(
-            mode=WindowFrameMode.ROWS,
-            start=FrameBound(FrameBoundType.UNBOUNDED_PRECEDING, value=None),
-            end=None
-        )
-
-        assert (extension.process_window_frame(frame, config) == "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING")
-
-        frame = WindowFrame(
-            mode=WindowFrameMode.RANGE,
-            start=FrameBound(FrameBoundType.PRECEDING, value=ConstantExpression("1")),
-            end=FrameBound(FrameBoundType.FOLLOWING, value=ConstantExpression("2"))
-        )
-
-        assert (extension.process_window_frame(frame, config) == "RANGE BETWEEN 1 PRECEDING AND 2 FOLLOWING")
-
-        frame = WindowFrame(
-            mode=WindowFrameMode.RANGE,
-            start=FrameBound(FrameBoundType.PRECEDING, value=ConstantExpression("1"), duration_unit=DurationUnit.DAY),
-            end=FrameBound(FrameBoundType.FOLLOWING, value=ConstantExpression("2"))
-        )
-
-        assert (extension.process_window_frame(frame, config) == "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND 2 FOLLOWING")

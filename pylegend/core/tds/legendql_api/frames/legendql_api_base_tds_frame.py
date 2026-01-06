@@ -32,7 +32,9 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiWindowReference,
     LegendQLApiWindowFrame,
     LegendQLApiWindowFrameMode,
-    LegendQLApiDurationInput
+    LegendQLApiWindowFrameBound,
+    LegendQLApiWindowFrameBoundType,
+    LegendQLApiDurationUnit
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
@@ -316,49 +318,85 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiGroupByFunction(self, grouping_columns, aggregate_specifications)
         )
 
-    @staticmethod
     def rows(
-            start: PyLegendOptional[PyLegendUnion[str, int]] = None,
-            end: PyLegendOptional[PyLegendUnion[str, int]] = None) -> LegendQLApiWindowFrame:
-        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import \
-            infer_window_frame_bound
-
+            self,
+            start: PyLegendUnion[str, int, float],
+            end: PyLegendUnion[str, int, float]) -> LegendQLApiWindowFrame:
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.ROWS,
-            infer_window_frame_bound(start),
+            infer_window_frame_bound(start, is_start_bound=True),
             infer_window_frame_bound(end)
         )
 
-    @staticmethod
     def range(
-            start: PyLegendOptional[PyLegendUnion[str, int]] = None,
-            end: PyLegendOptional[PyLegendUnion[str, int]] = None) -> LegendQLApiWindowFrame:
-        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import \
-            infer_window_frame_bound
+            self,
+            *,
+            number_start: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            number_end: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            duration_start: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            duration_start_unit: PyLegendOptional[str] = None,
+            duration_end: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            duration_end_unit: PyLegendOptional[str] = None) -> LegendQLApiWindowFrame:
+
+        has_number = number_start is not None or number_end is not None
+        has_duration = any([
+            duration_start is not None,
+            duration_end is not None,
+            duration_start_unit is not None,
+            duration_end_unit is not None,
+        ])
+
+        if not has_number and not has_duration:
+            raise ValueError(
+                "Either numeric range or duration range must be provided. "
+                "Specify number_start and number_end, or duration_start and duration_end "
+                "(with duration_start_unit and duration_end_unit as needed)."
+            )
+
+        if has_number and has_duration:
+            raise ValueError(
+                "Numeric range and duration range cannot be used together. "
+                "Use either (number_start, number_end) or (duration_start, duration_end)."
+                "(with duration_start_unit and duration_end_unit as needed)."
+            )
+
+        if has_number:
+            if number_start is None or number_end is None:
+                raise ValueError(
+                    "Both number_start and number_end must be provided together."
+                )
+
+            return LegendQLApiWindowFrame(
+                LegendQLApiWindowFrameMode.RANGE,
+                infer_window_frame_bound(number_start, is_start_bound=True),
+                infer_window_frame_bound(number_end),
+            )
+
+        if duration_start is None or duration_end is None:
+            raise ValueError(
+                "Both duration_start and duration_end must be provided."
+                "(with duration_start_unit and duration_end_unit as needed).")
+
+        def requires_unit(value: object) -> bool:
+            if isinstance(value, str) and value.lower() == "unbounded":
+                return False
+
+            if isinstance(value, (int, float)) and value == 0:
+                return False
+
+            return True
+
+        if requires_unit(duration_start) and duration_start_unit is None:
+            raise ValueError("duration_start_unit is required for bounded duration_start.")
+
+        if requires_unit(duration_end) and duration_end_unit is None:
+            raise ValueError("duration_end_unit is required for bounded duration_end.")
 
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.RANGE,
-            infer_window_frame_bound(start),
-            infer_window_frame_bound(end)
+            infer_window_frame_bound(duration_start, is_start_bound=True, duration_unit=duration_start_unit),
+            infer_window_frame_bound(duration_end, duration_unit=duration_end_unit)
         )
-
-    @staticmethod
-    def duration_range(
-            start: PyLegendOptional[PyLegendUnion[str, LegendQLApiDurationInput]] = None,
-            end: PyLegendOptional[PyLegendUnion[str, LegendQLApiDurationInput]] = None
-    ) -> LegendQLApiWindowFrame:
-        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import \
-            infer_window_frame_bound
-
-        return LegendQLApiWindowFrame(
-            LegendQLApiWindowFrameMode.RANGE,
-            infer_window_frame_bound(start),
-            infer_window_frame_bound(end)
-        )
-
-    @staticmethod
-    def duration_range_boundary(value: int, unit: str) -> LegendQLApiDurationInput:
-        return LegendQLApiDurationInput(value, unit)
 
     def window(
             self,
@@ -474,3 +512,54 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiProjectFunction
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiProjectFunction(self, project_columns))
+
+
+def infer_window_frame_bound(
+        value: PyLegendOptional[
+            PyLegendUnion[str, int, float]
+        ] = None,
+        *,
+        is_start_bound: bool = False,
+        duration_unit: PyLegendOptional[str] = None,
+) -> LegendQLApiWindowFrameBound:
+    if isinstance(value, str):
+        if value.lower() != "unbounded":
+            raise ValueError(
+                f"Invalid window frame boundary '{value}'. "
+                "Only 'unbounded' is supported as a string. "
+                "Otherwise, provide a numeric offset where "
+                "positive = FOLLOWING, negative = PRECEDING, "
+                "and 0 = CURRENT ROW."
+            )
+
+        bound_type = (
+            LegendQLApiWindowFrameBoundType.UNBOUNDED_PRECEDING
+            if is_start_bound
+            else LegendQLApiWindowFrameBoundType.UNBOUNDED_FOLLOWING
+        )
+
+        return LegendQLApiWindowFrameBound(bound_type)
+
+    if not isinstance(value, (int, float)):
+        raise TypeError(
+            f"Invalid type for window frame boundary: {type(value).__name__}. "
+            "Expected 'unbounded' (str) or numeric offset (int | float)."
+        )
+
+    if value == 0:
+        return LegendQLApiWindowFrameBound(
+            LegendQLApiWindowFrameBoundType.CURRENT_ROW
+        )
+
+    duration_unit_enum = (
+        LegendQLApiDurationUnit.from_string(duration_unit)
+        if duration_unit
+        else None
+    )
+
+    if value > 0:
+        bound_type = LegendQLApiWindowFrameBoundType.FOLLOWING
+    else:
+        bound_type = LegendQLApiWindowFrameBoundType.PRECEDING
+
+    return LegendQLApiWindowFrameBound(bound_type, value, duration_unit_enum)

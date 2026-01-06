@@ -52,7 +52,7 @@ from pylegend.core.sql.metamodel import (
     WindowFrameMode,
     FrameBound,
     FrameBoundType,
-    DurationUnit
+    StringLiteral
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from typing import TYPE_CHECKING
@@ -75,7 +75,6 @@ __all__: PyLegendSequence[str] = [
     "LegendQLApiWindowFrameBound",
     "LegendQLApiWindowFrameMode",
     "LegendQLApiWindowFrame",
-    "LegendQLApiDurationInput",
     "LegendQLApiDurationUnit",
     "LegendQLApiWindowFrameBoundType"
 ]
@@ -188,34 +187,26 @@ class LegendQLApiWindowFrameMode(Enum):
 
 
 class LegendQLApiWindowFrameBoundType(Enum):
-    UNBOUNDED = 1
+    UNBOUNDED_PRECEDING = 1
     PRECEDING = 2
     CURRENT_ROW = 3
     FOLLOWING = 4
+    UNBOUNDED_FOLLOWING = 5
 
     def to_sql_node(
             self,
             query: QuerySpecification,
             config: FrameToSqlConfig,
-            is_start_bound: bool
     ) -> FrameBoundType:
-        if self is LegendQLApiWindowFrameBoundType.UNBOUNDED:
-            return (
-                FrameBoundType.UNBOUNDED_PRECEDING
-                if is_start_bound
-                else FrameBoundType.UNBOUNDED_FOLLOWING
-            )
-
         mapping = {
+            LegendQLApiWindowFrameBoundType.UNBOUNDED_PRECEDING: FrameBoundType.UNBOUNDED_PRECEDING,
             LegendQLApiWindowFrameBoundType.PRECEDING: FrameBoundType.PRECEDING,
             LegendQLApiWindowFrameBoundType.CURRENT_ROW: FrameBoundType.CURRENT_ROW,
             LegendQLApiWindowFrameBoundType.FOLLOWING: FrameBoundType.FOLLOWING,
+            LegendQLApiWindowFrameBoundType.UNBOUNDED_FOLLOWING: FrameBoundType.UNBOUNDED_FOLLOWING
         }
 
-        try:
-            return mapping[self]
-        except KeyError:  # pragma: no cover
-            raise ValueError(f"Unsupported frame bound type: {self}")  # pragma: no cover
+        return mapping[self]
 
 
 class LegendQLApiDurationUnit(Enum):
@@ -237,24 +228,21 @@ class LegendQLApiDurationUnit(Enum):
             self,
             query: QuerySpecification,
             config: FrameToSqlConfig
-    ) -> DurationUnit:
+    ) -> StringLiteral:
         mapping = {
-            LegendQLApiDurationUnit.YEARS: DurationUnit.YEAR,
-            LegendQLApiDurationUnit.MONTHS: DurationUnit.MONTH,
-            LegendQLApiDurationUnit.WEEKS: DurationUnit.WEEK,
-            LegendQLApiDurationUnit.DAYS: DurationUnit.DAY,
-            LegendQLApiDurationUnit.HOURS: DurationUnit.HOUR,
-            LegendQLApiDurationUnit.MINUTES: DurationUnit.MINUTE,
-            LegendQLApiDurationUnit.SECONDS: DurationUnit.SECOND,
-            LegendQLApiDurationUnit.MILLISECONDS: DurationUnit.MILLISECOND,
-            LegendQLApiDurationUnit.MICROSECONDS: DurationUnit.MICROSECOND,
-            LegendQLApiDurationUnit.NANOSECONDS: DurationUnit.NANOSECOND,
+            LegendQLApiDurationUnit.YEARS: "YEAR",
+            LegendQLApiDurationUnit.MONTHS: "MONTH",
+            LegendQLApiDurationUnit.WEEKS: "WEEK",
+            LegendQLApiDurationUnit.DAYS: "DAY",
+            LegendQLApiDurationUnit.HOURS: "HOUR",
+            LegendQLApiDurationUnit.MINUTES: "MINUTE",
+            LegendQLApiDurationUnit.SECONDS: "SECOND",
+            LegendQLApiDurationUnit.MILLISECONDS: "MILLISECOND",
+            LegendQLApiDurationUnit.MICROSECONDS: "MICROSECOND",
+            LegendQLApiDurationUnit.NANOSECONDS: "NANOSECOND",
         }
 
-        try:
-            return mapping[self]
-        except KeyError:  # pragma: no cover
-            raise ValueError(f"Unsupported duration unit: {self}")  # pragma: no cover
+        return StringLiteral(mapping[self], quoted=False)
 
     @classmethod
     def from_string(cls, value: str) -> "LegendQLApiDurationUnit":
@@ -265,21 +253,6 @@ class LegendQLApiDurationUnit(Enum):
                 f"Invalid duration unit '{value}'. "
                 f"Supported values: {[u.name.lower() for u in cls]}"
             )
-
-
-class LegendQLApiDurationInput:
-    __offset: int
-    __unit: str
-
-    def __init__(self, offset: int, unit: str) -> None:
-        self.__offset = offset
-        self.__unit = unit
-
-    def get_offset(self) -> int:
-        return self.__offset
-
-    def get_unit(self) -> str:
-        return self.__unit
 
 
 class LegendQLApiWindowFrameBound:
@@ -310,7 +283,8 @@ class LegendQLApiWindowFrameBound:
         self.__duration_unit = duration_unit
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        if self.__bound_type == LegendQLApiWindowFrameBoundType.UNBOUNDED:
+        if (self.__bound_type == LegendQLApiWindowFrameBoundType.UNBOUNDED_FOLLOWING
+                or self.__bound_type == LegendQLApiWindowFrameBoundType.UNBOUNDED_PRECEDING):
             return "unbounded()"
 
         elif self.__bound_type == LegendQLApiWindowFrameBoundType.CURRENT_ROW:
@@ -329,13 +303,12 @@ class LegendQLApiWindowFrameBound:
             self,
             query: QuerySpecification,
             config: FrameToSqlConfig,
-            is_start_bound: bool,
     ) -> FrameBound:
         value = (convert_literal_to_literal_expression(abs(self.__row_offset))
                  .to_sql_expression({"w": query}, config)) \
             if self.__row_offset is not None else None
 
-        frame_bound_type = self.__bound_type.to_sql_node(query, config, is_start_bound)
+        frame_bound_type = self.__bound_type.to_sql_node(query, config)
 
         duration_unit = self.__duration_unit.to_sql_node(
             query,
@@ -373,8 +346,8 @@ class LegendQLApiWindowFrame:
     ) -> WindowFrame:
         return WindowFrame(
             mode=WindowFrameMode.ROWS if self.__mode == LegendQLApiWindowFrameMode.ROWS else WindowFrameMode.RANGE,
-            start=self.__start_bound.to_sql_node(query, config, True),
-            end=self.__end_bound.to_sql_node(query, config, False),
+            start=self.__start_bound.to_sql_node(query, config),
+            end=self.__end_bound.to_sql_node(query, config),
         )
 
 
