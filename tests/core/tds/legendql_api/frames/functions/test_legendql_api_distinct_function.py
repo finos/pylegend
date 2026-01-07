@@ -69,13 +69,20 @@ class TestDistinctAppliedFunction:
         assert generate_pure_query_and_compile(distinct_frame, FrameToPureConfig(False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->distinct()')
 
-        distinct_col1_frame = frame.distinct(['col1'])
+        distinct_col1_frame = frame.distinct("col1")
 
         expected = '''\
-                SELECT DISTINCT
-                    "root"."col1" AS "col1"
-                FROM
-                    test_schema.test_table AS "root"'''
+                   SELECT DISTINCT
+                       "root"."col1" AS "col1"
+                   FROM
+                       (
+                           SELECT
+                               "root".col1 AS "col1",
+                               "root".col2 AS "col2",
+                               "root".col3 AS "col3"
+                           FROM
+                               test_schema.test_table AS "root"
+                       ) AS "root"'''
         assert distinct_col1_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert len(distinct_col1_frame.columns()) == 1 and distinct_col1_frame.columns()[0].get_name() == "col1"
         assert generate_pure_query_and_compile(distinct_col1_frame, FrameToPureConfig(), self.legend_client) == dedent(
@@ -91,7 +98,14 @@ class TestDistinctAppliedFunction:
                        "root"."col1" AS "col1",
                        "root"."col2" AS "col2"
                    FROM
-                       test_schema.test_table AS "root"'''
+                       (
+                           SELECT
+                               "root".col1 AS "col1",
+                               "root".col2 AS "col2",
+                               "root".col3 AS "col3"
+                           FROM
+                               test_schema.test_table AS "root"
+                       ) AS "root"'''
         assert distinct_col1_col2_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert (
                 len(distinct_col1_col2_frame.columns()) == 2 and
@@ -103,7 +117,7 @@ class TestDistinctAppliedFunction:
               ->distinct(~[col1, col2])'''
         )
 
-        distinct_all_col_frame = frame.distinct(['col3', 'col1', 'col2'])
+        distinct_all_col_frame = frame.distinct(lambda r: [r.col3, r["col1"], r.col2])
 
         expected = '''\
                    SELECT DISTINCT
@@ -111,7 +125,14 @@ class TestDistinctAppliedFunction:
                        "root"."col1" AS "col1",
                        "root"."col2" AS "col2"
                    FROM
-                       test_schema.test_table AS "root"'''
+                       (
+                           SELECT
+                               "root".col1 AS "col1",
+                               "root".col2 AS "col2",
+                               "root".col3 AS "col3"
+                           FROM
+                               test_schema.test_table AS "root"
+                       ) AS "root"'''
         assert distinct_all_col_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert len(distinct_all_col_frame.columns()) == 3 and {col.get_name() for col in
                                                                distinct_all_col_frame.columns()} == {"col1", "col2",
@@ -168,18 +189,16 @@ class TestDistinctAppliedFunction:
         distinct_all_res = distinct_all_frame.execute_frame_to_string()
         assert json.loads(distinct_all_res)["result"] == distinct_two_col_expected
 
-        distinct_one_col_frame = frame.distinct(["First Name"])
-        distinct_one_col_expected = {'columns': ['First Name'],
-                                     'rows': [{'values': ['Anthony']},
-                                              {'values': ['David']},
-                                              {'values': ['Fabrice']},
-                                              {'values': ['John']},
-                                              {'values': ['Oliver']},
-                                              {'values': ['Peter']}]}
+        distinct_one_col_frame = frame.distinct("Firm/Legal Name")
+        distinct_one_col_expected = {'columns': ['Firm/Legal Name'],
+                                     'rows': [{'values': ['Firm A']},
+                                              {'values': ['Firm B']},
+                                              {'values': ['Firm C']},
+                                              {'values': ['Firm X']}]}
         distinct_one_col_res = distinct_one_col_frame.execute_frame_to_string()
         assert json.loads(distinct_one_col_res)["result"] == distinct_one_col_expected
 
-        distinct_two_col_frame = frame.distinct(["First Name", "Firm/Legal Name"])
+        distinct_two_col_frame = frame.distinct(lambda r: [r["First Name"], r["Firm/Legal Name"]])
         distinct_two_col_res = distinct_two_col_frame.execute_frame_to_string()
         assert json.loads(distinct_two_col_res)["result"] == distinct_two_col_expected
 

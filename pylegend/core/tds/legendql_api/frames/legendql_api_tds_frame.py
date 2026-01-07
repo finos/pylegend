@@ -341,8 +341,8 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     @abstractmethod
     def rows(
             self,
-            start: PyLegendUnion[str, int, float],
-            end: PyLegendUnion[str, int, float]) -> LegendQLApiWindowFrame:
+            start: PyLegendUnion[str, int],
+            end: PyLegendUnion[str, int]) -> LegendQLApiWindowFrame:
         pass  # pragma: no cover
 
     @abstractmethod

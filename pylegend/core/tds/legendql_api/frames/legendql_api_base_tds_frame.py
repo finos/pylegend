@@ -320,12 +320,12 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
     def rows(
             self,
-            start: PyLegendUnion[str, int, float],
-            end: PyLegendUnion[str, int, float]) -> LegendQLApiWindowFrame:
+            start: PyLegendUnion[str, int],
+            end: PyLegendUnion[str, int]) -> LegendQLApiWindowFrame:
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.ROWS,
-            infer_window_frame_bound(start, is_start_bound=True),
-            infer_window_frame_bound(end)
+            _infer_window_frame_bound(start, is_start_bound=True),
+            _infer_window_frame_bound(end)
         )
 
     def range(
@@ -368,8 +368,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             return LegendQLApiWindowFrame(
                 LegendQLApiWindowFrameMode.RANGE,
-                infer_window_frame_bound(number_start, is_start_bound=True),
-                infer_window_frame_bound(number_end),
+                _infer_window_frame_bound(number_start, is_start_bound=True),
+                _infer_window_frame_bound(number_end),
             )
 
         if duration_start is None or duration_end is None:
@@ -388,8 +388,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.RANGE,
-            infer_window_frame_bound(duration_start, is_start_bound=True, duration_unit=duration_start_unit),
-            infer_window_frame_bound(duration_end, duration_unit=duration_end_unit)
+            _infer_window_frame_bound(duration_start, is_start_bound=True, duration_unit=duration_start_unit),
+            _infer_window_frame_bound(duration_end, duration_unit=duration_end_unit)
         )
 
     def window(
@@ -508,7 +508,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiProjectFunction(self, project_columns))
 
 
-def infer_window_frame_bound(
+def _infer_window_frame_bound(
         value: PyLegendOptional[
             PyLegendUnion[str, int, float]
         ] = None,

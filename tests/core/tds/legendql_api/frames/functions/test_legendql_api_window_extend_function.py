@@ -914,7 +914,7 @@ class TestWindowExtendAppliedFunction:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    def test_e2e_window_extend_function_window_frame_range_agg(
+    def test_e2e_window_extend_function_window_frame_numeric_range_agg(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
@@ -925,13 +925,14 @@ class TestWindowExtendAppliedFunction:
             "Product/Name",
             "Account/Name",
         ])
-        frame = frame.window_extend(
-            frame.window(partition_by='Date', order_by=["Id"], frame=frame.range(number_start="unbounded", number_end=-1)),
+        numeric_range_frame = frame.window_extend(
+            frame.window(partition_by='Date', order_by=["Id"],
+                         frame=frame.range(number_start="unbounded", number_end=-1)),
             [
                 ("Cnt", lambda p, w, r: r['Id'], lambda c: c.count())
             ]
         )
-        assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
+        assert ("[" + ", ".join([str(c) for c in numeric_range_frame.columns()]) + "]" ==
                 "[TdsColumn(Name: Id, Type: Integer), TdsColumn(Name: Date, Type: StrictDate), "
                 "TdsColumn(Name: Quantity, Type: Float), TdsColumn(Name: Product/Name, Type: String), "
                 "TdsColumn(Name: Account/Name, Type: String), TdsColumn(Name: Cnt, Type: Integer)]")
@@ -948,5 +949,48 @@ class TestWindowExtendAppliedFunction:
                              {'values': [9, '2014-12-04', 45.0, 'Firm C', 'Account 2', 1]},
                              {'values': [10, '2014-12-04', 38.0, 'Firm C', 'Account 2', 2]},
                              {'values': [11, '2014-12-05', 5.0, None, None, 0]}]}
-        res = frame.execute_frame_to_string()
+        res = numeric_range_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    @pytest.mark.skip(reason="interval range not currently supported in legend engine")
+    def test_e2e_window_extend_function_window_frame_duration_range_agg(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = frame.select([
+            "Id",
+            "Date",
+            "Quantity",
+            "Product/Name",
+            "Account/Name",
+        ])
+
+        duration_range_frame = frame.window_extend(
+            frame.window(partition_by='Product/Name',
+                         order_by=["Date"],
+                         frame=frame.range(
+                             duration_start=0,
+                             duration_start_unit='DAYS',
+                             duration_end=1,
+                             duration_end_unit='DAYS')),
+            [
+                ("Sum", lambda p, w, r: r['Id'], lambda c: c.sum())  # type: ignore
+            ]
+        )
+
+        expected = {'columns': ['Id', 'Date', 'Quantity', 'Product/Name', 'Account/Name', 'Sum'],
+                    'rows': [
+                        {'values': [1, '2014-12-01', 25.0, 'Firm X', 'Account 1', 345.0]},
+                        {'values': [2, '2014-12-01', 320.0, 'Firm X', 'Account 2', 345.0]},
+                        {'values': [3, '2014-12-01', 11.0, 'Firm A', 'Account 1', 66.0]},
+                        {'values': [4, '2014-12-02', 23.0, 'Firm A', 'Account 2', 55.0]},
+                        {'values': [5, '2014-12-02', 32.0, 'Firm A', 'Account 1', 55.0]},
+                        {'values': [6, '2014-12-03', 27.0, 'Firm C', 'Account 1', 176.0]},
+                        {'values': [7, '2014-12-03', 44.0, 'Firm C', 'Account 1', 176.0]},
+                        {'values': [8, '2014-12-04', 22.0, 'Firm C', 'Account 2', 105.0]},
+                        {'values': [9, '2014-12-04', 45.0, 'Firm C', 'Account 2', 105.0]},
+                        {'values': [10, '2014-12-04', 38.0, 'Firm C', 'Account 2', 105.0]},
+                        {'values': [11, '2014-12-05', 5.0, None, None, 5.0]}
+                    ]}
+        res = duration_range_frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
