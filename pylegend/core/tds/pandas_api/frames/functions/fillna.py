@@ -138,6 +138,15 @@ class PandasApiFillnaFunction(PandasApiAppliedFunction):
 
         if not isinstance(self.__value, (int, float, str, bool, date, datetime, dict)):
             raise TypeError(f"'value' parameter must be a scalar or dict, but you passed a {type(self.__value)}")
+        if isinstance(self.__value, dict):
+            for k, v in self.__value.items():
+                if not isinstance(k, str):
+                    raise TypeError(
+                        "All keys in 'value' dict must be strings representing column names, "
+                        f"but found key of type {type(k)}"
+                    )
+                if not isinstance(v, (int, float, str, bool, date, datetime)):
+                    raise TypeError(f"Non-scalar value of type {type(v)} passed for column '{k}' in 'value' parameter")
 
         if self.__axis not in (0, 1, "index", "columns"):
             raise ValueError(f"No axis named {self.__axis} for object type TdsFrame")
