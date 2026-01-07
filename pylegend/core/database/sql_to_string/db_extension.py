@@ -923,7 +923,13 @@ def frame_bound_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig,
 ) -> str:
-    bound_sql = extension.frame_bound_type_to_sql(frame_bound.type_)
+    bound_sql = {
+        FrameBoundType.UNBOUNDED_PRECEDING: "UNBOUNDED PRECEDING",
+        FrameBoundType.PRECEDING: "PRECEDING",
+        FrameBoundType.FOLLOWING: "FOLLOWING",
+        FrameBoundType.CURRENT_ROW: "CURRENT ROW",
+        FrameBoundType.UNBOUNDED_FOLLOWING: "UNBOUNDED FOLLOWING",
+    }[frame_bound.type_]
 
     if frame_bound.value is None:
         return bound_sql
@@ -982,16 +988,6 @@ class SqlToStringDbExtension:
                 return "'" + literal.value.replace("'", "''") + "'"
             raise RuntimeError("Unsupported literal type: " + str(type(literal)))
         return literal_process_function
-
-    @staticmethod
-    def frame_bound_type_to_sql(bound_type: FrameBoundType) -> str:
-        return {
-            FrameBoundType.UNBOUNDED_PRECEDING: "UNBOUNDED PRECEDING",
-            FrameBoundType.PRECEDING: "PRECEDING",
-            FrameBoundType.FOLLOWING: "FOLLOWING",
-            FrameBoundType.CURRENT_ROW: "CURRENT ROW",
-            FrameBoundType.UNBOUNDED_FOLLOWING: "UNBOUNDED FOLLOWING",
-        }[bound_type]
 
     def process_query_specification(self, query: QuerySpecification,
                                     config: SqlToStringConfig, nested_subquery: bool = False) -> str:
