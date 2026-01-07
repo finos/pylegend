@@ -48,6 +48,14 @@ class TestFillnaFunction:
             frame.fillna(value=[5])  # type: ignore
         assert t.value.args[0] == "'value' parameter must be a scalar or dict, but you passed a <class 'list'>"
 
+        with pytest.raises(TypeError) as t:
+            frame.fillna(value={'col1': [5]})  # type: ignore
+        assert t.value.args[0] == "Non-scalar value of type <class 'list'> passed for column 'col1' in 'value' parameter"
+
+        with pytest.raises(TypeError) as t:
+            frame.fillna(value={8: 5})  # type: ignore
+        assert t.value.args[0] == "All keys in 'value' dict must be strings representing column names, but found key of type <class 'int'>"
+
         with pytest.raises(ValueError) as v:
             frame.fillna()
         assert v.value.args[0] == "Must specify a fill 'value'"
