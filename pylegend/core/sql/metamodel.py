@@ -918,12 +918,15 @@ class WindowFrame(Node):
 class FrameBound(Node):
     type_: "FrameBoundType"
     value: "PyLegendOptional[Expression]"
+    duration_unit: "PyLegendOptional[StringLiteral]"
 
     def __init__(
         self,
         type_: "FrameBoundType",
-        value: "PyLegendOptional[Expression]"
+        value: "PyLegendOptional[Expression]",
+        duration_unit: "PyLegendOptional[StringLiteral]" = None
     ) -> None:
         super().__init__(_type="frameBound")
         self.type_ = type_
         self.value = value
+        self.duration_unit = duration_unit

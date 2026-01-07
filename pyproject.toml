@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pylegend"
-version = "0.11.0"
+version = "0.12.0"
 description = "Python language binding for Legend data management platform"
 authors = ["PyLegend Maintainers <legend@finos.org>"]
 license = "Apache-2.0"
