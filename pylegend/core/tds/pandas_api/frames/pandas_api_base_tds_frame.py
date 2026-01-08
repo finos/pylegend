@@ -693,6 +693,27 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
         return PandasApiIlocIndexer(self)
 
+    @property
+    def loc(self) -> "PandasApiLocIndexer":
+        """
+        Access a group of rows and columns by label(s) or a boolean array.
+        .loc[] is primarily label based, but may also be used with a boolean array.
+
+        Allowed inputs are:
+        - A single label, e.g. 5 or 'a', (note that 5 is interpreted as a
+          label of the index, not as an integer position along the index).
+        - A list or array of labels, e.g. ['a', 'b', 'c'].
+        - A slice object with labels, e.g. 'a':'f'.
+        - A boolean array of the same length as the axis being sliced.
+        - A callable function with one argument (the calling Series or
+          DataFrame) and that returns valid output for indexing (one of the above).
+
+        Currently, for row selection, only integer slices are supported.
+        For column selection, string labels, lists of string labels, and slices of string labels are supported.
+        """
+        from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
+        return PandasApiLocIndexer(self)
+
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         """
         Return the first `n` rows by calling truncate on rows.
