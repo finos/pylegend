@@ -675,6 +675,29 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
 
+    def rank(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            method: str = 'min',
+            numeric_only: bool = False,
+            na_option: str = 'bottom',
+            ascending: bool = True,
+            pct: bool = False
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=axis,
+            method=method,
+            numeric_only=numeric_only,
+            na_option=na_option,
+            ascending=ascending,
+            pct=pct
+        ))
+
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         """
         Return the first `n` rows by calling truncate on rows.
