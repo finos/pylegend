@@ -22,6 +22,7 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiWindow,
     LegendQLApiPartialFrame,
     LegendQLApiWindowReference,
+    LegendQLApiWindowFrame,
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.tds_frame import (
@@ -60,7 +61,17 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         pass  # pragma: no cover
 
     @abstractmethod
-    def distinct(self) -> "LegendQLApiTdsFrame":
+    def distinct(
+            self,
+            columns: PyLegendOptional[PyLegendUnion[
+                str,
+                PyLegendList[str],
+                PyLegendCallable[
+                    [LegendQLApiTdsRow],
+                    PyLegendUnion[LegendQLApiPrimitive, PyLegendList[LegendQLApiPrimitive]]
+                ]
+            ]] = None
+    ) -> "LegendQLApiTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod
@@ -261,7 +272,8 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                         ]
                     ]
                 ]
-            ] = None
+            ] = None,
+            frame: PyLegendOptional[LegendQLApiWindowFrame] = None
     ) -> LegendQLApiWindow:
         pass
 
@@ -324,4 +336,23 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                 ]
             ]
     ) -> "LegendQLApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def rows(
+            self,
+            start: PyLegendUnion[str, int],
+            end: PyLegendUnion[str, int]) -> LegendQLApiWindowFrame:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def range(
+            self,
+            *,
+            number_start: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            number_end: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            duration_start: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            duration_start_unit: PyLegendOptional[str] = None,
+            duration_end: PyLegendOptional[PyLegendUnion[str, int, float]] = None,
+            duration_end_unit: PyLegendOptional[str] = None) -> LegendQLApiWindowFrame:
         pass  # pragma: no cover

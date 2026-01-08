@@ -315,3 +315,28 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def shape(self) -> PyLegendTuple[int, int]:
         pass  # pragma: no cover
+
+    @abstractmethod
+    def dropna(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            how: str = "any",
+            thresh: PyLegendOptional[int] = None,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            inplace: bool = False,
+            ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def fillna(
+            self,
+            value: PyLegendUnion[
+                int, float, str, bool, date, datetime,
+                PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
+            ] = None,  # type: ignore
+            axis: PyLegendOptional[PyLegendUnion[int, str]] = 0,
+            inplace: bool = False,
+            limit: PyLegendOptional[int] = None
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
