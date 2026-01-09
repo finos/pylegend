@@ -1,4 +1,4 @@
-# Copyright 2025 Goldman Sachs
+# Copyright 2026 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -173,6 +173,13 @@ class TestIlocFunction:
                     'rows': [{'values': ['John', 'Hill', 12, 'Firm X']},
                              ]}
         res = newframe.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+        newframe1 = frame.iloc[2]
+        newframe2 = frame.iloc[2,]
+        res = newframe1.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        res = newframe2.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
         # out of bounds

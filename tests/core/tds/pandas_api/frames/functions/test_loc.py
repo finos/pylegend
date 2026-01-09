@@ -1,4 +1,4 @@
-# Copyright 2025 Goldman Sachs
+# Copyright 2026 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,6 +80,8 @@ class TestLocFunction:
 
         # basic
         newframe = frame.loc[:, :]
+        newframe1 = frame.loc[:]
+        newframe2 = frame.loc[:,]  # type: ignore
         expected_sql = '''\
             SELECT
                 "root".col1 AS "col1",
@@ -87,10 +89,16 @@ class TestLocFunction:
             FROM
                 test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert newframe1.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert newframe2.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
         expected_pure = '''\
             #Table(test_schema.test_table)#'''
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+        assert generate_pure_query_and_compile(newframe1, FrameToPureConfig(), self.legend_client) == dedent(
+            expected_pure)
+        assert generate_pure_query_and_compile(newframe2, FrameToPureConfig(), self.legend_client) == dedent(
+            expected_pure)
 
         # slice
         newframe = frame.loc[:, 'col1':'col2']  # type: ignore
