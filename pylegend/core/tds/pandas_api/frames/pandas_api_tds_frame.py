@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+    from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
@@ -305,6 +306,11 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @property
     @abstractmethod
     def iloc(self) -> "PandasApiIlocIndexer":
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def loc(self) -> "PandasApiLocIndexer":
         pass  # pragma: no cover
 
     @abstractmethod

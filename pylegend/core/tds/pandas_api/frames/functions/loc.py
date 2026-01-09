@@ -12,22 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TYPE_CHECKING, Callable, Any
+from typing import TYPE_CHECKING
+
+import pandas as pd
+
 from pylegend._typing import (
     PyLegendUnion,
     PyLegendSequence,
-    PyLegendList,
     PyLegendTuple,
+    PyLegendCallable
 )
 from pylegend.core.language import PyLegendBoolean
-from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filtering import PandasApiFilteringFunction
-
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-
 
 __all__: PyLegendSequence[str] = [
     "PandasApiLocIndexer"
@@ -40,20 +41,24 @@ class PandasApiLocIndexer:
     def __init__(self, frame: "PandasApiBaseTdsFrame") -> None:
         self._frame = frame
 
-    def __getitem__(
+    def __getitem__(  # type: ignore
             self,
             key: PyLegendUnion[
                 slice,
                 PyLegendBoolean,
-                Callable[["PandasApiBaseTdsFrame"], PyLegendBoolean],
+                PyLegendCallable[["PandasApiBaseTdsFrame"], PyLegendBoolean],
                 PyLegendTuple[
-                    PyLegendUnion[slice, PyLegendBoolean, Callable[["PandasApiBaseTdsFrame"], PyLegendBoolean]],
-                    PyLegendUnion[str, slice, PyLegendList[str], PyLegendList[bool]]
+                    PyLegendUnion[slice, PyLegendBoolean, PyLegendCallable[["PandasApiBaseTdsFrame"], PyLegendBoolean]],
+                    PyLegendUnion[str, slice, PyLegendSequence[str], PyLegendSequence[bool]]
                 ]
             ]
     ) -> "PandasApiTdsFrame":
-        rows: PyLegendUnion[slice, PyLegendBoolean, Callable[["PandasApiBaseTdsFrame"], PyLegendBoolean]]
-        cols: PyLegendUnion[str, slice, PyLegendList[str], PyLegendList[bool]]
+        rows: PyLegendUnion[  # type: ignore
+            slice,
+            PyLegendBoolean,
+            PyLegendCallable[["PandasApiBaseTdsFrame"], PyLegendBoolean]
+        ]
+        cols: PyLegendUnion[str, slice, PyLegendSequence[str], PyLegendSequence[bool]]  # type: ignore
 
         if isinstance(key, tuple):
             if len(key) == 1:
@@ -68,22 +73,22 @@ class PandasApiLocIndexer:
         row_frame = self._handle_row_selection(rows)
         return self._handle_column_selection(row_frame, cols)
 
-    def _handle_row_selection(
+    def _handle_row_selection(  # type: ignore
             self,
-            rows: PyLegendUnion[slice, PyLegendBoolean, Callable[["PandasApiBaseTdsFrame"], PyLegendBoolean]]
+            rows: PyLegendUnion[slice, PyLegendBoolean, PyLegendCallable[["PandasApiBaseTdsFrame"], PyLegendBoolean]]
     ) -> "PandasApiTdsFrame":
         if isinstance(rows, slice):
             if rows.start is None and rows.stop is None and rows.step is None:
-                return self._frame  # type: ignore
+                return self._frame
             else:
                 raise TypeError(
                     "loc supports only ':' for row slicing. "
-                    "Label-based or integer-based slicing for rows is not supported."
+                    "Label-based slicing for rows is not supported."
                 )
 
         if isinstance(rows, PyLegendBoolean):
             return PandasApiAppliedFunctionTdsFrame(
-                PandasApiFilteringFunction(self._frame, filter_expr=rows)  # type: ignore
+                PandasApiFilteringFunction(self._frame, filter_expr=rows)
             )
 
         if callable(rows):
@@ -92,10 +97,10 @@ class PandasApiLocIndexer:
 
         raise TypeError(f"Unsupported key type for .loc row selection: {type(rows)}")
 
-    def _handle_column_selection(
+    def _handle_column_selection(  # type: ignore
             self,
             frame: "PandasApiTdsFrame",
-            cols: PyLegendUnion[str, slice, PyLegendList[str], PyLegendList[bool]]
+            cols: PyLegendUnion[str, slice, PyLegendSequence[str], PyLegendSequence[bool]]
     ) -> "PandasApiTdsFrame":
         if isinstance(cols, slice) and cols.start is None and cols.stop is None and cols.step is None:
             return frame
@@ -103,38 +108,29 @@ class PandasApiLocIndexer:
         if isinstance(cols, str):
             return frame.filter(items=[cols])
 
-        if isinstance(cols, list):
-            if all(isinstance(k, bool) for k in cols):
-                all_columns = [c.get_name() for c in frame.columns()]
+        if isinstance(cols, (list, tuple)):
+            all_columns = [c.get_name() for c in frame.columns()]
+            is_boolean_list = all(isinstance(k, bool) for k in cols)
+
+            if is_boolean_list:
                 if len(cols) != len(all_columns):
-                    raise IndexError(f"Boolean index has wrong length: "
-                                     f"{len(cols)} instead of {len(all_columns)}")
+                    raise IndexError(f"Boolean index has wrong length: {len(cols)} instead of {len(all_columns)}")
                 selected_columns = [col for col, select in zip(all_columns, cols) if select]
                 return frame.filter(items=selected_columns)
-            elif all(isinstance(k, str) for k in cols):
-                return frame.filter(items=cols)
             else:
-                raise TypeError("List for loc must contain either all strings or all booleans")
+                missing_cols = [c for c in cols if c not in all_columns]
+                if missing_cols:
+                    raise KeyError(f"{missing_cols} not in index")
+                return frame.filter(items=cols)  # type: ignore
 
         if isinstance(cols, slice):
             all_columns = [c.get_name() for c in frame.columns()]
-            start = cols.start
-            stop = cols.stop
+            pd_index = pd.Index(all_columns)
 
-            try:
-                start_index = all_columns.index(start) if start is not None else 0
-            except ValueError as e:
-                raise KeyError(f"Start label '{start}' not found in columns") from e
-
-            try:
-                stop_index = all_columns.index(stop) if stop is not None else len(all_columns) - 1
-            except ValueError as e:
-                raise KeyError(f"Stop label '{stop}' not found in columns") from e
-
-            if start_index > stop_index:
-                return frame.filter(items=[])
-
-            selected_columns = all_columns[start_index:stop_index + 1]
+            slicer = pd_index.slice_indexer(start=cols.start, end=cols.stop, step=cols.step)
+            selected_columns = pd_index[slicer].tolist()
+            if not selected_columns:
+                return frame.head(0)
             return frame.filter(items=selected_columns)
 
         raise TypeError(f"Unsupported key type for .loc column selection: {type(cols)}")

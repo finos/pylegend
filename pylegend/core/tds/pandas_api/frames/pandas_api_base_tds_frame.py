@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+    from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
 
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
@@ -708,7 +709,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         - A callable function with one argument (the calling Series or
           DataFrame) and that returns valid output for indexing (one of the above).
 
-        Currently, for row selection, only integer slices are supported.
+        Currently, for row selection, only callable function or complete slice are supported.
         For column selection, string labels, lists of string labels, and slices of string labels are supported.
         """
         from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
