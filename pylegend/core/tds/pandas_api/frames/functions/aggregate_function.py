@@ -100,7 +100,7 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             columns_to_retain: PyLegendList[str] = [
-                db_extension.quote_identifier(x) for x in self.__base_frame.grouping_column_name_list()
+                db_extension.quote_identifier(x.get_name()) for x in self.__base_frame.get_grouping_columns()
             ]
             new_cols_with_index: PyLegendList[PyLegendTuple[int, "SelectItem"]] = []
             for col in new_query.select.selectItems:
@@ -127,8 +127,8 @@ class AggregateFunction(PandasApiAppliedFunction):
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
             new_query.groupBy = [
-                (lambda x: x[c])(tds_row).to_sql_expression({"r": new_query}, config)
-                for c in self.__base_frame.grouping_column_name_list()
+                (lambda x: x[c.get_name()])(tds_row).to_sql_expression({"r": new_query}, config)
+                for c in self.__base_frame.get_grouping_columns()
             ]
 
         return new_query
@@ -149,8 +149,8 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             group_strings = []
-            for col_name in self.__base_frame.grouping_column_name_list():
-                group_strings.append(escape_column_name(col_name))
+            for col in self.__base_frame.get_grouping_columns():
+                group_strings.append(escape_column_name(col.get_name()))
 
             pure_expression = (
                 f"{self.base_frame().to_pure(config)}{config.separator(1)}" + f"->groupBy({config.separator(2)}"
@@ -182,7 +182,8 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             base_cols_map = {c.get_name(): c for c in self.base_frame().columns()}
-            for group_col_name in self.__base_frame.grouping_column_name_list():
+            for group_col in self.__base_frame.get_grouping_columns():
+                group_col_name = group_col.get_name()
                 if group_col_name in base_cols_map:
                     new_columns.append(base_cols_map[group_col_name].copy())
 
@@ -274,13 +275,13 @@ class AggregateFunction(PandasApiAppliedFunction):
         all_cols = [col.get_name() for col in self.base_frame().columns()]
 
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            group_cols = set(self.__base_frame.grouping_column_name_list())
+            group_cols = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
 
-            selected_cols = self.__base_frame.selected_columns()
+            selected_cols = self.__base_frame.get_selected_columns()
 
             if selected_cols is not None:
-                validation_columns = selected_cols
-                default_broadcast_columns = selected_cols
+                validation_columns = [col.get_name() for col in selected_cols]
+                default_broadcast_columns = [col.get_name() for col in selected_cols]
             else:
                 validation_columns = all_cols
                 default_broadcast_columns = [c for c in all_cols if c not in group_cols]
