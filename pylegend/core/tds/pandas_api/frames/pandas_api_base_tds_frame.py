@@ -69,6 +69,8 @@ from pylegend.extensions.tds.result_handler import (
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+    from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+    from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
 
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
@@ -674,6 +676,44 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         return PandasApiAppliedFunctionTdsFrame(
             AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
+
+    @property
+    def iloc(self) -> "PandasApiIlocIndexer":
+        """
+        Purely integer-location based indexing for selection by position.
+        .iloc[] is primarily integer position based (from 0 to length-1 of the axis).
+
+        Allowed inputs are:
+        - An integer, e.g. 5.
+        - A slice object with ints, e.g. 1:7.
+        - A tuple of row and column indexes, e.g., (slice(1, 5), slice(0, 2))
+
+        Other pandas iloc features such as list of integers, boolean arrays, and callables
+        are not supported and will raise a NotImplementedError.
+        """
+        from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+        return PandasApiIlocIndexer(self)
+
+    @property
+    def loc(self) -> "PandasApiLocIndexer":
+        """
+        Access a group of rows and columns by label(s) or a boolean array.
+        .loc[] is primarily label based, but may also be used with a boolean array.
+
+        Allowed inputs are:
+        - A single label, e.g. 5 or 'a', (note that 5 is interpreted as a
+          label of the index, not as an integer position along the index).
+        - A list or array of labels, e.g. ['a', 'b', 'c'].
+        - A slice object with labels, e.g. 'a':'f'.
+        - A boolean array of the same length as the axis being sliced.
+        - A callable function with one argument (the calling Series or
+          DataFrame) and that returns valid output for indexing (one of the above).
+
+        Currently, for row selection, only callable function or complete slice are supported.
+        For column selection, string labels, lists of string labels, and slices of string labels are supported.
+        """
+        from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
+        return PandasApiLocIndexer(self)
 
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         """
