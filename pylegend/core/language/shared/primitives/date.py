@@ -28,6 +28,8 @@ from pylegend.core.language.shared.expression import (
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendDateTimeLiteralExpression,
     PyLegendStrictDateLiteralExpression,
+    PyLegendIntegerLiteralExpression,
+    PyLegendStringLiteralExpression,
 )
 from pylegend.core.language.shared.operations.date_operation_expressions import (
     PyLegendFirstDayOfYearExpression,
@@ -54,6 +56,8 @@ from pylegend.core.language.shared.operations.date_operation_expressions import 
     PyLegendDateLessThanEqualExpression,
     PyLegendDateGreaterThanExpression,
     PyLegendDateGreaterThanEqualExpression,
+    PyLegendDateAdjustExpression,
+    PyLegendDateDiffExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -158,6 +162,23 @@ class PyLegendDate(PyLegendPrimitive):
         from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
         return PyLegendStrictDate(PyLegendDatePartExpression(self.__value))
 
+    def timedelta(self, number: PyLegendUnion[int, "PyLegendInteger"], duration_unit: str) -> "PyLegendDate":
+        self.validate_param_to_be_int_or_int_expr(number, "timedelta number parameter")
+        number_op = PyLegendIntegerLiteralExpression(number) if isinstance(number, int) else number.value()
+        self.validate_duration_unit_param(duration_unit)
+        duration_unit_op = PyLegendStringLiteralExpression(duration_unit.upper())
+        return PyLegendDate(PyLegendDateAdjustExpression([self.__value, number_op, duration_unit_op]))
+
+    def diff(
+            self,
+            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
+            duration_unit: str) -> "PyLegendInteger":
+        self.validate_param_to_be_date(other, "Diff parameter")
+        other_op = PyLegendDate.__convert_to_date_expr(other)
+        self.validate_duration_unit_param(duration_unit)
+        duration_unit_op = PyLegendStringLiteralExpression(duration_unit.upper())
+        return PyLegendInteger(PyLegendDateDiffExpression([self.__value, other_op, duration_unit_op]))
+
     def __lt__(
             self,
             other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"]
@@ -210,4 +231,22 @@ class PyLegendDate(PyLegendPrimitive):
         if not isinstance(param, (date, datetime, PyLegendDateTime, PyLegendStrictDate, PyLegendDate)):
             raise TypeError(desc + " should be a datetime.date/datetime.datetime or a Date expression"
                                    " (PyLegendDateTime/PyLegendStrictDate/PyLegendDate)."
+                                   " Got value " + str(param) + " of type: " + str(type(param)))
+
+    @staticmethod
+    def validate_duration_unit_param(duration_unit: str) -> None:
+        if duration_unit.lower() not in ('years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds',
+                                         'milliseconds', 'microseconds', 'nanoseconds'):
+            raise ValueError(
+                f"Unknown duration unit - {duration_unit}. Supported values are - YEARS, MONTHS, WEEKS, DAYS, HOURS,"
+                " MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS"
+            )
+
+    @staticmethod
+    def validate_param_to_be_int_or_int_expr(
+            param: PyLegendUnion[int, "PyLegendInteger"],
+            desc: str
+    ) -> None:
+        if not isinstance(param, (int, PyLegendInteger)):
+            raise TypeError(desc + " should be a int or an integer expression (PyLegendInteger)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))

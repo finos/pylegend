@@ -24,13 +24,16 @@ from pylegend.core.language.shared.expression import (
 )
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendStrictDateLiteralExpression,
+    PyLegendIntegerLiteralExpression,
+    PyLegendStringLiteralExpression
 )
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-
+from pylegend.core.language.shared.operations.date_operation_expressions import PyLegendDateTimeBucketExpression
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 
 __all__: PyLegendSequence[str] = [
     "PyLegendStrictDate"
@@ -57,6 +60,16 @@ class PyLegendStrictDate(PyLegendDate):
     def value(self) -> PyLegendExpressionStrictDateReturn:
         return self.__value
 
+    def time_bucket(
+            self,
+            quantity: PyLegendUnion[int, "PyLegendInteger"],
+            duration_unit: str) -> "PyLegendDate":
+        self.validate_param_to_be_int_or_int_expr(quantity, "time bucket quantity parameter")
+        quantity_op = PyLegendIntegerLiteralExpression(quantity) if isinstance(quantity, int) else quantity.value()
+        self.validate_duration_unit_param(duration_unit)
+        duration_unit_op = PyLegendStringLiteralExpression(duration_unit.upper())
+        return PyLegendDate(PyLegendDateTimeBucketExpression([self.__value, quantity_op, duration_unit_op]))
+
     @staticmethod
     def __convert_to_strictdate_expr(
             val: PyLegendUnion[date, "PyLegendStrictDate"]
@@ -73,3 +86,10 @@ class PyLegendStrictDate(PyLegendDate):
         if not isinstance(param, (date, PyLegendStrictDate)):
             raise TypeError(desc + " should be a datetime.date or a StrictDate expression (PyLegendStrictDate)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))
+
+    @staticmethod
+    def validate_duration_unit_param(duration_unit: str) -> None:
+        if duration_unit.lower() not in ('years', 'months', 'weeks', 'days'):
+            raise ValueError(
+                f"Duration unit - {duration_unit} is not supported. Supported values are - YEARS, MONTHS, WEEKS, DAYS"
+            )

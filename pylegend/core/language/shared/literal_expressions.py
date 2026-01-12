@@ -14,6 +14,7 @@
 
 
 from datetime import date, datetime
+from types import NoneType
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
@@ -27,6 +28,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionFloatReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
+    PyLegendExpressionNoneReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -37,6 +39,7 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     Cast,
     ColumnType,
+    NullLiteral,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -180,8 +183,25 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
         return True
 
 
+class PyLegendNoneLiteralExpression(PyLegendExpressionNoneReturn):
+    __value: None
+
+    def __init__(self) -> None:
+        return
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return NullLiteral()
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return "[]"
+
+
 def convert_literal_to_literal_expression(
-        literal: PyLegendUnion[int, float, bool, str, datetime, date]
+        literal: PyLegendUnion[int, float, bool, str, datetime, date, None]
 ) -> PyLegendExpression:
     if isinstance(literal, bool):
         return PyLegendBooleanLiteralExpression(literal)
@@ -195,5 +215,7 @@ def convert_literal_to_literal_expression(
         return PyLegendDateTimeLiteralExpression(literal)
     if isinstance(literal, date):
         return PyLegendStrictDateLiteralExpression(literal)
+    if isinstance(literal, NoneType):
+        return PyLegendNoneLiteralExpression()
 
     raise TypeError(f"Cannot convert value - {literal} of type {type(literal)} to literal expression")

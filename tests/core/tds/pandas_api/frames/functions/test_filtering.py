@@ -57,19 +57,10 @@ class TestFilteringFunction:
         assert v.value.args[0] == "unsupported operand type(s) for +: 'PyLegendBoolean' and 'PyLegendBoolean'"
 
         with pytest.raises(TypeError) as v:
-            frame[(frame['col1'] > 10) ^ (frame['col2'] == 2)]  # type: ignore
-        assert v.value.args[0] == "unsupported operand type(s) for ^: 'PyLegendBoolean' and 'PyLegendBoolean'"
-
-        # Comparator expression
-        with pytest.raises(TypeError) as v:
-            frame[(frame['col1'] >> 10)]  # type: ignore
-        assert v.value.args[0] == "unsupported operand type(s) for >>: 'IntegerSeries' and 'int'"
-
-        with pytest.raises(TypeError) as v:
             frame[(frame['col1'] + 10) & (frame['col2'] == 2)]  # type: ignore
         assert v.value.args[0].startswith(
-            "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). Got value "
-            "<pylegend.core.language.shared.primitives.integer.PyLegendInteger object"
+            "Integer and (&) parameter should be a int or an integer expression (PyLegendInteger). "
+            "Got value <pylegend.core.language.shared.primitives.boolean.PyLegendBoolean object"
         )
 
     def test_filtering_function_error_on_invalid_key(self) -> None:

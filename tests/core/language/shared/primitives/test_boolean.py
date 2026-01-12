@@ -103,6 +103,43 @@ class TestPyLegendBoolean:
         assert self.__generate_pure_string(lambda x: ~(x.get_boolean("col2") | x.get_boolean("col1"))) == \
                '(toOne($t.col2) || toOne($t.col1))->not()'
 
+    @pytest.mark.parametrize(
+        "py_op, sql_op",
+        [
+            ("<",  "<"),
+            ("<=", "<="),
+            (">",  ">"),
+            (">=", ">="),
+        ],
+    )
+    def test_boolean_comparison_operations(
+            self,
+            py_op: str,
+            sql_op: str) -> None:
+        assert self.__generate_sql_string(
+            lambda x, op=py_op: eval(f'x.get_boolean("col2") {op} x.get_boolean("col1")')
+        ) == f'("root".col2 {sql_op} "root".col1)'
+
+        assert self.__generate_pure_string(
+            lambda x, op=py_op: eval(f'x.get_boolean("col2") {op} x.get_boolean("col1")')
+        ) == f'(toOne($t.col2) {sql_op} toOne($t.col1))'
+
+    def test_boolean_xor_operation(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") ^ x.get_boolean("col1")) == \
+               '(("root".col2 AND NOT("root".col1)) OR ("root".col1 AND NOT("root".col2)))'
+        assert self.__generate_pure_string(lambda x: x.get_boolean("col2") ^ x.get_boolean("col1")) == \
+               'toOne($t.col2)->xor(toOne($t.col1))'
+
+        assert self.__generate_sql_string(lambda x: False ^ x.get_boolean("col1")) == \
+               '((false AND NOT("root".col1)) OR ("root".col1 AND NOT(false)))'
+        assert self.__generate_pure_string(lambda x: False ^ x.get_boolean("col1")) == \
+               'false->xor(toOne($t.col1))'
+
+        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") ^ True) == \
+               '(("root".col2 AND NOT(true)) OR (true AND NOT("root".col2)))'
+        assert self.__generate_pure_string(lambda x: x.get_boolean("col2") ^ True) == \
+               'toOne($t.col2)->xor(true)'
+
     @typing.no_type_check
     def test_boolean_equals_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x["col2"] == x["col1"]) == \

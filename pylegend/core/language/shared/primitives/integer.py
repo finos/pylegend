@@ -33,7 +33,13 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
     PyLegendIntegerSubtractExpression,
     PyLegendIntegerMultiplyExpression,
     PyLegendIntegerModuloExpression,
-    PyLegendIntegerCharExpression
+    PyLegendIntegerCharExpression,
+    PyLegendIntegerBitAndExpression,
+    PyLegendIntegerBitOrExpression,
+    PyLegendIntegerBitXorExpression,
+    PyLegendIntegerBitShiftLeftExpression,
+    PyLegendIntegerBitShiftRightExpression,
+    PyLegendIntegerBitNotExpression
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendFloat
@@ -158,6 +164,53 @@ class PyLegendInteger(PyLegendNumber):
 
     def __pos__(self) -> "PyLegendInteger":
         return self
+
+    def __invert__(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendIntegerBitNotExpression(self.__value_copy))
+
+    def __and__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitAndExpression, "and (&)")
+
+    def __rand__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitAndExpression, "and (&)", reverse=True)
+
+    def __or__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitOrExpression, "or (|)")
+
+    def __ror__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitOrExpression, "or (|)", reverse=True)
+
+    def __xor__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitXorExpression, "xor (^)")
+
+    def __rxor__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitXorExpression, "xor (^)", reverse=True)
+
+    def __lshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftLeftExpression, "left shift (<<)")
+
+    def __rlshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftLeftExpression, "left shift (<<)", reverse=True)
+
+    def __rshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftRightExpression, "right shift (>>)")
+
+    def __rrshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftRightExpression, "right shift (>>)", reverse=True)
+
+    def _create_binary_expression(
+            self,
+            other: PyLegendUnion[int, "PyLegendInteger"],
+            expression_class: type,
+            operation_name: str,
+            reverse: bool = False
+    ) -> "PyLegendInteger":
+        PyLegendInteger.__validate__param_to_be_integer(other, f"Integer {operation_name} parameter")
+        other_op = PyLegendInteger.__convert_to_integer_expr(other)
+
+        if reverse:
+            return PyLegendInteger(expression_class(other_op, self.__value_copy))
+        return PyLegendInteger(expression_class(self.__value_copy, other_op))
 
     @staticmethod
     def __convert_to_integer_expr(

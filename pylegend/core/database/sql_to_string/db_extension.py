@@ -75,7 +75,11 @@ from pylegend.core.sql.metamodel import (
     WindowFrame,
     WindowFrameMode,
     FrameBound,
-    FrameBoundType
+    FrameBoundType,
+    BitwiseShiftExpression,
+    BitwiseShiftDirection,
+    BitwiseBinaryExpression,
+    BitwiseBinaryOperator
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -137,6 +141,10 @@ from pylegend.core.sql.metamodel_extension import (
     WindowExpression,
     ConstantExpression,
     StringSubStringExpression,
+    DateAdjustExpression,
+    BitwiseNotExpression,
+    DateDiffExpression,
+    DateTimeBucketExpression,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -239,9 +247,9 @@ def order_by_processor(
 
 
 def select_processor(
-    select: Select,
-    extension: "SqlToStringDbExtension",
-    config: SqlToStringConfig
+        select: Select,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
 ) -> str:
     distinct_flag = " DISTINCT" if select.distinct else ""
     items = [extension.process_select_item(item, config.push_indent()) for item in select.selectItems]
@@ -460,6 +468,18 @@ def expression_processor(
         return expression.name
     elif isinstance(expression, StringSubStringExpression):
         return extension.process_string_substring_expression(expression, config)
+    elif isinstance(expression, DateAdjustExpression):
+        return extension.process_date_adjust_expression(expression, config)
+    elif isinstance(expression, DateDiffExpression):
+        return extension.process_date_diff_expression(expression, config)
+    elif isinstance(expression, DateTimeBucketExpression):
+        return extension.process_date_time_bucket_expression(expression, config)
+    elif isinstance(expression, BitwiseNotExpression):
+        return extension.process_bitwise_not_expression(expression, config)
+    elif isinstance(expression, BitwiseShiftExpression):
+        return extension.process_bitwise_shift_expression(expression, config)
+    elif isinstance(expression, BitwiseBinaryExpression):
+        return extension.process_bitwise_binary_expression(expression, config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -518,6 +538,147 @@ def logical_binary_expression_processor(
     left = extension.process_expression(logical.left, config)
     right = extension.process_expression(logical.right, config)
     return f"({left} {op} {right})"
+
+
+def bitwise_binary_expression_processor(
+        bitwise: BitwiseBinaryExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    op_type = bitwise.operator
+    if op_type == BitwiseBinaryOperator.AND:
+        op = "&"
+    elif op_type == BitwiseBinaryOperator.OR:
+        op = "|"
+    elif op_type == BitwiseBinaryOperator.XOR:
+        op = "#"
+    else:
+        raise ValueError("Unknown bitwise binary operator type: " + str(op_type))  # pragma: no cover
+
+    left = extension.process_expression(bitwise.left, config)
+    right = extension.process_expression(bitwise.right, config)
+    return f"({left} {op} {right})"
+
+
+def date_diff_processor(
+        date_diff: DateDiffExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    duration_unit = date_diff.duration_unit.value
+    start_date = extension.process_expression(date_diff.start_date, config)
+    end_date = extension.process_expression(date_diff.end_date, config)
+
+    if duration_unit == "YEARS":
+        return f"(DATE_PART('YEAR', {end_date}) - DATE_PART('YEAR', {start_date}))"
+
+    if duration_unit == "MONTHS":
+        return (
+            f"((DATE_PART('YEAR', {end_date}) * 12 + DATE_PART('MONTH', {end_date})) - "
+            f"(DATE_PART('YEAR', {start_date}) * 12 + DATE_PART('MONTH', {start_date})))"
+        )
+
+    if duration_unit == "WEEKS":
+        return f"FLOOR((({end_date})::DATE - ({start_date})::DATE) / 7)"
+
+    if duration_unit == "DAYS":
+        return f"(({end_date})::DATE - ({start_date})::DATE)"
+
+    epoch = f"EXTRACT(EPOCH FROM ({end_date} - {start_date}))"
+
+    if duration_unit == "HOURS":
+        return f"FLOOR({epoch} / 3600)"
+
+    if duration_unit == "MINUTES":
+        return f"FLOOR({epoch} / 60)"
+
+    if duration_unit == "SECONDS":
+        return f"FLOOR({epoch})"
+
+    if duration_unit == "MILLISECONDS":
+        return f"FLOOR({epoch} * 1000)"
+
+    if duration_unit == "MICROSECONDS":
+        return f"FLOOR({epoch} * 1000000)"
+
+    if duration_unit == "NANOSECONDS":
+        return f"FLOOR({epoch} * 1000000000)"
+
+    raise ValueError(f"Unsupported DATE DIFF unit: {duration_unit}")
+
+
+def date_time_bucket_processor(
+        expression: DateTimeBucketExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    unit = expression.duration_unit.value
+    ts = extension.process_expression(expression.date, config)
+    quantity = extension.process_expression(expression.quantity, config)
+
+    if unit == "YEARS":
+        return (
+            f"TIMESTAMP '1970-01-01' + "
+            f"FLOOR((EXTRACT(YEAR FROM {ts}) - 1970) / {quantity}) * "
+            f"({quantity} * INTERVAL '1 year')"
+        )
+
+    if unit == "MONTHS":
+        return (
+            f"TIMESTAMP '1970-01-01' + "
+            f"FLOOR("
+            f"((EXTRACT(YEAR FROM {ts}) - 1970) * 12 + (EXTRACT(MONTH FROM {ts}) - 1)) / {quantity}"
+            f") * ({quantity} * INTERVAL '1 month')"
+        )
+
+    if unit == "WEEKS":
+        return (
+            f"TIMESTAMP '1969-12-29' + "
+            f"FLOOR((DATE({ts}) - DATE('1969-12-29')) / (7 * {quantity})) * "
+            f"(7 * {quantity}) * INTERVAL '1 day'"
+        )
+
+    if unit == "DAYS":
+        return (
+            f"TIMESTAMP '1970-01-01' + "
+            f"FLOOR((DATE({ts}) - DATE('1970-01-01')) / {quantity}) * "
+            f"({quantity} * INTERVAL '1 day')"
+        )
+
+    # Use the Start of the Current Day (Midnight) as the Base.
+    # Midnight + (Seconds elapsed since Midnight / Bucket) * Bucket
+    start_of_day = f"DATE_TRUNC('day', {ts})"
+    seconds_since_midnight = f"EXTRACT(EPOCH FROM ({ts} - {start_of_day}))"
+
+    if unit == "HOURS":
+        return (
+            f"{start_of_day} + "
+            f"FLOOR({seconds_since_midnight} / ({quantity} * 3600)) * "
+            f"({quantity} * INTERVAL '1 hour')"
+        )
+
+    if unit == "MINUTES":
+        return (
+            f"{start_of_day} + "
+            f"FLOOR({seconds_since_midnight} / ({quantity} * 60)) * "
+            f"({quantity} * INTERVAL '1 minute')"
+        )
+
+    if unit == "SECONDS":
+        return (
+            f"{start_of_day} + "
+            f"FLOOR({seconds_since_midnight} / {quantity}) * "
+            f"({quantity} * INTERVAL '1 second')"
+        )
+
+    if unit == "MILLISECONDS":
+        return (
+            f"{start_of_day} + "
+            f"FLOOR({seconds_since_midnight} * 1000 / {quantity}) * "
+            f"({quantity} * INTERVAL '1 millisecond')"
+        )
+
+    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")
 
 
 def not_expression_processor(
@@ -1094,6 +1255,23 @@ class SqlToStringDbExtension:
             else f"SUBSTR({value}, ({start}) + 1, ({self.process_expression(expr.end, config)}) - ({start}) + 1)"
         )
 
+    def process_bitwise_not_expression(self, expr: BitwiseNotExpression, config: SqlToStringConfig) -> str:
+        return f"~({self.process_expression(expr.value, config)})"
+
+    def process_bitwise_shift_expression(self, expr: BitwiseShiftExpression, config: SqlToStringConfig) -> str:
+        return (f"({self.process_expression(expr.value, config)} "
+                f"{'>>' if expr.direction == BitwiseShiftDirection.RIGHT else '<<'} "
+                f"{self.process_expression(expr.shift, config)})")
+
+    def process_bitwise_binary_expression(self, expr: BitwiseBinaryExpression, config: SqlToStringConfig) -> str:
+        return bitwise_binary_expression_processor(expr, self, config)
+
+    def process_date_diff_expression(self, expr: DateDiffExpression, config: SqlToStringConfig) -> str:
+        return date_diff_processor(expr, self, config)
+
+    def process_date_time_bucket_expression(self, expr: DateTimeBucketExpression, config: SqlToStringConfig) -> str:
+        return date_time_bucket_processor(expr, self, config)
+
     def process_string_concat_expression(self, expr: StringConcatExpression, config: SqlToStringConfig) -> str:
         return f"CONCAT({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
 
@@ -1322,3 +1500,8 @@ class SqlToStringDbExtension:
 
     def process_frame_bound(self, frame_bound: FrameBound, config: SqlToStringConfig) -> str:
         return frame_bound_processor(frame_bound, self, config)
+
+    def process_date_adjust_expression(self, expr: DateAdjustExpression, config: SqlToStringConfig) -> str:
+        return (f"('{self.process_expression(expr.date, config)}'::DATE + "
+                f"(INTERVAL '{self.process_expression(expr.number, config)} "
+                f"{expr.duration_unit.value.upper()}'))::DATE")
