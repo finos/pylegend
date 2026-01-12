@@ -354,6 +354,52 @@ class TestPyLegendDate:
         assert self.__generate_pure_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) >= x.get_date("col2")) == \
                '($t.col2 <= %2025-01-01T10:00:00)'
 
+    def test_date_adjust_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").timedelta(2, "YEARS")) == \
+               '(\'"root".col2\'::DATE + (INTERVAL \'2 YEARS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").timedelta(-2, "MONTHS")) == \
+               '(\'"root".col2\'::DATE + (INTERVAL \'-2 MONTHS\'))::DATE'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").timedelta(2, "YEARS")) == \
+               'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").timedelta(-2, "YEARS")) == \
+               'toOne($t.col2)->adjust(minus(2), DurationUnit.\'YEARS\')'
+
+        with pytest.raises(ValueError) as t:
+            self.__generate_sql_string(lambda x: x.get_date("col2").timedelta(2, "Invalid"))
+        assert t.value.args[0] == ("Unknown duration unit - Invalid. Supported values are - YEARS, MONTHS, WEEKS, "
+                                   "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
+
+    def test_date_diff_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "YEARS")) == \
+               '(DATE_PART(\'YEAR\', "root".col1) - DATE_PART(\'YEAR\', "root".col2))'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "YEARS")) == \
+               'toOne($t.col2)->dateDiff(toOne($t.col1), DurationUnit.\'YEARS\')'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "years")) == \
+               '(DATE_PART(\'YEAR\', "root".col1) - DATE_PART(\'YEAR\', "root".col2))'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "years")) == \
+               'toOne($t.col2)->dateDiff(toOne($t.col1), DurationUnit.\'YEARS\')'
+
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MONTHS")) == \
+               ('((DATE_PART(\'YEAR\', "root".col1) * 12 + DATE_PART(\'MONTH\', "root".col1)) - '
+                '(DATE_PART(\'YEAR\', "root".col2) * 12 + DATE_PART(\'MONTH\', "root".col2)))')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "WEEKS")) == \
+               'FLOOR((("root".col1)::DATE - ("root".col2)::DATE) / 7)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "DAYS")) == \
+               '(("root".col1)::DATE - ("root".col2)::DATE)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "HOURS")) == \
+               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)) / 3600)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MINUTES")) == \
+               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)) / 60)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "SECONDS")) == \
+               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)))'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MILLISECONDS")) == \
+               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)) * 1000)'
+
+        with pytest.raises(ValueError) as t:
+            self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "invalid"))
+        assert t.value.args[0] == ("Unknown duration unit - invalid. Supported values are - YEARS, MONTHS, WEEKS, "
+                                   "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
