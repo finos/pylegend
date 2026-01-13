@@ -772,8 +772,8 @@ class StringSubStringExpression(Expression):
 
 class DateAdjustExpression(Expression):
     date: "Expression"
-    duration_unit: "StringLiteral"
     number: "Expression"
+    duration_unit: "StringLiteral"
 
     def __init__(
             self,

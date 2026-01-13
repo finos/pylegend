@@ -247,9 +247,9 @@ def order_by_processor(
 
 
 def select_processor(
-        select: Select,
-        extension: "SqlToStringDbExtension",
-        config: SqlToStringConfig
+    select: Select,
+    extension: "SqlToStringDbExtension",
+    config: SqlToStringConfig
 ) -> str:
     distinct_flag = " DISTINCT" if select.distinct else ""
     items = [extension.process_select_item(item, config.push_indent()) for item in select.selectItems]
@@ -579,12 +579,12 @@ def date_diff_processor(
         )
 
     if duration_unit == "WEEKS":
-        return f"FLOOR((({end_date})::DATE - ({start_date})::DATE) / 7)"
+        return f"FLOOR((DATE {end_date} - DATE {start_date}) / 7)"
 
     if duration_unit == "DAYS":
-        return f"(({end_date})::DATE - ({start_date})::DATE)"
+        return f"(DATE {end_date} - DATE {start_date})"
 
-    epoch = f"EXTRACT(EPOCH FROM ({end_date} - {start_date}))"
+    epoch = f"EXTRACT(EPOCH FROM (TIMESTAMP {end_date} - TIMESTAMP {start_date}))"
 
     if duration_unit == "HOURS":
         return f"FLOOR({epoch} / 3600)"
@@ -645,8 +645,6 @@ def date_time_bucket_processor(
             f"({quantity} * INTERVAL '1 day')"
         )
 
-    # Use the Start of the Current Day (Midnight) as the Base.
-    # Midnight + (Seconds elapsed since Midnight / Bucket) * Bucket
     start_of_day = f"DATE_TRUNC('day', {ts})"
     seconds_since_midnight = f"EXTRACT(EPOCH FROM ({ts} - {start_of_day}))"
 
@@ -1255,23 +1253,6 @@ class SqlToStringDbExtension:
             else f"SUBSTR({value}, ({start}) + 1, ({self.process_expression(expr.end, config)}) - ({start}) + 1)"
         )
 
-    def process_bitwise_not_expression(self, expr: BitwiseNotExpression, config: SqlToStringConfig) -> str:
-        return f"~({self.process_expression(expr.value, config)})"
-
-    def process_bitwise_shift_expression(self, expr: BitwiseShiftExpression, config: SqlToStringConfig) -> str:
-        return (f"({self.process_expression(expr.value, config)} "
-                f"{'>>' if expr.direction == BitwiseShiftDirection.RIGHT else '<<'} "
-                f"{self.process_expression(expr.shift, config)})")
-
-    def process_bitwise_binary_expression(self, expr: BitwiseBinaryExpression, config: SqlToStringConfig) -> str:
-        return bitwise_binary_expression_processor(expr, self, config)
-
-    def process_date_diff_expression(self, expr: DateDiffExpression, config: SqlToStringConfig) -> str:
-        return date_diff_processor(expr, self, config)
-
-    def process_date_time_bucket_expression(self, expr: DateTimeBucketExpression, config: SqlToStringConfig) -> str:
-        return date_time_bucket_processor(expr, self, config)
-
     def process_string_concat_expression(self, expr: StringConcatExpression, config: SqlToStringConfig) -> str:
         return f"CONCAT({self.process_expression(expr.first, config)}, {self.process_expression(expr.second, config)})"
 
@@ -1505,3 +1486,20 @@ class SqlToStringDbExtension:
         return (f"('{self.process_expression(expr.date, config)}'::DATE + "
                 f"(INTERVAL '{self.process_expression(expr.number, config)} "
                 f"{expr.duration_unit.value.upper()}'))::DATE")
+
+    def process_bitwise_not_expression(self, expr: BitwiseNotExpression, config: SqlToStringConfig) -> str:
+        return f"~({self.process_expression(expr.value, config)})"
+
+    def process_bitwise_shift_expression(self, expr: BitwiseShiftExpression, config: SqlToStringConfig) -> str:
+        return (f"({self.process_expression(expr.value, config)} "
+                f"{'>>' if expr.direction == BitwiseShiftDirection.RIGHT else '<<'} "
+                f"{self.process_expression(expr.shift, config)})")
+
+    def process_bitwise_binary_expression(self, expr: BitwiseBinaryExpression, config: SqlToStringConfig) -> str:
+        return bitwise_binary_expression_processor(expr, self, config)
+
+    def process_date_diff_expression(self, expr: DateDiffExpression, config: SqlToStringConfig) -> str:
+        return date_diff_processor(expr, self, config)
+
+    def process_date_time_bucket_expression(self, expr: DateTimeBucketExpression, config: SqlToStringConfig) -> str:
+        return date_time_bucket_processor(expr, self, config)

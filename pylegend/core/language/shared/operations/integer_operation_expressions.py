@@ -426,7 +426,7 @@ class PyLegendIntegerBitNotExpression(PyLegendUnaryExpression, PyLegendExpressio
         return generate_pure_functional_call("bitNot", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
-        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendExpressionIntegerReturn.__init__(self)
         PyLegendUnaryExpression.__init__(
             self,
             operand,

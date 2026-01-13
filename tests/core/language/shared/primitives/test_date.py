@@ -383,17 +383,17 @@ class TestPyLegendDate:
                ('((DATE_PART(\'YEAR\', "root".col1) * 12 + DATE_PART(\'MONTH\', "root".col1)) - '
                 '(DATE_PART(\'YEAR\', "root".col2) * 12 + DATE_PART(\'MONTH\', "root".col2)))')
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "WEEKS")) == \
-               'FLOOR((("root".col1)::DATE - ("root".col2)::DATE) / 7)'
+               'FLOOR((DATE "root".col1 - DATE "root".col2) / 7)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "DAYS")) == \
-               '(("root".col1)::DATE - ("root".col2)::DATE)'
+               '(DATE "root".col1 - DATE "root".col2)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "HOURS")) == \
-               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)) / 3600)'
+               'FLOOR(EXTRACT(EPOCH FROM (TIMESTAMP "root".col1 - TIMESTAMP "root".col2)) / 3600)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MINUTES")) == \
-               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)) / 60)'
+               'FLOOR(EXTRACT(EPOCH FROM (TIMESTAMP "root".col1 - TIMESTAMP "root".col2)) / 60)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "SECONDS")) == \
-               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)))'
+               'FLOOR(EXTRACT(EPOCH FROM (TIMESTAMP "root".col1 - TIMESTAMP "root".col2)))'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MILLISECONDS")) == \
-               'FLOOR(EXTRACT(EPOCH FROM ("root".col1 - "root".col2)) * 1000)'
+               'FLOOR(EXTRACT(EPOCH FROM (TIMESTAMP "root".col1 - TIMESTAMP "root".col2)) * 1000)'
 
         with pytest.raises(ValueError) as t:
             self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "invalid"))
