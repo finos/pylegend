@@ -1175,8 +1175,7 @@ class PyLegendStringCoalesceExpression(PyLegendNaryExpression, PyLegendExpressio
             self,
             operands,
             PyLegendStringCoalesceExpression.__to_sql_func,
-            PyLegendStringCoalesceExpression.__to_pure_func,
-            non_nullable=False,
+            PyLegendStringCoalesceExpression.__to_pure_func
         )
 
 

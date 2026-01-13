@@ -117,11 +117,11 @@ class TestPyLegendBoolean:
             py_op: str,
             sql_op: str) -> None:
         assert self.__generate_sql_string(
-            lambda x, op=py_op: eval(f'x.get_boolean("col2") {op} x.get_boolean("col1")')
+            lambda x: eval(f'x.get_boolean("col2") {py_op} x.get_boolean("col1")')
         ) == f'("root".col2 {sql_op} "root".col1)'
 
         assert self.__generate_pure_string(
-            lambda x, op=py_op: eval(f'x.get_boolean("col2") {op} x.get_boolean("col1")')
+            lambda x: eval(f'x.get_boolean("col2") {py_op} x.get_boolean("col1")')
         ) == f'(toOne($t.col2) {sql_op} toOne($t.col1))'
 
     def test_boolean_xor_operation(self) -> None:

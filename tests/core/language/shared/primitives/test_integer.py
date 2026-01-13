@@ -218,24 +218,24 @@ class TestPyLegendInteger:
             sql_op: str,
             pure_fn: str) -> None:
         assert self.__generate_sql_string(
-            lambda x, op=py_op: eval(f'x.get_integer("col2") {op} x.get_integer("col1")')
+            lambda x: eval(f'x.get_integer("col2") {py_op} x.get_integer("col1")')
         ) == f'("root".col2 {sql_op} "root".col1)'
         assert self.__generate_pure_string(
-            lambda x, op=py_op: eval(f'x.get_integer("col2") {op} x.get_integer("col1")')
+            lambda x: eval(f'x.get_integer("col2") {py_op} x.get_integer("col1")')
         ) == f'toOne($t.col2)->{pure_fn}(toOne($t.col1))'
 
         assert self.__generate_sql_string(
-            lambda x, op=py_op: eval(f'x.get_integer("col2") {op} 10')
+            lambda x: eval(f'x.get_integer("col2") {py_op} 10')
         ) == f'("root".col2 {sql_op} 10)'
         assert self.__generate_pure_string(
-            lambda x, op=py_op: eval(f'x.get_integer("col2") {op} 10')
+            lambda x: eval(f'x.get_integer("col2") {py_op} 10')
         ) == f'toOne($t.col2)->{pure_fn}(10)'
 
         assert self.__generate_sql_string(
-            lambda x, op=py_op: eval(f'10 {op} x.get_integer("col2")')
+            lambda x: eval(f'10 {py_op} x.get_integer("col2")')
         ) == f'(10 {sql_op} "root".col2)'
         assert self.__generate_pure_string(
-            lambda x, op=py_op: eval(f'10 {op} x.get_integer("col2")')
+            lambda x: eval(f'10 {py_op} x.get_integer("col2")')
         ) == f'10->{pure_fn}(toOne($t.col2))'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:

@@ -18,7 +18,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language.shared.literal_expressions import PyLegendIntegerLiteralExpression, PyLegendStringLiteralExpression
 from pylegend.core.language.shared.operations.date_operation_expressions import PyLegendDateTimeBucketExpression
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.date import PyLegendDate
@@ -27,6 +26,8 @@ from pylegend.core.language.shared.expression import (
 )
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendDateTimeLiteralExpression,
+    PyLegendIntegerLiteralExpression,
+    PyLegendStringLiteralExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
