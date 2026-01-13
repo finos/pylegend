@@ -22,8 +22,10 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionBooleanReturn,
+    PyLegendExpression
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
+from pylegend.core.language.shared.operations.nary_expression import PyLegendNaryExpression
 from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
@@ -61,6 +63,9 @@ from pylegend.core.sql.metamodel_extension import (
     MinuteExpression,
     SecondExpression,
     EpochExpression,
+    DateAdjustExpression,
+    DateDiffExpression,
+    DateTimeBucketExpression,
 )
 
 
@@ -91,6 +96,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateLessThanEqualExpression",
     "PyLegendDateGreaterThanExpression",
     "PyLegendDateGreaterThanEqualExpression",
+    "PyLegendDateAdjustExpression",
+    "PyLegendDateDiffExpression",
+    "PyLegendDateTimeBucketExpression",
 ]
 
 
@@ -780,3 +788,81 @@ class PyLegendDateGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegendE
 
     def is_non_nullable(self) -> bool:
         return True
+
+
+class PyLegendDateAdjustExpression(PyLegendNaryExpression, PyLegendExpressionDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expressions: list[Expression],
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DateAdjustExpression(expressions[0], expressions[1], expressions[2])  # type:ignore
+
+    @staticmethod
+    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("adjust", [op_expr[0], op_expr[1], f"DurationUnit.{op_expr[2]}"])
+
+    def __init__(self, operands: list[PyLegendExpression]) -> None:
+        PyLegendExpressionDateReturn.__init__(self)
+        PyLegendNaryExpression.__init__(
+            self,
+            operands,
+            PyLegendDateAdjustExpression.__to_sql_func,
+            PyLegendDateAdjustExpression.__to_pure_func,
+            non_nullable=True,
+            operands_non_nullable_flags=[True, True, True]
+        )
+
+
+class PyLegendDateDiffExpression(PyLegendNaryExpression, PyLegendExpressionIntegerReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expressions: list[Expression],
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DateDiffExpression(expressions[0], expressions[1], expressions[2])  # type: ignore
+
+    @staticmethod
+    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("dateDiff", [op_expr[0], op_expr[1], f"DurationUnit.{op_expr[2]}"])
+
+    def __init__(self, operands: list[PyLegendExpression]) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendNaryExpression.__init__(
+            self,
+            operands,
+            PyLegendDateDiffExpression.__to_sql_func,
+            PyLegendDateDiffExpression.__to_pure_func,
+            non_nullable=True,
+            operands_non_nullable_flags=[True, True, True]
+        )
+
+
+class PyLegendDateTimeBucketExpression(PyLegendNaryExpression, PyLegendExpressionDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expressions: list[Expression],
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DateTimeBucketExpression(expressions[0], expressions[1], expressions[2])  # type: ignore
+
+    @staticmethod
+    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("timeBucket", [op_expr[0], op_expr[1], f"DurationUnit.{op_expr[2]}"])
+
+    def __init__(self, operands: list[PyLegendExpression]) -> None:
+        PyLegendExpressionDateReturn.__init__(self)
+        PyLegendNaryExpression.__init__(
+            self,
+            operands,
+            PyLegendDateTimeBucketExpression.__to_sql_func,
+            PyLegendDateTimeBucketExpression.__to_pure_func,
+            non_nullable=True,
+            operands_non_nullable_flags=[True, True, True]
+        )

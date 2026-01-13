@@ -196,6 +196,48 @@ class TestPyLegendInteger:
         assert self.__generate_pure_string(lambda x: x.get_integer("col2").char()) == \
                'toOne($t.col2)->char()'
 
+    def test_integer_invert_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: ~x.get_integer("col2")) == \
+               '~("root".col2)'
+        assert self.__generate_pure_string(lambda x: ~x.get_integer("col2")) == \
+               'toOne($t.col2)->bitNot()'
+
+    @pytest.mark.parametrize(
+        "py_op, sql_op, pure_fn",
+        [
+            ("&", "&", "bitAnd"),
+            ("|", "|", "bitOr"),
+            ("^", "#", "bitXor"),
+            ("<<", "<<", "bitShiftLeft"),
+            (">>", ">>", "bitShiftRight"),
+        ],
+    )
+    def test_integer_bitwise_binary_expr(
+            self,
+            py_op: str,
+            sql_op: str,
+            pure_fn: str) -> None:
+        assert self.__generate_sql_string(
+            lambda x: eval(f'x.get_integer("col2") {py_op} x.get_integer("col1")')
+        ) == f'("root".col2 {sql_op} "root".col1)'
+        assert self.__generate_pure_string(
+            lambda x: eval(f'x.get_integer("col2") {py_op} x.get_integer("col1")')
+        ) == f'toOne($t.col2)->{pure_fn}(toOne($t.col1))'
+
+        assert self.__generate_sql_string(
+            lambda x: eval(f'x.get_integer("col2") {py_op} 10')
+        ) == f'("root".col2 {sql_op} 10)'
+        assert self.__generate_pure_string(
+            lambda x: eval(f'x.get_integer("col2") {py_op} 10')
+        ) == f'toOne($t.col2)->{pure_fn}(10)'
+
+        assert self.__generate_sql_string(
+            lambda x: eval(f'10 {py_op} x.get_integer("col2")')
+        ) == f'(10 {sql_op} "root".col2)'
+        assert self.__generate_pure_string(
+            lambda x: eval(f'10 {py_op} x.get_integer("col2")')
+        ) == f'10->{pure_fn}(toOne($t.col2))'
+
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)
         assert isinstance(ret, PyLegendInteger)
