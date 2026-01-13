@@ -52,6 +52,11 @@ class TestPyLegendStrictDate:
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").time_bucket(1, "YEARS")) == \
                'toOne($t.col2)->timeBucket(1, DurationUnit.\'YEARS\')'
 
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1.0, "YEARS"))
+        assert t.value.args[0] == ('time bucket quantity parameter should be a int or an integer expression (PyLegendInteger).'
+                                   ' Got value 1.0 of type: <class \'float\'>')
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

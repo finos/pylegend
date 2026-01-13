@@ -598,13 +598,7 @@ def date_diff_processor(
     if duration_unit == "MILLISECONDS":
         return f"FLOOR({epoch} * 1000)"
 
-    if duration_unit == "MICROSECONDS":
-        return f"FLOOR({epoch} * 1000000)"
-
-    if duration_unit == "NANOSECONDS":
-        return f"FLOOR({epoch} * 1000000000)"
-
-    raise ValueError(f"Unsupported DATE DIFF unit: {duration_unit}")
+    raise ValueError(f"Unsupported DATE DIFF unit: {duration_unit}")  # pragma: no cover
 
 
 def date_time_bucket_processor(
@@ -676,7 +670,7 @@ def date_time_bucket_processor(
             f"({quantity} * INTERVAL '1 millisecond')"
         )
 
-    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")
+    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")  # pragma: no cover
 
 
 def not_expression_processor(

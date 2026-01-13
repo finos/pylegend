@@ -14,7 +14,6 @@
 
 
 from datetime import date, datetime
-from types import NoneType
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
@@ -215,7 +214,7 @@ def convert_literal_to_literal_expression(
         return PyLegendDateTimeLiteralExpression(literal)
     if isinstance(literal, date):
         return PyLegendStrictDateLiteralExpression(literal)
-    if isinstance(literal, NoneType):
+    if isinstance(literal, type(None)):
         return PyLegendNoneLiteralExpression()
 
     raise TypeError(f"Cannot convert value - {literal} of type {type(literal)} to literal expression")
