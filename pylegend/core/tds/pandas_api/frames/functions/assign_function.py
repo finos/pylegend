@@ -135,9 +135,13 @@ class AssignFunction(PandasApiAppliedFunction):
 
                     clauses.append(f"{escape_column_name(col)}:c|{new_expr}")
 
+        extend_str = f"{config.separator(1).join(extend_strs)}"
+        if len(extend_str) > 0:
+            extend_str += f"{config.separator(1)}"
+
         return (
             f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-            f"{config.separator(1).join(extend_strs)}{config.separator(1)}"
+            f"{extend_str}"
             f"->project(~[{', '.join(clauses)}])"
         )
 
