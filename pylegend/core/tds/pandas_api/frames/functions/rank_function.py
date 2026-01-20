@@ -19,6 +19,7 @@ from pylegend._typing import (
     PyLegendTuple,
     PyLegendOptional,
     PyLegendCallable,
+    TYPE_CHECKING,
 )
 from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
@@ -31,11 +32,11 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
-    QualifiedName,
-    QualifiedNameReference,
     QuerySpecification,
     SelectItem,
     SingleColumn,
+    QualifiedNameReference,
+    QualifiedName,
 )
 from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
@@ -44,18 +45,17 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame i
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import (
     PandasApiBaseTdsFrame,
 )
-from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import (
-    PandasApiGroupbyTdsFrame,
-)
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 
+if TYPE_CHECKING:
+    from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
 class RankFunction(PandasApiAppliedFunction):
-    __base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
+    __base_frame: PyLegendUnion[PandasApiBaseTdsFrame, "PandasApiGroupbyTdsFrame"]
     __axis: PyLegendUnion[str, int]
     __method: str
     __numeric_only: bool
@@ -76,7 +76,7 @@ class RankFunction(PandasApiAppliedFunction):
 
     def __init__(
             self,
-            base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
+            base_frame: PyLegendUnion[PandasApiBaseTdsFrame, "PandasApiGroupbyTdsFrame"],
             axis: PyLegendUnion[str, int],
             method: str,
             numeric_only: bool,
@@ -93,7 +93,7 @@ class RankFunction(PandasApiAppliedFunction):
         self.__pct = pct
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__internal_sql_column_name__"
+        temp_column_name_suffix = "__internal_pylegend_column__"
 
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
@@ -109,7 +109,7 @@ class RankFunction(PandasApiAppliedFunction):
                 window=window.to_sql_node(new_query, config),
             )
             new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(c[0] + temp_column_name_suffix), expression=window_expr)
+                SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr)
             )
 
         new_query.select.selectItems = new_select_items
@@ -133,34 +133,44 @@ class RankFunction(PandasApiAppliedFunction):
 
         return new_query
 
-    def to_pure(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix: str = "__internal_pure_col_name__"
+    @staticmethod
+    def render_single_column_expression(c: PyLegendUnion[PyLegendTuple[str, PyLegendPrimitive]], suffix: str, config: FrameToPureConfig) -> str:
+        escaped_col_name: str = escape_column_name(c[0] + suffix)
+        expr_str: str = c[1].to_pure_expression(config)
+        return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
 
-        def render_single_column_expression(c: PyLegendUnion[PyLegendTuple[str, PyLegendPrimitive]]) -> str:
-            escaped_col_name: str = escape_column_name(c[0] + temp_column_name_suffix)
-            expr_str: str = c[1].to_pure_expression(config)
-            return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
+    def to_pure(self, config: FrameToPureConfig) -> str:
+        temp_column_name_suffix: str = "__internal_pylegend_column__"
 
         extend_strs: PyLegendList[str] = []
         for c, window in self.__column_expression_and_window_tuples:
             window_expression: str = window.to_pure_expression(config)
             extend_strs.append(
-                f"->extend({window_expression}, ~{render_single_column_expression(c)})")
+                f"->extend({window_expression}, ~{self.render_single_column_expression(c, temp_column_name_suffix, config)})"
+            )
         extend_str = f"{config.separator(1)}".join(extend_strs)
 
+        project_cols = [
+            f"{escape_column_name(c[0])}:p|$p.{escape_column_name(c[0] + temp_column_name_suffix)}"
+            for c, _ in self.__column_expression_and_window_tuples
+        ]
+
+        joined_project_cols = ("," + config.separator(2)).join(project_cols)
+
         project_str = (
-                "->project(~[" +
-                ", ".join([f"{escape_column_name(c[0])}:p|$p.{escape_column_name(c[0] + temp_column_name_suffix)}"
-                           for c, _ in self.__column_expression_and_window_tuples]) +
-                "])"
+                f"->project(~[{config.separator(2)}"
+                f"{joined_project_cols}"
+                f"{config.separator(1)}])"
         )
 
         return (
                 f"{self.base_frame().to_pure(config)}{config.separator(1)}"
-                f"{extend_str}{config.separator(1)}{project_str}"
+                f"{extend_str}{config.separator(1)}"
+                f"{project_str}"
         )
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             return self.__base_frame.base_frame()
         return self.__base_frame
@@ -169,6 +179,7 @@ class RankFunction(PandasApiAppliedFunction):
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
         def __validate_and_convert_column(col: TdsColumn) -> PyLegendOptional["TdsColumn"]:
             valid_column_types_for_numeric_only = ["Integer", "Float", "Number"]
@@ -182,8 +193,7 @@ class RankFunction(PandasApiAppliedFunction):
 
         new_columns: PyLegendList["TdsColumn"] = []
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            grouping_column_names = set(
-                [col.get_name() for col in self.__base_frame.get_grouping_columns()])
+            grouping_column_names = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
             selected_columns: PyLegendOptional[PyLegendList[TdsColumn]] = self.__base_frame.get_selected_columns()
             if selected_columns is None:
                 for col in self.base_frame().columns():
@@ -202,28 +212,33 @@ class RankFunction(PandasApiAppliedFunction):
                 validated_col = __validate_and_convert_column(col)
                 if validated_col is not None:
                     new_columns.append(validated_col)
+
         return new_columns
 
     def validate(self) -> bool:
         if self.__axis not in [0, "index"]:
             raise NotImplementedError(
-                f"The 'axis' parameter of the rank function must be 0 or 'index', but got: axis={self.__axis!r}")
+                f"The 'axis' parameter of the rank function must be 0 or 'index', but got: axis={self.__axis!r}"
+            )
 
         valid_methods: set[str] = {'min', 'first', 'dense'}
         if self.__method not in valid_methods:
             raise NotImplementedError(
                 f"The 'method' parameter of the rank function must be one of {sorted(list(valid_methods))!r},"
-                f" but got: method={self.__method!r}")
+                f" but got: method={self.__method!r}"
+            )
         elif self.__pct is True and self.__method != 'min':
             raise NotImplementedError(
                 "The 'pct=True' parameter of the rank function is only supported with method='min',"
-                f" but got: method={self.__method!r}.")
+                f" but got: method={self.__method!r}."
+            )
 
         valid_na_options = {'bottom'}
         if self.__na_option not in valid_na_options:
             raise NotImplementedError(
                 f"The 'na_option' parameter of the rank function must be one of {sorted(list(valid_na_options))!r},"
-                f" but got: na_option={self.__na_option!r}")
+                f" but got: na_option={self.__na_option!r}"
+            )
 
         self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples()
 
@@ -235,6 +250,7 @@ class RankFunction(PandasApiAppliedFunction):
             PandasApiWindow
         ]
     ]:
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
         column_names: list[str] = [col.get_name() for col in self.calculate_columns()]
 
         lambda_func: PyLegendCallable[

@@ -32,6 +32,7 @@ from pylegend.core.language import (
     PyLegendDateTime
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
@@ -112,18 +113,92 @@ class AssignFunction(PandasApiAppliedFunction):
 
         for col in base_cols:
             if col in assigned_exprs:
-                clauses.append(f"{col}:c|{assigned_exprs[col]}")
+                clauses.append(f"{escape_column_name(col)}:c|{assigned_exprs[col]}")
             else:
-                clauses.append(f"{col}:c|$c.{col}")
+                clauses.append(f"{escape_column_name(col)}:c|$c.{escape_column_name(col)}")
 
+        extend_strs = []
         for col, pure_expr in assigned_exprs.items():
             if col not in base_cols:
-                clauses.append(f"{col}:c|{pure_expr}")
+                extend_limits = self.find_all_extend_spans(pure_expr)
+
+                if len(extend_limits) == 0:
+                    clauses.append(f"{escape_column_name(col)}:c|{pure_expr}")
+
+                else:
+                    new_expr = pure_expr
+                    for start, end in reversed(extend_limits):
+                        extend_str = pure_expr[start: end + 1]
+                        extend_strs.append(extend_str)
+                        col_name = f"$c.{self.find_col_name_in_extend(extend_str)}"
+                        new_expr = new_expr[:start] + col_name + new_expr[end + 1:]
+
+                    clauses.append(f"{escape_column_name(col)}:c|{new_expr}")
 
         return (
             f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+            f"{config.separator(1).join(extend_strs)}{config.separator(1)}"
             f"->project(~[{', '.join(clauses)}])"
         )
+
+    @staticmethod
+    def find_col_name_in_extend(extend_string):
+        colon_index = extend_string.find(':')
+
+        if colon_index == -1:
+            return None
+
+        for i in range(colon_index - 1, -1, -1):
+            char = extend_string[i]
+
+            if char == '~' or char == '[':
+                result = extend_string[i + 1: colon_index]
+
+                return result.strip()
+
+        return None
+
+    @staticmethod
+    def find_all_extend_spans(text_string):
+        trigger = "->extend"
+        results = []
+        search_start = 0
+
+        while True:
+            start_pos = text_string.find(trigger, search_start)
+
+            if start_pos == -1:
+                break
+
+            open_bracket_pos = text_string.find("(", start_pos)
+
+            if open_bracket_pos == -1:
+                break
+
+            balance = 0
+            found_closing = False
+            current_end_pos = -1
+
+            for i in range(open_bracket_pos, len(text_string)):
+                char = text_string[i]
+
+                if char == '(':
+                    balance += 1
+                elif char == ')':
+                    balance -= 1
+
+                if balance == 0:
+                    current_end_pos = i
+                    found_closing = True
+                    break
+
+            if found_closing:
+                results.append((start_pos, current_end_pos))
+                search_start = current_end_pos + 1
+            else:
+                break
+
+        return results
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame

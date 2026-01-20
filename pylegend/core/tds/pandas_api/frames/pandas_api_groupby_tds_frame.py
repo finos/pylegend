@@ -19,9 +19,11 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendDict,
     PyLegendSet,
+    PyLegendSequence,
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
@@ -113,7 +115,7 @@ class PandasApiGroupbyTdsFrame:
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
             )  # pragma: no cover
-        group_by_names: list[str]
+        group_by_names: PyLegendList[str]
         if isinstance(self.__by, str):
             group_by_names = [self.__by]
         elif isinstance(self.__by, list):
@@ -144,7 +146,7 @@ class PandasApiGroupbyTdsFrame:
                 f"Current frame columns: {sorted(available_columns)}"
             )
 
-    def __getitem__(self, item: PyLegendUnion[str, PyLegendList[str]]) -> "PandasApiGroupbyTdsFrame":
+    def __getitem__(self, item: PyLegendUnion[str, PyLegendList[str]]) -> PyLegendUnion["PandasApiGroupbyTdsFrame", "Series"]:
         columns_to_select: PyLegendSet[str]
 
         if isinstance(item, str):
@@ -183,10 +185,57 @@ class PandasApiGroupbyTdsFrame:
         )
 
         new_frame.__selected_columns = selected_columns
+
+        if selected_columns is not None and len(selected_columns) == 1:
+            column: TdsColumn = selected_columns[0]
+            col_type = column.get_type()
+            if col_type == "Boolean":
+                from pylegend.core.language.pandas_api.pandas_api_series import BooleanSeries  # pragma: no cover
+                return BooleanSeries(new_frame, column.get_name())  # pragma: no cover (Boolean column not supported in PURE)
+            elif col_type == "String":
+                from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
+                return StringSeries(new_frame, column.get_name())
+            elif col_type == "Number":
+                from pylegend.core.language.pandas_api.pandas_api_series import NumberSeries
+                return NumberSeries(new_frame, column.get_name())
+            elif col_type == "Integer":
+                from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
+                return IntegerSeries(new_frame, column.get_name())
+            elif col_type == "Float":
+                from pylegend.core.language.pandas_api.pandas_api_series import FloatSeries
+                return FloatSeries(new_frame, column.get_name())
+            elif col_type == "Date":
+                from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
+                return DateSeries(new_frame, column.get_name())
+            elif col_type == "DateTime":
+                from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
+                return DateTimeSeries(new_frame, column.get_name())
+            elif col_type == "StrictDate":
+                from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
+                return StrictDateSeries(new_frame, column.get_name())
+            else:
+                raise ValueError(f"Unsupported column type '{col_type}' for column '{key}'")  # pragma: no cover
+
         return new_frame
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
+
+    def columns(self) -> PyLegendSequence[TdsColumn]:
+        columns_of_this_frame = list()
+
+        grouping_column_names = set([col.get_name() for col in self.get_grouping_columns()])
+        selected_columns = self.get_selected_columns()
+        if selected_columns is None:
+            for col in self.base_frame().columns():
+                if col.get_name() in grouping_column_names:
+                    continue
+                columns_of_this_frame.append(col)
+        else:
+            for col in selected_columns:
+                columns_of_this_frame.append(col)
+
+        return columns_of_this_frame
 
     def get_grouping_columns(self) -> PyLegendList[TdsColumn]:
         return self.__grouping_columns.copy()

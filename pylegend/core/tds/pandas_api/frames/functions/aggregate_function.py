@@ -232,6 +232,10 @@ class AggregateFunction(PandasApiAppliedFunction):
 
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
 
+        group_cols: set[str] = set()
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            group_cols = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
+
         for column_name, agg_input in normalized_func.items():
             mapper_function: PyLegendCallable[[PandasApiTdsRow], PyLegendPrimitiveOrPythonPrimitive] = eval(
                 f'lambda r: r["{column_name}"]'
@@ -260,7 +264,12 @@ class AggregateFunction(PandasApiAppliedFunction):
                 normalized_agg_func = self.__normalize_agg_func_to_lambda_function(agg_input)
                 agg_result = normalized_agg_func(collection)
 
-                self.__aggregates_list.append((column_name, map_result, agg_result))
+                if column_name in group_cols:
+                    alias = self._generate_column_alias(column_name, agg_input, 0)
+                else:
+                    alias = column_name
+
+                self.__aggregates_list.append((alias, map_result, agg_result))
 
         return True
 

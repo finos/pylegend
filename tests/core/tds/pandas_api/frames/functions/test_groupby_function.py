@@ -722,6 +722,41 @@ class TestGroupbyFunctionality:
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->count()}])"
         )
 
+    def test_groupby_self_selection(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("Category"),
+            PrimitiveTdsColumn.integer_column("SubCategory"),
+            PrimitiveTdsColumn.integer_column("Amount"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.groupby(["Category", "SubCategory"], sort=False)[["SubCategory"]].sum()
+
+        expected = '''
+            SELECT
+                "root".Category AS "Category",
+                "root".SubCategory AS "SubCategory",
+                SUM("root".SubCategory) AS "sum(SubCategory)"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".Category,
+                "root".SubCategory
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[Category, SubCategory],
+                ~['sum(SubCategory)':{r | $r.SubCategory}:{c | $c->sum()}]
+              )
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+
+
 
 class TestGroupbyEndtoEnd:
     @pytest.fixture(autouse=True)

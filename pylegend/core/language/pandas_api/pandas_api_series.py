@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import TYPE_CHECKING
-
 import pandas as pd
 
 from pylegend._typing import (
     PyLegendDict,
+    PyLegendUnion,
+    PyLegendList,
+    TYPE_CHECKING,
 )
 from pylegend._typing import (
     PyLegendSequence,
@@ -49,7 +50,9 @@ from pylegend.core.sql.metamodel import (
     Expression,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
+from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -60,19 +63,34 @@ if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 
 __all__: PyLegendSequence[str] = [
-    "Series"
+    "Series",
+    "BooleanSeries",
+    "StringSeries",
+    "NumberSeries",
+    "IntegerSeries",
+    "FloatSeries",
+    "DateSeries",
+    "DateTimeSeries",
+    "StrictDateSeries"
 ]
 
 R = PyLegendTypeVar('R')
 
 
 class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        row = PandasApiTdsRow.from_tds_frame("c", base_frame)
-        PyLegendColumnExpression.__init__(self, row=row, column=column)
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
-        self.__base_frame = base_frame
-        self._filtered_frame = base_frame.filter(items=[column])
+        if isinstance(base_frame, PandasApiGroupbyTdsFrame):
+            row = PandasApiTdsRow.from_tds_frame("c", base_frame.base_frame())
+            self.__base_frame = base_frame.base_frame()
+            self._filtered_frame = base_frame
+        else:
+            row = PandasApiTdsRow.from_tds_frame("c", base_frame)
+            self.__base_frame = base_frame
+            self._filtered_frame = base_frame.filter(items=[column])
+
+        PyLegendColumnExpression.__init__(self, row=row, column=column)
 
     def value(self) -> PyLegendColumnExpression:
         return self
@@ -85,9 +103,29 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
+        applied_func = self._filtered_frame.get_applied_function()
+        if isinstance(applied_func, RankFunction):
+            for c, window in applied_func.construct_column_expression_and_window_tuples():
+                if c[0] == self.columns()[0].get_name():
+                    return WindowExpression(
+                        nested=c[1].to_sql_expression(frame_name_to_base_query_map, config),
+                        window=window.to_sql_node(frame_name_to_base_query_map["c"], config),
+                    )
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        applied_func = self._filtered_frame.get_applied_function()
+        suffix = "__internal_pylegend_column__"
+        if isinstance(applied_func, RankFunction):
+            extend_strs: PyLegendList[str] = []
+            for c, window in applied_func.construct_column_expression_and_window_tuples():
+                window_expression: str = window.to_pure_expression(config)
+                extend_strs.append(
+                    f"->extend({window_expression}, ~{applied_func.render_single_column_expression(c, suffix, config)})"
+                )
+            extend_str = f"{config.separator(1)}".join(extend_strs)
+            return extend_str
+
         return super().to_pure_expression(config)
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
@@ -128,50 +166,90 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
         return self._filtered_frame.get_all_tds_frames()  # type: ignore
 
+    def rank(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            method: str = 'min',
+            numeric_only: bool = False,
+            na_option: str = 'bottom',
+            ascending: bool = True,
+            pct: bool = False
+    ) -> "Series":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+
+        if pct:
+            new_series = FloatSeries(self._filtered_frame, self.columns()[0].get_name())
+        else:
+            new_series = IntegerSeries(self._filtered_frame, self.columns()[0].get_name())
+        new_series.__base_frame = self.__base_frame
+        if isinstance(self._filtered_frame, PandasApiGroupbyTdsFrame):
+            if numeric_only:
+                raise ValueError(
+                    "The numeric_only argument is not supported when the rank function is applied on a GroupBy frame"
+                )
+            new_series._filtered_frame = new_series._filtered_frame.rank(
+                axis=axis,
+                method=method,
+                na_option=na_option,
+                ascending=ascending,
+                pct=pct
+            )
+        else:
+            new_series._filtered_frame = new_series._filtered_frame.rank(
+                axis=axis,
+                method=method,
+                numeric_only=numeric_only,
+                na_option=na_option,
+                ascending=ascending,
+                pct=pct
+            )
+        print(f"type(new_series) = {type(new_series)}")
+        return new_series
+
 
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)  # pragma: no cover (Boolean column not supported in PURE)
         PyLegendBoolean.__init__(self, self)  # pragma: no cover (Boolean column not supported in PURE)
 
 
 class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)
         PyLegendString.__init__(self, self)
 
 
 class NumberSeries(Series, PyLegendNumber, PyLegendExpressionNumberReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)
         PyLegendNumber.__init__(self, self)
 
 
 class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)
         PyLegendInteger.__init__(self, self)
 
 
 class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)
         PyLegendFloat.__init__(self, self)
 
 
 class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)
         PyLegendDate.__init__(self, self)
 
 
 class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)
         PyLegendDateTime.__init__(self, self)
 
 
 class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: PyLegendUnion["PandasApiTdsFrame", "PandasApiGroupbyTdsFrame"], column: str):
         super().__init__(base_frame, column)
         PyLegendStrictDate.__init__(self, self)
