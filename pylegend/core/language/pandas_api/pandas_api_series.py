@@ -203,7 +203,6 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                 ascending=ascending,
                 pct=pct
             )
-        print(f"type(new_series) = {type(new_series)}")
         return new_series
 
 

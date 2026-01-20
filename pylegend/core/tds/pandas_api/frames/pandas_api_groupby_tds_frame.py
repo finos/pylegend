@@ -214,7 +214,7 @@ class PandasApiGroupbyTdsFrame:
                 from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
                 return StrictDateSeries(new_frame, column.get_name())
             else:
-                raise ValueError(f"Unsupported column type '{col_type}' for column '{key}'")  # pragma: no cover
+                raise ValueError(f"Unsupported column type '{col_type}' for column '{column.get_name()}'")  # pragma: no cover
 
         return new_frame
 
