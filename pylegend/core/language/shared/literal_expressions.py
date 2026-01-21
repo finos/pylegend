@@ -182,7 +182,7 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
         return True
 
 
-class PyLegendNoneLiteralExpression(PyLegendExpressionNoneReturn):
+class PyLegendNullLiteralExpression(PyLegendExpressionNoneReturn):
     __value: None
 
     def __init__(self) -> None:
@@ -215,6 +215,6 @@ def convert_literal_to_literal_expression(
     if isinstance(literal, date):
         return PyLegendStrictDateLiteralExpression(literal)
     if isinstance(literal, type(None)):
-        return PyLegendNoneLiteralExpression()
+        return PyLegendNullLiteralExpression()
 
     raise TypeError(f"Cannot convert value - {literal} of type {type(literal)} to literal expression")

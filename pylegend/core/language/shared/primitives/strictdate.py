@@ -86,3 +86,10 @@ class PyLegendStrictDate(PyLegendDate):
         if not isinstance(param, (date, PyLegendStrictDate)):
             raise TypeError(desc + " should be a datetime.date or a StrictDate expression (PyLegendStrictDate)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))
+
+    @staticmethod
+    def validate_duration_unit_param(duration_unit: str) -> None:
+        if duration_unit.lower() not in ('years', 'months', 'weeks', 'days'):
+            raise ValueError(
+                f"Unknown duration unit - {duration_unit}. Supported values are - YEARS, MONTHS, WEEKS, DAYS"
+            )

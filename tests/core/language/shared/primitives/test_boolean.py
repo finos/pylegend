@@ -122,21 +122,21 @@ class TestPyLegendBoolean:
 
         assert self.__generate_pure_string(
             lambda x: eval(f'x.get_boolean("col2") {py_op} x.get_boolean("col1")')
-        ) == f'(toOne($t.col2) {sql_op} toOne($t.col1))'
+        ) == f'($t.col2 {sql_op} $t.col1)'
 
     def test_boolean_xor_operation(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") ^ x.get_boolean("col1")) == \
-               '(("root".col2 AND NOT("root".col1)) OR ("root".col1 AND NOT("root".col2)))'
+               '("root".col2 <> "root".col1)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") ^ x.get_boolean("col1")) == \
                'toOne($t.col2)->xor(toOne($t.col1))'
 
         assert self.__generate_sql_string(lambda x: False ^ x.get_boolean("col1")) == \
-               '((false AND NOT("root".col1)) OR ("root".col1 AND NOT(false)))'
+               '(false <> "root".col1)'
         assert self.__generate_pure_string(lambda x: False ^ x.get_boolean("col1")) == \
                'false->xor(toOne($t.col1))'
 
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2") ^ True) == \
-               '(("root".col2 AND NOT(true)) OR (true AND NOT("root".col2)))'
+               '("root".col2 <> true)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") ^ True) == \
                'toOne($t.col2)->xor(true)'
 

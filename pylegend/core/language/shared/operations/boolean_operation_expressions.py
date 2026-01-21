@@ -128,9 +128,7 @@ class PyLegendBooleanLessThanExpression(PyLegendBinaryExpression, PyLegendExpres
             operand2,
             PyLegendBooleanLessThanExpression.__to_sql_func,
             PyLegendBooleanLessThanExpression.__to_pure_func,
-            non_nullable=True,
-            first_operand_needs_to_be_non_nullable=True,
-            second_operand_needs_to_be_non_nullable=True
+            non_nullable=True
         )
 
 
@@ -157,9 +155,7 @@ class PyLegendBooleanLessThanEqualExpression(PyLegendBinaryExpression, PyLegendE
             operand2,
             PyLegendBooleanLessThanEqualExpression.__to_sql_func,
             PyLegendBooleanLessThanEqualExpression.__to_pure_func,
-            non_nullable=True,
-            first_operand_needs_to_be_non_nullable=True,
-            second_operand_needs_to_be_non_nullable=True
+            non_nullable=True
         )
 
 
@@ -186,9 +182,7 @@ class PyLegendBooleanGreaterThanExpression(PyLegendBinaryExpression, PyLegendExp
             operand2,
             PyLegendBooleanGreaterThanExpression.__to_sql_func,
             PyLegendBooleanGreaterThanExpression.__to_pure_func,
-            non_nullable=True,
-            first_operand_needs_to_be_non_nullable=True,
-            second_operand_needs_to_be_non_nullable=True
+            non_nullable=True
         )
 
 
@@ -215,9 +209,7 @@ class PyLegendBooleanGreaterThanEqualExpression(PyLegendBinaryExpression, PyLege
             operand2,
             PyLegendBooleanGreaterThanEqualExpression.__to_sql_func,
             PyLegendBooleanGreaterThanEqualExpression.__to_pure_func,
-            non_nullable=True,
-            first_operand_needs_to_be_non_nullable=True,
-            second_operand_needs_to_be_non_nullable=True
+            non_nullable=True
         )
 
 
@@ -230,10 +222,7 @@ class PyLegendBooleanXorExpression(PyLegendBinaryExpression, PyLegendExpressionB
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return LogicalBinaryExpression(
-            LogicalBinaryType.OR,
-            LogicalBinaryExpression(LogicalBinaryType.AND, expression1, NotExpression(expression2)),
-            LogicalBinaryExpression(LogicalBinaryType.AND, expression2, NotExpression(expression1)))
+        return ComparisonExpression(expression1, expression2, ComparisonOperator.NOT_EQUAL)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
