@@ -18,6 +18,8 @@ class SqlToStringFormat:
     indent_count: int
 
     def __init__(self, pretty: bool = True, indent_count: int = 0) -> None:
+        if indent_count < 0:
+            raise ValueError(f"indent_count must be non-negative, got: {indent_count}")
         self.pretty = pretty
         self.indent_count = indent_count
 
