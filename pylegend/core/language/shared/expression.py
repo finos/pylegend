@@ -36,6 +36,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendExpressionDateReturn",
     "PyLegendExpressionDateTimeReturn",
     "PyLegendExpressionStrictDateReturn",
+    "PyLegendExpressionNoneReturn"
 ]
 
 
@@ -85,4 +86,8 @@ class PyLegendExpressionDateTimeReturn(PyLegendExpressionDateReturn, metaclass=A
 
 
 class PyLegendExpressionStrictDateReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
+    pass
+
+
+class PyLegendExpressionNoneReturn(PyLegendExpression, metaclass=ABCMeta):
     pass

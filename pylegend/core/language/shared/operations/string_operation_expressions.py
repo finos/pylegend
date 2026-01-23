@@ -92,7 +92,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringSplitPartExpression",
     "PyLegendStringRepeatStringExpression",
     "PyLegendStringFullMatchExpression",
-    "PyLegendStringMatchExpression"
+    "PyLegendStringMatchExpression",
+    "PyLegendStringCoalesceExpression"
 ]
 
 
@@ -1146,6 +1147,35 @@ class PyLegendStringSplitPartExpression(PyLegendNaryExpression, PyLegendExpressi
             PyLegendStringSplitPartExpression.__to_pure_func,
             non_nullable=True,
             operands_non_nullable_flags=[True, True, True]
+        )
+
+
+class PyLegendStringCoalesceExpression(PyLegendNaryExpression, PyLegendExpressionStringReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expressions: list[Expression],
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["COALESCE"]),
+            distinct=False,
+            arguments=expressions,
+            filter_=None, window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("meta::pure::functions::flow::coalesce", op_expr)
+
+    def __init__(self, operands: list[PyLegendExpression]) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendNaryExpression.__init__(
+            self,
+            operands,
+            PyLegendStringCoalesceExpression.__to_sql_func,
+            PyLegendStringCoalesceExpression.__to_pure_func
         )
 
 

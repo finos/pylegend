@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 import datetime
 import pytest
 from pylegend.core.database.sql_to_string import (
@@ -19,6 +19,7 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringDbExtension,
 )
+from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -26,6 +27,7 @@ from pylegend.core.language import today, now
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
+from tests.test_helpers.test_legend_service_frames import simple_relation_trade_service_frame_legendql_api
 
 
 class TestPyLegendDate:
@@ -353,6 +355,215 @@ class TestPyLegendDate:
                '($t.col2 >= %2025-01-01)'
         assert self.__generate_pure_string(lambda x: datetime.datetime(2025, 1, 1, 10, 00, 00) >= x.get_date("col2")) == \
                '($t.col2 <= %2025-01-01T10:00:00)'
+
+    def test_date_adjust_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").timedelta(2, "YEARS")) == \
+               '("root".col2::DATE + (INTERVAL \'2 YEARS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").timedelta(-2, "MONTHS")) == \
+               '("root".col2::DATE + (INTERVAL \'-2 MONTHS\'))::DATE'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").timedelta(2, "YEARS")) == \
+               'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").timedelta(-2, "YEARS")) == \
+               'toOne($t.col2)->adjust(minus(2), DurationUnit.\'YEARS\')'
+
+        with pytest.raises(ValueError) as t:
+            self.__generate_sql_string(lambda x: x.get_date("col2").timedelta(2, "Invalid"))
+        assert t.value.args[0] == ("Unknown duration unit - Invalid. Supported values are - YEARS, MONTHS, WEEKS, "
+                                   "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
+
+    def test_date_diff_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "YEARS")) == \
+               'CAST((EXTRACT(YEAR FROM "root".col2) - EXTRACT(YEAR FROM "root".col1)) AS INTEGER)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "YEARS")) == \
+               'toOne($t.col2)->dateDiff(toOne($t.col1), DurationUnit.\'YEARS\')'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "years")) == \
+               'CAST((EXTRACT(YEAR FROM "root".col2) - EXTRACT(YEAR FROM "root".col1)) AS INTEGER)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "years")) == \
+               'toOne($t.col2)->dateDiff(toOne($t.col1), DurationUnit.\'YEARS\')'
+
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MONTHS")) == \
+               ('(CAST((EXTRACT(YEAR FROM "root".col2) - EXTRACT(YEAR FROM "root".col1)) AS INTEGER) * 12 + '
+                'CAST((EXTRACT(MONTH FROM "root".col2) - EXTRACT(MONTH FROM "root".col1)) AS INTEGER))')
+
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "WEEKS")) == \
+               'CAST(FLOOR(CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) / 7) AS INTEGER)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "DAYS")) == \
+               'CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "HOURS")) == \
+               ('CAST((CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) * 24 + '
+                'CAST((EXTRACT(HOUR FROM "root".col2) - EXTRACT(HOUR FROM "root".col1)) AS INTEGER)) AS INTEGER)')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MINUTES")) == \
+               ('CAST((CAST((CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) * 24 +'
+                ' CAST((EXTRACT(HOUR FROM "root".col2) - EXTRACT(HOUR FROM "root".col1)) AS INTEGER)) AS INTEGER) * 60 + '
+                'CAST((EXTRACT(MINUTE FROM "root".col2) - EXTRACT(MINUTE FROM "root".col1)) AS INTEGER)) AS INTEGER)')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "SECONDS")) == \
+               ('CAST((CAST((CAST((CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) * 24 + '
+                'CAST((EXTRACT(HOUR FROM "root".col2) - EXTRACT(HOUR FROM "root".col1)) AS INTEGER)) AS INTEGER) * 60 + '
+                'CAST((EXTRACT(MINUTE FROM "root".col2) - EXTRACT(MINUTE FROM "root".col1)) AS INTEGER)) AS INTEGER) * 60 + '
+                'CAST((EXTRACT(SECOND FROM "root".col2) - EXTRACT(SECOND FROM "root".col1)) AS INTEGER)) AS INTEGER)')
+
+        with pytest.raises(ValueError) as t:
+            self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "invalid"))
+        assert t.value.args[0] == ("Unknown duration unit - invalid. Supported values are - YEARS, MONTHS, WEEKS, "
+                                   "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
+
+        with pytest.raises(ValueError) as t:
+            assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MILLISECONDS"))
+        assert t.value.args[0] == "Unsupported DATE DIFF unit: MILLISECONDS"
+
+    def test_e2e_date_adjust_expr_multiple_units(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
+    ) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
+            legend_test_server["engine_port"]
+        )
+
+        frame = frame.select([
+            "Settlement Date Time"
+        ])
+
+        frame = frame.extend([
+            ("Add 2 Days", lambda r: r["Settlement Date Time"].timedelta(2, "DAYS")),
+            ("Sub 1 Day", lambda r: r["Settlement Date Time"].timedelta(-1, "DAYS")),
+            ("Add 3 Months", lambda r: r["Settlement Date Time"].timedelta(3, "MONTHS")),
+            ("Sub 1 Month", lambda r: r["Settlement Date Time"].timedelta(-1, "MONTHS")),
+            ("Add 1 Year", lambda r: r["Settlement Date Time"].timedelta(1, "YEARS")),
+            ("Sub 2 Years", lambda r: r["Settlement Date Time"].timedelta(-2, "YEARS")),
+            ("Add 5 Hours", lambda r: r["Settlement Date Time"].timedelta(5, "HOURS")),
+            ("Sub 3 Hours", lambda r: r["Settlement Date Time"].timedelta(-3, "HOURS")),
+            ("Add 30 Minutes", lambda r: r["Settlement Date Time"].timedelta(30, "MINUTES")),
+            ("Sub 15 Minutes", lambda r: r["Settlement Date Time"].timedelta(-15, "MINUTES")),
+            ("Add 45 Seconds", lambda r: r["Settlement Date Time"].timedelta(45, "SECONDS")),
+            ("Sub 10 Seconds", lambda r: r["Settlement Date Time"].timedelta(-10, "SECONDS"))]
+        ).sort(
+            lambda r: r["Settlement Date Time"].descending()
+        ).limit(1)
+        print(frame.to_sql_query())
+        res = frame.execute_frame_to_string()
+
+        assert json.loads(res)["result"] == {
+            "columns": ["Settlement Date Time", "Add 2 Days", "Sub 1 Day", "Add 3 Months", "Sub 1 Month", "Add 1 Year",
+                        "Sub 2 Years", "Add 5 Hours", "Sub 3 Hours", "Add 30 Minutes", "Sub 15 Minutes",
+                        "Add 45 Seconds", "Sub 10 Seconds",
+                        ],
+            "rows": [{
+                "values": [
+                    "2014-12-05T21:00:00.000000000+0000", "2014-12-07T21:00:00.000000000+0000",
+                    "2014-12-04T21:00:00.000000000+0000",
+                    "2015-03-05T21:00:00.000000000+0000", "2014-11-05T21:00:00.000000000+0000",
+                    "2015-12-05T21:00:00.000000000+0000",
+                    "2012-12-05T21:00:00.000000000+0000", "2014-12-06T02:00:00.000000000+0000",
+                    "2014-12-05T18:00:00.000000000+0000",
+                    "2014-12-05T21:30:00.000000000+0000", "2014-12-05T20:45:00.000000000+0000",
+                    "2014-12-05T21:00:45.000000000+0000",
+                    "2014-12-05T20:59:50.000000000+0000",
+                ]
+            }]
+        }
+
+    def test_e2e_date_diff_expr_multiple_units(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
+    ) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
+            legend_test_server["engine_port"]
+        )
+
+        frame = frame.select([
+            "Settlement Date Time"
+        ]).sort(lambda r: r["Settlement Date Time"].descending()).limit(1)
+
+        frame = frame.extend([
+            ("dt_minus_5_days", lambda r: r["Settlement Date Time"].timedelta(-5, "DAYS")),
+            ("dt_minus_3_weeks", lambda r: r["Settlement Date Time"].timedelta(-3, "WEEKS")),
+            ("dt_plus_4_months", lambda r: r["Settlement Date Time"].timedelta(4, "MONTHS")),
+            ("dt_minus_1_year", lambda r: r["Settlement Date Time"].timedelta(-1, "YEARS")),
+            ("dt_plus_12_hours", lambda r: r["Settlement Date Time"].timedelta(12, "HOURS")),
+            ("dt_minus_30_minutes", lambda r: r["Settlement Date Time"].timedelta(-30, "MINUTES")),
+            ("dt_plus_90_seconds", lambda r: r["Settlement Date Time"].timedelta(90, "SECONDS"))
+        ])
+
+        frame = frame.extend([
+            ("days_diff", lambda r: r["dt_minus_5_days"].diff(r["Settlement Date Time"], "DAYS")),
+            ("weeks_diff", lambda r: r["dt_minus_3_weeks"].diff(r["Settlement Date Time"], "WEEKS")),
+            ("months_diff", lambda r: r["dt_plus_4_months"].diff(r["Settlement Date Time"], "MONTHS")),
+            ("months_diff_2", lambda r: r["dt_minus_5_days"].diff(r["Settlement Date Time"], "MONTHS")),
+            ("years_diff", lambda r: r["dt_minus_1_year"].diff(r["Settlement Date Time"], "YEARS")),
+            ("hours_diff", lambda r: r["dt_plus_12_hours"].diff(r["Settlement Date Time"], "HOURS")),
+            ("minutes_diff", lambda r: r["dt_minus_30_minutes"].diff(r["Settlement Date Time"], "MINUTES")),
+            ("seconds_diff", lambda r: r["dt_plus_90_seconds"].diff(r["Settlement Date Time"], "SECONDS"))
+        ])
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == {
+            'columns': ["Settlement Date Time", "dt_minus_5_days", "dt_minus_3_weeks", "dt_plus_4_months",
+                        "dt_minus_1_year", "dt_plus_12_hours", "dt_minus_30_minutes", "dt_plus_90_seconds",
+                        "days_diff", "weeks_diff", "months_diff", "months_diff_2", "years_diff",
+                        "hours_diff", "minutes_diff", "seconds_diff"],
+            'rows': [{"values": ["2014-12-05T21:00:00.000000000+0000", "2014-11-30T21:00:00.000000000+0000",
+                                 "2014-11-14T21:00:00.000000000+0000", "2015-04-05T21:00:00.000000000+0000",
+                                 "2013-12-05T21:00:00.000000000+0000", "2014-12-06T09:00:00.000000000+0000",
+                                 "2014-12-05T20:30:00.000000000+0000", "2014-12-05T21:01:30.000000000+0000",
+                                 5, 3, 4, -1, -1, -36, -30, 90]}]
+        }
+
+    def test_e2e_time_bucket_expr_multiple_units(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
+    ) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
+            legend_test_server["engine_port"]
+        )
+
+        frame = frame.select([
+            "Settlement Date Time",
+            "Date"
+        ])
+
+        frame = frame.extend([
+            ("dt_bucket_5_days", lambda r: r["Settlement Date Time"].time_bucket(5, "DAYS")),
+            ("dt_bucket_4_months", lambda r: r["Settlement Date Time"].time_bucket(4, "MONTHS")),
+            ("dt_bucket_3_years", lambda r: r["Settlement Date Time"].time_bucket(3, "YEARS")),
+            ("dt_bucket_12_hours", lambda r: r["Settlement Date Time"].time_bucket(12, "HOURS")),
+            ("dt_bucket_30_minutes", lambda r: r["Settlement Date Time"].time_bucket(30, "MINUTES")),
+            ("dt_bucket_90_seconds", lambda r: r["Settlement Date Time"].time_bucket(90, "SECONDS")),
+            ("date_bucket_5_days", lambda r: r["Date"].time_bucket(5, "DAYS")),
+            ("date_bucket_4_months", lambda r: r["Date"].time_bucket(4, "MONTHS")),
+            ("date_bucket_3_years", lambda r: r["Date"].time_bucket(3, "YEARS")),
+        ]).sort(lambda r: r["Settlement Date Time"].descending()).limit(1)
+
+        res = frame.execute_frame_to_string()
+
+        assert json.loads(res)["result"] == {
+            'columns': [
+                'Settlement Date Time',
+                'Date',
+                'dt_bucket_5_days',
+                'dt_bucket_4_months',
+                'dt_bucket_3_years',
+                'dt_bucket_12_hours',
+                'dt_bucket_30_minutes',
+                'dt_bucket_90_seconds',
+                'date_bucket_5_days',
+                'date_bucket_4_months',
+                'date_bucket_3_years',
+            ],
+            'rows': [{
+                'values': [
+                    '2014-12-05T21:00:00.000000000+0000',
+                    '2014-12-04',
+                    '2014-12-01T00:00:00.000000000+0000',
+                    '2014-09-01T00:00:00.000000000+0000',
+                    '2012-01-01T00:00:00.000000000+0000',
+                    '2014-12-05T12:00:00.000000000+0000',
+                    '2014-12-05T21:00:00.000000000+0000',
+                    '2014-12-05T21:00:00.000000000+0000',
+                    '2014-12-01',
+                    '2014-09-01',
+                    '2012-01-01',
+                ]
+            }]
+        }
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
