@@ -48,7 +48,7 @@ class TestPyLegendStrictDate:
 
     def test_date_time_bucket_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1, "YEARS")) == \
-               'TIMESTAMP \'1970-01-01\' + FLOOR((EXTRACT(YEAR FROM "root".col2) - 1970) / 1) * (1 * INTERVAL \'1 year\')'
+               'make_date(1970,1,1) + (FLOOR((EXTRACT(YEAR FROM "root".col2) - 1970) / 1) * 1) * INTERVAL \'1 year\''
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").time_bucket(1, "YEARS")) == \
                'toOne($t.col2)->timeBucket(1, DurationUnit.\'YEARS\')'
 

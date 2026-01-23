@@ -66,6 +66,7 @@ from pylegend.core.sql.metamodel_extension import (
     DateAdjustExpression,
     DateDiffExpression,
     DateTimeBucketExpression,
+    DateType,
 )
 
 
@@ -850,7 +851,11 @@ class PyLegendDateTimeBucketExpression(PyLegendNaryExpression, PyLegendExpressio
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return DateTimeBucketExpression(expressions[0], expressions[1], expressions[2])  # type: ignore
+        return DateTimeBucketExpression(
+            expressions[0],
+            expressions[1],
+            expressions[2],  # type: ignore
+            DateType.DateTime if expressions[3].value == "DATETIME" else DateType.StrictDate)  # type: ignore
 
     @staticmethod
     def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:

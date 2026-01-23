@@ -145,6 +145,7 @@ from pylegend.core.sql.metamodel_extension import (
     BitwiseNotExpression,
     DateDiffExpression,
     DateTimeBucketExpression,
+    DateType,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -565,40 +566,61 @@ def date_diff_processor(
         extension: "SqlToStringDbExtension",
         config: SqlToStringConfig
 ) -> str:
-    duration_unit = date_diff.duration_unit.value
-    start_date = extension.process_expression(date_diff.start_date, config)
-    end_date = extension.process_expression(date_diff.end_date, config)
+    unit = date_diff.duration_unit.value
+    # NOTE: We reverse start and end here because in Pure,
+    # an expression like d1 - d2 translates to dateDiff(d1, d2),
+    # which evaluates as d2 - d1. Reversing ensures the correct result.
+    end = extension.process_expression(date_diff.start_date, config)
+    start = extension.process_expression(date_diff.end_date, config)
 
-    if duration_unit == "YEARS":
-        return f"(DATE_PART('YEAR', {end_date}) - DATE_PART('YEAR', {start_date}))"
+    def diff(u: str) -> str:
+        if u == "YEARS":
+            return (
+                f"CAST((EXTRACT(YEAR FROM {end}) - "
+                f"EXTRACT(YEAR FROM {start})) AS INTEGER)"
+            )
 
-    if duration_unit == "MONTHS":
-        return (
-            f"((DATE_PART('YEAR', {end_date}) * 12 + DATE_PART('MONTH', {end_date})) - "
-            f"(DATE_PART('YEAR', {start_date}) * 12 + DATE_PART('MONTH', {start_date})))"
-        )
+        if u == "MONTHS":
+            return (
+                f"({diff('YEARS')} * 12 + "
+                f"CAST((EXTRACT(MONTH FROM {end}) - "
+                f"EXTRACT(MONTH FROM {start})) AS INTEGER))"
+            )
 
-    if duration_unit == "WEEKS":
-        return f"FLOOR((DATE {end_date} - DATE {start_date}) / 7)"
+        if u == "DAYS":
+            return (
+                f"CAST("
+                f"CAST({end} AS DATE) - CAST({start} AS DATE)"
+                f" AS INTEGER)"
+            )
 
-    if duration_unit == "DAYS":
-        return f"(DATE {end_date} - DATE {start_date})"
+        if u == "WEEKS":
+            return f"CAST(FLOOR({diff('DAYS')} / 7) AS INTEGER)"
 
-    epoch = f"EXTRACT(EPOCH FROM (TIMESTAMP {end_date} - TIMESTAMP {start_date}))"
+        if u == "HOURS":
+            return (
+                f"CAST(({diff('DAYS')} * 24 + "
+                f"CAST((EXTRACT(HOUR FROM {end}) - "
+                f"EXTRACT(HOUR FROM {start})) AS INTEGER)) AS INTEGER)"
+            )
 
-    if duration_unit == "HOURS":
-        return f"FLOOR({epoch} / 3600)"
+        if u == "MINUTES":
+            return (
+                f"CAST(({diff('HOURS')} * 60 + "
+                f"CAST((EXTRACT(MINUTE FROM {end}) - "
+                f"EXTRACT(MINUTE FROM {start})) AS INTEGER)) AS INTEGER)"
+            )
 
-    if duration_unit == "MINUTES":
-        return f"FLOOR({epoch} / 60)"
+        if u == "SECONDS":
+            return (
+                f"CAST(({diff('MINUTES')} * 60 + "
+                f"CAST((EXTRACT(SECOND FROM {end}) - "
+                f"EXTRACT(SECOND FROM {start})) AS INTEGER)) AS INTEGER)"
+            )
 
-    if duration_unit == "SECONDS":
-        return f"FLOOR({epoch})"
+        raise ValueError(f"Unsupported DATE DIFF unit: {u}")  # pragma: no cover
 
-    if duration_unit == "MILLISECONDS":
-        return f"FLOOR({epoch} * 1000)"
-
-    raise ValueError(f"Unsupported DATE DIFF unit: {duration_unit}")  # pragma: no cover
+    return diff(unit)
 
 
 def date_time_bucket_processor(
@@ -608,66 +630,63 @@ def date_time_bucket_processor(
 ) -> str:
     unit = expression.duration_unit.value
     ts = extension.process_expression(expression.date, config)
-    quantity = extension.process_expression(expression.quantity, config)
+    q = extension.process_expression(expression.quantity, config)
+
+    def coerce_to_datetime(sql: str) -> str:
+        return (
+            f"(({sql}) + INTERVAL '0 second')"
+            if expression.date_type == DateType.DateTime
+            else sql
+        )
+
+    day_start = f"DATE_TRUNC('DAY', {ts})"
+    month_start = f"DATE_TRUNC('MONTH', {ts})"
+    year_start = f"DATE_TRUNC('YEAR', {ts})"
 
     if unit == "YEARS":
-        return (
-            f"TIMESTAMP '1970-01-01' + "
-            f"FLOOR((EXTRACT(YEAR FROM {ts}) - 1970) / {quantity}) * "
-            f"({quantity} * INTERVAL '1 year')"
+        return coerce_to_datetime(
+            f"make_date(1970,1,1) + "
+            f"(FLOOR((EXTRACT(YEAR FROM {ts}) - 1970) / {q}) * {q}) * INTERVAL '1 year'"
         )
 
     if unit == "MONTHS":
-        return (
-            f"TIMESTAMP '1970-01-01' + "
-            f"FLOOR("
-            f"((EXTRACT(YEAR FROM {ts}) - 1970) * 12 + (EXTRACT(MONTH FROM {ts}) - 1)) / {quantity}"
-            f") * ({quantity} * INTERVAL '1 month')"
-        )
-
-    if unit == "WEEKS":
-        return (
-            f"TIMESTAMP '1969-12-29' + "
-            f"FLOOR((DATE({ts}) - DATE('1969-12-29')) / (7 * {quantity})) * "
-            f"(7 * {quantity}) * INTERVAL '1 day'"
+        return coerce_to_datetime(
+            f"{year_start} + "
+            f"(FLOOR((EXTRACT(MONTH FROM {ts}) - 1) / {q}) * {q}) "
+            f"* INTERVAL '1 month'"
         )
 
     if unit == "DAYS":
-        return (
-            f"TIMESTAMP '1970-01-01' + "
-            f"FLOOR((DATE({ts}) - DATE('1970-01-01')) / {quantity}) * "
-            f"({quantity} * INTERVAL '1 day')"
+        return coerce_to_datetime(
+            f"{month_start} + "
+            f"(FLOOR((EXTRACT(DAY FROM {ts}) - 1) / {q}) * {q}) "
+            f"* INTERVAL '1 day'"
         )
 
-    start_of_day = f"DATE_TRUNC('day', {ts})"
-    seconds_since_midnight = f"EXTRACT(EPOCH FROM ({ts} - {start_of_day}))"
-
     if unit == "HOURS":
-        return (
-            f"{start_of_day} + "
-            f"FLOOR({seconds_since_midnight} / ({quantity} * 3600)) * "
-            f"({quantity} * INTERVAL '1 hour')"
+        return coerce_to_datetime(
+            f"{day_start} + "
+            f"(FLOOR(EXTRACT(HOUR FROM {ts}) / {q}) * {q}) "
+            f"* INTERVAL '1 hour'"
         )
 
     if unit == "MINUTES":
-        return (
-            f"{start_of_day} + "
-            f"FLOOR({seconds_since_midnight} / ({quantity} * 60)) * "
-            f"({quantity} * INTERVAL '1 minute')"
+        return coerce_to_datetime(
+            f"{day_start} + "
+            f"FLOOR(("
+            f"EXTRACT(HOUR FROM {ts}) * 60 + "
+            f"EXTRACT(MINUTE FROM {ts})"
+            f") / {q}) * {q} * INTERVAL '1 minute'"
         )
 
     if unit == "SECONDS":
-        return (
-            f"{start_of_day} + "
-            f"FLOOR({seconds_since_midnight} / {quantity}) * "
-            f"({quantity} * INTERVAL '1 second')"
-        )
-
-    if unit == "MILLISECONDS":
-        return (
-            f"{start_of_day} + "
-            f"FLOOR({seconds_since_midnight} * 1000 / {quantity}) * "
-            f"({quantity} * INTERVAL '1 millisecond')"
+        return coerce_to_datetime(
+            f"{day_start} + "
+            f"FLOOR(("
+            f"EXTRACT(HOUR FROM {ts}) * 3600 + "
+            f"EXTRACT(MINUTE FROM {ts}) * 60 + "
+            f"EXTRACT(SECOND FROM {ts})"
+            f") / {q}) * {q} * INTERVAL '1 second'"
         )
 
     raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")  # pragma: no cover
@@ -1477,7 +1496,7 @@ class SqlToStringDbExtension:
         return frame_bound_processor(frame_bound, self, config)
 
     def process_date_adjust_expression(self, expr: DateAdjustExpression, config: SqlToStringConfig) -> str:
-        return (f"('{self.process_expression(expr.date, config)}'::DATE + "
+        return (f"({self.process_expression(expr.date, config)}::DATE + "
                 f"(INTERVAL '{self.process_expression(expr.number, config)} "
                 f"{expr.duration_unit.value.upper()}'))::DATE")
 

@@ -86,7 +86,8 @@ __all__: PyLegendSequence[str] = [
     "DateAdjustExpression",
     "BitwiseNotExpression",
     "DateDiffExpression",
-    "DateTimeBucketExpression"
+    "DateTimeBucketExpression",
+    "DateType"
 ]
 
 
@@ -804,21 +805,29 @@ class DateDiffExpression(Expression):
         self.duration_unit = duration_unit
 
 
+class DateType(Enum):
+    DateTime = 1
+    StrictDate = 2
+
+
 class DateTimeBucketExpression(Expression):
     date: "Expression"
     quantity: "Expression"
     duration_unit: "StringLiteral"
+    date_type: DateType
 
     def __init__(
             self,
             date: "Expression",
             quantity: "Expression",
             duration_unit: "StringLiteral",
+            date_type: DateType = DateType.DateTime,
     ) -> None:
         super().__init__(_type="dateTimeBucketExpression")
         self.date = date
         self.quantity = quantity
         self.duration_unit = duration_unit
+        self.date_type = date_type
 
 
 class BitwiseNotExpression(Expression):

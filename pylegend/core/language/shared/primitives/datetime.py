@@ -69,7 +69,11 @@ class PyLegendDateTime(PyLegendDate):
         quantity_op = PyLegendIntegerLiteralExpression(quantity) if isinstance(quantity, int) else quantity.value()
         self.validate_duration_unit_param(duration_unit)
         duration_unit_op = PyLegendStringLiteralExpression(duration_unit.upper())
-        return PyLegendDate(PyLegendDateTimeBucketExpression([self.__value, quantity_op, duration_unit_op]))
+        return PyLegendDate(PyLegendDateTimeBucketExpression([
+            self.__value,
+            quantity_op,
+            duration_unit_op,
+            PyLegendStringLiteralExpression("DATETIME")]))
 
     @staticmethod
     def __convert_to_datetime_expr(

@@ -48,30 +48,27 @@ class TestPyLegendDateTime:
 
     def test_date_time_bucket_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "YEARS")) == \
-               'TIMESTAMP \'1970-01-01\' + FLOOR((EXTRACT(YEAR FROM "root".col2) - 1970) / 2) * (2 * INTERVAL \'1 year\')'
+               ('((make_date(1970,1,1) + '
+                '(FLOOR((EXTRACT(YEAR FROM "root".col2) - 1970) / 2) * 2) * INTERVAL \'1 year\') + INTERVAL \'0 second\')')
         assert self.__generate_pure_string(lambda x: x.get_datetime("col2").time_bucket(2, "YEARS")) == \
                'toOne($t.col2)->timeBucket(2, DurationUnit.\'YEARS\')'
 
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "MONTHS")) == \
-               ('TIMESTAMP \'1970-01-01\' + FLOOR(((EXTRACT(YEAR FROM "root".col2) - 1970) * 12 + '
-                '(EXTRACT(MONTH FROM "root".col2) - 1)) / 2) * (2 * INTERVAL \'1 month\')')
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "WEEKS")) == \
-               ('TIMESTAMP \'1969-12-29\' + '
-                'FLOOR((DATE("root".col2) - DATE(\'1969-12-29\')) / (7 * 2)) * (7 * 2) * INTERVAL \'1 day\'')
+               ('((DATE_TRUNC(\'YEAR\', "root".col2) + '
+                '(FLOOR((EXTRACT(MONTH FROM "root".col2) - 1) / 2) * 2) * INTERVAL \'1 month\') + INTERVAL \'0 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "DAYS")) == \
-               'TIMESTAMP \'1970-01-01\' + FLOOR((DATE("root".col2) - DATE(\'1970-01-01\')) / 2) * (2 * INTERVAL \'1 day\')'
+               ('((DATE_TRUNC(\'MONTH\', "root".col2) + '
+                '(FLOOR((EXTRACT(DAY FROM "root".col2) - 1) / 2) * 2) * INTERVAL \'1 day\') + INTERVAL \'0 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "HOURS")) == \
-               ('DATE_TRUNC(\'day\', "root".col2) + FLOOR(EXTRACT(EPOCH FROM ("root".col2 - '
-                'DATE_TRUNC(\'day\', "root".col2))) / (2 * 3600)) * (2 * INTERVAL \'1 hour\')')
+               ('((DATE_TRUNC(\'DAY\', "root".col2) + '
+                '(FLOOR(EXTRACT(HOUR FROM "root".col2) / 2) * 2) * INTERVAL \'1 hour\') + INTERVAL \'0 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "MINUTES")) == \
-               ('DATE_TRUNC(\'day\', "root".col2) + FLOOR(EXTRACT(EPOCH FROM ("root".col2 - '
-                'DATE_TRUNC(\'day\', "root".col2))) / (2 * 60)) * (2 * INTERVAL \'1 minute\')')
+               ('((DATE_TRUNC(\'DAY\', "root".col2) + FLOOR((EXTRACT(HOUR FROM "root".col2) * 60 + '
+                'EXTRACT(MINUTE FROM "root".col2)) / 2) * 2 * INTERVAL \'1 minute\') + INTERVAL \'0 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "SECONDS")) == \
-               ('DATE_TRUNC(\'day\', "root".col2) + FLOOR(EXTRACT(EPOCH FROM ("root".col2 - '
-                'DATE_TRUNC(\'day\', "root".col2))) / 2) * (2 * INTERVAL \'1 second\')')
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "MILLISECONDS")) == \
-               ('DATE_TRUNC(\'day\', "root".col2) + FLOOR(EXTRACT(EPOCH FROM ("root".col2 - '
-                'DATE_TRUNC(\'day\', "root".col2))) * 1000 / 2) * (2 * INTERVAL \'1 millisecond\')')
+               ('((DATE_TRUNC(\'DAY\', "root".col2) + FLOOR((EXTRACT(HOUR FROM "root".col2) * 3600 + '
+                'EXTRACT(MINUTE FROM "root".col2) * 60 + EXTRACT(SECOND FROM "root".col2)) / 2) '
+                '* 2 * INTERVAL \'1 second\') + INTERVAL \'0 second\')')
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
