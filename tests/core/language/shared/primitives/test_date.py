@@ -373,45 +373,36 @@ class TestPyLegendDate:
 
     def test_date_diff_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "YEARS")) == \
-               'CAST((EXTRACT(YEAR FROM "root".col2) - EXTRACT(YEAR FROM "root".col1)) AS INTEGER)'
+               '(EXTRACT(YEAR FROM "root".col1) - EXTRACT(YEAR FROM "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "YEARS")) == \
                'toOne($t.col2)->dateDiff(toOne($t.col1), DurationUnit.\'YEARS\')'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "years")) == \
-               'CAST((EXTRACT(YEAR FROM "root".col2) - EXTRACT(YEAR FROM "root".col1)) AS INTEGER)'
+               '(EXTRACT(YEAR FROM "root".col1) - EXTRACT(YEAR FROM "root".col2))'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "years")) == \
                'toOne($t.col2)->dateDiff(toOne($t.col1), DurationUnit.\'YEARS\')'
 
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MONTHS")) == \
-               ('(CAST((EXTRACT(YEAR FROM "root".col2) - EXTRACT(YEAR FROM "root".col1)) AS INTEGER) * 12 + '
-                'CAST((EXTRACT(MONTH FROM "root".col2) - EXTRACT(MONTH FROM "root".col1)) AS INTEGER))')
-
+               ('((EXTRACT(YEAR FROM "root".col1) - EXTRACT(YEAR FROM "root".col2)) * 12 + '
+                '(EXTRACT(MONTH FROM "root".col1) - EXTRACT(MONTH FROM "root".col2)))')
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "WEEKS")) == \
                'CAST(FLOOR(CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) / 7) AS INTEGER)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "DAYS")) == \
                'CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "HOURS")) == \
-               ('CAST((CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) * 24 + '
-                'CAST((EXTRACT(HOUR FROM "root".col2) - EXTRACT(HOUR FROM "root".col1)) AS INTEGER)) AS INTEGER)')
+               'CAST(FLOOR((EXTRACT(EPOCH FROM "root".col1) - EXTRACT(EPOCH FROM "root".col2)) / 3600) AS INTEGER)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MINUTES")) == \
-               ('CAST((CAST((CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) * 24 +'
-                ' CAST((EXTRACT(HOUR FROM "root".col2) - EXTRACT(HOUR FROM "root".col1)) AS INTEGER)) AS INTEGER) * 60 + '
-                'CAST((EXTRACT(MINUTE FROM "root".col2) - EXTRACT(MINUTE FROM "root".col1)) AS INTEGER)) AS INTEGER)')
+               'CAST(FLOOR((EXTRACT(EPOCH FROM "root".col1) - EXTRACT(EPOCH FROM "root".col2)) / 60) AS INTEGER)'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "SECONDS")) == \
-               ('CAST((CAST((CAST((CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER) * 24 + '
-                'CAST((EXTRACT(HOUR FROM "root".col2) - EXTRACT(HOUR FROM "root".col1)) AS INTEGER)) AS INTEGER) * 60 + '
-                'CAST((EXTRACT(MINUTE FROM "root".col2) - EXTRACT(MINUTE FROM "root".col1)) AS INTEGER)) AS INTEGER) * 60 + '
-                'CAST((EXTRACT(SECOND FROM "root".col2) - EXTRACT(SECOND FROM "root".col1)) AS INTEGER)) AS INTEGER)')
+               'CAST((EXTRACT(EPOCH FROM "root".col1) - EXTRACT(EPOCH FROM "root".col2)) AS BIGINT)'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MILLISECONDS")) == \
+               'CAST((EXTRACT(EPOCH FROM "root".col1) - EXTRACT(EPOCH FROM "root".col2)) * 1000 AS BIGINT)'
 
         with pytest.raises(ValueError) as t:
             self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "invalid"))
         assert t.value.args[0] == ("Unknown duration unit - invalid. Supported values are - YEARS, MONTHS, WEEKS, "
                                    "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
 
-        with pytest.raises(ValueError) as t:
-            assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "MILLISECONDS"))
-        assert t.value.args[0] == "Unsupported DATE DIFF unit: MILLISECONDS"
-
-    def test_e2e_date_adjust_expr_multiple_units(
+    def test_e2e_date_adjust_expr(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
@@ -462,7 +453,7 @@ class TestPyLegendDate:
             }]
         }
 
-    def test_e2e_date_diff_expr_multiple_units(
+    def test_e2e_date_diff_expr(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
@@ -481,7 +472,8 @@ class TestPyLegendDate:
             ("dt_minus_1_year", lambda r: r["Settlement Date Time"].timedelta(-1, "YEARS")),
             ("dt_plus_12_hours", lambda r: r["Settlement Date Time"].timedelta(12, "HOURS")),
             ("dt_minus_30_minutes", lambda r: r["Settlement Date Time"].timedelta(-30, "MINUTES")),
-            ("dt_plus_90_seconds", lambda r: r["Settlement Date Time"].timedelta(90, "SECONDS"))
+            ("dt_plus_90_seconds", lambda r: r["Settlement Date Time"].timedelta(90, "SECONDS")),
+            ("dt_plus_3000_milli_seconds", lambda r: r["Settlement Date Time"].timedelta(3000, "MILLISECONDS"))
         ])
 
         frame = frame.extend([
@@ -492,22 +484,25 @@ class TestPyLegendDate:
             ("years_diff", lambda r: r["dt_minus_1_year"].diff(r["Settlement Date Time"], "YEARS")),
             ("hours_diff", lambda r: r["dt_plus_12_hours"].diff(r["Settlement Date Time"], "HOURS")),
             ("minutes_diff", lambda r: r["dt_minus_30_minutes"].diff(r["Settlement Date Time"], "MINUTES")),
-            ("seconds_diff", lambda r: r["dt_plus_90_seconds"].diff(r["Settlement Date Time"], "SECONDS"))
+            ("seconds_diff", lambda r: r["dt_plus_90_seconds"].diff(r["Settlement Date Time"], "SECONDS")),
+            ("milli_seconds_diff",
+             lambda r: r["dt_plus_3000_milli_seconds"].diff(r["Settlement Date Time"], "MILLISECONDS")),
         ])
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == {
             'columns': ["Settlement Date Time", "dt_minus_5_days", "dt_minus_3_weeks", "dt_plus_4_months",
                         "dt_minus_1_year", "dt_plus_12_hours", "dt_minus_30_minutes", "dt_plus_90_seconds",
-                        "days_diff", "weeks_diff", "months_diff", "months_diff_2", "years_diff",
-                        "hours_diff", "minutes_diff", "seconds_diff"],
+                        'dt_plus_3000_milli_seconds', "days_diff", "weeks_diff", "months_diff",
+                        "months_diff_2", "years_diff", "hours_diff", "minutes_diff", "seconds_diff",
+                        "milli_seconds_diff"],
             'rows': [{"values": ["2014-12-05T21:00:00.000000000+0000", "2014-11-30T21:00:00.000000000+0000",
                                  "2014-11-14T21:00:00.000000000+0000", "2015-04-05T21:00:00.000000000+0000",
                                  "2013-12-05T21:00:00.000000000+0000", "2014-12-06T09:00:00.000000000+0000",
                                  "2014-12-05T20:30:00.000000000+0000", "2014-12-05T21:01:30.000000000+0000",
-                                 5, 3, 4, -1, -1, -36, -30, 90]}]
+                                 '2014-12-05T21:00:03.000000000+0000', 5, 3, -4, 1, 1, -12, 30, -90, -3000]}]
         }
 
-    def test_e2e_time_bucket_expr_multiple_units(
+    def test_e2e_time_bucket_expr(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
@@ -536,31 +531,16 @@ class TestPyLegendDate:
 
         assert json.loads(res)["result"] == {
             'columns': [
-                'Settlement Date Time',
-                'Date',
-                'dt_bucket_5_days',
-                'dt_bucket_4_months',
-                'dt_bucket_3_years',
-                'dt_bucket_12_hours',
-                'dt_bucket_30_minutes',
-                'dt_bucket_90_seconds',
-                'date_bucket_5_days',
-                'date_bucket_4_months',
-                'date_bucket_3_years',
+                'Settlement Date Time', 'Date', 'dt_bucket_5_days', 'dt_bucket_4_months', 'dt_bucket_3_years',
+                'dt_bucket_12_hours', 'dt_bucket_30_minutes', 'dt_bucket_90_seconds', 'date_bucket_5_days',
+                'date_bucket_4_months', 'date_bucket_3_years',
             ],
             'rows': [{
                 'values': [
-                    '2014-12-05T21:00:00.000000000+0000',
-                    '2014-12-04',
-                    '2014-12-01T00:00:00.000000000+0000',
-                    '2014-09-01T00:00:00.000000000+0000',
-                    '2012-01-01T00:00:00.000000000+0000',
-                    '2014-12-05T12:00:00.000000000+0000',
-                    '2014-12-05T21:00:00.000000000+0000',
-                    '2014-12-05T21:00:00.000000000+0000',
-                    '2014-12-01',
-                    '2014-09-01',
-                    '2012-01-01',
+                    '2014-12-05T21:00:00.000000000+0000', '2014-12-04', '2014-12-01T00:00:00.000000000+0000',
+                    '2014-09-01T00:00:00.000000000+0000', '2012-01-01T00:00:00.000000000+0000',
+                    '2014-12-05T12:00:00.000000000+0000', '2014-12-05T21:00:00.000000000+0000',
+                    '2014-12-05T21:00:00.000000000+0000', '2014-12-01', '2014-09-01', '2012-01-01',
                 ]
             }]
         }

@@ -567,60 +567,46 @@ def date_diff_processor(
         config: SqlToStringConfig
 ) -> str:
     unit = date_diff.duration_unit.value
-    # NOTE: We reverse start and end here because in Pure,
-    # an expression like d1 - d2 translates to dateDiff(d1, d2),
-    # which evaluates as d2 - d1. Reversing ensures the correct result.
-    end = extension.process_expression(date_diff.start_date, config)
-    start = extension.process_expression(date_diff.end_date, config)
 
-    def diff(u: str) -> str:
-        if u == "YEARS":
-            return (
-                f"CAST((EXTRACT(YEAR FROM {end}) - "
-                f"EXTRACT(YEAR FROM {start})) AS INTEGER)"
-            )
+    end = extension.process_expression(date_diff.end_date, config)
+    start = extension.process_expression(date_diff.start_date, config)
 
-        if u == "MONTHS":
-            return (
-                f"({diff('YEARS')} * 12 + "
-                f"CAST((EXTRACT(MONTH FROM {end}) - "
-                f"EXTRACT(MONTH FROM {start})) AS INTEGER))"
-            )
+    def extract_diff(part: str) -> str:
+        return f"(EXTRACT({part} FROM {end}) - EXTRACT({part} FROM {start}))"
 
-        if u == "DAYS":
-            return (
-                f"CAST("
-                f"CAST({end} AS DATE) - CAST({start} AS DATE)"
-                f" AS INTEGER)"
-            )
+    year_diff = extract_diff("YEAR")
+    month_diff = extract_diff("MONTH")
+    # d1 - d2 → Pure dateDiff(d1, d2) → evaluated as d2 - d1
+    # Reverse to preserve expected semantics.
+    # only for days
+    day_diff = f"CAST(CAST({start} AS DATE) - CAST({end} AS DATE) AS INTEGER)"
+    epoch_diff = f"(EXTRACT(EPOCH FROM {end}) - EXTRACT(EPOCH FROM {start}))"
 
-        if u == "WEEKS":
-            return f"CAST(FLOOR({diff('DAYS')} / 7) AS INTEGER)"
+    if unit == "YEARS":
+        return year_diff
 
-        if u == "HOURS":
-            return (
-                f"CAST(({diff('DAYS')} * 24 + "
-                f"CAST((EXTRACT(HOUR FROM {end}) - "
-                f"EXTRACT(HOUR FROM {start})) AS INTEGER)) AS INTEGER)"
-            )
+    if unit == "MONTHS":
+        return f"({year_diff} * 12 + {month_diff})"
 
-        if u == "MINUTES":
-            return (
-                f"CAST(({diff('HOURS')} * 60 + "
-                f"CAST((EXTRACT(MINUTE FROM {end}) - "
-                f"EXTRACT(MINUTE FROM {start})) AS INTEGER)) AS INTEGER)"
-            )
+    if unit == "DAYS":
+        return day_diff
 
-        if u == "SECONDS":
-            return (
-                f"CAST(({diff('MINUTES')} * 60 + "
-                f"CAST((EXTRACT(SECOND FROM {end}) - "
-                f"EXTRACT(SECOND FROM {start})) AS INTEGER)) AS INTEGER)"
-            )
+    if unit == "WEEKS":
+        return f"CAST(FLOOR({day_diff} / 7) AS INTEGER)"
 
-        raise ValueError(f"Unsupported DATE DIFF unit: {u}")  # pragma: no cover
+    if unit == "HOURS":
+        return f"CAST(FLOOR({epoch_diff} / 3600) AS INTEGER)"
 
-    return diff(unit)
+    if unit == "MINUTES":
+        return f"CAST(FLOOR({epoch_diff} / 60) AS INTEGER)"
+
+    if unit == "SECONDS":
+        return f"CAST({epoch_diff} AS BIGINT)"
+
+    if unit == "MILLISECONDS":
+        return f"CAST({epoch_diff} * 1000 AS BIGINT)"
+
+    raise ValueError(f"Unsupported DATE DIFF unit: {unit}")  # pragma: no cover
 
 
 def date_time_bucket_processor(
@@ -639,10 +625,6 @@ def date_time_bucket_processor(
             else sql
         )
 
-    day_start = f"DATE_TRUNC('DAY', {ts})"
-    month_start = f"DATE_TRUNC('MONTH', {ts})"
-    year_start = f"DATE_TRUNC('YEAR', {ts})"
-
     if unit == "YEARS":
         return coerce_to_datetime(
             f"make_date(1970,1,1) + "
@@ -650,46 +632,41 @@ def date_time_bucket_processor(
         )
 
     if unit == "MONTHS":
+        total_months_sql = f"((EXTRACT(YEAR FROM {ts}) - 1970) * 12 + (EXTRACT(MONTH FROM {ts}) - 1))"
         return coerce_to_datetime(
-            f"{year_start} + "
-            f"(FLOOR((EXTRACT(MONTH FROM {ts}) - 1) / {q}) * {q}) "
-            f"* INTERVAL '1 month'"
+            f"make_date(1970,1,1) + "
+            f"(FLOOR({total_months_sql} / {q}) * {q}) * INTERVAL '1 month'"
         )
 
-    if unit == "DAYS":
+    if unit == "WEEKS":
         return coerce_to_datetime(
-            f"{month_start} + "
-            f"(FLOOR((EXTRACT(DAY FROM {ts}) - 1) / {q}) * {q}) "
+            f"make_date(1969,12,29) + "
+            f"(FLOOR((CAST({ts} AS DATE) - make_date(1969,12,29)) / ({q} * 7)) * ({q} * 7)) "
             f"* INTERVAL '1 day'"
         )
 
-    if unit == "HOURS":
+    if unit == "DAYS":
+        days_from_1970 = f"(EXTRACT(EPOCH FROM {ts}) / 86400)"
         return coerce_to_datetime(
-            f"{day_start} + "
-            f"(FLOOR(EXTRACT(HOUR FROM {ts}) / {q}) * {q}) "
-            f"* INTERVAL '1 hour'"
+            f"make_date(1970,1,1) + "
+            f"(FLOOR({days_from_1970} / {q}) * {q}) * INTERVAL '1 day'"
         )
 
-    if unit == "MINUTES":
+    unit_seconds_map = {
+        "HOURS": 3600,
+        "MINUTES": 60,
+        "SECONDS": 1
+    }
+
+    if unit in unit_seconds_map:
+        seconds_per_unit = unit_seconds_map[unit]
         return coerce_to_datetime(
-            f"{day_start} + "
-            f"FLOOR(("
-            f"EXTRACT(HOUR FROM {ts}) * 60 + "
-            f"EXTRACT(MINUTE FROM {ts})"
-            f") / {q}) * {q} * INTERVAL '1 minute'"
+            f"make_date(1970,1,1) + "
+            f"(FLOOR(EXTRACT(EPOCH FROM {ts}) / ({q} * {seconds_per_unit})) * ({q} * {seconds_per_unit})) "
+            f"* INTERVAL '1 second'"
         )
 
-    if unit == "SECONDS":
-        return coerce_to_datetime(
-            f"{day_start} + "
-            f"FLOOR(("
-            f"EXTRACT(HOUR FROM {ts}) * 3600 + "
-            f"EXTRACT(MINUTE FROM {ts}) * 60 + "
-            f"EXTRACT(SECOND FROM {ts})"
-            f") / {q}) * {q} * INTERVAL '1 second'"
-        )
-
-    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")  # pragma: no cover
+    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")
 
 
 def not_expression_processor(
