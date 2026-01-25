@@ -168,7 +168,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame.to_pure(config)
 
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
-        return self._filtered_frame.get_all_tds_frames()  # type: ignore
+        return self._filtered_frame.get_all_tds_frames()
 
     def aggregate(
             self,

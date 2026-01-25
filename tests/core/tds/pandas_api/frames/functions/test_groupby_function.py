@@ -785,7 +785,7 @@ class TestGroupbyFunctionality:
                 ~[col2:{r | $r.col2}:{c | $c->average()}]
               )
               ->sort([~col1->ascending()])
-        '''  # noqa: E501
+        '''
         expected = dedent(expected).strip()
         assert frame1.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected
@@ -825,7 +825,7 @@ class TestGroupbyFunctionality:
                 ~['mean(col1)':{r | $r.col1}:{c | $c->average()}]
               )
               ->sort([~col1->ascending()])
-        '''  # noqa: E501
+        '''
         expected = dedent(expected).strip()
         assert frame1.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected
@@ -858,7 +858,7 @@ class TestGroupbyFunctionality:
                 ~['mean(col1)':{r | $r.col1}:{c | $c->average()}]
               )
               ->sort([~col1->ascending(), ~col2->ascending()])
-        '''  # noqa: E501
+        '''
         expected = dedent(expected).strip()
         assert frame3.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected
@@ -890,7 +890,7 @@ class TestGroupbyFunctionality:
                 ~['sum(col2)':{r | $r.col2}:{c | $c->sum()}, 'count(col2)':{r | $r.col2}:{c | $c->count()}]
               )
               ->sort([~col1->ascending(), ~col2->ascending()])
-        '''  # noqa: E501
+        '''
         expected = dedent(expected).strip()
         assert frame4.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame4, FrameToPureConfig(), self.legend_client) == expected
