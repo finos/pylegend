@@ -13,34 +13,31 @@
 # limitations under the License.
 
 import copy
-from typing import cast, Protocol, runtime_checkable
-
 import pandas as pd
-
 from pylegend._typing import (
-    PyLegendDict,
-    PyLegendUnion,
-    PyLegendList,
     TYPE_CHECKING,
-)
-from pylegend._typing import (
-    PyLegendSequence,
+    PyLegendDict,
     PyLegendOptional,
-    PyLegendTypeVar
+    PyLegendSequence,
+    PyLegendTypeVar,
+    PyLegendUnion
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
-from pylegend.core.language.pandas_api.pandas_api_series import Series, SupportsToSqlExpression, SupportsToPureExpression
+from pylegend.core.language.pandas_api.pandas_api_series import (
+    SupportsToPureExpression,
+    SupportsToSqlExpression
+)
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionBooleanReturn,
-    PyLegendExpressionStringReturn,
-    PyLegendExpressionNumberReturn,
-    PyLegendExpressionIntegerReturn,
-    PyLegendExpressionFloatReturn,
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionFloatReturn,
+    PyLegendExpressionIntegerReturn,
+    PyLegendExpressionNumberReturn,
     PyLegendExpressionStrictDateReturn,
+    PyLegendExpressionStringReturn
 )
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.date import PyLegendDate
@@ -48,23 +45,20 @@ from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
-from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.language.shared.primitives.primitive import (
+    PyLegendPrimitive,
+    PyLegendPrimitiveOrPythonPrimitive
+)
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
 from pylegend.core.language.shared.primitives.string import PyLegendString
-from pylegend.core.sql.metamodel import (
-    Expression,
-)
-from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.sql.metamodel_extension import WindowExpression
+from pylegend.core.sql.metamodel import Expression, QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
-from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig
 
 if TYPE_CHECKING:
@@ -84,15 +78,16 @@ __all__: PyLegendSequence[str] = [
 
 R = PyLegendTypeVar('R')
 
+
 class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     _base_groupby_frame: PandasApiGroupbyTdsFrame
-    _applied_function_frame: PyLegendOptional[PyLegendUnion[PandasApiAppliedFunctionTdsFrame, Series]]
+    _applied_function_frame: PyLegendOptional[PandasApiAppliedFunctionTdsFrame]
 
     def __init__(self, base_groupby_frame: PandasApiGroupbyTdsFrame):
         selected_columns = base_groupby_frame.get_selected_columns()
         assert selected_columns is not None and len(selected_columns) == 1, (
             "To initialize a GroupbySeries object, exactly one column must be selected, "
-            f"but got selected columns: {[str(col) for col in selected_columns]}"
+            f"but got selected columns: {[str(col) for col in selected_columns] if selected_columns is not None else None}"
         )
 
         row = PandasApiTdsRow.from_tds_frame("c", base_groupby_frame.base_frame())
@@ -102,13 +97,19 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         self._applied_function_frame = None
 
     @property
-    def applied_function_frame(self) -> PandasApiAppliedFunctionTdsFrame:
+    def applied_function_frame(self) -> PyLegendOptional[PandasApiAppliedFunctionTdsFrame]:
         return self._applied_function_frame
 
     @applied_function_frame.setter
     def applied_function_frame(self, value: PandasApiAppliedFunctionTdsFrame) -> None:
-        assert isinstance(value, PandasApiAppliedFunctionTdsFrame)
         self._applied_function_frame = value
+
+    def _raise_exception_if_no_function_applied(self) -> PandasApiAppliedFunctionTdsFrame:
+        if self._applied_function_frame is None:
+            raise RuntimeError(
+                "The 'groupby' function requires at least one operation to be performed right after it (e.g. aggregate, rank)"
+            )
+        return self._applied_function_frame
 
     def value(self) -> PyLegendColumnExpression:
         return self
@@ -121,9 +122,8 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        self._raise_exception_if_no_function_applied()
-
-        applied_func = self._applied_function_frame.get_applied_function()
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        applied_func = applied_function_frame.get_applied_function()
         if not isinstance(applied_func, PandasApiFilterFunction):
             if isinstance(applied_func, SupportsToSqlExpression):
                 return applied_func.to_sql_expression(frame_name_to_base_query_map, config)
@@ -135,9 +135,8 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        self._raise_exception_if_no_function_applied()
-
-        applied_func = self._applied_function_frame.get_applied_function()
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        applied_func = applied_function_frame.get_applied_function()
         if not isinstance(applied_func, PandasApiFilterFunction):
             if isinstance(applied_func, SupportsToPureExpression):
                 return applied_func.to_pure_expression(config)
@@ -149,54 +148,51 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return super().to_pure_expression(config)
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
-        self._raise_exception_if_no_function_applied()
-        return self._applied_function_frame.columns()
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.columns()
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        self._raise_exception_if_no_function_applied()
-        return self._applied_function_frame.to_sql_query(config)
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.to_sql_query(config)
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
-        self._raise_exception_if_no_function_applied()
-        return self._applied_function_frame.to_pure_query(config)
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.to_pure_query(config)
 
     def execute_frame(
             self,
             result_handler: ResultHandler[R],
             chunk_size: PyLegendOptional[int] = None
     ) -> R:
-        self._raise_exception_if_no_function_applied()
-        return self._applied_function_frame.execute_frame(result_handler, chunk_size)  # pragma: no cover
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.execute_frame(result_handler, chunk_size)  # pragma: no cover
 
     def execute_frame_to_string(
             self,
             chunk_size: PyLegendOptional[int] = None
     ) -> str:
-        self._raise_exception_if_no_function_applied()
-        return self._applied_function_frame.execute_frame_to_string(chunk_size)
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.execute_frame_to_string(chunk_size)
 
     def execute_frame_to_pandas_df(
             self,
             chunk_size: PyLegendOptional[int] = None,
             pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
     ) -> pd.DataFrame:
-        self._raise_exception_if_no_function_applied()
-        return self._applied_function_frame.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self._applied_function_frame.to_sql_query_object(config)  # type: ignore
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.to_sql_query_object(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        return self._applied_function_frame.to_pure(config)  # type: ignore
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.to_pure(config)
 
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
-        return self._applied_function_frame.get_all_tds_frames()  # type: ignore
-
-    def _raise_exception_if_no_function_applied(self):
-        if self._applied_function_frame is None:
-            raise RuntimeError(
-                "The 'groupby' function requires at least one operation to be performed right after it (e.g. aggregate, rank)"
-            )
+        applied_function_frame = self._raise_exception_if_no_function_applied()
+        return applied_function_frame.get_all_tds_frames()
 
     def aggregate(
             self,
@@ -219,7 +215,6 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         return self.aggregate(func, axis, *args, **kwargs)
-
 
     def sum(
         self,

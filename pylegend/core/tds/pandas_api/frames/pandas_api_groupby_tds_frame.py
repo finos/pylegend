@@ -23,7 +23,7 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
-from pylegend.core.language.pandas_api.pandas_api_series import Series
+from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
@@ -192,9 +192,9 @@ class PandasApiGroupbyTdsFrame:
         if selected_columns is not None and len(selected_columns) == 1:
             column: TdsColumn = selected_columns[0]
             col_type = column.get_type()
-            if col_type == "Boolean":
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import BooleanGroupbySeries  # pragma: no cover
-                return BooleanGroupbySeries(new_frame)  # pragma: no cover (Boolean column not supported in PURE)
+            if col_type == "Boolean":  # pragma: no cover (Boolean column not supported in PURE)
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import BooleanGroupbySeries
+                return BooleanGroupbySeries(new_frame)
             elif col_type == "String":
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import StringGroupbySeries
                 return StringGroupbySeries(new_frame)

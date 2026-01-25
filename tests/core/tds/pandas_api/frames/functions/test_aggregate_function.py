@@ -721,7 +721,7 @@ class TestAggregateFunctionOnSeries:
               ->aggregate(
                 ~['mean(int_col)':{r | $r.int_col}:{c | $c->average()}, 'min(int_col)':{r | $r.int_col}:{c | $c->min()}, 'var(int_col)':{r | $r.int_col}:{c | $c->varianceSample()}]
               )
-        '''
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame1.to_pure_query(FrameToPureConfig()) == expected
         assert frame2.to_pure_query(FrameToPureConfig()) == expected

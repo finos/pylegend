@@ -64,7 +64,9 @@ if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 
 __all__: PyLegendSequence[str] = [
-    "Series"
+    "Series",
+    "SupportsToSqlExpression",
+    "SupportsToPureExpression",
 ]
 
 R = PyLegendTypeVar('R')
@@ -160,10 +162,10 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self._filtered_frame.to_sql_query_object(config)  # type: ignore
+        return self._filtered_frame.to_sql_query_object(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        return self._filtered_frame.to_pure(config)  # type: ignore
+        return self._filtered_frame.to_pure(config)
 
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
         return self._filtered_frame.get_all_tds_frames()  # type: ignore
