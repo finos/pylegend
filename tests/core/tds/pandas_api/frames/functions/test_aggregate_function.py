@@ -22,6 +22,7 @@ from pylegend._typing import (
 )
 import pytest
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
@@ -625,3 +626,102 @@ class TestAggregateFunction:
             "rows": [{"values": ['2014-12-01', '2014-12-05T21:00:00.000000000+0000']}]
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+
+class TestAggregateFunctionOnSeries:
+
+    def test_error_for_invalid_column_on_series(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("int_col"),
+            PrimitiveTdsColumn.string_column("str_col"),
+            PrimitiveTdsColumn.date_column("date_col")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as v:
+            frame["int_col"].agg({"int_col": "sum", "str_col": "count"})
+        expected = '''\
+            Invalid `func` argument for the aggregate function.
+            When a dictionary is provided, all keys must be column names.
+            Available columns are: ['int_col']
+            But got key: 'str_col' (type: str)
+        '''
+        expected = dedent(expected)
+        assert v.value.args[0] == expected
+
+        with pytest.raises(ValueError) as v:
+            frame["int_col"].agg({"date_col": "count"})
+        expected = '''\
+            Invalid `func` argument for the aggregate function.
+            When a dictionary is provided, all keys must be column names.
+            Available columns are: ['int_col']
+            But got key: 'date_col' (type: str)
+        '''
+        expected = dedent(expected)
+        assert v.value.args[0] == expected
+
+    def test_single_aggregation_on_series(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("int_col"),
+            PrimitiveTdsColumn.string_column("str_col"),
+            PrimitiveTdsColumn.date_column("date_col")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame1 = frame["int_col"].sum()
+        frame2 = frame["int_col"].agg({"int_col": "sum"})
+
+        expected = '''
+            SELECT
+                SUM("root".int_col) AS "int_col"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_sql_query(FrameToSqlConfig()) == expected
+        assert frame2.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->select(~[int_col])
+              ->aggregate(
+                ~[int_col:{r | $r.int_col}:{c | $c->sum()}]
+              )
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_pure_query(FrameToPureConfig()) == expected
+        assert frame2.to_pure_query(FrameToPureConfig()) == expected
+
+    def test_multiple_aggregations_on_series(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("int_col"),
+            PrimitiveTdsColumn.string_column("str_col"),
+            PrimitiveTdsColumn.date_column("date_col")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame1 = frame["int_col"].agg(["mean", "min", "var"])
+        frame2 = frame["int_col"].agg({"int_col": ["mean", "min", "var"]})
+
+        assert isinstance(frame1, PandasApiAppliedFunctionTdsFrame)
+
+        expected = '''
+            SELECT
+                AVG("root".int_col) AS "mean(int_col)",
+                MIN("root".int_col) AS "min(int_col)",
+                VAR_SAMP("root".int_col) AS "var(int_col)"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_sql_query(FrameToSqlConfig()) == expected
+        assert frame2.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->select(~[int_col])
+              ->aggregate(
+                ~['mean(int_col)':{r | $r.int_col}:{c | $c->average()}, 'min(int_col)':{r | $r.int_col}:{c | $c->min()}, 'var(int_col)':{r | $r.int_col}:{c | $c->varianceSample()}]
+              )
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_pure_query(FrameToPureConfig()) == expected
+        assert frame2.to_pure_query(FrameToPureConfig()) == expected
