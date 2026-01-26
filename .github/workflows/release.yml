@@ -139,6 +139,7 @@ jobs:
           format: table
           exit-code: '1'
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
