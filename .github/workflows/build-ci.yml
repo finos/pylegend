@@ -122,7 +122,6 @@ jobs:
           format: table
           exit-code: '1'
           severity: HIGH,CRITICAL
-          ignore-unfixed: true
 
       - name: Log in to Docker Hub
         if: github.ref == 'refs/heads/main' && github.repository == 'finos/pylegend'
