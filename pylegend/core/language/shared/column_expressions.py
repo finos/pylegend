@@ -73,7 +73,6 @@ class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
         return f"{self.__row.to_pure_expression(config)}.{escape_column_name(self.__column)}"
 
     def get_column(self) -> str:
-        # meow meow
         return self.__column
 
 
