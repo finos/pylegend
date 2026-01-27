@@ -140,6 +140,7 @@ class TestGroupbyErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         methods = ["sum", "mean", "min", "max", "std", "var"]
         for method in methods:
@@ -147,10 +148,15 @@ class TestGroupbyErrors:
                 getattr(gb, method)(numeric_only=True)
             assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(gb_series, method)(numeric_only=True)
+            assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
+
     def test_groupby_convenience_error_engine_args(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         methods = ["sum", "mean", "min", "max", "std", "var"]
         for method in methods:
@@ -162,19 +168,33 @@ class TestGroupbyErrors:
                 getattr(gb, method)(engine_kwargs={"nopython": True})
             assert f"engine_kwargs parameter is not supported in {method} function" in v2.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v1:
+                getattr(gb_series, method)(engine="numba")
+            assert f"engine parameter is not supported in {method} function" in v1.value.args[0]
+
+            with pytest.raises(NotImplementedError) as v2:
+                getattr(gb_series, method)(engine_kwargs={"nopython": True})
+            assert f"engine_kwargs parameter is not supported in {method} function" in v2.value.args[0]
+
     def test_groupby_sum_error_min_count_nonzero(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             gb.sum(min_count=5)
+        assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            gb_series.sum(min_count=5)
         assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
 
     def test_groupby_min_max_error_min_count_not_minus_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v_min:
             gb.min(min_count=0)
@@ -184,22 +204,40 @@ class TestGroupbyErrors:
             gb.max(min_count=5)
         assert "min_count must be -1 (default) in max function, but got: 5" in v_max.value.args[0]
 
+        with pytest.raises(NotImplementedError) as v_min:
+            gb_series.min(min_count=0)
+        assert "min_count must be -1 (default) in min function, but got: 0" in v_min.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v_max:
+            gb_series.max(min_count=5)
+        assert "min_count must be -1 (default) in max function, but got: 5" in v_max.value.args[0]
+
     def test_groupby_std_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             gb.std(ddof=0)
+        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            gb_series.std(ddof=0)
         assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
 
     def test_groupby_var_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             gb.var(ddof=2)
+        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            gb_series.var(ddof=2)
         assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
 
     def test_groupby_invalid_column_selection_from_series(self) -> None:
@@ -232,6 +270,17 @@ class TestGroupbyErrors:
         expected = dedent(expected)
         assert v.value.args[0] == expected
 
+    def test_groupby_series_without_aggregation(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb_series = frame.groupby("col1")["col1"]
+
+        with pytest.raises(RuntimeError) as v:
+            gb_series.to_sql_query_object(FrameToSqlConfig())
+
+        assert v.value.args[0] == (
+            "The 'groupby' function requires at least one operation to be performed right after it (e.g. aggregate, rank)"
+        )
 
 class TestGroupbyFunctionality:
 

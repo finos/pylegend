@@ -224,22 +224,6 @@ class PandasApiGroupbyTdsFrame:
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame
 
-    def columns(self) -> PyLegendSequence[TdsColumn]:
-        columns_of_this_frame = list()
-
-        grouping_column_names = set([col.get_name() for col in self.get_grouping_columns()])
-        selected_columns = self.get_selected_columns()
-        if selected_columns is None:
-            for col in self.base_frame().columns():
-                if col.get_name() in grouping_column_names:
-                    continue
-                columns_of_this_frame.append(col)
-        else:
-            for col in selected_columns:
-                columns_of_this_frame.append(col)
-
-        return columns_of_this_frame
-
     def get_grouping_columns(self) -> PyLegendList[TdsColumn]:
         return self.__grouping_columns.copy()
 

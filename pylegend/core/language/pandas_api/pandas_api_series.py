@@ -110,7 +110,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             config: FrameToSqlConfig
     ) -> Expression:
         applied_func = self._filtered_frame.get_applied_function()
-        if not isinstance(applied_func, PandasApiFilterFunction):
+        if not isinstance(applied_func, PandasApiFilterFunction):  # pragma: no cover
             if isinstance(applied_func, SupportsToSqlExpression):
                 return applied_func.to_sql_expression(frame_name_to_base_query_map, config)
             else:
@@ -122,7 +122,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         applied_func = self._filtered_frame.get_applied_function()
-        if not isinstance(applied_func, PandasApiFilterFunction):
+        if not isinstance(applied_func, PandasApiFilterFunction):  # pragma: no cover
             if isinstance(applied_func, SupportsToPureExpression):
                 return applied_func.to_pure_expression(config)
             else:

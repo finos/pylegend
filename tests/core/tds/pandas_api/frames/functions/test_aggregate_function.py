@@ -21,6 +21,8 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 import pytest
+
+from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -145,6 +147,7 @@ class TestAggregateFunction:
     def test_convenience_methods_error_invalid_axis(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
@@ -152,9 +155,15 @@ class TestAggregateFunction:
                 getattr(frame, method)(axis=1)
             assert f"The 'axis' parameter must be 0 or 'index' in {method} function, but got: 1" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(axis=1)
+            assert f"The 'axis' parameter must be 0 or 'index' in {method} function, but got: 1" in v.value.args[0]
+
+
     def test_convenience_methods_error_skipna_false(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var']
         for method in methods:
@@ -162,9 +171,14 @@ class TestAggregateFunction:
                 getattr(frame, method)(skipna=False)
             assert f"skipna=False is not currently supported in {method} function" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(skipna=False)
+            assert f"skipna=False is not currently supported in {method} function" in v.value.args[0]
+
     def test_convenience_methods_error_numeric_only_true(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
@@ -172,9 +186,14 @@ class TestAggregateFunction:
                 getattr(frame, method)(numeric_only=True)
             assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(numeric_only=True)
+            assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
+
     def test_convenience_methods_error_extra_kwargs(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
@@ -182,28 +201,47 @@ class TestAggregateFunction:
                 getattr(frame, method)(dummy_arg=1)
             assert f"Additional keyword arguments not supported in {method} function: ['dummy_arg']" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(dummy_arg=1)
+            assert f"Additional keyword arguments not supported in {method} function: ['dummy_arg']" in v.value.args[0]
+
     def test_sum_error_min_count_nonzero(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             frame.sum(min_count=5)
         assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
 
+        with pytest.raises(NotImplementedError) as v:
+            series.sum(min_count=5)
+        assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
+
     def test_std_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             frame.std(ddof=0)
         assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
 
+        with pytest.raises(NotImplementedError) as v:
+            series.std(ddof=0)
+        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+
     def test_var_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             frame.var(ddof=2)
+        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            series.var(ddof=2)
         assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
 
     def test_aggregate_simple_query_generation(self) -> None:
