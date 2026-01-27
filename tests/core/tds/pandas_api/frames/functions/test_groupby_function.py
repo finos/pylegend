@@ -818,19 +818,19 @@ class TestGroupbyFunctionality:
 
     def test_groupby_single_selection(self) -> None:
         columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.integer_column("col2"),
+            PrimitiveTdsColumn.string_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
             PrimitiveTdsColumn.integer_column("col3")
         ]
         frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame1 = frame.groupby("col1")["col2"].mean()
-        frame2 = frame.groupby("col1")[["col2"]].mean()
+        frame1 = frame.groupby("col1")["col2"].max()
+        frame2 = frame.groupby("col1")[["col2"]].max()
 
         expected = '''
             SELECT
                 "root".col1 AS "col1",
-                AVG("root".col2) AS "col2"
+                MAX("root".col2) AS "col2"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -846,7 +846,7 @@ class TestGroupbyFunctionality:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col1],
-                ~[col2:{r | $r.col2}:{c | $c->average()}]
+                ~[col2:{r | $r.col2}:{c | $c->max()}]
               )
               ->sort([~col1->ascending()])
         '''
@@ -859,8 +859,8 @@ class TestGroupbyFunctionality:
     def test_groupby_self_selection(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.integer_column("col2"),
-            PrimitiveTdsColumn.integer_column("col3")
+            PrimitiveTdsColumn.strictdate_column("col2"),
+            PrimitiveTdsColumn.date_column("col3")
         ]
         frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
@@ -927,14 +927,14 @@ class TestGroupbyFunctionality:
         assert frame3.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected
 
-        frame4 = frame.groupby(["col1", "col2"])["col2"].agg(["sum", "count"])
+        frame4 = frame.groupby(["col1", "col2"])["col2"].agg(["min", "max"])
 
         expected = '''
             SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
-                SUM("root".col2) AS "sum(col2)",
-                COUNT("root".col2) AS "count(col2)"
+                MIN("root".col2) AS "min(col2)",
+                MAX("root".col2) AS "max(col2)"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -951,7 +951,7 @@ class TestGroupbyFunctionality:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col1, col2],
-                ~['sum(col2)':{r | $r.col2}:{c | $c->sum()}, 'count(col2)':{r | $r.col2}:{c | $c->count()}]
+                ~['min(col2)':{r | $r.col2}:{c | $c->min()}, 'max(col2)':{r | $r.col2}:{c | $c->max()}]
               )
               ->sort([~col1->ascending(), ~col2->ascending()])
         '''
@@ -959,15 +959,15 @@ class TestGroupbyFunctionality:
         assert frame4.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame4, FrameToPureConfig(), self.legend_client) == expected
 
-        frame5 = frame.groupby(["col1", "col2"])[["col1", "col2"]].agg({"col1": "sum", "col2": ["sum", "mean"]})
+        frame5 = frame.groupby(["col1", "col2"])[["col1", "col3"]].agg({"col1": "sum", "col3": ["min", "max"]})
 
         expected = '''
             SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
                 SUM("root".col1) AS "sum(col1)",
-                SUM("root".col2) AS "sum(col2)",
-                AVG("root".col2) AS "mean(col2)"
+                MIN("root".col3) AS "min(col3)",
+                MAX("root".col3) AS "max(col3)"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -984,7 +984,7 @@ class TestGroupbyFunctionality:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col1, col2],
-                ~['sum(col1)':{r | $r.col1}:{c | $c->sum()}, 'sum(col2)':{r | $r.col2}:{c | $c->sum()}, 'mean(col2)':{r | $r.col2}:{c | $c->average()}]
+                ~['sum(col1)':{r | $r.col1}:{c | $c->sum()}, 'min(col3)':{r | $r.col3}:{c | $c->min()}, 'max(col3)':{r | $r.col3}:{c | $c->max()}]
               )
               ->sort([~col1->ascending(), ~col2->ascending()])
         '''  # noqa: E501

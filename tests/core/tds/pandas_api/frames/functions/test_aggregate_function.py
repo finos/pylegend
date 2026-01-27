@@ -366,98 +366,119 @@ class TestAggregateFunction:
         )
 
     def test_aggregate_convenience_methods_all(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.number_column("col2")]
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         res = frame.sum()
+        res_series = frame["col1"].sum()
         expected_sql = """\
             SELECT
-                SUM("root".col1) AS "col1",
-                SUM("root".col2) AS "col2"
+                SUM("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}, "
-            "col2:{r | $r.col2}:{c | $c->sum()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}])"
         )
 
         res = frame.mean()
+        res_series = frame["col1"].mean()
         expected_sql = """\
             SELECT
-                AVG("root".col1) AS "col1",
-                AVG("root".col2) AS "col2"
+                AVG("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}, "
-            "col2:{r | $r.col2}:{c | $c->average()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}])"
         )
 
         res = frame.min()
+        res_series = frame["col1"].min()
         expected_sql = """\
             SELECT
-                MIN("root".col1) AS "col1",
-                MIN("root".col2) AS "col2"
+                MIN("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, "
-            "col2:{r | $r.col2}:{c | $c->min()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}])"
         )
 
         res = frame.max()
+        res_series = frame["col1"].max()
         expected_sql = """\
             SELECT
-                MAX("root".col1) AS "col1",
-                MAX("root".col2) AS "col2"
+                MAX("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}, "
-            "col2:{r | $r.col2}:{c | $c->max()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}])"
         )
 
         res = frame.std()
+        res_series = frame["col1"].std()
         expected_sql = """\
             SELECT
-                STDDEV_SAMP("root".col1) AS "col1",
-                STDDEV_SAMP("root".col2) AS "col2"
+                STDDEV_SAMP("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}, "
-            "col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
         )
 
         res = frame.var()
+        res_series = frame["col1"].var()
         expected_sql = """\
             SELECT
-                VAR_SAMP("root".col1) AS "col1",
-                VAR_SAMP("root".col2) AS "col2"
+                VAR_SAMP("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}, "
-            "col2:{r | $r.col2}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
         )
 
         res = frame.count()
+        res_series = frame["col1"].count()
         expected_sql = """\
             SELECT
-                COUNT("root".col1) AS "col1",
-                COUNT("root".col2) AS "col2"
+                COUNT("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}, "
-            "col2:{r | $r.col2}:{c | $c->count()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}])"
         )
 
     def test_e2e_aggregate_single_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:

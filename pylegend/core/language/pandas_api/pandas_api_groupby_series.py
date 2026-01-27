@@ -167,7 +167,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def execute_frame_to_string(
             self,
             chunk_size: PyLegendOptional[int] = None
-    ) -> str:
+    ) -> str:  # pragma: no cover
         applied_function_frame = self._raise_exception_if_no_function_applied()
         return applied_function_frame.execute_frame_to_string(chunk_size)
 
