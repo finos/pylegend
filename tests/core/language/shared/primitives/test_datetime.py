@@ -56,21 +56,22 @@ class TestPyLegendDateTime:
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "MONTHS")) == \
                ('((make_date(1970,1,1) + (FLOOR(((EXTRACT(YEAR FROM "root".col2) - 1970) * 12 + '
                 '(EXTRACT(MONTH FROM "root".col2) - 1)) / 2) * 2) * INTERVAL \'1 month\') + INTERVAL \'0 second\')')
+        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "WEEKS")) == \
+               ('((make_date(1969,12,29) + (FLOOR((EXTRACT(EPOCH FROM "root".col2) - '
+                'EXTRACT(EPOCH FROM make_date(1969,12,29))) / (86400 * 2 * 7))) *'
+                ' (2 * 7) * INTERVAL \'1 day\') + INTERVAL \'0 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "DAYS")) == \
                ('((make_date(1970,1,1) + '
                 '(FLOOR((EXTRACT(EPOCH FROM "root".col2) / 86400) / 2) * 2) * INTERVAL \'1 day\') + INTERVAL \'0 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "HOURS")) == \
-               ('((make_date(1970,1,1) + '
-                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 3600)) * (2 * 3600)) * INTERVAL \'1 second\') '
-                '+ INTERVAL \'0 second\')')
+               ('(make_date(1970,1,1) + '
+                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 3600)) * (2 * 3600)) * INTERVAL \'1 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "MINUTES")) == \
-               ('((make_date(1970,1,1) + '
-                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 60)) * (2 * 60)) * INTERVAL \'1 second\') '
-                '+ INTERVAL \'0 second\')')
+               ('(make_date(1970,1,1) + '
+                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 60)) * (2 * 60)) * INTERVAL \'1 second\')')
         assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "SECONDS")) == \
-               ('((make_date(1970,1,1) + '
-                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 1)) * (2 * 1)) * INTERVAL \'1 second\') '
-                '+ INTERVAL \'0 second\')')
+               ('(make_date(1970,1,1) + '
+                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 1)) * (2 * 1)) * INTERVAL \'1 second\')')
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

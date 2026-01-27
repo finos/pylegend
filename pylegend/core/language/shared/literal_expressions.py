@@ -27,7 +27,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionFloatReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
-    PyLegendExpressionNoneReturn,
+    PyLegendExpressionNullReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -182,7 +182,7 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
         return True
 
 
-class PyLegendNullLiteralExpression(PyLegendExpressionNoneReturn):
+class PyLegendNullLiteralExpression(PyLegendExpressionNullReturn):
     __value: None
 
     def __init__(self) -> None:

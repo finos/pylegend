@@ -519,6 +519,7 @@ class TestPyLegendDate:
             ("dt_bucket_5_days", lambda r: r["Settlement Date Time"].time_bucket(5, "DAYS")),
             ("dt_bucket_4_months", lambda r: r["Settlement Date Time"].time_bucket(4, "MONTHS")),
             ("dt_bucket_3_years", lambda r: r["Settlement Date Time"].time_bucket(3, "YEARS")),
+            ("dt_bucket_7_weeks", lambda r: r["Settlement Date Time"].time_bucket(7, "WEEKS")),
             ("dt_bucket_12_hours", lambda r: r["Settlement Date Time"].time_bucket(12, "HOURS")),
             ("dt_bucket_30_minutes", lambda r: r["Settlement Date Time"].time_bucket(30, "MINUTES")),
             ("dt_bucket_90_seconds", lambda r: r["Settlement Date Time"].time_bucket(90, "SECONDS")),
@@ -532,15 +533,16 @@ class TestPyLegendDate:
         assert json.loads(res)["result"] == {
             'columns': [
                 'Settlement Date Time', 'Date', 'dt_bucket_5_days', 'dt_bucket_4_months', 'dt_bucket_3_years',
-                'dt_bucket_12_hours', 'dt_bucket_30_minutes', 'dt_bucket_90_seconds', 'date_bucket_5_days',
-                'date_bucket_4_months', 'date_bucket_3_years',
+                'dt_bucket_7_weeks', 'dt_bucket_12_hours', 'dt_bucket_30_minutes', 'dt_bucket_90_seconds',
+                'date_bucket_5_days', 'date_bucket_4_months', 'date_bucket_3_years',
             ],
             'rows': [{
                 'values': [
                     '2014-12-05T21:00:00.000000000+0000', '2014-12-04', '2014-12-01T00:00:00.000000000+0000',
                     '2014-09-01T00:00:00.000000000+0000', '2012-01-01T00:00:00.000000000+0000',
-                    '2014-12-05T12:00:00.000000000+0000', '2014-12-05T21:00:00.000000000+0000',
-                    '2014-12-05T21:00:00.000000000+0000', '2014-12-01', '2014-09-01', '2012-01-01',
+                    '2014-10-20T00:00:00.000000000+0000', '2014-12-05T12:00:00.000000000+0000',
+                    '2014-12-05T21:00:00.000000000+0000', '2014-12-05T21:00:00.000000000+0000',
+                    '2014-12-01', '2014-09-01', '2012-01-01',
                 ]
             }]
         }

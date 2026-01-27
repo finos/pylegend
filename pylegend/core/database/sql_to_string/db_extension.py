@@ -625,6 +625,11 @@ def date_time_bucket_processor(
             else sql
         )
 
+    def epoch() -> str:
+        return (
+            f"EXTRACT(EPOCH FROM {ts})"
+        )
+
     if unit == "YEARS":
         return coerce_to_datetime(
             f"make_date(1970,1,1) + "
@@ -640,13 +645,15 @@ def date_time_bucket_processor(
 
     if unit == "WEEKS":
         return coerce_to_datetime(
-            f"make_date(1969,12,29) + "
-            f"(FLOOR((CAST({ts} AS DATE) - make_date(1969,12,29)) / ({q} * 7)) * ({q} * 7)) "
-            f"* INTERVAL '1 day'"
+            f"make_date(1969,12,29) + ("
+            f"FLOOR(("
+            f"{epoch()} - EXTRACT(EPOCH FROM make_date(1969,12,29))"
+            f") / (86400 * {q} * 7))"
+            f") * ({q} * 7) * INTERVAL '1 day'"
         )
 
     if unit == "DAYS":
-        days_from_1970 = f"(EXTRACT(EPOCH FROM {ts}) / 86400)"
+        days_from_1970 = f"({epoch()} / 86400)"
         return coerce_to_datetime(
             f"make_date(1970,1,1) + "
             f"(FLOOR({days_from_1970} / {q}) * {q}) * INTERVAL '1 day'"
@@ -660,11 +667,9 @@ def date_time_bucket_processor(
 
     if unit in unit_seconds_map:
         seconds_per_unit = unit_seconds_map[unit]
-        return coerce_to_datetime(
-            f"make_date(1970,1,1) + "
-            f"(FLOOR(EXTRACT(EPOCH FROM {ts}) / ({q} * {seconds_per_unit})) * ({q} * {seconds_per_unit})) "
-            f"* INTERVAL '1 second'"
-        )
+        return (f"(make_date(1970,1,1) + "
+                f"(FLOOR({epoch()} / ({q} * {seconds_per_unit})) * ({q} * {seconds_per_unit})) "
+                f"* INTERVAL '1 second')")
 
     raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")
 
