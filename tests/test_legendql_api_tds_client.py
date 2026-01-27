@@ -60,9 +60,6 @@ class TestLegendQLApiTdsClient:
             ]
         ).astype({
             "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -79,9 +76,6 @@ class TestLegendQLApiTdsClient:
             ]
         ).astype({
             "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -99,7 +93,6 @@ class TestLegendQLApiTdsClient:
                 [23, "Peter"],
             ]
         ).astype({
-            "Age": "Int64",
-            "First Names": "object"
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)
