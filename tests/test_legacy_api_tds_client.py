@@ -59,10 +59,7 @@ class TestLegacyApiTdsClient:
                 ["David", "Harris", 35, "Firm C"]
             ]
         ).astype({
-            "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -78,10 +75,7 @@ class TestLegacyApiTdsClient:
                 ["Anthony", "Allen", 22, "Firm X"],
             ]
         ).astype({
-            "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -99,7 +93,6 @@ class TestLegacyApiTdsClient:
                 [23, "Peter"],
             ]
         ).astype({
-            "Age": "Int64",
-            "First Names": "object"
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)

@@ -50,10 +50,7 @@ class TestToPandasDfResultHandler:
                 ["David", "Harris", 35, "Firm C"]
             ]
         ).astype({
-            "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -79,10 +76,7 @@ class TestToPandasDfResultHandler:
                 ["David", "Harris", 35, "Firm C"]
             ]
         ).astype({
-            "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -131,9 +125,7 @@ class TestToPandasDfResultHandler:
             ]
         ).astype({
             "Id": "Int64",
-            "Quantity": "Float64",
-            "Product/Name": "object",
-            "Account/Name": "object"
+            "Quantity": "Float64"
         })
         expected['Date'] = pd.to_datetime(expected['Date'])
         expected['Settlement Date Time'] = pd.to_datetime(expected['Settlement Date Time'])
@@ -158,8 +150,6 @@ class TestToPandasDfResultHandler:
                 ['Firm C', 'ISIN3', 'ISIN'],
                 ['Firm D', None, None]]
         ).astype({
-            "Name": "object",
-            "Synonyms/Name": "object",
             "Synonyms/Type": "object"
         })
         pd.testing.assert_frame_equal(expected, df)

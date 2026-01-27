@@ -37,7 +37,7 @@ COLUMN_TYPE_DTYPE_MAP = {
     "Integer": "Int64",
     "Float": "Float64",
     "Number": "Float64",
-    "String": "object"
+    "String": "str"
 }
 
 
