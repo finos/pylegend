@@ -59,7 +59,7 @@ class TestLegendQLApiTdsClient:
                 ["David", "Harris", 35, "Firm C"]
             ]
         ).astype({
-            "Age": "Int64",
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -75,7 +75,7 @@ class TestLegendQLApiTdsClient:
                 ["Anthony", "Allen", 22, "Firm X"],
             ]
         ).astype({
-            "Age": "Int64",
+            "Age": "Int64"
         })
         pd.testing.assert_frame_equal(expected, df)
 
