@@ -22,7 +22,6 @@ from pylegend._typing import (
 )
 import pytest
 
-from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -158,7 +157,6 @@ class TestAggregateFunction:
             with pytest.raises(NotImplementedError) as v:
                 getattr(series, method)(axis=1)
             assert f"The 'axis' parameter must be 0 or 'index' in {method} function, but got: 1" in v.value.args[0]
-
 
     def test_convenience_methods_error_skipna_false(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]

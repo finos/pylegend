@@ -276,11 +276,12 @@ class TestGroupbyErrors:
         gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(RuntimeError) as v:
-            gb_series.to_sql_query_object(FrameToSqlConfig())
+            gb_series.to_sql_query_object(FrameToSqlConfig())  # type: ignore
 
         assert v.value.args[0] == (
             "The 'groupby' function requires at least one operation to be performed right after it (e.g. aggregate, rank)"
         )
+
 
 class TestGroupbyFunctionality:
 
@@ -704,6 +705,7 @@ class TestGroupbyFunctionality:
         gb = frame.groupby("col1", sort=False)
 
         res = gb.sum()
+        res_series = gb["col2"].sum()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -713,11 +715,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->sum()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.mean()
+        res_series = gb["col2"].mean()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -727,11 +731,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->average()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.min()
+        res_series = gb["col2"].min()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -741,11 +747,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.max()
+        res_series = gb["col2"].max()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -755,11 +763,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->max()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.std()
+        res_series = gb["col2"].std()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -769,11 +779,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.var()
+        res_series = gb["col2"].var()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -783,11 +795,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.count()
+        res_series = gb["col2"].count()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -797,9 +811,10 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->count()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
     def test_groupby_single_selection(self) -> None:
         columns = [
