@@ -671,7 +671,7 @@ def date_time_bucket_processor(
                 f"(FLOOR({epoch()} / ({q} * {seconds_per_unit})) * ({q} * {seconds_per_unit})) "
                 f"* INTERVAL '1 second')")
 
-    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")
+    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")  # pragma: no cover
 
 
 def not_expression_processor(
