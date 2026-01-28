@@ -896,13 +896,13 @@ class TestGroupbyFunctionality:
         assert frame2.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == expected
 
-        frame3 = frame.groupby(["col1", "col2"])["col1"].mean()
+        frame3 = frame.groupby(["col1", "col2"])["col2"].mean()
 
         expected = '''
             SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
-                AVG("root".col1) AS "mean(col1)"
+                AVG("root".col2) AS "mean(col2)"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -919,7 +919,7 @@ class TestGroupbyFunctionality:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col1, col2],
-                ~['mean(col1)':{r | $r.col1}:{c | $c->average()}]
+                ~['mean(col2)':{r | $r.col2}:{c | $c->average()}]
               )
               ->sort([~col1->ascending(), ~col2->ascending()])
         '''
