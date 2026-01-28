@@ -927,22 +927,22 @@ class TestGroupbyFunctionality:
         assert frame3.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected
 
-        frame4 = frame.groupby(["col1", "col2"])["col2"].agg(["min", "max"])
+        frame4 = frame.groupby(["col1", "col3"])["col3"].agg(["min", "max"])
 
         expected = '''
             SELECT
                 "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                MIN("root".col2) AS "min(col2)",
-                MAX("root".col2) AS "max(col2)"
+                "root".col3 AS "col3",
+                MIN("root".col3) AS "min(col3)",
+                MAX("root".col3) AS "max(col3)"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
                 "root".col1,
-                "root".col2
+                "root".col3
             ORDER BY
                 "root".col1,
-                "root".col2
+                "root".col3
         '''
         expected = dedent(expected).strip()
         assert frame4.to_sql_query(FrameToSqlConfig()) == expected
@@ -950,10 +950,10 @@ class TestGroupbyFunctionality:
         expected = '''
             #Table(test_schema.test_table)#
               ->groupBy(
-                ~[col1, col2],
-                ~['min(col2)':{r | $r.col2}:{c | $c->min()}, 'max(col2)':{r | $r.col2}:{c | $c->max()}]
+                ~[col1, col3],
+                ~['min(col3)':{r | $r.col3}:{c | $c->min()}, 'max(col3)':{r | $r.col3}:{c | $c->max()}]
               )
-              ->sort([~col1->ascending(), ~col2->ascending()])
+              ->sort([~col1->ascending(), ~col3->ascending()])
         '''
         expected = dedent(expected).strip()
         assert frame4.to_pure_query(FrameToPureConfig()) == expected
