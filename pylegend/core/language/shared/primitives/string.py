@@ -18,7 +18,10 @@ from pylegend._typing import (
     PyLegendUnion,
     PyLegendOptional
 )
-from pylegend.core.language.shared.literal_expressions import PyLegendIntegerLiteralExpression
+from pylegend.core.language.shared.literal_expressions import (
+    PyLegendIntegerLiteralExpression,
+    convert_literal_to_literal_expression
+)
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
@@ -67,7 +70,8 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringSplitPartExpression,
     PyLegendStringFullMatchExpression,
     PyLegendStringRepeatStringExpression,
-    PyLegendStringMatchExpression
+    PyLegendStringMatchExpression,
+    PyLegendStringCoalesceExpression
 )
 
 __all__: PyLegendSequence[str] = [
@@ -241,6 +245,16 @@ class PyLegendString(PyLegendPrimitive):
         PyLegendString.__validate_param_to_be_int_or_int_expr(times, "repeatString parameter")
         times_op = PyLegendIntegerLiteralExpression(times) if isinstance(times, int) else times.value()
         return PyLegendString(PyLegendStringRepeatStringExpression(self.__value, times_op))
+
+    def coalesce(self, *other: PyLegendOptional[PyLegendUnion[str, "PyLegendString"]]) -> "PyLegendString":
+        other_op = []
+        for op in other:
+            if op is not None:
+                PyLegendString.__validate_param_to_be_str_or_str_expr(op, "coalesce parameter")
+            other_op.append(
+                convert_literal_to_literal_expression(op) if not isinstance(op, PyLegendString) else op.__value)
+
+        return PyLegendString(PyLegendStringCoalesceExpression([self.__value, *other_op]))
 
     def __add__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String plus (+) parameter")

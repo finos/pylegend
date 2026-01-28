@@ -379,6 +379,26 @@ class TestPyLegendString:
         assert self.__generate_pure_string(lambda x: x.get_string("col2").repeat_string(3)) == \
                'toOne($t.col2)->repeatString(3)'
 
+    def test_string_coalesce_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").coalesce("hello")) == \
+               'COALESCE("root".col2, \'hello\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").coalesce("hello")) == \
+               '$t.col2->meta::pure::functions::flow::coalesce(\'hello\')'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").coalesce(None, "hello")) == \
+               'COALESCE("root".col2, null, \'hello\')'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").coalesce(None, "hello")) == \
+               '$t.col2->meta::pure::functions::flow::coalesce([], \'hello\')'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").coalesce(None, "hello", None)) == \
+               'COALESCE("root".col2, null, \'hello\', null)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").coalesce(None, "hello", None)) == \
+               '$t.col2->meta::pure::functions::flow::coalesce([], \'hello\', [])'
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_string("col2").coalesce(None, 2, None))
+        assert (t.value.args[0] ==
+                "coalesce parameter should be a str or a string expression (PyLegendString). "
+                "Got value 2 of type: <class 'int'>")
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

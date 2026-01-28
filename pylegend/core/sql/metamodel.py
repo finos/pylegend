@@ -87,7 +87,11 @@ __all__: PyLegendSequence[str] = [
     'InPredicate',
     'Window',
     'WindowFrame',
-    'FrameBound'
+    'FrameBound',
+    'BitwiseShiftDirection',
+    'BitwiseBinaryOperator',
+    'BitwiseBinaryExpression',
+    'BitwiseShiftExpression',
 ]
 
 
@@ -177,6 +181,17 @@ class ExtractField(Enum):
     TIMEZONE_HOUR = 15,
     TIMEZONE_MINUTE = 16,
     EPOCH = 17
+
+
+class BitwiseShiftDirection(Enum):
+    LEFT = 1
+    RIGHT = 2
+
+
+class BitwiseBinaryOperator(Enum):
+    AND = 1
+    OR = 2
+    XOR = 3
 
 
 class Node:
@@ -930,3 +945,37 @@ class FrameBound(Node):
         self.type_ = type_
         self.value = value
         self.duration_unit = duration_unit
+
+
+class BitwiseBinaryExpression(Expression):
+    left: "Expression"
+    right: "Expression"
+    operator: "BitwiseBinaryOperator"
+
+    def __init__(
+            self,
+            left: "Expression",
+            right: "Expression",
+            operator: "BitwiseBinaryOperator"
+    ) -> None:
+        super().__init__(_type="bitwiseBinaryExpression")
+        self.left = left
+        self.right = right
+        self.operator = operator
+
+
+class BitwiseShiftExpression(Expression):
+    value: "Expression"
+    shift: "Expression"
+    direction: "BitwiseShiftDirection"
+
+    def __init__(
+            self,
+            value: "Expression",
+            shift: "Expression",
+            direction: "BitwiseShiftDirection"
+    ) -> None:
+        super().__init__(_type="bitwiseShiftExpression")
+        self.value = value
+        self.shift = shift
+        self.direction = direction

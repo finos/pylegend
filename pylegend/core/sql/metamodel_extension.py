@@ -20,6 +20,7 @@ from pylegend._typing import (
 from pylegend.core.sql.metamodel import (
     Expression,
     Window,
+    StringLiteral,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -81,7 +82,12 @@ __all__: PyLegendSequence[str] = [
     "EpochExpression",
     "WindowExpression",
     "ConstantExpression",
-    "StringSubStringExpression"
+    "StringSubStringExpression",
+    "DateAdjustExpression",
+    "BitwiseNotExpression",
+    "DateDiffExpression",
+    "DateTimeBucketExpression",
+    "DateType"
 ]
 
 
@@ -763,3 +769,73 @@ class StringSubStringExpression(Expression):
         self.value = value
         self.start = start
         self.end = end
+
+
+class DateAdjustExpression(Expression):
+    date: "Expression"
+    number: "Expression"
+    duration_unit: "StringLiteral"
+
+    def __init__(
+            self,
+            date: "Expression",
+            number: "Expression",
+            duration_unit: "StringLiteral",
+    ) -> None:
+        super().__init__(_type="dateAdjustExpression")
+        self.date = date
+        self.number = number
+        self.duration_unit = duration_unit
+
+
+class DateDiffExpression(Expression):
+    start_date: "Expression"
+    end_date: "Expression"
+    duration_unit: "StringLiteral"
+
+    def __init__(
+            self,
+            start_date: "Expression",
+            end_date: "Expression",
+            duration_unit: "StringLiteral",
+    ) -> None:
+        super().__init__(_type="dateDiffExpression")
+        self.start_date = start_date
+        self.end_date = end_date
+        self.duration_unit = duration_unit
+
+
+class DateType(Enum):
+    DateTime = 1
+    StrictDate = 2
+
+
+class DateTimeBucketExpression(Expression):
+    date: "Expression"
+    quantity: "Expression"
+    duration_unit: "StringLiteral"
+    date_type: DateType
+
+    def __init__(
+            self,
+            date: "Expression",
+            quantity: "Expression",
+            duration_unit: "StringLiteral",
+            date_type: DateType = DateType.DateTime,
+    ) -> None:
+        super().__init__(_type="dateTimeBucketExpression")
+        self.date = date
+        self.quantity = quantity
+        self.duration_unit = duration_unit
+        self.date_type = date_type
+
+
+class BitwiseNotExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+            self,
+            value: "Expression",
+    ) -> None:
+        super().__init__(_type="bitwiseNotExpression")
+        self.value = value
