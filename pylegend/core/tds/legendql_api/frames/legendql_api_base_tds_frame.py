@@ -134,6 +134,32 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                 ]
             ]
     ) -> "LegendQLApiTdsFrame":
+        """
+            Sort the TDS frame based on the given columns.
+
+            Parameters
+            ----------
+            sort_infos: Union[str, List[str], Callable[[LegendQLApiTdsRow], Union[LegendQLApiPrimitive, LegendQLApiSortInfo, List[Union[LegendQLApiPrimitive, LegendQLApiSortInfo]]]]]
+                A string or list of strings representing column names to sort by in ascending order.
+                Alternatively, a callable that takes a TDS row and returns a column, a SortInfo object (for specifying direction),
+                or a list of columns/SortInfo objects to sort by.
+
+            Returns
+            -------
+            LegendQLApiTdsFrame
+                A new TDS frame with the sort operation applied.
+
+            Examples
+            --------
+            >>> from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
+            >>> from pylegend.core.tds.legendql_api.functions.legend_api_functions import asc, desc
+            >>> from tests.test_helpers.northwind_legend_models import northwind_service_frame
+            >>> frame: LegendQLApiTdsFrame = northwind_service_frame()
+            # Sort by 'SHIP_COUNTRY' ascending
+            >>> sorted_frame = frame.sort("SHIP_COUNTRY")
+            # Sort by 'SHIP_COUNTRY' ascending and then 'SHIP_CITY' descending
+            >>> sorted_frame_2 = frame.sort(lambda r: [asc(r.SHIP_COUNTRY), desc(r.SHIP_CITY)])
+        """
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
         )

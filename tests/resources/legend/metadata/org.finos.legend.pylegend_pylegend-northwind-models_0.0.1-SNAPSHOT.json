@@ -1,0 +1,241 @@
+{
+  "_type": "data",
+  "elements": [
+    {
+      "_type": "function",
+      "body": [
+        {
+          "_type": "func",
+          "function": "from",
+          "parameters": [
+            {
+              "_type": "classInstance",
+              "sourceInformation": {
+                "endColumn": 68,
+                "endLine": 1,
+                "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
+                "startColumn": 2,
+                "startLine": 1
+              },
+              "type": ">",
+              "value": {
+                "path": [
+                  "showcase::northwind::store::NorthwindDatabase",
+                  "NORTHWIND",
+                  "ORDERS"
+                ],
+                "sourceInformation": {
+                  "endColumn": 68,
+                  "endLine": 1,
+                  "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
+                  "startColumn": 2,
+                  "startLine": 1
+                }
+              }
+            },
+            {
+              "_type": "packageableElementPtr",
+              "fullPath": "showcase::northwind::runtime::NorthwindRuntime",
+              "sourceInformation": {
+                "endColumn": 48,
+                "endLine": 2,
+                "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
+                "startColumn": 3,
+                "startLine": 2
+              }
+            }
+          ],
+          "sourceInformation": {
+            "endColumn": 74,
+            "endLine": 1,
+            "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
+            "startColumn": 71,
+            "startLine": 1
+          }
+        }
+      ],
+      "name": "RelationalStoreAccessor__Relation_1_",
+      "package": "test::query",
+      "parameters": [],
+      "postConstraints": [],
+      "preConstraints": [],
+      "returnGenericType": {
+        "rawType": {
+          "_type": "packageableType",
+          "fullPath": "meta::pure::metamodel::relation::Relation"
+        },
+        "typeArguments": [
+          {
+            "rawType": {
+              "_type": "packageableType",
+              "fullPath": "meta::pure::metamodel::type::Any"
+            }
+          }
+        ]
+      },
+      "returnMultiplicity": {
+        "lowerBound": 1,
+        "upperBound": 1
+      }
+    },
+    {
+      "_type": "relational",
+      "filters": [],
+      "joins": [],
+      "name": "NorthwindDatabase",
+      "package": "showcase::northwind::store",
+      "schemas": [
+        {
+          "name": "NORTHWIND",
+          "tables": [
+            {
+              "columns": [
+                {
+                  "name": "ORDER_ID",
+                  "nullable": false,
+                  "type": {
+                    "_type": "SmallInt"
+                  }
+                },
+                {
+                  "name": "CUSTOMER_ID",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Varchar",
+                    "size": 5
+                  }
+                },
+                {
+                  "name": "EMPLOYEE_ID",
+                  "nullable": true,
+                  "type": {
+                    "_type": "SmallInt"
+                  }
+                },
+                {
+                  "name": "ORDER_DATE",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Date"
+                  }
+                },
+                {
+                  "name": "REQUIRED_DATE",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Date"
+                  }
+                },
+                {
+                  "name": "SHIPPED_DATE",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Date"
+                  }
+                },
+                {
+                  "name": "SHIP_VIA",
+                  "nullable": true,
+                  "type": {
+                    "_type": "SmallInt"
+                  }
+                },
+                {
+                  "name": "SHIP_NAME",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Varchar",
+                    "size": 40
+                  }
+                },
+                {
+                  "name": "SHIP_ADDRESS",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Varchar",
+                    "size": 60
+                  }
+                },
+                {
+                  "name": "SHIP_CITY",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Varchar",
+                    "size": 15
+                  }
+                },
+                {
+                  "name": "SHIP_REGION",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Varchar",
+                    "size": 15
+                  }
+                },
+                {
+                  "name": "SHIP_POSTAL_CODE",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Varchar",
+                    "size": 10
+                  }
+                },
+                {
+                  "name": "SHIP_COUNTRY",
+                  "nullable": true,
+                  "type": {
+                    "_type": "Varchar",
+                    "size": 15
+                  }
+                }
+              ],
+              "name": "ORDERS",
+              "primaryKey": [
+                "ORDER_ID"
+              ]
+            }
+          ],
+          "views": []
+        }
+      ]
+    },
+    {
+      "_type": "runtime",
+      "name": "NorthwindRuntime",
+      "package": "showcase::northwind::runtime",
+      "runtimeValue": {
+        "_type": "engineRuntime",
+        "connectionStores": [],
+        "connections": [
+          {
+            "store": {
+              "path": "showcase::northwind::store::NorthwindDatabase",
+              "type": "STORE"
+            },
+            "storeConnections": [
+              {
+                "connection": {
+                  "_type": "RelationalDatabaseConnection",
+                  "authenticationStrategy": {
+                    "_type": "h2Default"
+                  },
+                  "databaseType": "H2",
+                  "datasourceSpecification": {
+                    "_type": "h2Local",
+                    "testDataSetupSqls": [
+                      "call loadNorthwindData()"
+                    ]
+                  },
+                  "element": "showcase::northwind::store::NorthwindDatabase",
+                  "type": "H2"
+                },
+                "id": "connection_1"
+              }
+            ]
+          }
+        ],
+        "mappings": []
+      }
+    }
+  ]
+}
