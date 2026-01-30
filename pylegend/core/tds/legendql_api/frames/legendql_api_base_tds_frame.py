@@ -151,14 +151,17 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             Examples
             --------
-            >>> from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
-            >>> from pylegend.core.tds.legendql_api.functions.legend_api_functions import asc, desc
-            >>> from tests.test_helpers.northwind_legend_models import northwind_service_frame
-            >>> frame: LegendQLApiTdsFrame = northwind_service_frame()
-            # Sort by 'SHIP_COUNTRY' ascending
-            >>> sorted_frame = frame.sort("SHIP_COUNTRY")
-            # Sort by 'SHIP_COUNTRY' ascending and then 'SHIP_CITY' descending
-            >>> sorted_frame_2 = frame.sort(lambda r: [asc(r.SHIP_COUNTRY), desc(r.SHIP_CITY)])
+            .. ipython:: python
+
+               import os
+               from pylegend.core.request.legend_client import LegendClient
+               from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
+
+               frame = simple_person_service_frame_legendql_api(os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT'])
+               frame.head(5)
+               frame = frame.sort(lambda r: [r["Firm/Legal Name"].descending(), r["First Name"].ascending()])
+               frame.execute_frame_to_pandas_df()
+
         """
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame

@@ -6,6 +6,22 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath('../../'))
+import shlex
+import datetime
+import time
+import requests
+import subprocess
+import logging
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
+from sphinx.application import Sphinx
+import tests
+from tests.test_helpers.dynamic_port_generator import generate_dynamic_port
+
 project = 'PyLegend'
 copyright = '2026, Vithesh'
 author = 'Vithesh'
@@ -19,15 +35,115 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx_rtd_theme',
+    'IPython.sphinxext.ipython_console_highlighting',
+    'IPython.sphinxext.ipython_directive',
 ]
 
 templates_path = ['_templates']
 exclude_patterns = []
-
-
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+# -- Custom Server Setup for Sphinx ------------------------------------------
+
+LOGGER = logging.getLogger(__name__)
+engine_process = None
+metadata_server = None
+
+
+def start_legend_server(app: Sphinx) -> None:
+    global engine_process, metadata_server
+    LOGGER.info("Starting Legend Test Server for Sphinx build....")
+    start = datetime.datetime.now()
+
+    engine_port = generate_dynamic_port()
+    metadata_port = generate_dynamic_port()
+    relative_path = os.path.dirname(tests.__file__).replace("\\", "/")
+    print(f"Relative path for tests: {relative_path}")
+
+    java_home = os.environ.get("JAVA_HOME")
+    if java_home is None:
+        raise RuntimeError("JAVA_HOME environment variable is not set")
+    java_home = java_home.replace("\\", "/")
+    cmd = (
+        f'{java_home}/bin/java -jar '
+        f'-Duser.timezone=UTC '
+        f'-Ddw.server.connector.port={engine_port} '
+        f'-Ddw.metadataserver.alloy.port={metadata_port} '
+        f'{relative_path}/resources/legend/server/pylegend-sql-server/target/pylegend-sql-server-1.0-shaded.jar server '
+        f'{relative_path}/resources/legend/server/pylegend_sql_server_config.json'
+    )
+
+    LOGGER.info(f"Command: {cmd}")
+    engine_process = subprocess.Popen(
+        shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, shell=False
+    )
+
+    class MetadataServerHandler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            path_map = {
+                "/depot/api/projects/org.finos.legend.pylegend/pylegend-test-models/versions/0.0.1-SNAPSHOT/pureModelContextData?convertToNewProtocol=false&clientVersion=v1_33_0":
+                    "org.finos.legend.pylegend_pylegend-test-models_0.0.1-SNAPSHOT.json",
+                "/depot/api/projects/org.finos.legend.pylegend/pylegend-northwind-models/versions/0.0.1-SNAPSHOT/pureModelContextData?convertToNewProtocol=false&clientVersion=v1_33_0":
+                    "org.finos.legend.pylegend_pylegend-northwind-models_0.0.1-SNAPSHOT.json"
+            }
+            file = path_map.get(self.path)
+            if not file:
+                self.send_error(404, f"Unhandled metadata path: {self.path}")
+                return
+
+            try:
+                with open(f"{relative_path}/resources/legend/metadata/{file}", "r") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header('Content-Length', str(len(content)))
+                self.end_headers()
+                self.wfile.write(content.encode("UTF-8"))
+            except FileNotFoundError:
+                self.send_error(404, "Metadata file not found")
+
+        def log_message(self, format: str, *args: any) -> None:
+            return
+
+    metadata_server = HTTPServer(("localhost", metadata_port), MetadataServerHandler)
+    metadata_server_thread = Thread(target=metadata_server.serve_forever)
+    metadata_server_thread.daemon = True
+    metadata_server_thread.start()
+
+    try_count = 0
+    while True:
+        try_count += 1
+        try:
+            requests.get(f"http://localhost:{engine_port}/api/server/v1/info").raise_for_status()
+            break
+        except Exception:
+            if try_count >= 15:
+                raise RuntimeError("Unable to start legend server for testing")
+            time.sleep(4)
+
+    os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT'] = str(engine_port)
+    LOGGER.info(f"Legend Test Server started in {(datetime.datetime.now() - start).seconds} seconds.")
+
+
+def stop_legend_server(app: Sphinx, exception: Exception) -> None:
+    global engine_process, metadata_server
+    LOGGER.info("Terminating Legend Test Server....")
+    if engine_process:
+        engine_process.terminate()
+        engine_process.wait()
+        LOGGER.info("Legend Engine process terminated.")
+    if metadata_server:
+        metadata_server.shutdown()
+        LOGGER.info("Legend Metadata server terminated.")
+    if 'PYLEGEND_DOC_GEN_ENGINE_PORT' in os.environ:
+        del os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT']
+
+
+def setup(app: Sphinx) -> None:
+    app.connect('builder-inited', start_legend_server)
+    app.connect('build-finished', stop_legend_server)
