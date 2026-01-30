@@ -276,7 +276,7 @@ class TestGroupbyErrors:
         gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(RuntimeError) as v:
-            gb_series.to_sql_query_object(FrameToSqlConfig())  # type: ignore
+            gb_series.to_sql_query_object(FrameToSqlConfig())
 
         assert v.value.args[0] == (
             "The 'groupby' function requires at least one operation to be performed right after it (e.g. aggregate, rank)"

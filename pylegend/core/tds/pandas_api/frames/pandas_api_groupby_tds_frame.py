@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from typing import overload
 
 from pylegend._typing import (
     PyLegendOptional,
@@ -145,6 +145,14 @@ class PandasApiGroupbyTdsFrame:
                 f"Current frame columns: {sorted(available_columns)}"
             )
 
+    @overload
+    def __getitem__(self, key: str) -> "GroupbySeries":
+        ...
+
+    @overload
+    def __getitem__(self, key: PyLegendList[str]) -> "PandasApiGroupbyTdsFrame":
+        ...
+
     def __getitem__(
             self,
             item: PyLegendUnion[str, PyLegendList[str]]
@@ -188,7 +196,7 @@ class PandasApiGroupbyTdsFrame:
 
         new_frame.__selected_columns = selected_columns
 
-        if selected_columns is not None and len(selected_columns) == 1:
+        if selected_columns is not None and isinstance(item, str):
             column: TdsColumn = selected_columns[0]
             col_type = column.get_type()
             if col_type == "Boolean":  # pragma: no cover (Boolean column not supported in PURE)
