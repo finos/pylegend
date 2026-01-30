@@ -85,3 +85,6 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
             for x in [self.__applied_function.base_frame()] + self.__applied_function.tds_frame_parameters()
             for y in x.get_all_tds_frames()
         ] + [self]
+
+    def get_applied_function(self) -> PandasApiAppliedFunction:
+        return self.__applied_function

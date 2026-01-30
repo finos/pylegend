@@ -140,6 +140,7 @@ class TestGroupbyErrors:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         methods = ["sum", "mean", "min", "max", "std", "var"]
         for method in methods:
@@ -147,10 +148,15 @@ class TestGroupbyErrors:
                 getattr(gb, method)(numeric_only=True)
             assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(gb_series, method)(numeric_only=True)
+            assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
+
     def test_groupby_convenience_error_engine_args(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         methods = ["sum", "mean", "min", "max", "std", "var"]
         for method in methods:
@@ -162,19 +168,33 @@ class TestGroupbyErrors:
                 getattr(gb, method)(engine_kwargs={"nopython": True})
             assert f"engine_kwargs parameter is not supported in {method} function" in v2.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v1:
+                getattr(gb_series, method)(engine="numba")
+            assert f"engine parameter is not supported in {method} function" in v1.value.args[0]
+
+            with pytest.raises(NotImplementedError) as v2:
+                getattr(gb_series, method)(engine_kwargs={"nopython": True})
+            assert f"engine_kwargs parameter is not supported in {method} function" in v2.value.args[0]
+
     def test_groupby_sum_error_min_count_nonzero(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             gb.sum(min_count=5)
+        assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            gb_series.sum(min_count=5)
         assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
 
     def test_groupby_min_max_error_min_count_not_minus_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v_min:
             gb.min(min_count=0)
@@ -184,23 +204,83 @@ class TestGroupbyErrors:
             gb.max(min_count=5)
         assert "min_count must be -1 (default) in max function, but got: 5" in v_max.value.args[0]
 
+        with pytest.raises(NotImplementedError) as v_min:
+            gb_series.min(min_count=0)
+        assert "min_count must be -1 (default) in min function, but got: 0" in v_min.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v_max:
+            gb_series.max(min_count=5)
+        assert "min_count must be -1 (default) in max function, but got: 5" in v_max.value.args[0]
+
     def test_groupby_std_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             gb.std(ddof=0)
+        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            gb_series.std(ddof=0)
         assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
 
     def test_groupby_var_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
+        gb_series = frame.groupby("col1")["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             gb.var(ddof=2)
         assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            gb_series.var(ddof=2)
+        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+
+    def test_groupby_invalid_column_selection_from_series(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2"),
+            PrimitiveTdsColumn.integer_column("col3")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as v:
+            frame.groupby("col1")["col2"].agg({"col3": "count", "col2": "sum"})
+        expected = '''\
+            Invalid `func` argument for the aggregate function.
+            When a dictionary is provided, all keys must be column names.
+            Available columns are: ['col2']
+            But got key: 'col3' (type: str)
+        '''
+        expected = dedent(expected)
+        assert v.value.args[0] == expected
+
+        with pytest.raises(ValueError) as v:
+            frame.groupby("col1")["col2"].agg({"col1": "min"})
+        expected = '''\
+            Invalid `func` argument for the aggregate function.
+            When a dictionary is provided, all keys must be column names.
+            Available columns are: ['col2']
+            But got key: 'col1' (type: str)
+        '''
+        expected = dedent(expected)
+        assert v.value.args[0] == expected
+
+    def test_groupby_series_without_aggregation(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb_series = frame.groupby("col1")["col1"]
+
+        with pytest.raises(RuntimeError) as v:
+            gb_series.to_sql_query_object(FrameToSqlConfig())
+
+        assert v.value.args[0] == (
+            "The 'groupby' function requires at least one operation to be performed right after it (e.g. aggregate, rank)"
+        )
 
 
 class TestGroupbyFunctionality:
@@ -625,6 +705,7 @@ class TestGroupbyFunctionality:
         gb = frame.groupby("col1", sort=False)
 
         res = gb.sum()
+        res_series = gb["col2"].sum()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -634,11 +715,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->sum()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.mean()
+        res_series = gb["col2"].mean()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -648,11 +731,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->average()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.min()
+        res_series = gb["col2"].min()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -662,11 +747,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->min()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.max()
+        res_series = gb["col2"].max()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -676,11 +763,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->max()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.std()
+        res_series = gb["col2"].std()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -690,11 +779,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.var()
+        res_series = gb["col2"].var()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -704,11 +795,13 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.count()
+        res_series = gb["col2"].count()
         expected_sql = """\
             SELECT
                 "root".col1 AS "col1",
@@ -718,9 +811,186 @@ class TestGroupbyFunctionality:
             GROUP BY
                 "root".col1"""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->count()}])"
-        )
+        ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
+
+    def test_groupby_single_selection(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.integer_column("col3")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame1 = frame.groupby("col1")["col2"].max()
+        frame2 = frame.groupby("col1")[["col2"]].max()
+
+        expected = '''
+            SELECT
+                "root".col1 AS "col1",
+                MAX("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_sql_query(FrameToSqlConfig()) == expected
+        assert frame2.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[col2:{r | $r.col2}:{c | $c->max()}]
+              )
+              ->sort([~col1->ascending()])
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected
+        assert frame2.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == expected
+
+    def test_groupby_self_selection(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.strictdate_column("col2"),
+            PrimitiveTdsColumn.date_column("col3")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame1 = frame.groupby("col1")["col1"].mean()
+        frame2 = frame.groupby("col1")[["col1"]].mean()
+
+        expected = '''
+            SELECT
+                "root".col1 AS "col1",
+                AVG("root".col1) AS "mean(col1)"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_sql_query(FrameToSqlConfig()) == expected
+        assert frame2.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~['mean(col1)':{r | $r.col1}:{c | $c->average()}]
+              )
+              ->sort([~col1->ascending()])
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected
+        assert frame2.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == expected
+
+        frame3 = frame.groupby(["col1", "col2"])["col2"].min()
+
+        expected = '''
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                MIN("root".col2) AS "min(col2)"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1,
+                "root".col2
+            ORDER BY
+                "root".col1,
+                "root".col2
+        '''
+        expected = dedent(expected).strip()
+        assert frame3.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1, col2],
+                ~['min(col2)':{r | $r.col2}:{c | $c->min()}]
+              )
+              ->sort([~col1->ascending(), ~col2->ascending()])
+        '''
+        expected = dedent(expected).strip()
+        assert frame3.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected
+
+        frame4 = frame.groupby(["col1", "col3"])["col3"].agg(["min", "max"])
+
+        expected = '''
+            SELECT
+                "root".col1 AS "col1",
+                "root".col3 AS "col3",
+                MIN("root".col3) AS "min(col3)",
+                MAX("root".col3) AS "max(col3)"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1,
+                "root".col3
+            ORDER BY
+                "root".col1,
+                "root".col3
+        '''
+        expected = dedent(expected).strip()
+        assert frame4.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1, col3],
+                ~['min(col3)':{r | $r.col3}:{c | $c->min()}, 'max(col3)':{r | $r.col3}:{c | $c->max()}]
+              )
+              ->sort([~col1->ascending(), ~col3->ascending()])
+        '''
+        expected = dedent(expected).strip()
+        assert frame4.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame4, FrameToPureConfig(), self.legend_client) == expected
+
+        frame5 = frame.groupby(["col1", "col2"])[["col1", "col3"]].agg({"col1": "sum", "col3": ["min", "max"]})
+
+        expected = '''
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                SUM("root".col1) AS "sum(col1)",
+                MIN("root".col3) AS "min(col3)",
+                MAX("root".col3) AS "max(col3)"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1,
+                "root".col2
+            ORDER BY
+                "root".col1,
+                "root".col2
+        '''
+        expected = dedent(expected).strip()
+        assert frame5.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1, col2],
+                ~['sum(col1)':{r | $r.col1}:{c | $c->sum()}, 'min(col3)':{r | $r.col3}:{c | $c->min()}, 'max(col3)':{r | $r.col3}:{c | $c->max()}]
+              )
+              ->sort([~col1->ascending(), ~col2->ascending()])
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame5.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame5, FrameToPureConfig(), self.legend_client) == expected
 
 
 class TestGroupbyEndtoEnd:
