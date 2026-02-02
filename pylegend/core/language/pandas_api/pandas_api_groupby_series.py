@@ -121,28 +121,22 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     ) -> Expression:
         applied_function_frame = self._raise_exception_if_no_function_applied()
         applied_func = applied_function_frame.get_applied_function()
-        if not isinstance(applied_func, PandasApiFilterFunction):
-            if isinstance(applied_func, SupportsToSqlExpression):
-                return applied_func.to_sql_expression(frame_name_to_base_query_map, config)
-            else:
-                raise NotImplementedError(
-                    f"The '{applied_func.name()}' function cannot provide a SQL expression"
-                )
+        if isinstance(applied_func, SupportsToSqlExpression):
+            return applied_func.to_sql_expression(frame_name_to_base_query_map, config)
 
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
+        raise NotImplementedError(  # pragma: no cover
+            f"The '{applied_func.name()}' function cannot provide a SQL expression"
+        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         applied_function_frame = self._raise_exception_if_no_function_applied()
         applied_func = applied_function_frame.get_applied_function()
-        if not isinstance(applied_func, PandasApiFilterFunction):
-            if isinstance(applied_func, SupportsToPureExpression):
-                return applied_func.to_pure_expression(config)
-            else:
-                raise NotImplementedError(
-                    f"The '{applied_func.name()}' function cannot provide a pure expression"
-                )
+        if isinstance(applied_func, SupportsToPureExpression):
+            return applied_func.to_pure_expression(config)
 
-        return super().to_pure_expression(config)
+        raise NotImplementedError(  # pragma: no cover
+            f"The '{applied_func.name()}' function cannot provide a pure expression"
+        )
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
         applied_function_frame = self._raise_exception_if_no_function_applied()
