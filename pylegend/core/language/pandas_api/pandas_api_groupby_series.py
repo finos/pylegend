@@ -53,7 +53,6 @@ from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDa
 from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import Expression, QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler
