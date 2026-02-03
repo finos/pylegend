@@ -86,7 +86,6 @@ jobs:
 
   build:
     name: Poetry Build
-    needs: [pytest]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
