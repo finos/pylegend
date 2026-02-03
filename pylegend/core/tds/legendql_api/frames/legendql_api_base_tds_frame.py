@@ -156,10 +156,22 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                import os
                from pylegend.core.request.legend_client import LegendClient
                from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
+               from pylegend.extensions.tds.legendql_api.frames.legendql_api_legend_function_input_frame import LegendQLApiLegendFunctionInputFrame
+               from pylegend.extensions.tds.legendql_api.frames.legendql_api_legend_service_input_frame import LegendQLApiLegendServiceInputFrame
+               from pylegend.core.project_cooridnates import VersionedProjectCoordinates
 
-               frame = simple_person_service_frame_legendql_api(os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT'])
+               # frame = simple_person_service_frame_legendql_api(os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT'])
+               frame = LegendQLApiLegendServiceInputFrame(
+                   pattern="/allOrders",
+                   project_coordinates=VersionedProjectCoordinates(
+                       group_id="org.finos.legend.pylegend",
+                       artifact_id="pylegend-northwind-models",
+                       version="0.0.1-SNAPSHOT"
+                   ),
+                   legend_client=LegendClient("localhost", os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT'], secure_http=False)
+               )
                frame.head(5)
-               frame = frame.sort(lambda r: [r["Firm/Legal Name"].descending(), r["First Name"].ascending()])
+               frame = frame.sort(lambda r: [r["Ship Name"].descending(), r["Order Id"].ascending()])
                frame.execute_frame_to_pandas_df()
 
         """

@@ -1,82 +1,97 @@
 {
   "_type": "data",
+  "serializer": {
+    "name": "pure",
+    "version": "v1_23_0"
+  },
+  "origin": {
+    "_type": "pointer",
+    "serializer": {
+      "name": "pure",
+      "version": "v1_23_0"
+    },
+    "sdlcInfo": {
+      "_type": "alloy",
+      "baseVersion": "f55510b402791293b4a43202b3186bad8282083b",
+      "version": "none",
+      "packageableElementPointers": [],
+      "project": "PROD-44958303",
+      "groupId": null,
+      "artifactId": null
+    }
+  },
   "elements": [
     {
-      "_type": "function",
-      "body": [
+      "_type": "class",
+      "name": "Order",
+      "package": "showcase::northwind::model",
+      "properties": [
         {
-          "_type": "func",
-          "function": "from",
-          "parameters": [
-            {
-              "_type": "classInstance",
-              "sourceInformation": {
-                "endColumn": 68,
-                "endLine": 1,
-                "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
-                "startColumn": 2,
-                "startLine": 1
-              },
-              "type": ">",
-              "value": {
-                "path": [
-                  "showcase::northwind::store::NorthwindDatabase",
-                  "NORTHWIND",
-                  "ORDERS"
-                ],
-                "sourceInformation": {
-                  "endColumn": 68,
-                  "endLine": 1,
-                  "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
-                  "startColumn": 2,
-                  "startLine": 1
-                }
-              }
-            },
-            {
-              "_type": "packageableElementPtr",
-              "fullPath": "showcase::northwind::runtime::NorthwindRuntime",
-              "sourceInformation": {
-                "endColumn": 48,
-                "endLine": 2,
-                "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
-                "startColumn": 3,
-                "startLine": 2
-              }
-            }
-          ],
-          "sourceInformation": {
-            "endColumn": 74,
-            "endLine": 1,
-            "sourceId": "test::query::RelationalStoreAccessor__Relation_1_",
-            "startColumn": 71,
-            "startLine": 1
-          }
-        }
-      ],
-      "name": "RelationalStoreAccessor__Relation_1_",
-      "package": "test::query",
-      "parameters": [],
-      "postConstraints": [],
-      "preConstraints": [],
-      "returnGenericType": {
-        "rawType": {
-          "_type": "packageableType",
-          "fullPath": "meta::pure::metamodel::relation::Relation"
-        },
-        "typeArguments": [
-          {
+          "genericType": {
             "rawType": {
               "_type": "packageableType",
-              "fullPath": "meta::pure::metamodel::type::Any"
+              "fullPath": "Integer"
             }
-          }
-        ]
-      },
-      "returnMultiplicity": {
-        "lowerBound": 1,
-        "upperBound": 1
-      }
+          },
+          "multiplicity": {
+            "lowerBound": 1,
+            "upperBound": 1
+          },
+          "name": "id"
+        },
+        {
+          "genericType": {
+            "rawType": {
+              "_type": "packageableType",
+              "fullPath": "StrictDate"
+            }
+          },
+          "multiplicity": {
+            "lowerBound": 0,
+            "upperBound": 1
+          },
+          "name": "createdDate"
+        },
+        {
+          "genericType": {
+            "rawType": {
+              "_type": "packageableType",
+              "fullPath": "StrictDate"
+            }
+          },
+          "multiplicity": {
+            "lowerBound": 0,
+            "upperBound": 1
+          },
+          "name": "requiredDate"
+        },
+        {
+          "genericType": {
+            "rawType": {
+              "_type": "packageableType",
+              "fullPath": "StrictDate"
+            }
+          },
+          "multiplicity": {
+            "lowerBound": 0,
+            "upperBound": 1
+          },
+          "name": "shippedDate"
+        },
+        {
+          "genericType": {
+            "rawType": {
+              "_type": "packageableType",
+              "fullPath": "String"
+            }
+          },
+          "multiplicity": {
+            "lowerBound": 0,
+            "upperBound": 1
+          },
+          "name": "shipToName"
+        }
+      ]
     },
     {
       "_type": "relational",
@@ -200,6 +215,328 @@
       ]
     },
     {
+      "_type": "mapping",
+      "classMappings": [
+        {
+          "_type": "relational",
+          "class": "showcase::northwind::model::Order",
+          "distinct": false,
+          "id": "Order",
+          "mainTable": {
+            "_type": "Table",
+            "database": "showcase::northwind::store::NorthwindDatabase",
+            "mainTableDb": "showcase::northwind::store::NorthwindDatabase",
+            "schema": "NORTHWIND",
+            "table": "ORDERS"
+          },
+          "primaryKey": [
+            {
+              "_type": "column",
+              "column": "ORDER_ID",
+              "table": {
+                "_type": "Table",
+                "database": "showcase::northwind::store::NorthwindDatabase",
+                "mainTableDb": "showcase::northwind::store::NorthwindDatabase",
+                "schema": "NORTHWIND",
+                "table": "ORDERS"
+              },
+              "tableAlias": "ORDERS"
+            }
+          ],
+          "propertyMappings": [
+            {
+              "_type": "relationalPropertyMapping",
+              "property": {
+                "class": "showcase::northwind::model::Order",
+                "property": "id"
+              },
+              "relationalOperation": {
+                "_type": "column",
+                "column": "ORDER_ID",
+                "table": {
+                  "_type": "Table",
+                  "database": "showcase::northwind::store::NorthwindDatabase",
+                  "mainTableDb": "showcase::northwind::store::NorthwindDatabase",
+                  "schema": "NORTHWIND",
+                  "table": "ORDERS"
+                },
+                "tableAlias": "ORDERS"
+              },
+              "source": "Order"
+            },
+            {
+              "_type": "relationalPropertyMapping",
+              "property": {
+                "class": "showcase::northwind::model::Order",
+                "property": "createdDate"
+              },
+              "relationalOperation": {
+                "_type": "column",
+                "column": "ORDER_DATE",
+                "table": {
+                  "_type": "Table",
+                  "database": "showcase::northwind::store::NorthwindDatabase",
+                  "mainTableDb": "showcase::northwind::store::NorthwindDatabase",
+                  "schema": "NORTHWIND",
+                  "table": "ORDERS"
+                },
+                "tableAlias": "ORDERS"
+              },
+              "source": "Order"
+            },
+            {
+              "_type": "relationalPropertyMapping",
+              "property": {
+                "class": "showcase::northwind::model::Order",
+                "property": "requiredDate"
+              },
+              "relationalOperation": {
+                "_type": "column",
+                "column": "REQUIRED_DATE",
+                "table": {
+                  "_type": "Table",
+                  "database": "showcase::northwind::store::NorthwindDatabase",
+                  "mainTableDb": "showcase::northwind::store::NorthwindDatabase",
+                  "schema": "NORTHWIND",
+                  "table": "ORDERS"
+                },
+                "tableAlias": "ORDERS"
+              },
+              "source": "Order"
+            },
+            {
+              "_type": "relationalPropertyMapping",
+              "property": {
+                "class": "showcase::northwind::model::Order",
+                "property": "shippedDate"
+              },
+              "relationalOperation": {
+                "_type": "column",
+                "column": "SHIPPED_DATE",
+                "table": {
+                  "_type": "Table",
+                  "database": "showcase::northwind::store::NorthwindDatabase",
+                  "mainTableDb": "showcase::northwind::store::NorthwindDatabase",
+                  "schema": "NORTHWIND",
+                  "table": "ORDERS"
+                },
+                "tableAlias": "ORDERS"
+              },
+              "source": "Order"
+            },
+            {
+              "_type": "relationalPropertyMapping",
+              "property": {
+                "class": "showcase::northwind::model::Order",
+                "property": "shipToName"
+              },
+              "relationalOperation": {
+                "_type": "column",
+                "column": "SHIP_NAME",
+                "table": {
+                  "_type": "Table",
+                  "database": "showcase::northwind::store::NorthwindDatabase",
+                  "mainTableDb": "showcase::northwind::store::NorthwindDatabase",
+                  "schema": "NORTHWIND",
+                  "table": "ORDERS"
+                },
+                "tableAlias": "ORDERS"
+              },
+              "source": "Order"
+            }
+          ],
+          "root": true
+        }
+      ],
+      "enumerationMappings": [],
+      "includedMappings": [],
+      "name": "NorthwindMapping",
+      "package": "showcase::northwind::mapping",
+      "tests": []
+    },
+    {
+      "_type": "service",
+      "autoActivateUpdates": true,
+      "documentation": "",
+      "execution": {
+        "_type": "pureSingleExecution",
+        "func": {
+          "_type": "lambda",
+          "body": [
+            {
+              "_type": "func",
+              "function": "project",
+              "parameters": [
+                {
+                  "_type": "func",
+                  "function": "getAll",
+                  "parameters": [
+                    {
+                      "_type": "packageableElementPtr",
+                      "fullPath": "showcase::northwind::model::Order"
+                    }
+                  ]
+                },
+                {
+                  "_type": "collection",
+                  "multiplicity": {
+                    "lowerBound": 5,
+                    "upperBound": 5
+                  },
+                  "values": [
+                    {
+                      "_type": "lambda",
+                      "body": [
+                        {
+                          "_type": "property",
+                          "property": "id",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "name": "x"
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "body": [
+                        {
+                          "_type": "property",
+                          "property": "createdDate",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "name": "x"
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "body": [
+                        {
+                          "_type": "property",
+                          "property": "requiredDate",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "name": "x"
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "body": [
+                        {
+                          "_type": "property",
+                          "property": "shippedDate",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "name": "x"
+                        }
+                      ]
+                    },
+                    {
+                      "_type": "lambda",
+                      "body": [
+                        {
+                          "_type": "property",
+                          "property": "shipToName",
+                          "parameters": [
+                            {
+                              "_type": "var",
+                              "name": "x"
+                            }
+                          ]
+                        }
+                      ],
+                      "parameters": [
+                        {
+                          "_type": "var",
+                          "name": "x"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "_type": "collection",
+                  "multiplicity": {
+                    "lowerBound": 5,
+                    "upperBound": 5
+                  },
+                  "values": [
+                    {
+                      "_type": "string",
+                      "value": "Order Id"
+                    },
+                    {
+                      "_type": "string",
+                      "value": "Order Date"
+                    },
+                    {
+                      "_type": "string",
+                      "value": "Required Date"
+                    },
+                    {
+                      "_type": "string",
+                      "value": "Shipped Date"
+                    },
+                    {
+                      "_type": "string",
+                      "value": "Ship Name"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "parameters": []
+        },
+        "mapping": "showcase::northwind::mapping::NorthwindMapping",
+        "runtime": {
+          "_type": "runtimePointer",
+          "runtime": "showcase::northwind::runtime::NorthwindRuntime"
+        }
+      },
+      "name": "AllOrdersTDS",
+      "owners": [],
+      "package": "showcase::northwind::services",
+      "pattern": "/allOrders"
+    },
+    {
       "_type": "runtime",
       "name": "NorthwindRuntime",
       "package": "showcase::northwind::runtime",
@@ -234,7 +571,12 @@
             ]
           }
         ],
-        "mappings": []
+        "mappings": [
+          {
+            "path": "showcase::northwind::mapping::NorthwindMapping",
+            "type": "MAPPING"
+          }
+        ]
       }
     }
   ]

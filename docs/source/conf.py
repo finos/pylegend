@@ -63,7 +63,6 @@ def start_legend_server(app: Sphinx) -> None:
     engine_port = generate_dynamic_port()
     metadata_port = generate_dynamic_port()
     relative_path = os.path.dirname(tests.__file__).replace("\\", "/")
-    print(f"Relative path for tests: {relative_path}")
 
     java_home = os.environ.get("JAVA_HOME")
     if java_home is None:
@@ -91,7 +90,9 @@ def start_legend_server(app: Sphinx) -> None:
                 "/depot/api/projects/org.finos.legend.pylegend/pylegend-northwind-models/versions/0.0.1-SNAPSHOT/pureModelContextData?convertToNewProtocol=false&clientVersion=v1_33_0":
                     "org.finos.legend.pylegend_pylegend-northwind-models_0.0.1-SNAPSHOT.json"
             }
+
             file = path_map.get(self.path)
+
             if not file:
                 self.send_error(404, f"Unhandled metadata path: {self.path}")
                 return
@@ -99,6 +100,7 @@ def start_legend_server(app: Sphinx) -> None:
             try:
                 with open(f"{relative_path}/resources/legend/metadata/{file}", "r") as f:
                     content = f.read()
+
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header('Content-Length', str(len(content)))
