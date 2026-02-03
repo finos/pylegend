@@ -86,7 +86,6 @@ jobs:
 
   build:
     name: Poetry Build
-    needs: [pytest]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -104,7 +103,6 @@ jobs:
 
   docker_build_push:
     name: Build-Push Docker Image
-    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
