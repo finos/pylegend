@@ -41,5 +41,4 @@ COPY . /workspace
 
 # 6. Install dependencies
 #    Now this will use pre-compiled 'manylinux' wheels (FAST)
-RUN python -m pip install --no-cache-dir --upgrade pip
 RUN pip install -e .
