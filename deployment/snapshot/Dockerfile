@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM cgr.dev/chainguard/python:3.13-dev
+FROM python:3.12-slim
+
+RUN apt-get update && apt-get upgrade -y libc-bin libc6
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
