@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:24.04 # Install Python 3.12 manually (Ubuntu 24.04 has 3.12 by default) 
-
-RUN apt-get update && apt-get install -y \ python3 \ python3-pip \ python3-venv \ && rm -rf /var/lib/apt/lists/* # Set aliases so "python" works 
-RUN ln -s /usr/bin/python3 /usr/bin/python
+FROM ubuntu/python:3.12-24.04_stable
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
