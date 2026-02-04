@@ -71,7 +71,6 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
                 raise RuntimeError("Unhandled metadata path: " + self.path)  # pragma: no cover
 
             with open(relative_path + "/resources/legend/metadata/" + file, "r") as f:
-                print(f"Came to file read\n")
                 content = f.read()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")

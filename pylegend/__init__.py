@@ -53,6 +53,8 @@ __all__: PyLegendSequence[str] = [
 
     "LegendQLApiTdsClient",
     "legendql_api_tds_client",
+    "LegendQLApiLocalTdsClient",
+    "legendql_api_local_tds_client",
 
     "LegacyApiTdsClient",
     "legacy_api_tds_client",

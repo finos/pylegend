@@ -139,9 +139,11 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             Parameters
             ----------
-            sort_infos: Union[str, List[str], Callable[[LegendQLApiTdsRow], Union[LegendQLApiPrimitive, LegendQLApiSortInfo, List[Union[LegendQLApiPrimitive, LegendQLApiSortInfo]]]]]
+            sort_infos: Union[str, List[str], Callable[[LegendQLApiTdsRow],
+             Union[LegendQLApiPrimitive, LegendQLApiSortInfo, List[Union[LegendQLApiPrimitive, LegendQLApiSortInfo]]]]]
                 A string or list of strings representing column names to sort by in ascending order.
-                Alternatively, a callable that takes a TDS row and returns a column, a SortInfo object (for specifying direction),
+                Alternatively, a callable that takes a TDS row and returns a column,
+                 a SortInfo object (for specifying direction),
                 or a list of columns/SortInfo objects to sort by.
 
             Returns

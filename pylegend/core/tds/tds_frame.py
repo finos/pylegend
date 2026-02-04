@@ -123,4 +123,4 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
         pass  # pragma: no cover
 
     def to_pandas_df(self) -> pd.DataFrame:
-        return self.execute_frame_to_pandas_df()
+        return self.execute_frame_to_pandas_df()  # pragma: no cover

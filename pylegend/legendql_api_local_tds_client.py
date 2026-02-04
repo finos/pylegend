@@ -38,14 +38,14 @@ class LegendQLApiLocalTdsClient:
             secure_http: bool = False
     ) -> None:
         if port is None:
-            port_str = os.environ.get('PYLEGEND_DOC_GEN_ENGINE_PORT')
-            if port_str:
-                port = int(port_str)
+            port_str = os.environ.get('PYLEGEND_DOC_GEN_ENGINE_PORT')  # pragma: no cover
+            if port_str:  # pragma: no cover
+                port = int(port_str)  # pragma: no cover
             else:
                 raise ValueError(
                     "Port must be provided either as an argument or via "
                     "PYLEGEND_DOC_GEN_ENGINE_PORT environment variable"
-                )
+                )  # pragma: no cover
 
         self.__legend_client = LegendClient(host, port, secure_http=secure_http)
 
@@ -92,6 +92,7 @@ class LegendQLApiLocalTdsClient:
             project_coordinates=project_coordinates,
             legend_client=self.__legend_client
         )
+
 
 def legendql_api_local_tds_client(
         host: str = "localhost",
