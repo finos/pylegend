@@ -18,12 +18,16 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.language.shared.operations.date_operation_expressions import PyLegendDateTimeBucketExpression
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateTimeReturn,
 )
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendDateTimeLiteralExpression,
+    PyLegendIntegerLiteralExpression,
+    PyLegendStringLiteralExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -56,6 +60,20 @@ class PyLegendDateTime(PyLegendDate):
 
     def value(self) -> PyLegendExpressionDateTimeReturn:
         return self.__value
+
+    def time_bucket(
+            self,
+            quantity: PyLegendUnion[int, "PyLegendInteger"],
+            duration_unit: str) -> "PyLegendDate":
+        self.validate_param_to_be_int_or_int_expr(quantity, "time bucket quantity parameter")
+        quantity_op = PyLegendIntegerLiteralExpression(quantity) if isinstance(quantity, int) else quantity.value()
+        self.validate_duration_unit_param(duration_unit)
+        duration_unit_op = PyLegendStringLiteralExpression(duration_unit.upper())
+        return PyLegendDate(PyLegendDateTimeBucketExpression([
+            self.__value,
+            quantity_op,
+            duration_unit_op,
+            PyLegendStringLiteralExpression("DATETIME")]))
 
     @staticmethod
     def __convert_to_datetime_expr(

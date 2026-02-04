@@ -24,6 +24,11 @@ from pylegend.core.language.shared.operations.boolean_operation_expressions impo
     PyLegendBooleanOrExpression,
     PyLegendBooleanAndExpression,
     PyLegendBooleanNotExpression,
+    PyLegendBooleanLessThanExpression,
+    PyLegendBooleanLessThanEqualExpression,
+    PyLegendBooleanGreaterThanExpression,
+    PyLegendBooleanGreaterThanEqualExpression,
+    PyLegendBooleanXorExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -82,6 +87,41 @@ class PyLegendBoolean(PyLegendPrimitive):
 
     def __invert__(self) -> "PyLegendBoolean":
         return PyLegendBoolean(PyLegendBooleanNotExpression(self.__value))
+
+    def __lt__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        return self._create_binary_expression(other, PyLegendBooleanLessThanExpression, "less than (<)")
+
+    def __le__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        return self._create_binary_expression(other, PyLegendBooleanLessThanEqualExpression, "less than equal (<=)")
+
+    def __gt__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        return self._create_binary_expression(other, PyLegendBooleanGreaterThanExpression, "greater than (>)")
+
+    def __ge__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        return self._create_binary_expression(
+            other,
+            PyLegendBooleanGreaterThanEqualExpression,
+            "greater than equal (>=)")
+
+    def __xor__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        return self._create_binary_expression(other, PyLegendBooleanXorExpression, "xor (^)")
+
+    def __rxor__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
+        return self._create_binary_expression(other, PyLegendBooleanXorExpression, "xor (^)", reverse=True)
+
+    def _create_binary_expression(
+            self,
+            other: PyLegendUnion[bool, "PyLegendBoolean"],
+            expression_class: type,
+            operation_name: str,
+            reverse: bool = False
+    ) -> "PyLegendBoolean":
+        PyLegendBoolean.__validate__param_to_be_bool(other, f"Boolean {operation_name} parameter")
+        other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
+
+        if reverse:
+            return PyLegendBoolean(expression_class(other_op, self.__value))
+        return PyLegendBoolean(expression_class(self.__value, other_op))
 
     @staticmethod
     def __validate__param_to_be_bool(param: PyLegendUnion[bool, "PyLegendBoolean"], desc: str) -> None:
