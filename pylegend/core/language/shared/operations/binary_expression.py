@@ -17,11 +17,19 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendCallable,
+    PyLegendUnion,
+    PyLegendOptional,
+    PyLegendList,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
 )
 from pylegend.core.language.shared.helpers import expr_has_matching_start_and_end_parentheses
+from pylegend.core.language.shared.pure_expression import (
+    CompositePureExpression,
+    PrerequisitePureExpression,
+    PureExpression,
+)
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -82,20 +90,43 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
             config
         )
 
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        op1_expr = self.__operand1.to_pure_expression(config)
+    def to_pure_expression(self, config: FrameToPureConfig) -> PyLegendUnion[str, PureExpression]:  # type: ignore
+        op1_prerequisites: PyLegendOptional[PyLegendList[PrerequisitePureExpression]] = None
+        op2_prerequisites: PyLegendOptional[PyLegendList[PrerequisitePureExpression]] = None
+        op1_expr: str
+        op2_expr: str
+
+        op1_pure_expr = self.__operand1.to_pure_expression(config)
+        if isinstance(op1_pure_expr, PureExpression):
+            op1_prerequisites, op1_expr = op1_pure_expr.compile(tds_row_alias="c")
+        else:
+            op1_expr = op1_pure_expr
         if self.__first_operand_needs_to_be_non_nullable:
             op1_expr = (
                 op1_expr if self.__operand1.is_non_nullable() else
                 f"toOne({op1_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op1_expr) else op1_expr})"
             )
-        op2_expr = self.__operand2.to_pure_expression(config)
+        op2_pure_expr = self.__operand2.to_pure_expression(config)
+        if isinstance(op2_pure_expr, PureExpression):
+            op2_prerequisites, op2_expr = op2_pure_expr.compile(tds_row_alias="c")
+        else:
+            op2_expr = op2_pure_expr
         if self.__second_operand_needs_to_be_non_nullable:
             op2_expr = (
                 op2_expr if self.__operand2.is_non_nullable() else
                 f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
             )
-        return self.__to_pure_func(op1_expr, op2_expr, config)
+        combined_expression = self.__to_pure_func(op1_expr, op2_expr, config)
+
+        if op1_prerequisites is None and op2_prerequisites is None:
+            return combined_expression
+
+        combined_pure_expression = CompositePureExpression(final_expr=combined_expression)
+        if op1_prerequisites is not None:
+            combined_pure_expression.add_prerequisites(op1_prerequisites)
+        if op2_prerequisites is not None:
+            combined_pure_expression.add_prerequisites(op2_prerequisites)
+        return combined_pure_expression
 
     def is_non_nullable(self) -> bool:
         return self.__non_nullable

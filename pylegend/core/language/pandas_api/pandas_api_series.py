@@ -322,6 +322,28 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                 f"Additional keyword arguments not supported in count function: {list(kwargs.keys())}")
         return self.aggregate("count", 0)
 
+    def rank(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            method: str = 'min',
+            numeric_only: bool = False,
+            na_option: str = 'bottom',
+            ascending: bool = True,
+            pct: bool = False
+    ) -> "Series":
+        new_series: Series
+        if pct:
+            new_series = FloatSeries(self._filtered_frame, self.columns()[0].get_name())
+        else:
+            new_series = IntegerSeries(self._filtered_frame, self.columns()[0].get_name())
+        new_series.__base_frame = self.__base_frame
+
+        applied_function_frame = self._filtered_frame.rank(axis, method, numeric_only, na_option, ascending, pct)
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+
+        new_series._filtered_frame = applied_function_frame
+        return new_series
+
 
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore
     def __init__(self, base_frame: "PandasApiTdsFrame", column: str):

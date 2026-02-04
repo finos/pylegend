@@ -38,6 +38,7 @@ __all__: PyLegendSequence[str] = [
     "simple_product_service_frame_legendql_api",
     "simple_relation_person_service_frame_legendql_api",
     "simple_relation_trade_service_frame_legendql_api",
+    "simple_relation_person_service_frame_pandas_api",
 ]
 
 
@@ -152,6 +153,18 @@ def simple_relation_person_service_frame_legendql_api(engine_port: int) -> Legen
 def simple_relation_trade_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
     return LegendQLApiLegendServiceInputFrame(
         pattern="/simpleRelationTradeService",
+        project_coordinates=VersionedProjectCoordinates(
+            group_id="org.finos.legend.pylegend",
+            artifact_id="pylegend-test-models",
+            version="0.0.1-SNAPSHOT"
+        ),
+        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+    )
+
+
+def simple_relation_person_service_frame_pandas_api(engine_port: int) -> PandasApiLegendServiceInputFrame:
+    return PandasApiLegendServiceInputFrame(
+        pattern="/simpleRelationPersonService",
         project_coordinates=VersionedProjectCoordinates(
             group_id="org.finos.legend.pylegend",
             artifact_id="pylegend-test-models",

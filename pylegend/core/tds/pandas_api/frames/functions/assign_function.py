@@ -32,7 +32,9 @@ from pylegend.core.language import (
     PyLegendDateTime
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
+from pylegend.core.language.shared.pure_expression import PureExpression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
@@ -101,27 +103,40 @@ class AssignFunction(PandasApiAppliedFunction):
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
 
+        prerequisite_exprs: PyLegendList[str] = []
         assigned_exprs: PyLegendDict[str, str] = {}
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
-            assigned_exprs[col] = res_expr.to_pure_expression(config)
+            pure_expr = res_expr.to_pure_expression(config)
+            if isinstance(pure_expr, str):
+                assigned_exprs[col] = pure_expr
+            elif isinstance(pure_expr, PureExpression):
+                prerequisites, expr = pure_expr.compile(tds_row_alias="c")
+                prerequisite_strs = [expr.prerequisite_expr for expr in prerequisites]
+                prerequisite_exprs.extend(prerequisite_strs)
+                assigned_exprs[col] = expr
 
         # build project clauses
         clauses: PyLegendList[str] = []
 
         for col in base_cols:
             if col in assigned_exprs:
-                clauses.append(f"{col}:c|{assigned_exprs[col]}")
+                clauses.append(f"{escape_column_name(col)}:c|{assigned_exprs[col]}")
             else:
-                clauses.append(f"{col}:c|$c.{col}")
+                clauses.append(f"{escape_column_name(col)}:c|$c.{escape_column_name(col)}")
 
         for col, pure_expr in assigned_exprs.items():
             if col not in base_cols:
-                clauses.append(f"{col}:c|{pure_expr}")
+                clauses.append(f"{escape_column_name(col)}:c|{pure_expr}")
+
+        prerequisite_str = f"{config.separator(1).join(prerequisite_exprs)}"
+        if len(prerequisite_str) > 0:
+            prerequisite_str += f"{config.separator(1)}"
 
         return (
             f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+            f"{prerequisite_str}"
             f"->project(~[{', '.join(clauses)}])"
         )
 

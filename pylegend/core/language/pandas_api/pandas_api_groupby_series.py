@@ -308,6 +308,26 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
 
+    def rank(
+            self,
+            method: str = 'min',
+            ascending: bool = True,
+            na_option: str = 'bottom',
+            pct: bool = False,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "GroupbySeries":
+        new_series: GroupbySeries
+        if pct:
+            new_series = FloatGroupbySeries(self._base_groupby_frame)
+        else:
+            new_series = IntegerGroupbySeries(self._base_groupby_frame)
+
+        applied_function_frame = self._base_groupby_frame.rank(method, ascending, na_option, pct, axis)
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+
+        new_series.applied_function_frame = applied_function_frame
+        return new_series
+
 
 class BooleanGroupbySeries(GroupbySeries, PyLegendBoolean, PyLegendExpressionBooleanReturn):
     def __init__(self, base_frame: "PandasApiGroupbyTdsFrame"):
