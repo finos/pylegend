@@ -23,6 +23,10 @@ from pylegend.legendql_api_tds_client import (
     LegendQLApiTdsClient,
     legendql_api_tds_client,
 )
+from pylegend.legendql_api_local_tds_client import (
+    LegendQLApiLocalTdsClient,
+    legendql_api_local_tds_client,
+)
 from pylegend.core.request import (
     LegendClient,
     AuthScheme,

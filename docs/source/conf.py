@@ -32,21 +32,40 @@ release = '0.1.0'
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx_rtd_theme',
+    'sphinx.ext.todo',
+    'sphinx.ext.githubpages',
+    'sphinx_autodoc_typehints',
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',
 ]
 
-templates_path = ['_templates']
+templates_path = ['./_templates']
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_theme = 'alabaster'
+html_static_path = ['./_static']
+# html_favicon = './_static/img/favicon.ico'
+html_show_copyright = False
+html_show_sphinx = False
+html_style = 'css/style.css'
+html_output_encoding = 'ascii'
+html_theme_options = {
+    'canonical_url': True,
+    # 'logo': "/img/logo.png",
+    'logo_name': True,
+    'logo_text_align': "center",
+    "show_powered_by": False,
+    "page_width": "1200px",
+    "sidebar_width": "240px",
+    "font_size": "17px",
+}
 
 # -- Custom Server Setup for Sphinx ------------------------------------------
 

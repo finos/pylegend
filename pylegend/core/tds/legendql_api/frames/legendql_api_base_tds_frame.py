@@ -153,26 +153,19 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             --------
             .. ipython:: python
 
-               import os
-               from pylegend.core.request.legend_client import LegendClient
-               from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
-               from pylegend.extensions.tds.legendql_api.frames.legendql_api_legend_function_input_frame import LegendQLApiLegendFunctionInputFrame
-               from pylegend.extensions.tds.legendql_api.frames.legendql_api_legend_service_input_frame import LegendQLApiLegendServiceInputFrame
-               from pylegend.core.project_cooridnates import VersionedProjectCoordinates
+               import pylegend
 
-               # frame = simple_person_service_frame_legendql_api(os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT'])
-               frame = LegendQLApiLegendServiceInputFrame(
-                   pattern="/allOrders",
-                   project_coordinates=VersionedProjectCoordinates(
-                       group_id="org.finos.legend.pylegend",
-                       artifact_id="pylegend-northwind-models",
-                       version="0.0.1-SNAPSHOT"
-                   ),
-                   legend_client=LegendClient("localhost", os.environ['PYLEGEND_DOC_GEN_ENGINE_PORT'], secure_http=False)
+               tds_client = pylegend.legendql_api_local_tds_client()  # for local testing
+               frame = tds_client.legend_service_frame(
+                   service_pattern="/allOrders",
+                   group_id="org.finos.legend.pylegend",
+                   artifact_id="pylegend-northwind-models",
+                   version="0.0.1-SNAPSHOT"
                )
-               frame.head(5)
+
+               frame.columns()
                frame = frame.sort(lambda r: [r["Ship Name"].descending(), r["Order Id"].ascending()])
-               frame.execute_frame_to_pandas_df()
+               frame.to_pandas_df()
 
         """
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
