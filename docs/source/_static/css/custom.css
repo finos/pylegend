@@ -1,0 +1,20 @@
+div.ipython,
+div.ipython .output,
+div.ipython .highlight pre,
+div.highlight-ipython3 pre,
+div.output_area,
+div.output,
+div.input_area,
+div.highlight pre {
+  max-height: 450px !important;
+  overflow: auto !important;
+  padding: 0.5rem !important;
+  margin: 0 !important;
+  white-space: pre !important;
+}
+
+div.ipython .highlight pre,
+div.highlight pre {
+  white-space: pre !important;
+  word-wrap: normal !important;
+}

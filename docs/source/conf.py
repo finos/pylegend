@@ -8,6 +8,23 @@
 
 import os
 import sys
+from collections import namedtuple
+
+import sphinx.util.inspect as ins
+
+
+def isstaticmethod(obj, cls=None, name=None) -> bool:
+    return False
+
+
+def isabstractmethod(obj) -> bool:
+    return False
+
+
+ins.isabstractmethod = isabstractmethod
+ins.isstaticmethod = isstaticmethod
+
+namedtuple.__repr__ = lambda x: x.name
 
 sys.path.insert(0, os.path.abspath('../../'))
 import shlex
@@ -43,6 +60,12 @@ extensions = [
     'IPython.sphinxext.ipython_directive',
 ]
 
+autoclass_content = 'init'
+autodoc_default_options = {
+    'member-order': 'bysource',
+}
+ipython_savefig_dir = '.'
+
 templates_path = ['./_templates']
 exclude_patterns = []
 
@@ -65,6 +88,7 @@ html_theme_options = {
     "page_width": "1200px",
     "sidebar_width": "240px",
     "font_size": "17px",
+    "fixed_sidebar": "true",
 }
 
 # -- Custom Server Setup for Sphinx ------------------------------------------

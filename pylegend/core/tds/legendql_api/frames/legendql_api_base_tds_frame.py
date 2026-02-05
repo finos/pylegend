@@ -165,7 +165,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                    version="0.0.1-SNAPSHOT"
                )
 
-               frame.columns()
+               frame.schema()
                frame = frame.sort(lambda r: [r["Ship Name"].descending(), r["Order Id"].ascending()])
                frame.to_pandas_df()
 
