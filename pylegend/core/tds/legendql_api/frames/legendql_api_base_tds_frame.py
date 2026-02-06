@@ -137,22 +137,16 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         """
             Sort the TDS frame based on the given columns.
 
-            Parameters
-            ----------
-            sort_infos : str, list of str, or callable
-                - A string or list of column names to sort by (ascending).
-                - Alternatively, a callable that takes a TDS row and returns one of:
-                    - a column (``LegendQLApiPrimitive``),
-                    - a ``LegendQLApiSortInfo`` (to specify direction), or
-                    - a list of columns and/or ``LegendQLApiSortInfo`` objects.
+            Args:
+                sort_infos: str, list of str, or callable. A string or list of column names to sort by (ascending).
+                            Alternatively, a callable that takes a TDS row and returns one of:
+                                - a column (``LegendQLApiPrimitive``),
+                                - a ``LegendQLApiSortInfo`` (to specify direction), or
+                                - a list of columns and/or ``LegendQLApiSortInfo`` objects.
 
-            Returns
-            -------
-            LegendQLApiTdsFrame
-                A new TDS frame with the sort operation applied.
+            Returns:
+                LegendQLApiTdsFrame: A new TDS frame with the sort operation applied.
 
-            Examples
-            --------
             .. ipython:: python
 
                import pylegend
