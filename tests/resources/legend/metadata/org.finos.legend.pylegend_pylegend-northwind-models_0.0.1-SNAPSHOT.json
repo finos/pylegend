@@ -12,10 +12,10 @@
     },
     "sdlcInfo": {
       "_type": "alloy",
-      "baseVersion": "f55510b402791293b4a43202b3186bad8282083b",
+      "baseVersion": "testhash",
       "version": "none",
       "packageableElementPointers": [],
-      "project": "PROD-44958303",
+      "project": "testproject",
       "groupId": null,
       "artifactId": null
     }
