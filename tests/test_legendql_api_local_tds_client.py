@@ -55,7 +55,10 @@ class TestLegendQLApiLocalTdsClient:
                 ["David", "Harris", 35, "Firm C"]
             ]
         ).astype({
-            "Age": "Int64"
+            "Age": "Int64",
+            "First Name": "object",
+            "Last Name": "object",
+            "Firm/Legal Name": "object"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -71,7 +74,10 @@ class TestLegendQLApiLocalTdsClient:
                 ["Anthony", "Allen", 22, "Firm X"],
             ]
         ).astype({
-            "Age": "Int64"
+            "Age": "Int64",
+            "First Name": "object",
+            "Last Name": "object",
+            "Firm/Legal Name": "object"
         })
         pd.testing.assert_frame_equal(expected, df)
 
@@ -89,6 +95,7 @@ class TestLegendQLApiLocalTdsClient:
                 [23, "Peter"],
             ]
         ).astype({
-            "Age": "Int64"
+            "Age": "Int64",
+            "First Names": "object"
         })
         pd.testing.assert_frame_equal(expected, df)
