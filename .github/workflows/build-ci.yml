@@ -138,39 +138,45 @@ jobs:
 
   sphinx_docs:
     name: Build Sphinx Docs
-    needs: [ docker_build_push ]
+    needs: [ pytest ]
     runs-on: ubuntu-latest
     permissions:
       pages: write
       id-token: write
-    env:
-      JAVA_HOME: /usr/lib/jvm/default-java
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Install JDK
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y default-jdk
-          echo "JAVA_HOME=${JAVA_HOME}"
-          java -version
-
-      - name: Setup Python
+      - name: Setup
         uses: ./.github/workflows/actions/setup
         with:
           python-version: '3.12'
 
+      - name: Poetry Install Dependencies
+        uses: ./.github/workflows/actions/poetry_install_dependencies
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: "zulu"
+          java-version: "11"
+
+      - name: Build Legend Server
+        shell: bash
+        run: |
+          mvn --batch-mode clean package -f ./tests/resources/legend/server/pylegend-sql-server/pom.xml
+
       - name: Install Sphinx and extensions
         shell: bash
         run: |
+          source .venv/bin/activate
           python -m pip install -U pip
           pip install sphinx sphinx_rtd_theme IPython sphinx-autodoc-typehints requests
 
       - name: Build Sphinx docs
         shell: bash
         run: |
+          source .venv/bin/activate
           cd docs
           make clean
           make html
