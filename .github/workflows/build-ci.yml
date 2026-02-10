@@ -38,107 +38,107 @@ jobs:
       - name: MyPy Type Check
         uses: ./.github/workflows/actions/mypy_type_check
 
-#  pytest:
-#    name: PyTest
-#    needs: [ lint, typing_check ]
-#    strategy:
-#      matrix:
-#        os: [ ubuntu-latest, windows-latest ]
-#        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
-#    runs-on: ${{ matrix.os }}
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v6
-#
-#      - name: PyTest
-#        uses: ./.github/workflows/actions/pytest
-#        with:
-#          os: ${{ matrix.os }}
-#          python-version: ${{ matrix.python-version }}
-#
-#      - name: Upload Test Results
-#        if: always()
-#        uses: actions/upload-artifact@v6
-#        with:
-#          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
-#          path: ./test-results/*.xml
-#
-#      - name: Upload Test Coverage Report
-#        if: always()
-#        uses: actions/upload-artifact@v6
-#        with:
-#          name: coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}
-#          path: ./coverage/*.xml
-#
-#      - name: CodeCov Coverage Report
-#        uses: codecov/codecov-action@v5.5.2
-#        with:
-#          files: ./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
-#          flags: pytest
-#          token: ${{ secrets.CODECOV_TOKEN }}
-#
-#      - name: Upload CI Event
-#        if: always()
-#        uses: actions/upload-artifact@v6
-#        with:
-#          name: event-file-${{ matrix.os }}-${{ matrix.python-version }}
-#          path: ${{ github.event_path }}
-#
-#  build:
-#    name: Poetry Build
-#    needs: [ pytest ]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v6
-#
-#      - name: Poetry Build
-#        uses: ./.github/workflows/actions/poetry_build
-#
-#      - name: Upload Built Artifacts
-#        if: always()
-#        uses: actions/upload-artifact@v6
-#        with:
-#          name: build-artifacts
-#          path: ./dist/*
-#
-#  docker_build_push:
-#    name: Build-Push Docker Image
-#    needs: [ build ]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v6
-#
-#      - name: Build Docker Image
-#        shell: bash
-#        run: |
-#          docker build -f ./deployment/snapshot/Dockerfile -t finos/pylegend:SNAPSHOT .
-#
-#      - name: Scan Image with Trivy
-#        uses: aquasecurity/trivy-action@0.33.1
-#        with:
-#          image-ref: finos/pylegend:SNAPSHOT
-#          format: table
-#          exit-code: '1'
-#          severity: HIGH,CRITICAL
-#
-#      - name: Log in to Docker Hub
-#        if: github.ref == 'refs/heads/main' && github.repository == 'finos/pylegend'
-#        uses: docker/login-action@v3
-#        with:
-#          username: finos
-#          password: ${{ secrets.DOCKER_PASSWORD }}
-#
-#      - name: Publish Docker Image
-#        if: github.ref == 'refs/heads/main' && github.repository == 'finos/pylegend'
-#        shell: bash
-#        run: |
-#          docker push finos/pylegend:SNAPSHOT
+  pytest:
+    name: PyTest
+    needs: [ lint, typing_check ]
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: PyTest
+        uses: ./.github/workflows/actions/pytest
+        with:
+          os: ${{ matrix.os }}
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
+          path: ./test-results/*.xml
+
+      - name: Upload Test Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}
+          path: ./coverage/*.xml
+
+      - name: CodeCov Coverage Report
+        uses: codecov/codecov-action@v5.5.2
+        with:
+          files: ./coverage/coverage_${{ matrix.os }}_${{ matrix.python-version }}.xml
+          flags: pytest
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload CI Event
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: event-file-${{ matrix.os }}-${{ matrix.python-version }}
+          path: ${{ github.event_path }}
+
+  build:
+    name: Poetry Build
+    needs: [ pytest ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Poetry Build
+        uses: ./.github/workflows/actions/poetry_build
+
+      - name: Upload Built Artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-artifacts
+          path: ./dist/*
+
+  docker_build_push:
+    name: Build-Push Docker Image
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Build Docker Image
+        shell: bash
+        run: |
+          docker build -f ./deployment/snapshot/Dockerfile -t finos/pylegend:SNAPSHOT .
+
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: finos/pylegend:SNAPSHOT
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+
+      - name: Log in to Docker Hub
+        if: github.ref == 'refs/heads/main' && github.repository == 'finos/pylegend'
+        uses: docker/login-action@v3
+        with:
+          username: finos
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish Docker Image
+        if: github.ref == 'refs/heads/main' && github.repository == 'finos/pylegend'
+        shell: bash
+        run: |
+          docker push finos/pylegend:SNAPSHOT
 
   sphinx_docs:
     name: Build Sphinx Docs
-    needs: [ lint, typing_check ]
+    needs: [ pytest ]
     runs-on: ubuntu-latest
     permissions:
       pages: write
