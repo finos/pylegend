@@ -134,6 +134,36 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
                 ]
             ]
     ) -> "LegendQLApiTdsFrame":
+        """
+            Sort the TDS frame based on the given columns.
+
+            Args:
+                sort_infos: str, list of str, or callable. A string or list of column names to sort by (ascending).
+                            Alternatively, a callable that takes a TDS row and returns one of:
+                                - a column (``LegendQLApiPrimitive``),
+                                - a ``LegendQLApiSortInfo`` (to specify direction), or
+                                - a list of columns and/or ``LegendQLApiSortInfo`` objects.
+
+            Returns:
+                LegendQLApiTdsFrame: A new TDS frame with the sort operation applied.
+
+            .. ipython:: python
+
+               import pylegend
+
+               tds_client = pylegend.legendql_api_local_tds_client()  # for local testing
+               frame = tds_client.legend_service_frame(
+                   service_pattern="/allOrders",
+                   group_id="org.finos.legend.pylegend",
+                   artifact_id="pylegend-northwind-models",
+                   version="0.0.1-SNAPSHOT"
+               )
+
+               frame.schema()
+               frame = frame.sort(lambda r: [r["Ship Name"].descending(), r["Order Id"].ascending()])
+               frame.to_pandas_df()
+
+        """
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
         )
