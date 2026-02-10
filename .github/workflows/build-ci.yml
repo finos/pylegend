@@ -138,7 +138,7 @@ jobs:
 
   sphinx_docs:
     name: Build Sphinx Docs
-    needs: [ docker_build_push ]
+    needs: [ lint, typing_check ]
     runs-on: ubuntu-latest
     permissions:
       pages: write
