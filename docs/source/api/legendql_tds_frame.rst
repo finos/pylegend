@@ -12,7 +12,16 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
+LegendQL TDS Frame
+==================
+
+The ``LegendQLApiBaseTdsFrame`` class provides a python-like interface for working with TDS (Tabular Data Store) frames.
+
+Methods
+-------
+
 sort
-====
+~~~~
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame.LegendQLApiBaseTdsFrame.sort
+

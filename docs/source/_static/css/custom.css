@@ -34,3 +34,61 @@ div.highlight pre {
   white-space: pre !important;
   word-wrap: normal !important;
 }
+
+a.headerlink {
+  opacity: 0;
+  text-decoration: none !important;
+  padding-left: 6px;
+  transition: opacity 0.2s;
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  font-size: 0 !important;
+}
+
+a.headerlink::after {
+  content: "\00B6";
+  font-size: 1.2rem;
+  color: #ccc;
+  border: none !important;
+  background: none !important;
+}
+
+a.headerlink:hover {
+  border: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+a.headerlink:hover::after {
+  color: #2980B9;
+}
+
+h1:hover > a.headerlink,
+h2:hover > a.headerlink,
+h3:hover > a.headerlink,
+h4:hover > a.headerlink,
+h5:hover > a.headerlink,
+h6:hover > a.headerlink,
+dt:hover > a.headerlink,
+p.caption:hover > a.headerlink,
+.method:hover a.headerlink,
+.class:hover > dt > a.headerlink {
+  opacity: 1;
+}
+
+.sphinxsidebar ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.sphinxsidebar ul ul {
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.sphinxsidebar ul ul li {
+  list-style: disc;
+  display: list-item;
+}
