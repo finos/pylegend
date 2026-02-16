@@ -89,20 +89,22 @@ class SupportsToPureExpression(Protocol):
 
 
 class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str, value: PyLegendOptional[PyLegendExpressionIntegerReturn] = None):
         row = PandasApiTdsRow.from_tds_frame("c", base_frame)
         PyLegendColumnExpression.__init__(self, row=row, column=column)
 
-        self.__base_frame = base_frame
+        self._base_frame = base_frame
         filtered = base_frame.filter(items=[column])
         assert isinstance(filtered, PandasApiAppliedFunctionTdsFrame)
         self._filtered_frame: PandasApiAppliedFunctionTdsFrame = filtered
+
+        self._value = value
 
     def value(self) -> PyLegendColumnExpression:
         return self
 
     def get_base_frame(self) -> "PandasApiTdsFrame":
-        return self.__base_frame
+        return self._base_frame
 
     def to_sql_expression(
             self,
@@ -118,6 +120,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                     f"The '{applied_func.name()}' function cannot provide a SQL expression"
                 )
 
+        if self._value is not None:
+            return self._value.to_sql_expression(frame_name_to_base_query_map, config)
+
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
@@ -129,6 +134,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                 raise NotImplementedError(
                     f"The '{applied_func.name()}' function cannot provide a pure expression"
                 )
+
+        if self._value is not None:
+            return self._value.to_pure_expression(config)
 
         return super().to_pure_expression(config)
 
@@ -336,15 +344,33 @@ class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):  # t
 
 
 class NumberSeries(Series, PyLegendNumber, PyLegendExpressionNumberReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: str, value: PyLegendOptional[PyLegendExpressionIntegerReturn] = None):
+        super().__init__(base_frame, column, value)
         PyLegendNumber.__init__(self, self)
 
 
 class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(self, base_frame: "PandasApiTdsFrame", column: PyLegendOptional[str], value: PyLegendOptional[PyLegendExpressionIntegerReturn] = None):
+        super().__init__(base_frame, column, value)
         PyLegendInteger.__init__(self, self)
+
+    def _wrap_number_result(self, result):
+        new_series = IntegerSeries(self._base_frame, self.columns()[0].get_name(), result)
+        return new_series
+
+    def __add__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "IntegerSeries":
+        result = PyLegendInteger.__add__(self, other)
+        return self._wrap_number_result(result)
+
+    def __radd__(
+            self,
+            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+    ) -> "IntegerSeries":
+        result = PyLegendInteger.__radd__(self, other)
+        return self._wrap_number_result(result)
 
 
 class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  # type: ignore

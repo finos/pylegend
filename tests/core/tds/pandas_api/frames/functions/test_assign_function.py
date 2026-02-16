@@ -30,6 +30,21 @@ from pylegend.core.request.legend_client import LegendClient
 from tests.test_helpers import generate_pure_query_and_compile
 
 
+class TestTemp:
+    def test_temp(self):
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        series = frame["col1"] + 5
+
+        print(f"type(series) = {type(series)}")
+        print('series.to_sql_query()', series.to_sql_query())
+
+        assert series.to_sql_expression({'c': frame.to_sql_query_object(FrameToSqlConfig())}, FrameToSqlConfig()) == ""
+
+
 class TestAssignFunction:
 
     @pytest.fixture(autouse=True)
