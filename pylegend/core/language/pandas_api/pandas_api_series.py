@@ -25,6 +25,7 @@ from pylegend._typing import (
     PyLegendTypeVar,
     PyLegendUnion
 )
+from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
@@ -48,13 +49,15 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
 from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import (
-    Expression,
+    Expression, SingleColumn,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler
+from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -89,7 +92,7 @@ class SupportsToPureExpression(Protocol):
 
 
 class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str, value: PyLegendOptional[PyLegendExpressionIntegerReturn] = None):
+    def __init__(self, base_frame: "PandasApiBaseTdsFrame", column: str, expr: PyLegendOptional[PyLegendExpressionIntegerReturn] = None):
         row = PandasApiTdsRow.from_tds_frame("c", base_frame)
         PyLegendColumnExpression.__init__(self, row=row, column=column)
 
@@ -98,12 +101,12 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         assert isinstance(filtered, PandasApiAppliedFunctionTdsFrame)
         self._filtered_frame: PandasApiAppliedFunctionTdsFrame = filtered
 
-        self._value = value
+        self._expr = expr
 
     def value(self) -> PyLegendColumnExpression:
         return self
 
-    def get_base_frame(self) -> "PandasApiTdsFrame":
+    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
         return self._base_frame
 
     def to_sql_expression(
@@ -120,8 +123,8 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                     f"The '{applied_func.name()}' function cannot provide a SQL expression"
                 )
 
-        if self._value is not None:
-            return self._value.to_sql_expression(frame_name_to_base_query_map, config)
+        if self._expr is not None:
+            return self._expr.to_sql_expression(frame_name_to_base_query_map, config)
 
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
@@ -135,8 +138,8 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                     f"The '{applied_func.name()}' function cannot provide a pure expression"
                 )
 
-        if self._value is not None:
-            return self._value.to_pure_expression(config)
+        if self._expr is not None:
+            return self._expr.to_pure_expression(config)
 
         return super().to_pure_expression(config)
 
@@ -144,10 +147,18 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame.columns()
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        return self._filtered_frame.to_sql_query(config)
+        query = self.to_sql_query_object(config)
+        sql_to_string_config = SqlToStringConfig(
+            format_=SqlToStringFormat(pretty=config.pretty)
+        )
+        return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
-        return self._filtered_frame.to_pure_query(config)
+        col_name = self.columns()[0].get_name()
+        return (
+            self.get_base_frame().to_pure_query(config) +
+            config.separator(1) + f"->project(~{col_name}:c|{self.to_pure_expression(config)})"
+        )
 
     def execute_frame(
             self,
@@ -170,7 +181,17 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self._filtered_frame.to_sql_query_object(config)
+        base_query = self._filtered_frame.to_sql_query_object(config)
+        select_item = base_query.select.selectItems[0]
+        if not isinstance(select_item, SingleColumn):
+            raise RuntimeError("Series SQL query generation is not supported for queries with columns other than SingleColumn")
+        new_select_item = SingleColumn(
+            select_item.alias,
+            self.to_sql_expression({'c': base_query}, config)
+        )
+        new_query = create_sub_query(base_query, config, "root")
+        new_query.select.selectItems = [new_select_item]
+        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return self._filtered_frame.to_pure(config)
@@ -371,6 +392,15 @@ class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerRetu
     ) -> "IntegerSeries":
         result = PyLegendInteger.__radd__(self, other)
         return self._wrap_number_result(result)
+
+
+class ComputedIntegerSeries(Series, PyLegendInteger, PyLegendExpressionIntegerReturn):
+    def __init__(self, base_frame: "PandasApiTdsFrame", expr: PyLegendExpressionIntegerReturn):
+        self.__base_frame = base_frame
+        PyLegendInteger.__init__(self, expr)
+
+    def _create_integer_from_expr(self, expr: PyLegendExpressionIntegerReturn) -> "ComputedIntegerSeries":
+        return ComputedIntegerSeries(self.get_base_frame(), expr)
 
 
 class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  # type: ignore

@@ -17,6 +17,7 @@ from textwrap import dedent
 from datetime import date, datetime
 import pytest
 
+from pylegend.core.language import PyLegendString
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -37,12 +38,13 @@ class TestTemp:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        series = frame["col1"] + 5
+        # frame = frame["col1"] + 5
 
-        print(f"type(series) = {type(series)}")
-        print('series.to_sql_query()', series.to_sql_query())
+        # print(f"type(series) = {type(series)}")
+        print((frame["col1"] + 5).to_sql_query())
+        print((frame["col1"] + 5).to_pure_query())
 
-        assert series.to_sql_expression({'c': frame.to_sql_query_object(FrameToSqlConfig())}, FrameToSqlConfig()) == ""
+        assert frame.to_sql_expression({'c': frame.to_sql_query_object(FrameToSqlConfig())}, FrameToSqlConfig()) == ""
 
 
 class TestAssignFunction:
