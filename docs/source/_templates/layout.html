@@ -57,6 +57,37 @@
 
 {# Nav should appear before content, not after #}
 {%- block content %}
+
+<div class="theme-toggle-container" id="theme-toggle-container">
+  <span class="theme-toggle-label">🌙</span>
+  <button class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Toggle dark mode"></button>
+</div>
+
+<script>
+(function() {
+  var savedTheme = localStorage.getItem('pylegend-theme');
+  var toggleBtn = document.getElementById('theme-toggle-btn');
+
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+    if (toggleBtn) toggleBtn.classList.add('active');
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function() {
+      document.body.classList.toggle('dark-mode');
+      this.classList.toggle('active');
+
+      if (document.body.classList.contains('dark-mode')) {
+        localStorage.setItem('pylegend-theme', 'dark');
+      } else {
+        localStorage.setItem('pylegend-theme', 'light');
+      }
+    });
+  }
+})();
+</script>
+
 {%- if theme_fixed_sidebar|lower == 'true' %}
   <div class="document">
     {{ sidebar() }}
