@@ -150,8 +150,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             .. ipython:: python
 
                import pylegend
+               from legendql_api_local_tds_client import legendql_api_local_tds_client
 
-               tds_client = pylegend.legendql_api_local_tds_client()  # for local testing
+               tds_client = legendql_api_local_tds_client()  # for local testing
                frame = tds_client.legend_service_frame(
                    service_pattern="/allOrders",
                    group_id="org.finos.legend.pylegend",
