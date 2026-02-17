@@ -132,30 +132,28 @@ class AssignFunction(PandasApiAppliedFunction):
         return []
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
-        new_cols = [c.copy() for c in self.__base_frame.columns()]
-        base_cols = {c.get_name() for c in self.__base_frame.columns()}
+        new_cols = [c.copy() for c in self.__base_frame.columns() if c.get_name() not in self.__col_definitions]
         tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, func in self.__col_definitions.items():
-            if col not in base_cols:
-                res = func(tds_row)
-                if isinstance(res, (int, PyLegendInteger)):
-                    new_cols.append(PrimitiveTdsColumn.integer_column(col))
-                elif isinstance(res, (float, PyLegendFloat)):
-                    new_cols.append(PrimitiveTdsColumn.float_column(col))
-                elif isinstance(res, PyLegendNumber):
-                    new_cols.append(PrimitiveTdsColumn.number_column(col))  # pragma: no cover
-                elif isinstance(res, (bool, PyLegendBoolean)):
-                    new_cols.append(
-                        PrimitiveTdsColumn.boolean_column(col)
-                    )  # pragma: no cover (Boolean column not supported in PURE)
-                elif isinstance(res, (str, PyLegendString)):
-                    new_cols.append(PrimitiveTdsColumn.string_column(col))
-                elif isinstance(res, (datetime, PyLegendDateTime)):
-                    new_cols.append(PrimitiveTdsColumn.datetime_column(col))
-                elif isinstance(res, (date, PyLegendDate)):
-                    new_cols.append(PrimitiveTdsColumn.date_column(col))
-                else:
-                    raise RuntimeError("Type not supported")
+            res = func(tds_row)
+            if isinstance(res, (int, PyLegendInteger)):
+                new_cols.append(PrimitiveTdsColumn.integer_column(col))
+            elif isinstance(res, (float, PyLegendFloat)):
+                new_cols.append(PrimitiveTdsColumn.float_column(col))
+            elif isinstance(res, PyLegendNumber):
+                new_cols.append(PrimitiveTdsColumn.number_column(col))  # pragma: no cover
+            elif isinstance(res, (bool, PyLegendBoolean)):
+                new_cols.append(
+                    PrimitiveTdsColumn.boolean_column(col)
+                )  # pragma: no cover (Boolean column not supported in PURE)
+            elif isinstance(res, (str, PyLegendString)):
+                new_cols.append(PrimitiveTdsColumn.string_column(col))
+            elif isinstance(res, (datetime, PyLegendDateTime)):
+                new_cols.append(PrimitiveTdsColumn.datetime_column(col))
+            elif isinstance(res, (date, PyLegendDate)):
+                new_cols.append(PrimitiveTdsColumn.date_column(col))
+            else:
+                raise RuntimeError("Type not supported")
         return new_cols
 
     def validate(self) -> bool:
