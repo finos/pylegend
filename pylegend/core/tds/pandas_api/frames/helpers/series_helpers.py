@@ -95,14 +95,14 @@ def wrap_primitive_methods(cls: Type[T]) -> Type[T]:
         if not (original_func and callable(original_func)):
             continue
 
-        def make_wrapper(
+        def make_wrapper(  # type: ignore[explicit-any]
                 func: PyLegendCallable[..., PyLegendAny]
-        ) -> PyLegendCallable[..., PyLegendAny]:  # type: ignore[explicit-any]
-            def wrapper(
+        ) -> PyLegendCallable[..., PyLegendAny]:
+            def wrapper(  # type: ignore[explicit-any]
                     self: PyLegendAny,
                     *args: PyLegendAny,
                     **kwargs: PyLegendAny
-            ) -> PyLegendAny:  # type: ignore[explicit-any]
+            ) -> PyLegendAny:
                 result_primitive = func(self, *args, **kwargs)
                 primitive_type_name = type(result_primitive).__name__
 
