@@ -105,6 +105,13 @@ html_theme_options = {
     "fixed_sidebar": "true",
 }
 
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+    ]
+}
+
 # -- Custom Server Setup for Sphinx ------------------------------------------
 
 LOGGER = logging.getLogger(__name__)

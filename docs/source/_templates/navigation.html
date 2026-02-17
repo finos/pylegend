@@ -24,3 +24,13 @@
     {% endfor %}
 </ul>
 {% endif %}
+
+<h3>{{ _('Quick Search') }}</h3>
+<div id="searchbox" role="search">
+  <form class="search" action="{{ pathto('search') }}" method="get" style="display: flex; gap: 5px;">
+    <input type="text" name="q" placeholder="Search docs..." style="flex: 1;" />
+    <input type="submit" value="Go" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
