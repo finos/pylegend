@@ -14,13 +14,25 @@
 
 
 import importlib
-from pylegend._typing import PyLegendSequence
+from typing import (
+    Type,
+    TypeVar,
+)
+from pylegend._typing import (
+    PyLegendAny,
+    PyLegendCallable,
+    PyLegendSequence,
+)
+
 
 __all__: PyLegendSequence[str] = [
     "wrap_primitive_methods",
 ]
 
-def wrap_primitive_methods(cls):
+T = TypeVar("T")
+
+
+def wrap_primitive_methods(cls: Type[T]) -> Type[T]:
     primitive_to_series_map = {
         "PyLegendInteger": "IntegerSeries",
         "PyLegendFloat": "FloatSeries",
@@ -83,8 +95,14 @@ def wrap_primitive_methods(cls):
         if not (original_func and callable(original_func)):
             continue
 
-        def make_wrapper(func):
-            def wrapper(self, *args, **kwargs):
+        def make_wrapper(
+                func: PyLegendCallable[..., PyLegendAny]
+        ) -> PyLegendCallable[..., PyLegendAny]:  # type: ignore[explicit-any]
+            def wrapper(
+                    self: PyLegendAny,
+                    *args: PyLegendAny,
+                    **kwargs: PyLegendAny
+            ) -> PyLegendAny:  # type: ignore[explicit-any]
                 result_primitive = func(self, *args, **kwargs)
                 primitive_type_name = type(result_primitive).__name__
 
