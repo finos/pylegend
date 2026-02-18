@@ -158,7 +158,7 @@ class TestFilteringFunction:
               ->filter(c|(toOne($c.col3 > %2025-01-01T00:00:00) && toOne($c.col4 == %2025-01-02)))'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-                "#Table(test_schema.test_table)#->filter(c|(toOne($c.col3 > %2025-01-01T00:00:00) && toOne($c.col4 == %2025-01-02)))"  # noqa: E501
+            "#Table(test_schema.test_table)#->filter(c|(toOne($c.col3 > %2025-01-01T00:00:00) && toOne($c.col4 == %2025-01-02)))"  # noqa: E501
 
     def test_filtering_function_on_str_input(self) -> None:
         columns = [
@@ -177,7 +177,6 @@ class TestFilteringFunction:
                    FROM
                        test_schema.test_table AS "root"'''
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected)
-        print(newframe.to_pure(FrameToPureConfig()))
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -431,8 +430,8 @@ class TestFilteringFunction:
             '''\
             #Table(test_schema.test_table)#
               ->filter(c|toOne(toOne(toOne(toOne($c.col1 == 2) && toOne($c.col2 != $c.col3)) || toOne($c.col1 > 9)) || toOne($c.col5 >= %2003-11-10))->not())
-              ->select(~[col1, col5])'''
-        )  # noqa: E501
+              ->select(~[col1, col5])'''  # noqa: E501
+        )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
                "#Table(test_schema.test_table)#->filter(c|toOne(toOne(toOne(toOne($c.col1 == 2) && toOne($c.col2 != $c.col3)) || toOne($c.col1 > 9)) || toOne($c.col5 >= %2003-11-10))->not())->select(~[col1, col5])"  # noqa: E501
 

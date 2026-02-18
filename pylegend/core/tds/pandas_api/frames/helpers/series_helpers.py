@@ -84,9 +84,6 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
             'time_bucket',
         ]
     }
-    # for series, methods in series_methods_map.items():
-    #     series_methods_map[series] = methods + ['__eq__', '__ne__', 'is_empty', 'is_null', 'is_not_empty', 'is_not_null', 'to_string']
-
 
     methods_to_wrap = series_methods_map.get(cls.__name__, [])
 
