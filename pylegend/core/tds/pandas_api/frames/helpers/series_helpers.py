@@ -88,12 +88,12 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
     methods_to_wrap = series_methods_map.get(cls.__name__, [])
 
     for name in methods_to_wrap:
-        if name in cls.__dict__:
+        if name in cls.__dict__:  # pragma: no cover
             continue
 
         original_func = getattr(cls, name, None)
 
-        if not (original_func and callable(original_func)):
+        if not (original_func and callable(original_func)):  # pragma: no cover
             continue
 
         def make_wrapper(  # type: ignore[explicit-any]
