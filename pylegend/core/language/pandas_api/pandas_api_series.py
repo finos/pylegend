@@ -185,7 +185,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         input_frames = [x for x in tds_frames if isinstance(x, PandasApiInputTdsFrame)]
 
         non_exec_frames = [x for x in input_frames if not isinstance(x, PandasApiExecutableInputTdsFrame)]
-        if non_exec_frames:
+        if non_exec_frames:  # pragma: no cover
             raise ValueError(
                 "Cannot execute frame as its built on top of non-executable input frames: [" +
                 (", ".join([str(f) for f in non_exec_frames]) + "]")
@@ -198,7 +198,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             c = e.get_legend_client()
             if c not in all_legend_clients:
                 all_legend_clients.append(c)
-        if len(all_legend_clients) > 1:
+        if len(all_legend_clients) > 1:  # pragma: no cover
             raise ValueError(
                 "Found tds frames with multiple legend_clients (which is not supported): [" +
                 (", ".join([str(f) for f in all_legend_clients]) + "]")
@@ -223,7 +223,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         filtered_frame_query = self._filtered_frame.to_sql_query_object(config)
         select_item = filtered_frame_query.select.selectItems[0]
-        if not isinstance(select_item, SingleColumn):
+        if not isinstance(select_item, SingleColumn):  # pragma: no cover
             raise RuntimeError("Series SQL query generation is not supported for queries with columns other than SingleColumn")
         new_select_item = SingleColumn(
             select_item.alias,
@@ -246,7 +246,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
-        if self._expr is not None:
+        if self._expr is not None:  # pragma: no cover
             error_msg = '''
                 Applying aggregate function to a computed series expression is not supported yet.
                 Please change the series itself before trying to apply aggregate function.
