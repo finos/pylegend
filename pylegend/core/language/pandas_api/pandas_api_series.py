@@ -115,6 +115,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         self._expr = expr
 
+    def contains_expr(self) -> bool:
+        return self._expr is not None
+
     def value(self) -> PyLegendColumnExpression:
         return self
 

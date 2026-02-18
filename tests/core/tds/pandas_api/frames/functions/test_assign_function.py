@@ -234,7 +234,7 @@ class TestAssignFunction:
 
         expected_pure = (
             "#Table(test_schema.test_table)#\n"
-            "  ->project(~[col1:c|(toOne(toOne($c.col1) * 3) + 2), col2:c|(toOne(toOne($c.col2) * 3) + 2)])"
+            "  ->project(~[col1:c|((toOne($c.col1) * 3) + 2), col2:c|((toOne($c.col2) * 3) + 2)])"
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 

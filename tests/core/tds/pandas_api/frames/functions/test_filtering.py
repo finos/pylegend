@@ -155,10 +155,10 @@ class TestFilteringFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->filter(c|(toOne($c.col3 > %2025-01-01T00:00:00) && toOne($c.col4 == %2025-01-02)))'''
+              ->filter(c|(($c.col3 > %2025-01-01T00:00:00) && ($c.col4 == %2025-01-02)))'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-            "#Table(test_schema.test_table)#->filter(c|(toOne($c.col3 > %2025-01-01T00:00:00) && toOne($c.col4 == %2025-01-02)))"  # noqa: E501
+            "#Table(test_schema.test_table)#->filter(c|(($c.col3 > %2025-01-01T00:00:00) && ($c.col4 == %2025-01-02)))"  # noqa: E501
 
     def test_filtering_function_on_str_input(self) -> None:
         columns = [
@@ -300,10 +300,10 @@ class TestFilteringFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->filter(c|(toOne(toOne($c.col1 > 10) && toOne($c.col3 < 5.5)) || toOne($c.col5 >= %2003-11-10)))'''
+              ->filter(c|((($c.col1 > 10) && ($c.col3 < 5.5)) || ($c.col5 >= %2003-11-10)))'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->filter(c|(toOne(toOne($c.col1 > 10) && toOne($c.col3 < 5.5)) || toOne($c.col5 >= %2003-11-10)))"  # noqa: E501
+               "#Table(test_schema.test_table)#->filter(c|((($c.col1 > 10) && ($c.col3 < 5.5)) || ($c.col5 >= %2003-11-10)))"
 
         # Complex expression with negation
         newframe = frame[
@@ -331,10 +331,10 @@ class TestFilteringFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->filter(c|toOne(toOne(toOne(toOne($c.col1 == 2) && toOne($c.col2 != $c.col3)) || toOne($c.col1 > 9)) || toOne($c.col5 >= %2003-11-10))->not())'''  # noqa: E501
+              ->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())'''  # noqa: E501
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->filter(c|toOne(toOne(toOne(toOne($c.col1 == 2) && toOne($c.col2 != $c.col3)) || toOne($c.col1 > 9)) || toOne($c.col5 >= %2003-11-10))->not())"  # noqa: E501
+               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())"  # noqa: E501
 
     def test_filtering_function_chained(self) -> None:
         columns = [
@@ -429,11 +429,11 @@ class TestFilteringFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->filter(c|toOne(toOne(toOne(toOne($c.col1 == 2) && toOne($c.col2 != $c.col3)) || toOne($c.col1 > 9)) || toOne($c.col5 >= %2003-11-10))->not())
+              ->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())
               ->select(~[col1, col5])'''  # noqa: E501
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->filter(c|toOne(toOne(toOne(toOne($c.col1 == 2) && toOne($c.col2 != $c.col3)) || toOne($c.col1 > 9)) || toOne($c.col5 >= %2003-11-10))->not())->select(~[col1, col5])"  # noqa: E501
+               "#Table(test_schema.test_table)#->filter(c|(((($c.col1 == 2) && ($c.col2 != $c.col3)) || ($c.col1 > 9)) || ($c.col5 >= %2003-11-10))->not())->select(~[col1, col5])"  # noqa: E501
 
     def test_e2e_filtering_function_str_input(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])

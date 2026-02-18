@@ -172,7 +172,7 @@ class TestLocFunction:
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         expected_pure = '''\
             #Table(test_schema.test_table)#
-              ->filter(c|(toOne($c.col1 > 2) && toOne($c.col2 < 5)))'''
+              ->filter(c|(($c.col1 > 2) && ($c.col2 < 5)))'''
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
         # callable
@@ -187,7 +187,7 @@ class TestLocFunction:
         assert newframe.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         expected_pure = '''\
             #Table(test_schema.test_table)#
-              ->filter(c|(toOne($c.col1 > 10) || toOne($c.col2 < 3)))
+              ->filter(c|(($c.col1 > 10) || ($c.col2 < 3)))
               ->select(~[col1])'''
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 

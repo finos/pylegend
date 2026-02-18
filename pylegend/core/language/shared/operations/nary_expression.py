@@ -85,6 +85,7 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
         return self.__to_sql_func(sql_operands, frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        from pylegend.core.language.pandas_api.pandas_api_series import Series
         pure_operands: PyLegendList[str] = []
 
         for operand, must_be_non_nullable in zip(self.__operands, self.__operands_non_nullable_flags):
@@ -92,7 +93,8 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
 
             if must_be_non_nullable:
                 expr = (
-                    expr if operand.is_non_nullable() else
+                    expr if operand.is_non_nullable()
+                    or (isinstance(operand, Series) and operand.contains_expr()) else
                     f"toOne({expr[1:-1] if expr_has_matching_start_and_end_parentheses(expr) else expr})"
                 )
 

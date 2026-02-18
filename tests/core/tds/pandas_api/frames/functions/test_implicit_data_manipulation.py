@@ -468,10 +468,10 @@ class TestSeriesArithmetic:
         '''
         expected_pure_pretty = '''
             #Table(test_schema.test_table)#
-              ->project(~[col1:c|(toOne(toOne($c.col1) + 5) + 10)])
+              ->project(~[col1:c|((toOne($c.col1) + 5) + 10)])
         '''
         expected_pure = '''
-            #Table(test_schema.test_table)#->project(~[col1:c|(toOne(toOne($c.col1) + 5) + 10)])
+            #Table(test_schema.test_table)#->project(~[col1:c|((toOne($c.col1) + 5) + 10)])
         '''
 
         assert col1_series.to_sql_query() == dedent(expected_sql).strip()  # type: ignore[attr-defined]
@@ -544,10 +544,10 @@ class TestSeriesArithmetic:
         '''
         expected_pure_pretty = '''
             #Table(test_schema.test_table)#
-              ->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->year()))])
+              ->project(~[col3:c|(toOne($c.col3)->year() + toOne($c.col4)->year())])
         '''
         expected_pure = '''
-            #Table(test_schema.test_table)#->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->year()))])
+            #Table(test_schema.test_table)#->project(~[col3:c|(toOne($c.col3)->year() + toOne($c.col4)->year())])
         '''  # noqa: E501
 
         assert combined_series.to_sql_query() == dedent(expected_sql).strip()
