@@ -55,7 +55,7 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helpers import wrap_primitive_methods
+from pylegend.core.tds.pandas_api.frames.helpers.series_helpers import add_primitive_methods
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
@@ -101,6 +101,7 @@ class SupportsToPureExpression(Protocol):
         ...
 
 
+@add_primitive_methods
 class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, expr: PyLegendOptional[PyLegendExpression] = None
@@ -169,7 +170,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         col_name = self.columns()[0].get_name()
         return (
             self.get_base_frame().to_pure_query(config) +
-            config.separator(1) + f"->project(~{col_name}:c|{self.to_pure_expression(config)})"
+            config.separator(1) + f"->project(~[{col_name}:c|{self.to_pure_expression(config)}])"
         )
 
     def execute_frame(
@@ -230,9 +231,8 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             self.to_sql_expression({'c': filtered_frame_query}, config)
         )
         base_query = self.get_base_frame().to_sql_query_object(config)
-        new_query = create_sub_query(base_query, config, "root")
-        new_query.select.selectItems = [new_select_item]
-        return new_query
+        base_query.select.selectItems = [new_select_item]
+        return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return self.to_pure_query(config)
@@ -403,7 +403,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.aggregate("count", 0)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
@@ -412,7 +412,7 @@ class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  
         PyLegendBoolean.__init__(self, self)  # pragma: no cover (Boolean column not supported in PURE)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
@@ -421,7 +421,7 @@ class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):  # t
         PyLegendString.__init__(self, self)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class NumberSeries(Series, PyLegendNumber, PyLegendExpressionNumberReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
@@ -430,7 +430,7 @@ class NumberSeries(Series, PyLegendNumber, PyLegendExpressionNumberReturn):  # t
         PyLegendNumber.__init__(self, self)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
@@ -439,7 +439,7 @@ class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerRetu
         PyLegendInteger.__init__(self, self)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
@@ -448,7 +448,7 @@ class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  
         PyLegendFloat.__init__(self, self)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
@@ -457,7 +457,7 @@ class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):  # type: i
         PyLegendDate.__init__(self, self)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
@@ -466,7 +466,7 @@ class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeRet
         PyLegendDateTime.__init__(self, self)
 
 
-@wrap_primitive_methods
+@add_primitive_methods
 class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):  # type: ignore
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None

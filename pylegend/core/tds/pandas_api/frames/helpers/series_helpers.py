@@ -26,39 +26,26 @@ from pylegend._typing import (
 
 
 __all__: PyLegendSequence[str] = [
-    "wrap_primitive_methods",
+    "add_primitive_methods",
 ]
 
 T = TypeVar("T")
 
 
-def wrap_primitive_methods(cls: Type[T]) -> Type[T]:
+def add_primitive_methods(cls: Type[T]) -> Type[T]:
     primitive_to_series_map = {
-        "PyLegendInteger": "IntegerSeries",
-        "PyLegendFloat": "FloatSeries",
-        "PyLegendNumber": "NumberSeries",
         "PyLegendBoolean": "BooleanSeries",
         "PyLegendString": "StringSeries",
+        "PyLegendNumber": "NumberSeries",
+        "PyLegendInteger": "IntegerSeries",
+        "PyLegendFloat": "FloatSeries",
         "PyLegendDate": "DateSeries",
         "PyLegendDateTime": "DateTimeSeries",
         "PyLegendStrictDate": "StrictDateSeries"
     }
 
     series_methods_map = {
-        "IntegerSeries": [
-            'char', '__add__', '__radd__', '__sub__', '__rsub__', '__mul__', '__rmul__', '__mod__', '__rmod__',
-            '__abs__', '__neg__', '__pos__', '__invert__', '__and__', '__rand__', '__or__', '__ror__', '__xor__', '__rxor__',
-            '__lshift__', '__rlshift__', '__rshift__', '__rrshift__',
-        ],
-        "FloatSeries": [
-            '__add__', '__radd__', '__sub__', '__rsub__', '__mul__', '__rmul__', '__abs__', '__neg__', '__pos__',
-        ],
-        "NumberSeries": [
-            '__add__', '__radd__', '__mul__', '__rmul__', '__truediv__', '__rtruediv__', '__sub__', '__rsub__', '__lt__',
-            '__le__', '__gt__', '__ge__', '__pos__', '__neg__', '__abs__', '__pow__', '__rpow__', 'ceil', '__ceil__', 'floor',
-            '__floor__', 'sqrt', 'cbrt', 'exp', 'log', 'rem', 'sin', 'asin', 'cos', 'acos', 'tan', 'atan', 'atan2', 'cot',
-            'round', 'log10', 'degrees', 'radians', 'sign', 'sinh', 'cosh', 'tanh', '__round__',
-        ],
+        "Series": ['__eq__', '__ne__', 'is_empty', 'is_null', 'is_not_empty', 'is_not_null', 'to_string'],
         "BooleanSeries": [
             '__or__', '__ror__', '__and__', '__rand__', '__invert__',
             '__lt__', '__le__', '__gt__', '__ge__', '__xor__', '__rxor__'
@@ -69,6 +56,20 @@ def wrap_primitive_methods(cls: Type[T]) -> Type[T]:
             'b64encode', 'reverse', 'to_lower_first_character', 'to_upper_first_character', 'left', 'right', 'substring',
             'replace', 'rjust', 'ljust', 'split_part', 'full_match', 'match', 'repeat_string', 'coalesce', '__add__',
             '__radd__', '__lt__', '__le__', '__gt__', '__ge__',
+        ],
+        "NumberSeries": [
+            '__add__', '__radd__', '__mul__', '__rmul__', '__truediv__', '__rtruediv__', '__sub__', '__rsub__', '__lt__',
+            '__le__', '__gt__', '__ge__', '__pos__', '__neg__', '__abs__', '__pow__', '__rpow__', 'ceil', '__ceil__', 'floor',
+            '__floor__', 'sqrt', 'cbrt', 'exp', 'log', 'rem', 'sin', 'asin', 'cos', 'acos', 'tan', 'atan', 'atan2', 'cot',
+            'round', 'log10', 'degrees', 'radians', 'sign', 'sinh', 'cosh', 'tanh', '__round__',
+        ],
+        "IntegerSeries": [
+            'char', '__add__', '__radd__', '__sub__', '__rsub__', '__mul__', '__rmul__', '__mod__', '__rmod__',
+            '__abs__', '__neg__', '__pos__', '__invert__', '__and__', '__rand__', '__or__', '__ror__', '__xor__', '__rxor__',
+            '__lshift__', '__rlshift__', '__rshift__', '__rrshift__',
+        ],
+        "FloatSeries": [
+            '__add__', '__radd__', '__sub__', '__rsub__', '__mul__', '__rmul__', '__abs__', '__neg__', '__pos__',
         ],
         "DateSeries": [
              'first_day_of_year', 'first_day_of_quarter', 'first_day_of_month', 'first_day_of_week', 'first_hour_of_day',
@@ -83,6 +84,9 @@ def wrap_primitive_methods(cls: Type[T]) -> Type[T]:
             'time_bucket',
         ]
     }
+    # for series, methods in series_methods_map.items():
+    #     series_methods_map[series] = methods + ['__eq__', '__ne__', 'is_empty', 'is_null', 'is_not_empty', 'is_not_null', 'to_string']
+
 
     methods_to_wrap = series_methods_map.get(cls.__name__, [])
 

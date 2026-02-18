@@ -17,6 +17,7 @@ from textwrap import dedent
 from datetime import date, datetime
 
 import pytest
+from pandas.io.sas.sas_constants import col_count_p1_multiplier
 
 from pylegend._typing import (
     PyLegendDict,
@@ -422,3 +423,19 @@ class TestImplicitDataManipulationFunction:
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+
+class TestSeriesArithmetic:
+    def test_series_class_type(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        col1_plus_10_series = frame["col1"] == 10
+        print(type(col1_plus_10_series))
+        expected_sql = '''
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert col1_plus_10_series.to_sql_query() == expected_sql
