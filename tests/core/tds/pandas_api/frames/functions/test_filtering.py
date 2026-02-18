@@ -158,7 +158,7 @@ class TestFilteringFunction:
               ->filter(c|(($c.col3 > %2025-01-01T00:00:00) && ($c.col4 == %2025-01-02)))'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-                "#Table(test_schema.test_table)#->filter(c|(($c.col3 > %2025-01-01T00:00:00) && ($c.col4 == %2025-01-02)))"
+               "#Table(test_schema.test_table)#->filter(c|(($c.col3 > %2025-01-01T00:00:00) && ($c.col4 == %2025-01-02)))"
 
     def test_filtering_function_on_str_input(self) -> None:
         columns = [
