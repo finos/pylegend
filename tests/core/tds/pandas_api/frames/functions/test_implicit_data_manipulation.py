@@ -422,3 +422,128 @@ class TestImplicitDataManipulationFunction:
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+
+class TestSeriesArithmetic:
+    def test_series_class_type(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.datetime_column("col3")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        col1_plus_10_series = frame["col1"] + 10
+        assert type(col1_plus_10_series).__name__ == "NumberSeries"
+
+        col2_len_series = frame["col2"].len()
+        assert type(col2_len_series).__name__ == "IntegerSeries"
+
+        col3_year_series = frame["col3"].year()
+        assert type(col3_year_series).__name__ == "IntegerSeries"
+
+        assert type(frame["col2"]).__name__ == "StringSeries"
+        frame["col2"] = frame["col2"].parse_float()
+        assert type(frame["col2"]).__name__ == "FloatSeries"
+
+
+    def test_arithmetic(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.datetime_column("col3")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        col1_series = frame["col1"] + 5 + 10
+        expected_sql = '''
+            SELECT
+                (("root".col1 + 5) + 10) AS "col1"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert col1_series.to_sql_query() == expected_sql
+        expected_pure_pretty = '''
+            #Table(test_schema.test_table)#
+              ->project(~[col1:c|(toOne(toOne($c.col1) + 5) + 10)])
+        '''
+        expected_pure_pretty = dedent(expected_pure_pretty).strip()
+        assert col1_series.to_pure_query() == expected_pure_pretty
+        expected_pure = '''
+            #Table(test_schema.test_table)#->project(~[col1:c|(toOne(toOne($c.col1) + 5) + 10)])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert col1_series.to_pure_query(FrameToPureConfig(pretty=False)) == expected_pure
+
+    def test_data_type_conversion(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.datetime_column("col3"),
+            PrimitiveTdsColumn.strictdate_column("col4")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        col2_series = frame["col2"].len()
+        expected_sql = '''
+            SELECT
+                CHAR_LENGTH("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert col2_series.to_sql_query() == expected_sql
+        expected_pure_pretty = '''
+            #Table(test_schema.test_table)#
+              ->project(~[col2:c|toOne($c.col2)->length()])
+        '''
+        expected_pure_pretty = dedent(expected_pure_pretty).strip()
+        assert col2_series.to_pure_query() == expected_pure_pretty
+        expected_pure = '''
+            #Table(test_schema.test_table)#->project(~[col2:c|toOne($c.col2)->length()])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert col2_series.to_pure_query(FrameToPureConfig(pretty=False)) == expected_pure
+
+        col3_series = frame["col3"].year() + frame["col4"].month()
+        expected_sql = '''
+            SELECT
+                (DATE_PART('year', "root".col3) + DATE_PART('month', "root".col4)) AS "col3"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert col3_series.to_sql_query() == expected_sql
+        expected_pure_pretty = '''
+            #Table(test_schema.test_table)#
+              ->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->month()))])
+        '''
+        expected_pure_pretty = dedent(expected_pure_pretty).strip()
+        assert col3_series.to_pure_query() == expected_pure_pretty
+        expected_pure = '''
+            #Table(test_schema.test_table)#->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->month()))])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert col3_series.to_pure_query(FrameToPureConfig(pretty=False)) == expected_pure
+
+    def test_e2e_assign(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        frame["First Name"] = frame["First Name"].len()
+        frame["Last Name"] = frame["Last Name"].len()
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+            "rows": [
+                {"values": [5, 5, 23, "Firm X"]},
+                {"values": [4, 7, 22, "Firm X"]},
+                {"values": [4, 4, 12, "Firm X"]},
+                {"values": [7, 5, 22, "Firm X"]},
+                {"values": [7, 7, 34, "Firm A"]},
+                {"values": [6, 4, 32, "Firm B"]},
+                {"values": [5, 6, 35, "Firm C"]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+

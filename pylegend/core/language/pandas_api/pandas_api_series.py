@@ -225,9 +225,10 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         select_item = filtered_frame_query.select.selectItems[0]
         if not isinstance(select_item, SingleColumn):  # pragma: no cover
             raise RuntimeError("Series SQL query generation is not supported for queries with columns other than SingleColumn")
+        base_query = self.get_base_frame().to_sql_query_object(config)
         new_select_item = SingleColumn(
             select_item.alias,
-            self.to_sql_expression({'c': filtered_frame_query}, config)
+            self.to_sql_expression({'c': base_query}, config)
         )
         base_query = self.get_base_frame().to_sql_query_object(config)
         base_query.select.selectItems = [new_select_item]
