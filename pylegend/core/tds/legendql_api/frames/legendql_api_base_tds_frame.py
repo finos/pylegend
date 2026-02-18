@@ -1256,10 +1256,6 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         window : Create a window specification.
         window_extend : Apply window functions.
 
-        Examples
-        --------
-
-
         """
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.ROWS,
@@ -1313,10 +1309,6 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         rows : Create a row-based window frame.
         window : Create a window specification.
         window_extend : Apply window functions.
-
-        Examples
-        --------
-
 
         """
         has_number = number_start is not None or number_end is not None
@@ -1442,10 +1434,6 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         rows : Create a row-based window frame.
         range : Create a range-based window frame.
         window_extend : Apply window functions using the window specification.
-
-        Examples
-        --------
-
 
         """
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import (
