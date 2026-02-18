@@ -425,6 +425,11 @@ class TestImplicitDataManipulationFunction:
 
 
 class TestSeriesArithmetic:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
     def test_series_class_type(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -433,19 +438,18 @@ class TestSeriesArithmetic:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        col1_plus_10_series = frame["col1"] + 10
+        col1_plus_10_series = frame["col1"] + 10  # type: ignore[operator]
         assert type(col1_plus_10_series).__name__ == "NumberSeries"
 
-        col2_len_series = frame["col2"].len()
+        col2_len_series = frame["col2"].len()  # type: ignore[union-attr]
         assert type(col2_len_series).__name__ == "IntegerSeries"
 
-        col3_year_series = frame["col3"].year()
+        col3_year_series = frame["col3"].year()  # type: ignore[union-attr]
         assert type(col3_year_series).__name__ == "IntegerSeries"
 
         assert type(frame["col2"]).__name__ == "StringSeries"
-        frame["col2"] = frame["col2"].parse_float()
+        frame["col2"] = frame["col2"].parse_float()  # type: ignore[union-attr]
         assert type(frame["col2"]).__name__ == "FloatSeries"
-
 
     def test_arithmetic(self) -> None:
         columns = [
@@ -454,27 +458,35 @@ class TestSeriesArithmetic:
             PrimitiveTdsColumn.datetime_column("col3")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        col1_series = frame["col1"] + 5 + 10  # type: ignore[operator]
 
-        col1_series = frame["col1"] + 5 + 10
         expected_sql = '''
             SELECT
                 (("root".col1 + 5) + 10) AS "col1"
             FROM
                 test_schema.test_table AS "root"
         '''
-        expected_sql = dedent(expected_sql).strip()
-        assert col1_series.to_sql_query() == expected_sql
         expected_pure_pretty = '''
             #Table(test_schema.test_table)#
               ->project(~[col1:c|(toOne(toOne($c.col1) + 5) + 10)])
         '''
-        expected_pure_pretty = dedent(expected_pure_pretty).strip()
-        assert col1_series.to_pure_query() == expected_pure_pretty
         expected_pure = '''
             #Table(test_schema.test_table)#->project(~[col1:c|(toOne(toOne($c.col1) + 5) + 10)])
         '''
-        expected_pure = dedent(expected_pure).strip()
-        assert col1_series.to_pure_query(FrameToPureConfig(pretty=False)) == expected_pure
+
+        assert col1_series.to_sql_query() == dedent(expected_sql).strip()  # type: ignore[attr-defined]
+        assert (
+            generate_pure_query_and_compile(
+                col1_series, FrameToPureConfig(), self.legend_client  # type: ignore[arg-type]
+            )
+            == dedent(expected_pure_pretty).strip()
+        )
+        assert (
+            generate_pure_query_and_compile(
+                col1_series, FrameToPureConfig(pretty=False), self.legend_client  # type: ignore[arg-type]
+            )
+            == dedent(expected_pure).strip()
+        )
 
     def test_data_type_conversion(self) -> None:
         columns = [
@@ -484,54 +496,79 @@ class TestSeriesArithmetic:
             PrimitiveTdsColumn.strictdate_column("col4")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        col2_series = frame["col2"].len()  # type: ignore[union-attr]
 
-        col2_series = frame["col2"].len()
         expected_sql = '''
             SELECT
                 CHAR_LENGTH("root".col2) AS "col2"
             FROM
                 test_schema.test_table AS "root"
         '''
-        expected_sql = dedent(expected_sql).strip()
-        assert col2_series.to_sql_query() == expected_sql
         expected_pure_pretty = '''
             #Table(test_schema.test_table)#
               ->project(~[col2:c|toOne($c.col2)->length()])
         '''
-        expected_pure_pretty = dedent(expected_pure_pretty).strip()
-        assert col2_series.to_pure_query() == expected_pure_pretty
         expected_pure = '''
             #Table(test_schema.test_table)#->project(~[col2:c|toOne($c.col2)->length()])
         '''
-        expected_pure = dedent(expected_pure).strip()
-        assert col2_series.to_pure_query(FrameToPureConfig(pretty=False)) == expected_pure
 
-        col3_series = frame["col3"].year() + frame["col4"].month()
+        assert col2_series.to_sql_query() == dedent(expected_sql).strip()
+        assert (
+            generate_pure_query_and_compile(
+                col2_series, FrameToPureConfig(), self.legend_client
+            )
+            == dedent(expected_pure_pretty).strip()
+        )
+        assert (
+            generate_pure_query_and_compile(
+                col2_series, FrameToPureConfig(pretty=False), self.legend_client
+            )
+            == dedent(expected_pure).strip()
+        )
+
+    def test_multiple_columns_arithmetic(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.datetime_column("col3"),
+            PrimitiveTdsColumn.strictdate_column("col4")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        combined_series = frame["col3"].year() + frame["col4"].year()  # type: ignore[union-attr]
+
         expected_sql = '''
             SELECT
-                (DATE_PART('year', "root".col3) + DATE_PART('month', "root".col4)) AS "col3"
+                (DATE_PART('year', "root".col3) + DATE_PART('year', "root".col4)) AS "col3"
             FROM
                 test_schema.test_table AS "root"
         '''
-        expected_sql = dedent(expected_sql).strip()
-        assert col3_series.to_sql_query() == expected_sql
         expected_pure_pretty = '''
             #Table(test_schema.test_table)#
-              ->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->month()))])
+              ->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->year()))])
         '''
-        expected_pure_pretty = dedent(expected_pure_pretty).strip()
-        assert col3_series.to_pure_query() == expected_pure_pretty
         expected_pure = '''
-            #Table(test_schema.test_table)#->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->month()))])
+            #Table(test_schema.test_table)#->project(~[col3:c|(toOne(toOne($c.col3)->year()) + toOne(toOne($c.col4)->year()))])
         '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert col3_series.to_pure_query(FrameToPureConfig(pretty=False)) == expected_pure
+
+        assert combined_series.to_sql_query() == dedent(expected_sql).strip()
+        assert (
+            generate_pure_query_and_compile(
+                combined_series, FrameToPureConfig(), self.legend_client
+            )
+            == dedent(expected_pure_pretty).strip()
+        )
+        assert (
+            generate_pure_query_and_compile(
+                combined_series, FrameToPureConfig(pretty=False), self.legend_client
+            )
+            == dedent(expected_pure).strip()
+        )
 
     def test_e2e_assign(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        frame["First Name"] = frame["First Name"].len()
-        frame["Last Name"] = frame["Last Name"].len()
+        frame["First Name"] = frame["First Name"].len()  # type: ignore[union-attr]
+        frame["Last Name"] = frame["Last Name"].len()  # type: ignore[union-attr]
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -546,4 +583,3 @@ class TestSeriesArithmetic:
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
-
