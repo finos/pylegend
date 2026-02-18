@@ -125,5 +125,16 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
     ) -> pd.DataFrame:
         pass  # pragma: no cover
 
-    def to_pandas_df(self) -> pd.DataFrame:
-        return self.execute_frame_to_pandas_df()  # pragma: no cover
+    def to_pandas_df(
+            self,
+            chunk_size: PyLegendOptional[int] = None,
+            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
+    ) -> pd.DataFrame:
+        return self.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
+
+    def to_pandas(
+            self,
+            chunk_size: PyLegendOptional[int] = None,
+            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
+    ) -> pd.DataFrame:
+        return self.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
