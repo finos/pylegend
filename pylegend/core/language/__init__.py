@@ -76,6 +76,17 @@ from pylegend.core.language.shared.functions import (
     now,
     current_user,
 )
+from pylegend.core.language.shared.variable_expressions import (
+    PyLegendVariableExpression,
+    PyLegendBooleanVariableExpression,
+    PyLegendStringVariableExpression,
+    PyLegendNumberVariableExpression,
+    PyLegendIntegerVariableExpression,
+    PyLegendFloatVariableExpression,
+    PyLegendDateVariableExpression,
+    PyLegendStrictDateVariableExpression,
+    PyLegendDateTimeVariableExpression,
+)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
@@ -134,4 +145,14 @@ __all__: PyLegendSequence[str] = [
     "today",
     "now",
     "current_user",
+
+    "PyLegendVariableExpression",
+    "PyLegendBooleanVariableExpression",
+    "PyLegendStringVariableExpression",
+    "PyLegendNumberVariableExpression",
+    "PyLegendIntegerVariableExpression",
+    "PyLegendFloatVariableExpression",
+    "PyLegendDateVariableExpression",
+    "PyLegendDateTimeVariableExpression",
+    "PyLegendStrictDateVariableExpression",
 ]
