@@ -233,8 +233,8 @@ class TestAssignFunction:
         assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
 
         expected_pure = (
-            "# Table(test_schema.test_table)#\n"
-            "  ->project(~[col1:c | (toOne(toOne($c.col1) * 3) + 2), col2: c | (toOne(toOne($c.col2) * 3) + 2)])"
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|(toOne(toOne($c.col1) * 3) + 2), col2:c|(toOne(toOne($c.col2) * 3) + 2)])"
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
