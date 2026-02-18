@@ -58,7 +58,6 @@ class TestFilteringFunction:
 
         with pytest.raises(TypeError) as v:
             frame[(frame['col1'] + 10) & (frame['col2'] == 2)]  # type: ignore
-        print(v.value.args[0])
         assert v.value.args[0].startswith(
             "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). "
             "Got value <pylegend.core.language.pandas_api.pandas_api_series.NumberSeries object"

@@ -233,7 +233,6 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             select_item.alias,
             self.to_sql_expression({'c': base_query}, config)
         )
-        base_query = self.get_base_frame().to_sql_query_object(config)
         base_query.select.selectItems = [new_select_item]
         return base_query
 
