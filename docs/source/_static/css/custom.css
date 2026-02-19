@@ -71,12 +71,12 @@ body.dark-mode .theme-toggle-container {
 }
 
 body.dark-mode {
-  background-color: #121212 !important;
+  background-color: #1e1e1e !important;
   color: #f5f5f5 !important;
 }
 
 body.dark-mode .document {
-  background-color: #121212 !important;
+  background-color: #1e1e1e !important;
 }
 
 body.dark-mode .body {
@@ -93,7 +93,7 @@ body.dark-mode .documentwrapper {
 }
 
 body.dark-mode .sphinxsidebar {
-  background-color: #0d0d0d !important;
+  background-color: #1e1e1e !important;
   color: #f5f5f5 !important;
 }
 
@@ -201,6 +201,66 @@ body.dark-mode .highlight .nb {
 
 body.dark-mode .highlight .nf {
   color: #50fa7b !important;
+}
+
+/* Method/attribute access (e.g., .sort, .filter, .head) */
+body.dark-mode .highlight .na {
+  color: #50fa7b !important;
+}
+
+/* Additional syntax highlighting for better code readability */
+body.dark-mode .highlight .nd {
+  color: #ff79c6 !important;  /* Decorators */
+}
+
+body.dark-mode .highlight .nc {
+  color: #8be9fd !important;  /* Class names */
+}
+
+body.dark-mode .highlight .nt {
+  color: #ff79c6 !important;  /* Tags */
+}
+
+body.dark-mode .highlight .bp {
+  color: #bd93f9 !important;  /* Built-in pseudo (self, cls) */
+}
+
+body.dark-mode .highlight .fm {
+  color: #50fa7b !important;  /* Function magic (__init__, etc) */
+}
+
+body.dark-mode .highlight .vm {
+  color: #f8f8f2 !important;  /* Variable magic */
+}
+
+body.dark-mode .highlight .ow {
+  color: #ff79c6 !important;  /* Operator word (and, or, not, in) */
+}
+
+body.dark-mode .highlight .p {
+  color: #f8f8f2 !important;  /* Punctuation */
+}
+
+/* Output text styling - gray color to distinguish from input */
+body.dark-mode .highlight-none pre,
+body.dark-mode .highlight-text pre,
+body.dark-mode div.output pre,
+body.dark-mode div.output_area pre,
+body.dark-mode .go {
+  color: #9e9e9e !important;  /* Gray output text */
+}
+
+/* IPython/Jupyter output styling */
+body.dark-mode .output_text pre,
+body.dark-mode .output_stdout pre,
+body.dark-mode .output_result pre {
+  color: #9e9e9e !important;  /* Gray output text */
+}
+
+/* DataFrame/Table output in gray */
+body.dark-mode .dataframe,
+body.dark-mode .rendered_html table {
+  color: #9e9e9e !important;
 }
 
 body.dark-mode div.ipython,
