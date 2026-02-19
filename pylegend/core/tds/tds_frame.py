@@ -91,8 +91,9 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
     def columns(self) -> PyLegendSequence[TdsColumn]:
         pass  # pragma: no cover
 
-    def schema(self) -> str:
-        return "Columns: " + ", ".join([f"{c.get_name()}({c.get_type()})" for c in self.columns()])  # pragma: no cover
+    def schema(self) -> None:
+        col_lines = [f"  {c.get_name()} ({c.get_type()})" for c in self.columns()]  # pragma: no cover
+        print("Columns:\n" + "\n".join(col_lines))  # pragma: no cover
 
     @abstractmethod
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
@@ -125,5 +126,16 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
     ) -> pd.DataFrame:
         pass  # pragma: no cover
 
-    def to_pandas_df(self) -> pd.DataFrame:
-        return self.execute_frame_to_pandas_df()  # pragma: no cover
+    def to_pandas_df(
+            self,
+            chunk_size: PyLegendOptional[int] = None,
+            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
+    ) -> pd.DataFrame:
+        return self.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
+
+    def to_pandas(
+            self,
+            chunk_size: PyLegendOptional[int] = None,
+            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
+    ) -> pd.DataFrame:
+        return self.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover

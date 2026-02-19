@@ -15,13 +15,131 @@
 LegendQL TDS Frame
 ==================
 
-The ``LegendQLApiBaseTdsFrame`` class provides a python-like interface for working with TDS (Tabular Data Store) frames.
+The ``LegendQLApiTdsFrame`` class provides a Python-like interface for working with TDS (Tabular Data Store) frames.
+It offers methods for data manipulation, filtering, aggregation, joins, and window functions.
 
-Methods
--------
+Row Selection Methods
+---------------------
+
+head
+~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.head
+
+limit
+~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.limit
+
+drop
+~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.drop
+
+slice
+~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.slice
+
+Column Selection Methods
+------------------------
+
+select
+~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.select
+
+distinct
+~~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.distinct
+
+Sorting and Filtering
+---------------------
 
 sort
 ~~~~
 
-.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame.LegendQLApiBaseTdsFrame.sort
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.sort
 
+filter
+~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.filter
+
+Column Transformation Methods
+-----------------------------
+
+rename
+~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.rename
+
+extend
+~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.extend
+
+project
+~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.project
+
+Combining Frames
+----------------
+
+concatenate
+~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.concatenate
+
+join
+~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.join
+
+inner_join
+~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.inner_join
+
+left_join
+~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.left_join
+
+right_join
+~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.right_join
+
+Aggregation
+-----------
+
+group_by
+~~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.group_by
+
+Window Functions
+----------------
+
+rows
+~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.rows
+
+range
+~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.range
+
+window
+~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.window
+
+window_extend
+~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.window_extend

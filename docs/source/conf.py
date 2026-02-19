@@ -136,6 +136,7 @@ def start_legend_server(app: Sphinx) -> None:
     cmd = (
         f'{java_home}/bin/java -jar '
         f'-Duser.timezone=UTC '
+        f'-Dfile.encoding=UTF-8 '
         f'-Ddw.server.connector.port={engine_port} '
         f'-Ddw.metadataserver.alloy.port={metadata_port} '
         f'{relative_path}/resources/legend/server/pylegend-sql-server/target/pylegend-sql-server-1.0-shaded.jar server '
@@ -163,14 +164,15 @@ def start_legend_server(app: Sphinx) -> None:
                 return
 
             try:
-                with open(f"{relative_path}/resources/legend/metadata/{file}", "r") as f:
+                with open(f"{relative_path}/resources/legend/metadata/{file}", "r", encoding="utf-8") as f:
                     content = f.read()
 
+                content_bytes = content.encode("utf-8")
                 self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header('Content-Length', str(len(content)))
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header('Content-Length', str(len(content_bytes)))
                 self.end_headers()
-                self.wfile.write(content.encode("UTF-8"))
+                self.wfile.write(content_bytes)
             except FileNotFoundError:
                 self.send_error(404, "Metadata file not found")
 
