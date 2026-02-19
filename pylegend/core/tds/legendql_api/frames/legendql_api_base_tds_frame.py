@@ -765,13 +765,15 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             frame.schema()
 
             # Add a single computed column
-            frame.extend(("Ship Name Upper", lambda r: r["Ship Name"].upper())).select(["Ship Name", "Ship Name Upper"]).head(5).to_pandas()
+            extended = frame.extend(("Ship Name Upper", lambda r: r["Ship Name"].upper()))
+            extended.select(["Ship Name", "Ship Name Upper"]).head(5).to_pandas()
 
             # Add multiple computed columns
+            cols = ["Ship Name", "Ship Name Upper", "Ship Name Lower"]
             frame.extend([
                 ("Ship Name Upper", lambda r: r["Ship Name"].upper()),
                 ("Ship Name Lower", lambda r: r["Ship Name"].lower())
-            ]).select(["Ship Name", "Ship Name Upper", "Ship Name Lower"]).head(5).to_pandas()
+            ]).select(cols).head(5).to_pandas()
 
         """
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
@@ -842,7 +844,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             # Self-join example: join orders with a filtered version
             # Rename duplicate columns to avoid conflicts
-            filtered_orders = orders.filter(lambda r: r["Order Id"] > 10300).select(["Order Id", "Ship Name"]).rename([("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")])
+            cols = ["Order Id", "Ship Name"]
+            renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
+            filtered_orders = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames)
             orders.join(filtered_orders, lambda l, r: l["Order Id"] == r["Right Order Id"], "INNER").head(5).to_pandas()
 
         """
@@ -905,7 +909,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             # Inner join with filtered data
             # Rename duplicate columns to avoid conflicts
-            filtered = orders.filter(lambda r: r["Order Id"] > 10300).select(["Order Id", "Ship Name"]).rename([("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")])
+            cols = ["Order Id", "Ship Name"]
+            renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
+            filtered = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames)
             orders.inner_join(filtered, lambda l, r: l["Order Id"] == r["Right Order Id"]).head(5).to_pandas()
 
         """
@@ -964,7 +970,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             # Left join - all orders with filtered info where available
             # Rename duplicate columns to avoid conflicts
-            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(["Order Id", "Ship Name"]).rename([("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]).head(10)
+            cols = ["Order Id", "Ship Name"]
+            renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
+            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames).head(10)
             orders.head(15).left_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"]).to_pandas()
 
         """
@@ -1023,7 +1031,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             # Right join example
             # Rename duplicate columns to avoid conflicts
-            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(["Order Id", "Ship Name"]).rename([("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]).head(10)
+            cols = ["Order Id", "Ship Name"]
+            renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
+            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames).head(10)
             orders.head(5).right_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"]).to_pandas()
 
         """
@@ -1088,7 +1098,9 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             # As-of join: match orders with closest order ID
             # Rename duplicate columns to avoid conflicts
-            reference = orders.select(["Order Id", "Ship Name"]).rename([("Order Id", "Ref Order Id"), ("Ship Name", "Ref Ship Name")]).head(10)
+            cols = ["Order Id", "Ship Name"]
+            renames = [("Order Id", "Ref Order Id"), ("Ship Name", "Ref Ship Name")]
+            reference = orders.select(cols).rename(renames).head(10)
             orders.head(5).as_of_join(reference, lambda l, r: l["Order Id"] >= r["Ref Order Id"]).to_pandas()
 
         """
