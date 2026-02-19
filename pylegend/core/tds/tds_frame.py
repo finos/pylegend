@@ -91,8 +91,9 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
     def columns(self) -> PyLegendSequence[TdsColumn]:
         pass  # pragma: no cover
 
-    def schema(self) -> str:
-        return "Columns: " + ", ".join([f"{c.get_name()}({c.get_type()})" for c in self.columns()])  # pragma: no cover
+    def schema(self) -> None:
+        col_lines = [f"  {c.get_name()} ({c.get_type()})" for c in self.columns()]  # pragma: no cover
+        print("Columns:\n" + "\n".join(col_lines))  # pragma: no cover
 
     @abstractmethod
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
