@@ -583,3 +583,20 @@ class TestSeriesArithmetic:
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+    def test_e2e_series_sql(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        expected = {
+            "columns": ["First Name"],
+            "rows": [
+                {"values": [5]},
+                {"values": [4]},
+                {"values": [4]},
+                {"values": [7]},
+                {"values": [7]},
+                {"values": [6]},
+                {"values": [5]},
+            ],
+        }
+        res = frame["First Name"].len().execute_frame_to_string()
+        assert json.loads(res)["result"] == expected

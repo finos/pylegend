@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
@@ -180,35 +181,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             result_handler: ResultHandler[R],
             chunk_size: PyLegendOptional[int] = None
     ) -> R:
-        from pylegend.core.tds.pandas_api.frames.pandas_api_input_tds_frame import (
-            PandasApiInputTdsFrame,
-            PandasApiExecutableInputTdsFrame
-        )
-        tds_frames = self.get_all_tds_frames()
-        input_frames = [x for x in tds_frames if isinstance(x, PandasApiInputTdsFrame)]
-
-        non_exec_frames = [x for x in input_frames if not isinstance(x, PandasApiExecutableInputTdsFrame)]
-        if non_exec_frames:  # pragma: no cover
-            raise ValueError(
-                "Cannot execute frame as its built on top of non-executable input frames: [" +
-                (", ".join([str(f) for f in non_exec_frames]) + "]")
-            )
-
-        exec_frames = [x for x in input_frames if isinstance(x, PandasApiExecutableInputTdsFrame)]
-
-        all_legend_clients = []
-        for e in exec_frames:
-            c = e.get_legend_client()
-            if c not in all_legend_clients:
-                all_legend_clients.append(c)
-        if len(all_legend_clients) > 1:  # pragma: no cover
-            raise ValueError(
-                "Found tds frames with multiple legend_clients (which is not supported): [" +
-                (", ".join([str(f) for f in all_legend_clients]) + "]")
-            )
-        legend_client = all_legend_clients[0]
-        result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
-        return result_handler.handle_result(self, result)
+        return BaseTdsFrame.execute_frame(self, result_handler, chunk_size)
 
     def execute_frame_to_string(
             self,
