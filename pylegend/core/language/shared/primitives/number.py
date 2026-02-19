@@ -68,6 +68,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
@@ -102,6 +103,7 @@ class PyLegendNumber(PyLegendPrimitive):
     def value(self) -> PyLegendExpressionNumberReturn:
         return self.__value
 
+    @grammar_method
     def __add__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -110,6 +112,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberAddExpression(self.__value, other_op))
 
+    @grammar_method
     def __radd__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -118,6 +121,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberAddExpression(other_op, self.__value))
 
+    @grammar_method
     def __mul__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -126,6 +130,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberMultiplyExpression(self.__value, other_op))
 
+    @grammar_method
     def __rmul__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -134,6 +139,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberMultiplyExpression(other_op, self.__value))
 
+    @grammar_method
     def __truediv__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -142,6 +148,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberDivideExpression(self.__value, other_op))
 
+    @grammar_method
     def __rtruediv__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -150,6 +157,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberDivideExpression(other_op, self.__value))
 
+    @grammar_method
     def __sub__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -158,6 +166,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberSubtractExpression(self.__value, other_op))
 
+    @grammar_method
     def __rsub__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -166,6 +175,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberSubtractExpression(other_op, self.__value))
 
+    @grammar_method
     def __lt__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -174,6 +184,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendBoolean(PyLegendNumberLessThanExpression(self.__value, other_op))
 
+    @grammar_method
     def __le__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -182,6 +193,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendBoolean(PyLegendNumberLessThanEqualExpression(self.__value, other_op))
 
+    @grammar_method
     def __gt__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -190,6 +202,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendBoolean(PyLegendNumberGreaterThanExpression(self.__value, other_op))
 
+    @grammar_method
     def __ge__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -198,15 +211,19 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendBoolean(PyLegendNumberGreaterThanEqualExpression(self.__value, other_op))
 
+    @grammar_method
     def __pos__(self) -> "PyLegendNumber":
         return self
 
+    @grammar_method
     def __neg__(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberNegativeExpression(self.__value))
 
+    @grammar_method
     def __abs__(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberAbsoluteExpression(self.__value))
 
+    @grammar_method
     def __pow__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -215,6 +232,7 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberPowerExpression(self.__value, other_op))
 
+    @grammar_method
     def __rpow__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -223,32 +241,41 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberPowerExpression(other_op, self.__value))
 
+    @grammar_method
     def ceil(self) -> "PyLegendInteger":
         from pylegend.core.language.shared.primitives.integer import PyLegendInteger
         return PyLegendInteger(PyLegendNumberCeilExpression(self.__value))
 
+    @grammar_method
     def __ceil__(self) -> "PyLegendInteger":
         return self.ceil()
 
+    @grammar_method
     def floor(self) -> "PyLegendInteger":
         from pylegend.core.language.shared.primitives.integer import PyLegendInteger
         return PyLegendInteger(PyLegendNumberFloorExpression(self.__value))
 
+    @grammar_method
     def __floor__(self) -> "PyLegendInteger":
         return self.floor()
 
+    @grammar_method
     def sqrt(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberSqrtExpression(self.__value))
 
+    @grammar_method
     def cbrt(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberCbrtExpression(self.__value))
 
+    @grammar_method
     def exp(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberExpExpression(self.__value))
 
+    @grammar_method
     def log(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberLogExpression(self.__value))
 
+    @grammar_method
     def rem(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -257,24 +284,31 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberRemainderExpression(self.__value, other_op))
 
+    @grammar_method
     def sin(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberSineExpression(self.__value))
 
+    @grammar_method
     def asin(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberArcSineExpression(self.__value))
 
+    @grammar_method
     def cos(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberCosineExpression(self.__value))
 
+    @grammar_method
     def acos(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberArcCosineExpression(self.__value))
 
+    @grammar_method
     def tan(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberTanExpression(self.__value))
 
+    @grammar_method
     def atan(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberArcTanExpression(self.__value))
 
+    @grammar_method
     def atan2(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -283,9 +317,11 @@ class PyLegendNumber(PyLegendPrimitive):
         other_op = PyLegendNumber.__convert_to_number_expr(other)
         return PyLegendNumber(PyLegendNumberArcTan2Expression(self.__value, other_op))
 
+    @grammar_method
     def cot(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberCotExpression(self.__value))
 
+    @grammar_method
     def round(
             self,
             n: PyLegendOptional[int] = None
@@ -297,27 +333,35 @@ class PyLegendNumber(PyLegendPrimitive):
                 raise TypeError("Round parameter should be an int. Passed - " + str(type(n)))
             return PyLegendNumber(PyLegendNumberRoundExpression(self.__value, PyLegendIntegerLiteralExpression(n)))
 
+    @grammar_method
     def log10(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberLog10Expression(self.__value))
 
+    @grammar_method
     def degrees(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberDegreesExpression(self.__value))
 
+    @grammar_method
     def radians(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberRadiansExpression(self.__value))
 
+    @grammar_method
     def sign(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberSignExpression(self.__value))
 
+    @grammar_method
     def sinh(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberHyperbolicSinExpression(self.__value))
 
+    @grammar_method
     def cosh(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberHyperbolicCosExpression(self.__value))
 
+    @grammar_method
     def tanh(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberHyperbolicTanExpression(self.__value))
 
+    @grammar_method
     def __round__(self, n: PyLegendOptional[int] = None) -> "PyLegendNumber":
         return self.round(n)
 

@@ -34,6 +34,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
@@ -65,47 +66,58 @@ class PyLegendBoolean(PyLegendPrimitive):
     def value(self) -> PyLegendExpressionBooleanReturn:
         return self.__value
 
+    @grammar_method
     def __or__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
         return PyLegendBoolean(PyLegendBooleanOrExpression(self.__value, other_op))
 
+    @grammar_method
     def __ror__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean OR (|) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
         return PyLegendBoolean(PyLegendBooleanOrExpression(other_op, self.__value))
 
+    @grammar_method
     def __and__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean AND (&) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
         return PyLegendBoolean(PyLegendBooleanAndExpression(self.__value, other_op))
 
+    @grammar_method
     def __rand__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         PyLegendBoolean.__validate__param_to_be_bool(other, "Boolean AND (&) parameter")
         other_op = PyLegendBooleanLiteralExpression(other) if isinstance(other, bool) else other.__value
         return PyLegendBoolean(PyLegendBooleanAndExpression(other_op, self.__value))
 
+    @grammar_method
     def __invert__(self) -> "PyLegendBoolean":
         return PyLegendBoolean(PyLegendBooleanNotExpression(self.__value))
 
+    @grammar_method
     def __lt__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         return self._create_binary_expression(other, PyLegendBooleanLessThanExpression, "less than (<)")
 
+    @grammar_method
     def __le__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         return self._create_binary_expression(other, PyLegendBooleanLessThanEqualExpression, "less than equal (<=)")
 
+    @grammar_method
     def __gt__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         return self._create_binary_expression(other, PyLegendBooleanGreaterThanExpression, "greater than (>)")
 
+    @grammar_method
     def __ge__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         return self._create_binary_expression(
             other,
             PyLegendBooleanGreaterThanEqualExpression,
             "greater than equal (>=)")
 
+    @grammar_method
     def __xor__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         return self._create_binary_expression(other, PyLegendBooleanXorExpression, "xor (^)")
 
+    @grammar_method
     def __rxor__(self, other: PyLegendUnion[bool, "PyLegendBoolean"]) -> "PyLegendBoolean":
         return self._create_binary_expression(other, PyLegendBooleanXorExpression, "xor (^)", reverse=True)
 

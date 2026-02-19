@@ -54,13 +54,13 @@ class TestFilteringFunction:
         # Logical expression
         with pytest.raises(TypeError) as v:
             frame[(frame['col1'] > 10) + (frame['col2'] == 2)]  # type: ignore
-        assert v.value.args[0] == "unsupported operand type(s) for +: 'PyLegendBoolean' and 'PyLegendBoolean'"
+        assert v.value.args[0] == "unsupported operand type(s) for +: 'BooleanSeries' and 'BooleanSeries'"
 
         with pytest.raises(TypeError) as v:
             frame[(frame['col1'] + 10) & (frame['col2'] == 2)]  # type: ignore
         assert v.value.args[0].startswith(
             "Integer and (&) parameter should be a int or an integer expression (PyLegendInteger). "
-            "Got value <pylegend.core.language.shared.primitives.boolean.PyLegendBoolean object"
+            "Got value <pylegend.core.language.pandas_api.pandas_api_series.BooleanSeries object"
         )
 
     def test_filtering_function_error_on_invalid_key(self) -> None:
@@ -115,7 +115,7 @@ class TestFilteringFunction:
         assert pure == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col3])'''
+              ->project(~[col3:c|$c.col3])'''
         )
 
         # SQL Query
@@ -179,10 +179,10 @@ class TestFilteringFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->select(~[col1])'''
+              ->project(~[col1:c|$c.col1])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->select(~[col1])"
+               "#Table(test_schema.test_table)#->project(~[col1:c|$c.col1])"
 
     def test_filtering_function_on_list_input(self) -> None:
         columns = [

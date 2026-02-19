@@ -25,6 +25,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.shared.operations.float_operation_expressions import (
     PyLegendFloatAbsoluteExpression,
@@ -51,6 +52,7 @@ class PyLegendFloat(PyLegendNumber):
         self.__value_copy = value
         super().__init__(value)
 
+    @grammar_method
     def __add__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -62,6 +64,7 @@ class PyLegendFloat(PyLegendNumber):
         else:
             return super().__add__(other)
 
+    @grammar_method
     def __radd__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -73,6 +76,7 @@ class PyLegendFloat(PyLegendNumber):
         else:
             return super().__radd__(other)
 
+    @grammar_method
     def __sub__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -84,6 +88,7 @@ class PyLegendFloat(PyLegendNumber):
         else:
             return super().__sub__(other)
 
+    @grammar_method
     def __rsub__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -95,6 +100,7 @@ class PyLegendFloat(PyLegendNumber):
         else:
             return super().__rsub__(other)
 
+    @grammar_method
     def __mul__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -106,6 +112,7 @@ class PyLegendFloat(PyLegendNumber):
         else:
             return super().__mul__(other)
 
+    @grammar_method
     def __rmul__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -117,12 +124,15 @@ class PyLegendFloat(PyLegendNumber):
         else:
             return super().__rmul__(other)
 
+    @grammar_method
     def __abs__(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendFloatAbsoluteExpression(self.__value_copy))
 
+    @grammar_method
     def __neg__(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendFloatNegativeExpression(self.__value_copy))
 
+    @grammar_method
     def __pos__(self) -> "PyLegendFloat":
         return self
 
