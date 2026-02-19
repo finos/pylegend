@@ -586,6 +586,8 @@ class TestSeriesArithmetic:
 
     def test_e2e_series_sql(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        series = frame["First Name"].len()  # type: ignore[union-attr]
+
         expected = {
             "columns": ["First Name"],
             "rows": [
@@ -598,5 +600,5 @@ class TestSeriesArithmetic:
                 {"values": [5]},
             ],
         }
-        res = frame["First Name"].len().execute_frame_to_string()
+        res = series.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
