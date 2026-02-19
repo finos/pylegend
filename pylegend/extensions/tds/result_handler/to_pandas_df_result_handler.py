@@ -124,20 +124,24 @@ class ToPandasDfResultHandler(ResultHandler[pd.DataFrame]):
         else:
             dtype = "object"
 
+        # Extract column data
+        column_data = all_values_list[col_index::columns_length]
+
+        # For object dtype, convert None to np.nan before creating Series to avoid FutureWarning
+        if dtype == "object":
+            column_data = [np.nan if x is None else x for x in column_data]
+
         if dtype:
             series = pd.Series(
-                data=all_values_list[col_index::columns_length],
+                data=column_data,
                 name=column.get_name(),
                 dtype=dtype
             )
         else:
             series = pd.Series(
-                data=all_values_list[col_index::columns_length],
+                data=column_data,
                 name=column.get_name()
             )
-
-        if dtype == "object":
-            series = series.fillna(np.nan)
 
         if column.get_type() in DATE_TYPES:
             series = pd.to_datetime(series, format="ISO8601")
