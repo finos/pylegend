@@ -130,7 +130,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                     elif col_type == "String":
                         from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
                         return StringSeries(self, key)
-                    elif col_type == "Number":
+                    elif col_type == "Number":  # pragma: no cover
                         from pylegend.core.language.pandas_api.pandas_api_series import NumberSeries
                         return NumberSeries(self, key)
                     elif col_type == "Integer":

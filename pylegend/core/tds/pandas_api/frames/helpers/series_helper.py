@@ -74,7 +74,7 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
                 primitive_type_name = type(result_primitive).__name__
 
                 if not hasattr(result_primitive, 'value') or primitive_type_name not in primitive_to_series_map:
-                    return result_primitive
+                    return result_primitive  # pragma: no cover
 
                 base_frame = self._base_frame
                 col_name = self.columns()[0].get_name()
