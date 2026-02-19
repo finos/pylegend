@@ -33,6 +33,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
@@ -61,6 +62,7 @@ class PyLegendDateTime(PyLegendDate):
     def value(self) -> PyLegendExpressionDateTimeReturn:
         return self.__value
 
+    @grammar_method
     def time_bucket(
             self,
             quantity: PyLegendUnion[int, "PyLegendInteger"],

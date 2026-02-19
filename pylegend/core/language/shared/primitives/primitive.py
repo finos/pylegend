@@ -34,6 +34,7 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
     PyLegendIsNotEmptyExpression,
     PyLegendPrimitiveToStringExpression
 )
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
@@ -60,6 +61,7 @@ class PyLegendPrimitive(metaclass=ABCMeta):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         pass
 
+    @grammar_method
     def __eq__(  # type: ignore
             self,
             other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]"
@@ -74,6 +76,7 @@ class PyLegendPrimitive(metaclass=ABCMeta):
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
         return PyLegendBoolean(PyLegendPrimitiveEqualsExpression(self.value(), other_op))
 
+    @grammar_method
     def __ne__(  # type: ignore
             self,
             other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]"
@@ -88,20 +91,25 @@ class PyLegendPrimitive(metaclass=ABCMeta):
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
         return PyLegendBoolean(PyLegendPrimitiveNotEqualsExpression(self.value(), other_op))
 
+    @grammar_method
     def is_empty(self) -> "PyLegendBoolean":
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
         return PyLegendBoolean(PyLegendIsEmptyExpression(self.value()))
 
+    @grammar_method
     def is_null(self) -> "PyLegendBoolean":
         return self.is_empty()
 
+    @grammar_method
     def is_not_empty(self) -> "PyLegendBoolean":
         from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
         return PyLegendBoolean(PyLegendIsNotEmptyExpression(self.value()))
 
+    @grammar_method
     def is_not_null(self) -> "PyLegendBoolean":
         return self.is_not_empty()
 
+    @grammar_method
     def to_string(self) -> "PyLegendString":
         from pylegend.core.language.shared.primitives.string import PyLegendString
         return PyLegendString(PyLegendPrimitiveToStringExpression(self.value()))

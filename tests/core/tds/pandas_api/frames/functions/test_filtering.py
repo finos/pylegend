@@ -59,8 +59,8 @@ class TestFilteringFunction:
         with pytest.raises(TypeError) as v:
             frame[(frame['col1'] + 10) & (frame['col2'] == 2)]  # type: ignore
         assert v.value.args[0].startswith(
-            "Boolean AND (&) parameter should be a bool or a boolean expression (PyLegendBoolean). "
-            "Got value <pylegend.core.language.pandas_api.pandas_api_series.NumberSeries object"
+            "Integer and (&) parameter should be a int or an integer expression (PyLegendInteger). "
+            "Got value <pylegend.core.language.pandas_api.pandas_api_series.BooleanSeries object"
         )
 
     def test_filtering_function_error_on_invalid_key(self) -> None:

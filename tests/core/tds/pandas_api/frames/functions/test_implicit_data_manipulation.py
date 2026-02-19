@@ -439,7 +439,7 @@ class TestSeriesArithmetic:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         col1_plus_10_series = frame["col1"] + 10  # type: ignore[operator]
-        assert type(col1_plus_10_series).__name__ == "NumberSeries"
+        assert type(col1_plus_10_series).__name__ == "IntegerSeries"
 
         col2_len_series = frame["col2"].len()  # type: ignore[union-attr]
         assert type(col2_len_series).__name__ == "IntegerSeries"
