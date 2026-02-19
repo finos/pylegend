@@ -23,3 +23,6 @@ poetry.lock
 
 /dist/
 /temp/
+
+# Sphinx docs
+/docs/_build/
