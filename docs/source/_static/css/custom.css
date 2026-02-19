@@ -14,6 +14,173 @@
 # limitations under the License.
 */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, Monaco, 'Courier New', monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.6;
+}
+
+*,
+*::before,
+*::after {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+
+/* ── Page scrollbar ── */
+
+html,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+html.dark-mode,
+body.dark-mode {
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+html.dark-mode ::-webkit-scrollbar-track,
+body.dark-mode ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb,
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 5px;
+}
+
+html.dark-mode ::-webkit-scrollbar-thumb:hover,
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── API signatures: monospace ── */
+
+dt.sig,
+dt.sig span,
+dt.sig em,
+dt.sig a {
+  font-family: var(--font-mono) !important;
+}
+
+.sig-name.descname {
+  font-weight: 700 !important;
+}
+
+h3,
+h4 {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.5em !important;
+}
+
+h1,
+h2 {
+  letter-spacing: -0.02em;
+  margin-bottom: 0.8em !important;
+}
+
+p {
+  line-height: 1.65 !important;
+  margin-bottom: 1.2em !important;
+  font-size: 1rem;
+}
+
+li {
+  line-height: 1.6 !important;
+  margin-bottom: 0.4em;
+}
+
+li>p {
+  margin-bottom: 0.5em !important;
+}
+
+/* ── Reading progress bar ── */
+
+.reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: #3b82f6;
+  z-index: 9999;
+  transition: width 0.1s linear;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+body.dark-mode .reading-progress-bar {
+  background: #60a5fa;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
+}
+
+/* ── Modern inline code styling ── */
+
+:not(pre)>code,
+:not(pre)>.docutils.literal,
+.xref {
+  background: rgba(59, 130, 246, 0.06) !important;
+  color: #1e40af !important;
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(59, 130, 246, 0.12) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.88em !important;
+  font-weight: 500 !important;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+body.dark-mode :not(pre)>code,
+body.dark-mode :not(pre)>.docutils.literal,
+body.dark-mode .xref {
+  background: rgba(96, 165, 250, 0.08) !important;
+  color: #93c5fd !important;
+  border-color: rgba(96, 165, 250, 0.15) !important;
+}
+
+/* ── Theme toggle ── */
+
 .theme-toggle-container {
   position: fixed;
   top: 15px;
@@ -59,7 +226,7 @@ body.dark-mode .theme-toggle-container {
   background: #fff;
   border-radius: 50%;
   transition: transform 0.3s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .theme-toggle-btn.active {
@@ -70,51 +237,161 @@ body.dark-mode .theme-toggle-container {
   transform: translateX(20px);
 }
 
+/* ── Dark mode: layout backgrounds ── */
+
 body.dark-mode {
   background-color: #1e1e1e !important;
   color: #f5f5f5 !important;
 }
 
-body.dark-mode .document {
-  background-color: #1e1e1e !important;
-}
-
-body.dark-mode .body {
-  background-color: #1e1e1e !important;
-  color: #f5f5f5 !important;
-}
-
-body.dark-mode .bodywrapper {
-  background-color: #1e1e1e !important;
-}
-
+body.dark-mode .document,
+body.dark-mode .body,
+body.dark-mode .bodywrapper,
 body.dark-mode .documentwrapper {
   background-color: #1e1e1e !important;
 }
 
-body.dark-mode .sphinxsidebar {
-  background-color: #1e1e1e !important;
+body.dark-mode .body {
   color: #f5f5f5 !important;
+}
+
+/* ── Code Block Typography ── */
+
+div.highlight pre {
+  font-size: 0.88rem !important;
+  line-height: 1.5 !important;
+  font-family: var(--font-mono) !important;
+}
+
+/* ── IPython / Code Block Prompts (Unselectable) ── */
+
+.highlight .gp {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  color: #8fa1b3 !important;
+  /* Muted prompt color */
+  font-weight: 500 !important;
+}
+
+.highlight .go {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  color: #888 !important;
+  /* Muted output color */
+}
+
+/* Ensure prompts in dark mode are also readable & unselectable */
+body.dark-mode .highlight .gp {
+  color: #6272a4 !important;
+}
+
+body.dark-mode .highlight .go {
+  color: #999 !important;
+}
+
+/* ── Code Block Copy Button (Line Level) ── */
+
+.highlight {
+  position: relative;
+}
+
+.highlight pre {
+  position: relative !important;
+  /* Ensure buttons position relative to scrolling content */
+}
+
+.copy-line-btn {
+  position: absolute;
+  right: 8px !important;
+  /* Top set by JS */
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 4px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
+  z-index: 20;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.highlight:hover .copy-line-btn {
+  opacity: 1;
+}
+
+.copy-line-btn:hover {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.copy-line-btn.success {
+  background: #10b981 !important;
+  color: #fff !important;
+  border-color: #059669 !important;
+}
+
+body.dark-mode .copy-line-btn {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+}
+
+body.dark-mode .copy-line-btn:hover {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #60a5fa;
+}
+
+/* ── Dark mode: sidebar ── */
+
+body.dark-mode .sphinxsidebar {
+  background: rgba(22, 22, 26, 0.92) !important;
+  border-right-color: rgba(255, 255, 255, 0.06) !important;
+  color: #f5f5f5 !important;
+}
+
+body.dark-mode .sphinxsidebarwrapper {
+  background: transparent !important;
 }
 
 body.dark-mode .sphinxsidebar h3,
 body.dark-mode .sphinxsidebar h4 {
-  color: #ffffff !important;
-  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
 }
 
 body.dark-mode .sphinxsidebar a {
-  color: #5dade2 !important;
+  color: #c8cdd3 !important;
 }
 
 body.dark-mode .sphinxsidebar a:hover {
-  color: #85c1e9 !important;
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+body.dark-mode .sphinxsidebar a.current {
+  color: #60a5fa !important;
+  background: rgba(96, 165, 250, 0.08) !important;
 }
 
 body.dark-mode .sphinxsidebar p,
 body.dark-mode .sphinxsidebar li {
-  color: #e0e0e0 !important;
+  color: #b0b8c4 !important;
 }
+
+
+/* ── Dark mode: typography ── */
 
 body.dark-mode a {
   color: #5dade2 !important;
@@ -136,10 +413,17 @@ body.dark-mode h2,
 body.dark-mode h3,
 body.dark-mode h4,
 body.dark-mode h5,
-body.dark-mode h6 {
-  color: #ffffff !important;
-  font-weight: 600 !important;
+body.dark-mode h6,
+body.dark-mode strong {
+  color: #fff !important;
+  font-weight: 700 !important;
 }
+
+body.dark-mode em {
+  color: #e0e0e0 !important;
+}
+
+/* ── Dark mode: inline code & pre ── */
 
 body.dark-mode code {
   background-color: #2b2b2b !important;
@@ -155,23 +439,36 @@ body.dark-mode pre {
   padding: 12px !important;
 }
 
-body.dark-mode .highlight {
+body.dark-mode .highlight,
+body.dark-mode div.ipython,
+body.dark-mode div.ipython .output,
+body.dark-mode div.highlight-ipython3 pre {
   background-color: #1a1a1a !important;
 }
 
-body.dark-mode .highlight pre {
+body.dark-mode .highlight pre,
+body.dark-mode div.ipython .highlight pre {
   background-color: #1a1a1a !important;
   color: #f8f8f2 !important;
 }
 
+/* ── Dark mode: syntax highlighting (Dracula-inspired) ── */
+
 body.dark-mode .highlight .k,
 body.dark-mode .highlight .kn,
-body.dark-mode .highlight .kd {
+body.dark-mode .highlight .kd,
+body.dark-mode .highlight .nd,
+body.dark-mode .highlight .nt,
+body.dark-mode .highlight .o,
+body.dark-mode .highlight .ow {
   color: #ff79c6 !important;
 }
 
 body.dark-mode .highlight .n,
-body.dark-mode .highlight .nn {
+body.dark-mode .highlight .nn,
+body.dark-mode .highlight .vm,
+body.dark-mode .highlight .p,
+body.dark-mode .highlight .sig-param {
   color: #f8f8f2 !important;
 }
 
@@ -186,104 +483,96 @@ body.dark-mode .highlight .c1 {
   color: #6272a4 !important;
 }
 
-body.dark-mode .highlight .o {
-  color: #ff79c6 !important;
-}
-
 body.dark-mode .highlight .mi,
-body.dark-mode .highlight .mf {
+body.dark-mode .highlight .mf,
+body.dark-mode .highlight .bp {
   color: #bd93f9 !important;
 }
 
-body.dark-mode .highlight .nb {
+body.dark-mode .highlight .nb,
+body.dark-mode .highlight .nc {
   color: #8be9fd !important;
 }
 
-body.dark-mode .highlight .nf {
-  color: #50fa7b !important;
-}
-
-/* Method/attribute access (e.g., .sort, .filter, .head) */
-body.dark-mode .highlight .na {
-  color: #50fa7b !important;
-}
-
-/* Additional syntax highlighting for better code readability */
-body.dark-mode .highlight .nd {
-  color: #ff79c6 !important;  /* Decorators */
-}
-
-body.dark-mode .highlight .nc {
-  color: #8be9fd !important;  /* Class names */
-}
-
-body.dark-mode .highlight .nt {
-  color: #ff79c6 !important;  /* Tags */
-}
-
-body.dark-mode .highlight .bp {
-  color: #bd93f9 !important;  /* Built-in pseudo (self, cls) */
-}
-
+body.dark-mode .highlight .nf,
+body.dark-mode .highlight .na,
 body.dark-mode .highlight .fm {
-  color: #50fa7b !important;  /* Function magic (__init__, etc) */
+  color: #50fa7b !important;
 }
 
-body.dark-mode .highlight .vm {
-  color: #f8f8f2 !important;  /* Variable magic */
-}
+/* ── Dark mode: output text ── */
 
-body.dark-mode .highlight .ow {
-  color: #ff79c6 !important;  /* Operator word (and, or, not, in) */
-}
-
-body.dark-mode .highlight .p {
-  color: #f8f8f2 !important;  /* Punctuation */
-}
-
-/* Output text styling - gray color to distinguish from input */
 body.dark-mode .highlight-none pre,
 body.dark-mode .highlight-text pre,
 body.dark-mode div.output pre,
 body.dark-mode div.output_area pre,
-body.dark-mode .go {
-  color: #9e9e9e !important;  /* Gray output text */
-}
-
-/* IPython/Jupyter output styling */
+body.dark-mode .go,
 body.dark-mode .output_text pre,
 body.dark-mode .output_stdout pre,
 body.dark-mode .output_result pre {
-  color: #9e9e9e !important;  /* Gray output text */
+  color: #9e9e9e !important;
 }
 
-/* DataFrame/Table output in gray */
 body.dark-mode .dataframe,
 body.dark-mode .rendered_html table {
   color: #9e9e9e !important;
 }
 
-body.dark-mode div.ipython,
-body.dark-mode div.ipython .output,
-body.dark-mode div.ipython .highlight pre,
-body.dark-mode div.highlight-ipython3 pre {
-  background-color: #1a1a1a !important;
+/* ── Dark mode: viewcode (source) pages ── */
+
+body.dark-mode .viewcode-block {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: transparent !important;
+}
+
+body.dark-mode .viewcode-block:hover {
+  background: rgba(96, 165, 250, 0.06) !important;
+}
+
+body.dark-mode .viewcode-back {
+  color: #60a5fa !important;
+  background: transparent !important;
+}
+
+body.dark-mode .viewcode-back:hover {
+  color: #93c5fd !important;
+}
+
+/* Ensure the source page highlight block gets dark styling */
+body.dark-mode .highlight-default .highlight,
+body.dark-mode .highlight-python .highlight {
+  background: linear-gradient(180deg, #0e1114 0%, #0b0d0f 100%) !important;
+}
+
+body.dark-mode .highlight-default .highlight pre,
+body.dark-mode .highlight-python .highlight pre {
+  background: transparent !important;
   color: #f8f8f2 !important;
 }
 
-body.dark-mode table {
+/* Line numbers on source pages */
+body.dark-mode .linenodiv pre {
+  color: #555 !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* ── Dark mode: tables, hr, footer, forms ── */
+
+body.dark-mode table,
+body.dark-mode th,
+body.dark-mode td {
   border-color: #444 !important;
 }
 
 body.dark-mode th {
-  border-color: #444 !important;
   background-color: #2a2a2a !important;
-  color: #ffffff !important;
+  color: #fff !important;
   font-weight: 600 !important;
 }
 
 body.dark-mode td {
-  border-color: #444 !important;
   background-color: #1e1e1e !important;
   color: #e8e8e8 !important;
 }
@@ -320,24 +609,378 @@ body.dark-mode input[type="submit"]:hover {
   background-color: #2980b9 !important;
 }
 
+/* ── Dark mode: admonitions, API definitions ── */
+
 body.dark-mode .admonition {
-  background-color: #252525 !important;
-  border: 1px solid #444 !important;
+  background-color: #1a1d23 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.admonition.seealso {
+  font-size: 0.82rem !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0.75rem 0 !important;
+}
+
+.admonition.seealso .admonition-title {
+  font-size: 1.1rem !important;
+  padding: 6px 14px !important;
+}
+
+.admonition.seealso dt,
+.admonition.seealso dd,
+.admonition.seealso p,
+.admonition.seealso a,
+.admonition.seealso span,
+.admonition.seealso code {
+  font-size: 0.82rem !important;
+}
+
+.admonition.seealso dt {
+  padding: 3px 8px !important;
+  margin: 2px 0 !important;
+  background: rgba(37, 99, 235, 0.04) !important;
+  border-left: 2px solid #3b82f6 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  border-radius: 0 6px 6px 0 !important;
+  box-shadow: none !important;
+  display: table;
+  line-height: 1.4 !important;
+}
+
+.admonition.seealso dt code {
+  font-weight: 600 !important;
+  padding: 1px 4px !important;
+  border: none !important;
+}
+
+.admonition.seealso dd {
+  margin-bottom: 6px !important;
+  margin-left: 10px !important;
+}
+
+.admonition.seealso dd p {
+  margin: 2px 0 !important;
+}
+
+.admonition.seealso dl {
+  margin: 4px 0 !important;
+}
+
+body.dark-mode .admonition.seealso {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  font-size: 0.82rem !important;
+}
+
+body.dark-mode .admonition.seealso dt {
+  background: rgba(96, 165, 250, 0.06) !important;
+  border-left: 2px solid #3b82f6 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  color: #93c5fd !important;
+  box-shadow: none !important;
+}
+
+body.dark-mode .admonition.seealso dt code {
+  background: transparent !important;
+  color: #93c5fd !important;
+}
+
+/* ── Modern Admonitions (Note, Warning, Error, Tip) ── */
+
+.admonition {
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-left-width: 4px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  margin: 1.5em 0 !important;
+  padding: 12px 16px !important;
+}
+
+.admonition:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+.admonition-title {
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  margin-bottom: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Specific Admonition Colors (Light Mode) */
+.admonition.note {
+  background-color: #f0f9ff !important;
+  border-left-color: #0ea5e9 !important;
+}
+
+.admonition.note .admonition-title {
+  color: #0369a1 !important;
+}
+
+.admonition.warning {
+  background-color: #fffbeb !important;
+  border-left-color: #f59e0b !important;
+}
+
+.admonition.warning .admonition-title {
+  color: #b45309 !important;
+}
+
+.admonition.error,
+.admonition.danger {
+  background-color: #fef2f2 !important;
+  border-left-color: #ef4444 !important;
+}
+
+.admonition.error .admonition-title,
+.admonition.danger .admonition-title {
+  color: #b91c1c !important;
+}
+
+.admonition.tip {
+  background-color: #ecfdf5 !important;
+  border-left-color: #10b981 !important;
+}
+
+.admonition.tip .admonition-title {
+  color: #047857 !important;
+}
+
+
+/* Specific Admonition Colors (Dark Mode Override) */
+body.dark-mode .admonition {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-mode .admonition:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.dark-mode .admonition.note {
+  background-color: rgba(14, 165, 233, 0.1) !important;
+  border-left-color: #0ea5e9 !important;
+}
+
+body.dark-mode .admonition.note .admonition-title {
+  color: #7dd3fc !important;
+}
+
+body.dark-mode .admonition.warning {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  border-left-color: #f59e0b !important;
+}
+
+body.dark-mode .admonition.warning .admonition-title {
+  color: #fcd34d !important;
+}
+
+body.dark-mode .admonition.error,
+body.dark-mode .admonition.danger {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-left-color: #ef4444 !important;
+}
+
+body.dark-mode .admonition.error .admonition-title,
+body.dark-mode .admonition.danger .admonition-title {
+  color: #fca5a5 !important;
+}
+
+body.dark-mode .admonition.tip {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border-left-color: #10b981 !important;
+}
+
+body.dark-mode .admonition.tip .admonition-title {
+  color: #6ee7b7 !important;
+}
+
+
+/* ── Modern Tables ── */
+
+table.docutils {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+  margin: 1.5em 0 !important;
+}
+
+table.docutils th,
+table.docutils td {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+  text-align: left !important;
+}
+
+table.docutils th {
+  background-color: #f8fafc !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+table.docutils tr:last-child td {
+  border-bottom: none !important;
+}
+
+table.docutils tr:nth-child(even) {
+  background-color: #fcfcfc !important;
+  /* Very subtle stripe */
+}
+
+table.docutils tr:hover td {
+  background-color: #f1f5f9 !important;
+  /* Highlight on hover */
+}
+
+
+/* Dark Mode Tables */
+body.dark-mode table.docutils {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.dark-mode table.docutils th {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.dark-mode table.docutils td {
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.dark-mode table.docutils tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+body.dark-mode table.docutils tr:hover td {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ── Field Lists (Parameters, Returns, etc.) - Compact Labels ── */
+
+dl.field-list {
+  display: block;
+  margin-top: 12px;
+}
+
+dl.field-list>dt {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(0, 0, 0, 0.04);
+  color: #555;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  width: auto;
+}
+
+dl.field-list>dd {
+  margin-left: 20px !important;
+  margin-bottom: 12px !important;
+  padding-left: 10px;
+  border-left: 2px solid rgba(0, 0, 0, 0.05);
+  /* Subtle guide line */
+}
+
+dl.field-list>dd>p {
+  margin-bottom: 4px !important;
+}
+
+/* Dark mode for field lists */
+body.dark-mode dl.field-list>dt {
+  background: rgba(255, 255, 255, 0.08);
+  color: #aaa;
+}
+
+body.dark-mode .admonition.tip,
+body.dark-mode .admonition.hint {
+  border-left: 3px solid #10b981 !important;
 }
 
 body.dark-mode .admonition-title {
-  background-color: #333 !important;
-  color: #fff !important;
+  background: linear-gradient(135deg, #1e2128 0%, #22252c 100%) !important;
+  color: #e2e8f0 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+body.dark-mode .class dt {
+  background: linear-gradient(135deg, #172033 0%, #141c2e 100%) !important;
+  color: #93c5fd !important;
+  border-top: none !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1) !important;
+}
+
+body.dark-mode .method dt {
+  background: linear-gradient(135deg, #151b2a 0%, #131825 100%) !important;
+  color: #cbd5e1 !important;
+  border-left-color: #3b82f6 !important;
+}
+
+body.dark-mode .method dt:hover {
+  background: linear-gradient(135deg, #1a2236 0%, #171e2e 100%) !important;
+}
+
+body.dark-mode .method {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+body.dark-mode .attribute dt {
+  background: linear-gradient(135deg, #1e1633 0%, #1a132e 100%) !important;
+  color: #c4b5fd !important;
+  border-left-color: #8b5cf6 !important;
+}
+
+body.dark-mode .attribute dt:hover {
+  background: linear-gradient(135deg, #25193f 0%, #1f1636 100%) !important;
+}
+
+body.dark-mode .attribute {
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+body.dark-mode .field-list dt {
+  background: linear-gradient(135deg, #18162e 0%, #151328 100%) !important;
+  color: #a5b4fc !important;
+  border-left-color: #6366f1 !important;
 }
 
 body.dark-mode dt {
-  background-color: #252525 !important;
+  background-color: #1e2128 !important;
   color: #f5f5f5 !important;
 }
 
 body.dark-mode dl.py dt {
-  background-color: #252525 !important;
-  border-top: 2px solid #3498db !important;
+  border-top: none !important;
+  background: linear-gradient(135deg, #172033 0%, #141c2e 100%) !important;
+  border-radius: 0 10px 10px 0 !important;
 }
 
 body.dark-mode .sig-name {
@@ -348,14 +991,6 @@ body.dark-mode .sig-param {
   color: #f8f8f2 !important;
 }
 
-body.dark-mode em {
-  color: #e0e0e0 !important;
-}
-
-body.dark-mode strong {
-  color: #ffffff !important;
-}
-
 body.dark-mode a.headerlink::after {
   color: #666 !important;
 }
@@ -363,6 +998,8 @@ body.dark-mode a.headerlink::after {
 body.dark-mode a.headerlink:hover::after {
   color: #5dade2 !important;
 }
+
+/* ── IPython / Jupyter scroll containers ── */
 
 div.ipython,
 div.ipython .output,
@@ -381,9 +1018,10 @@ div.highlight pre {
 
 div.ipython .highlight pre,
 div.highlight pre {
-  white-space: pre !important;
   word-wrap: normal !important;
 }
+
+/* ── Header links ── */
 
 a.headerlink {
   opacity: 0;
@@ -415,30 +1053,662 @@ a.headerlink:hover::after {
   color: #2980B9;
 }
 
-h1:hover > a.headerlink,
-h2:hover > a.headerlink,
-h3:hover > a.headerlink,
-h4:hover > a.headerlink,
-h5:hover > a.headerlink,
-h6:hover > a.headerlink,
-dt:hover > a.headerlink,
-p.caption:hover > a.headerlink,
+h1:hover>a.headerlink,
+h2:hover>a.headerlink,
+h3:hover>a.headerlink,
+h4:hover>a.headerlink,
+h5:hover>a.headerlink,
+h6:hover>a.headerlink,
+dt:hover>a.headerlink,
+p.caption:hover>a.headerlink,
 .method:hover a.headerlink,
-.class:hover > dt > a.headerlink {
+.class:hover>dt>a.headerlink {
   opacity: 1;
 }
 
+/* ── Modern sidebar ── */
+
+.sphinxsidebar {
+  background: rgba(248, 249, 252, 0.88) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(16, 24, 40, 0.06) !important;
+  padding-top: 0 !important;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
+  transition: background 0.3s ease;
+}
+
+.sphinxsidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sphinxsidebar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+}
+
+body.dark-mode .sphinxsidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sphinxsidebarwrapper {
+  padding: 24px 20px 24px !important;
+}
+
+/* Logo area */
+.sphinxsidebar p.logo {
+  text-align: center;
+  margin-bottom: 4px !important;
+}
+
+.sphinxsidebar p.logo a img {
+  border-radius: 12px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sphinxsidebar p.logo a img:hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.sphinxsidebar h3[class="logo"] a,
+.sphinxsidebar p.logo a {
+  text-decoration: none !important;
+}
+
+/* Section headers */
+.sphinxsidebar h3,
+.sphinxsidebar h4 {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: rgba(60, 65, 75, 0.55) !important;
+  margin: 20px 0 8px !important;
+  padding-bottom: 6px !important;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+}
+
+/* Navigation lists */
 .sphinxsidebar ul {
   list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.sphinxsidebar>div>ul,
+.sphinxsidebarwrapper>ul {
   padding-left: 0;
 }
 
 .sphinxsidebar ul ul {
-  list-style-type: disc;
-  padding-left: 20px;
+  list-style-type: none;
+  padding-left: 12px;
+  margin-left: 0;
+  border: none;
 }
 
 .sphinxsidebar ul ul li {
-  list-style: disc;
+  list-style: none;
   display: list-item;
+  border: none;
+}
+
+/* Navigation links */
+.sphinxsidebar li {
+  margin: 1px 0;
+  border: none !important;
+}
+
+.sphinxsidebar li a {
+  display: block;
+  padding: 5px 10px;
+  border-radius: 6px;
+  color: #3c414b !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: background 0.15s ease, color 0.15s ease;
+  line-height: 1.4;
+  border: none !important;
+}
+
+.sphinxsidebar li a:hover {
+  background: rgba(16, 24, 40, 0.05) !important;
+  color: #111827 !important;
+}
+
+/* Active page link */
+.sphinxsidebar li a.current {
+  color: #2563eb !important;
+  background: rgba(37, 99, 235, 0.06) !important;
+  font-weight: 600;
+  position: relative;
+}
+
+.sphinxsidebar li a.current::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 2px;
+  background: #2563eb;
+}
+
+body.dark-mode .sphinxsidebar li a.current::before {
+  background: #60a5fa;
+}
+
+/* Sidebar body text */
+.sphinxsidebar p {
+  font-size: 0.88rem;
+  color: #6b7280 !important;
+  line-height: 1.5;
+}
+
+/* Search box */
+/* Search box - Modern "Pill" Style */
+.sphinxsidebar #searchbox {
+  margin-top: 12px;
+  position: relative;
+}
+
+.sphinxsidebar form.search {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center;
+}
+
+.sphinxsidebar input[type="text"] {
+  width: 100%;
+  padding: 10px 16px 10px 36px !important;
+  border: 1px solid rgba(16, 24, 40, 0.08) !important;
+  border-radius: 99px !important;
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239ca3af' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  background-size: 16px;
+  font-size: 0.9rem !important;
+  color: #1f2937 !important;
+  outline: none !important;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.sphinxsidebar input[type="text"]:focus {
+  background-color: #fff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.sphinxsidebar input[type="text"]::placeholder {
+  color: #9ca3af !important;
+  font-weight: 450;
+}
+
+.sphinxsidebar input[type="submit"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(16, 24, 40, 0.08) !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  color: transparent !important;
+  /* Hide text, show icon */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%234b5563'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.sphinxsidebar input[type="submit"]:hover {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+}
+
+body.dark-mode .sphinxsidebar input[type="text"] {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f3f4f6 !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%236b7280' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' /%3E%3C/svg%3E");
+}
+
+body.dark-mode .sphinxsidebar input[type="text"]:focus {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15) !important;
+}
+
+body.dark-mode .sphinxsidebar input[type="submit"] {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
+}
+
+body.dark-mode .sphinxsidebar input[type="submit"]:hover {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
+}
+
+/* ── Modern code block card ── */
+
+div.highlight,
+div.highlight pre,
+pre,
+code,
+.highlight code {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+div.highlight {
+  position: relative;
+  padding: 1.25rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #eef6ff 0%, #e6eef8 100%);
+  box-shadow: 0 18px 54px rgba(20, 30, 40, 0.10);
+  overflow: auto;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  margin: 1.25rem 0;
+  transition: box-shadow 0.18s ease, transform 0.12s ease;
+  -webkit-overflow-scrolling: touch;
+}
+
+div.highlight:hover {
+  box-shadow: 0 28px 80px rgba(20, 30, 40, 0.12);
+  transform: translateY(-3px);
+}
+
+/* Mac-style window dots */
+div.highlight:not([data-ipython-in]):not([data-ipython-out])::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff5f56;
+  box-shadow: 18px 0 0 #ffbd2e, 36px 0 0 #27c93f;
+  z-index: 10;
+}
+
+div.highlight:not([data-ipython-in]):not([data-ipython-out]) {
+  padding-top: 36px !important;
+}
+
+/* Hide dots for inline/output/text blocks if desired */
+.highlight-none::before,
+.highlight-text::before {
+  display: none;
+}
+
+.highlight-none,
+.highlight-text {
+  padding-top: 1.25rem !important;
+}
+
+body.dark-mode div.highlight {
+  background: linear-gradient(180deg, #0e1114 0%, #0b0d0f 100%);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  background-clip: padding-box;
+}
+
+div.highlight pre {
+  margin: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 8px;
+  tab-size: 4;
+  white-space: pre;
+  overflow: visible;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 24, 40, 0.12) transparent;
+}
+
+body.dark-mode div.highlight pre {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+/* ── Code block scrollbars (WebKit) ── */
+
+div.highlight pre::-webkit-scrollbar {
+  height: 10px;
+  background: transparent;
+}
+
+div.highlight pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+div.highlight pre::-webkit-scrollbar-thumb {
+  background-color: rgba(16, 24, 40, 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+div.highlight pre::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(16, 24, 40, 0.18);
+}
+
+body.dark-mode div.highlight pre::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode div.highlight pre::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* ── Light mode: syntax token colors ── */
+
+div.highlight .k {
+  color: #e11d48;
+}
+
+div.highlight .kn,
+div.highlight .kp {
+  color: #d946ef;
+}
+
+div.highlight .nf,
+div.highlight .nc {
+  color: #0ea5a6;
+}
+
+div.highlight .s {
+  color: #c084fc;
+}
+
+div.highlight .mi,
+div.highlight .m {
+  color: #7c3aed;
+}
+
+div.highlight .nb {
+  color: #2563eb;
+}
+
+/* ── Dark mode: modern code block token overrides ── */
+
+body.dark-mode div.highlight .k {
+  color: #ff6b81;
+}
+
+body.dark-mode div.highlight .nf {
+  color: #56e39f;
+}
+
+body.dark-mode div.highlight .nc {
+  color: #8be9fd;
+}
+
+body.dark-mode div.highlight .s {
+  color: #f1fa8c;
+}
+
+/* ── Comment styling ── */
+
+div.highlight .c,
+div.highlight .c1,
+div.highlight .cm {
+  color: #15803d !important;
+  font-style: italic;
+  font-weight: 500;
+}
+
+body.dark-mode div.highlight .c,
+body.dark-mode div.highlight .c1,
+body.dark-mode div.highlight .cm {
+  color: #4ade80 !important;
+  font-weight: 600;
+}
+
+/* ── IPython prompts & output ── */
+
+div.highlight .gp {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+
+body.dark-mode div.highlight .gp,
+body.dark-mode .highlight .gp,
+body.dark-mode pre .gp {
+  color: #60a5fa !important;
+  font-weight: 600 !important;
+}
+
+div.highlight .go {
+  color: #666 !important;
+  font-weight: 500;
+}
+
+body.dark-mode div.highlight .go,
+body.dark-mode .highlight .go,
+body.dark-mode pre .go {
+  color: #a0a0a0 !important;
+  font-weight: 400;
+}
+
+.highlight-none,
+.highlight-text {
+  color: #666 !important;
+}
+
+body.dark-mode .highlight-none,
+body.dark-mode .highlight-text {
+  color: #a0a0a0 !important;
+}
+
+div.highlight .dataframe,
+div.highlight pre.output {
+  color: #666;
+}
+
+body.dark-mode div.highlight .dataframe,
+body.dark-mode div.highlight pre.output {
+  color: #a0a0a0;
+}
+
+/* ── IPython In/Out labels ── */
+
+div.highlight[data-ipython-in]::before,
+div.highlight[data-ipython-out]::before {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+}
+
+div.highlight[data-ipython-in]::before {
+  content: attr(data-ipython-in);
+  color: #2563eb;
+}
+
+div.highlight[data-ipython-out]::before {
+  content: attr(data-ipython-out);
+  color: #dc2626;
+}
+
+body.dark-mode div.highlight[data-ipython-in]::before {
+  content: attr(data-ipython-in) !important;
+  color: #60a5fa !important;
+  background-color: transparent !important;
+  letter-spacing: 0 !important;
+}
+
+body.dark-mode div.highlight[data-ipython-out]::before {
+  content: attr(data-ipython-out) !important;
+  color: #ef4444 !important;
+  background-color: transparent !important;
+  letter-spacing: 0 !important;
+}
+
+/* ── IPython input/output block accents ── */
+
+div.ipython-input {
+  border-left: 3px solid #2563eb;
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+}
+
+div.ipython-output {
+  border-left: 3px solid #dc2626;
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+}
+
+body.dark-mode div.ipython-input {
+  border-left-color: #60a5fa;
+}
+
+body.dark-mode div.ipython-output {
+  border-left-color: #ef4444;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 600px) {
+  div.highlight {
+    padding: 0.75rem;
+    border-radius: 10px;
+  }
+
+  .code-copy-btn {
+    top: 6px;
+    right: 6px;
+    padding: 5px 7px;
+  }
+
+  div.highlight::before {
+    left: 8px;
+    top: 8px;
+    padding: 3px 6px;
+  }
+}
+
+.card {
+  /* Add shadows to create the "card" effect */
+  padding: 15px;
+  box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.2);
+  perspective: 100px;
+  transition: 0.3s;
+}
+
+/* On mouse-over, add a deeper shadow */
+.card:hover {
+  box-shadow: 8px 8px 8px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+
+
+/* ── API documentation: modern styling ── */
+
+.class dt {
+  display: table;
+  margin: 8px 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  background: linear-gradient(135deg, #eef4fb 0%, #e8eff8 100%);
+  color: #1e40af;
+  border-top: none;
+  border-radius: 0 10px 10px 0;
+  padding: 10px 14px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+  transition: box-shadow 0.2s ease;
+}
+
+.class dt:hover {
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12);
+}
+
+.method {
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+  padding-bottom: 8px;
+}
+
+.method dt {
+  border: none;
+  border-left: 3px solid #3b82f6;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(135deg, #f0f5ff 0%, #edf2f7 100%);
+  color: #334155;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.method dt:hover {
+  background: linear-gradient(135deg, #e8f0fe 0%, #e2eaf4 100%);
+}
+
+.attribute {
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(16, 24, 40, 0.06);
+  padding-bottom: 8px;
+}
+
+.attribute dt {
+  border: none;
+  border-left: 3px solid #8b5cf6;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  color: #4c1d95;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+}
+
+.attribute dt:hover {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+}
+
+.field-list dt {
+  border: none;
+  margin: 4px 0;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(135deg, #f0f0ff 0%, #eef2ff 100%);
+  color: #312e81;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+}
+
+.field-list dd {
+  margin-top: 4px;
+  margin-bottom: 12px;
+}
+
+dl p {
+  margin-bottom: 12px !important;
 }

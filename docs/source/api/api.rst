@@ -18,6 +18,6 @@ API Reference
 The reference guide consists detailed description of all user-facing APIs of ``pylegend`` library.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
    legendql_tds_frame

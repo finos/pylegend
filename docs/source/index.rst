@@ -114,7 +114,7 @@ Documentation
 :raw-html:`<p>Detailed documentation of all PyLegend classes and methods.</p>`
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
    api/api
 
