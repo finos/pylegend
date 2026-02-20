@@ -33,6 +33,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.language.shared.operations.string_operation_expressions import (
@@ -88,96 +89,122 @@ class PyLegendString(PyLegendPrimitive):
     ) -> None:
         self.__value = value
 
+    @grammar_method
     def len(self) -> PyLegendInteger:
         return PyLegendInteger(PyLegendStringLengthExpression(self.__value))
 
+    @grammar_method
     def length(self) -> PyLegendInteger:
         return self.len()
 
+    @grammar_method
     def startswith(self, prefix: str) -> PyLegendBoolean:
         PyLegendString.__validate_param_to_be_str(prefix, "startswith prefix parameter")
         return PyLegendBoolean(
             PyLegendStringStartsWithExpression(self.__value, PyLegendStringLiteralExpression(prefix))
         )
 
+    @grammar_method
     def endswith(self, suffix: str) -> PyLegendBoolean:
         PyLegendString.__validate_param_to_be_str(suffix, "endswith suffix parameter")
         return PyLegendBoolean(
             PyLegendStringEndsWithExpression(self.__value, PyLegendStringLiteralExpression(suffix))
         )
 
+    @grammar_method
     def contains(self, other: str) -> PyLegendBoolean:
         PyLegendString.__validate_param_to_be_str(other, "contains/in other parameter")
         return PyLegendBoolean(
             PyLegendStringContainsExpression(self.__value, PyLegendStringLiteralExpression(other))
         )
 
+    @grammar_method
     def upper(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringUpperExpression(self.__value))
 
+    @grammar_method
     def lower(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringLowerExpression(self.__value))
 
+    @grammar_method
     def lstrip(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringLTrimExpression(self.__value))
 
+    @grammar_method
     def rstrip(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringRTrimExpression(self.__value))
 
+    @grammar_method
     def strip(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringBTrimExpression(self.__value))
 
+    @grammar_method
     def index_of(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "Index_of parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendInteger(PyLegendStringPosExpression(self.__value, other_op))
 
+    @grammar_method
     def index(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendInteger":
         return self.index_of(other)
 
+    @grammar_method
     def parse_int(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendStringParseIntExpression(self.__value))
 
+    @grammar_method
     def parse_integer(self) -> "PyLegendInteger":
         return self.parse_int()
 
+    @grammar_method
     def parse_float(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendStringParseFloatExpression(self.__value))
 
+    @grammar_method
     def parse_boolean(self) -> "PyLegendBoolean":
         return PyLegendBoolean(PyLegendStringParseBooleanExpression(self.__value))
 
+    @grammar_method
     def parse_datetime(self) -> "PyLegendDateTime":
         return PyLegendDateTime(PyLegendStringParseDateTimeExpression(self.__value))
 
+    @grammar_method
     def ascii(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendStringAsciiExpression(self.__value))
 
+    @grammar_method
     def b64decode(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringDecodeBase64Expression(self.__value))
 
+    @grammar_method
     def b64encode(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringEncodeBase64Expression(self.__value))
 
+    @grammar_method
     def reverse(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringReverseExpression(self.__value))
 
+    @grammar_method
     def to_lower_first_character(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringToLowerFirstCharacterExpression(self.__value))
 
+    @grammar_method
     def to_upper_first_character(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringToUpperFirstCharacterExpression(self.__value))
 
+    @grammar_method
     def left(self, count: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(count, "left parameter")
         count_op = PyLegendIntegerLiteralExpression(count) if isinstance(count, int) else count.value()
         return PyLegendString(PyLegendStringLeftExpression(self.__value, count_op))
 
+    @grammar_method
     def right(self, count: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(count, "right parameter")
         count_op = PyLegendIntegerLiteralExpression(count) if isinstance(count, int) else count.value()
         return PyLegendString(PyLegendStringRightExpression(self.__value, count_op))
 
+    @grammar_method
     def substring(
             self,
             start: PyLegendUnion[int, "PyLegendInteger"],
@@ -190,6 +217,7 @@ class PyLegendString(PyLegendPrimitive):
         end_op = PyLegendIntegerLiteralExpression(end) if isinstance(end, int) else end.value()
         return PyLegendString(PyLegendStringSubStringExpression([self.__value, start_op, end_op]))
 
+    @grammar_method
     def replace(
             self,
             to_replace: PyLegendUnion[str, "PyLegendString"],
@@ -202,6 +230,7 @@ class PyLegendString(PyLegendPrimitive):
                                                                                     str) else replacement.__value
         return PyLegendString(PyLegendStringReplaceExpression([self.__value, to_replace_op, replacement_op]))
 
+    @grammar_method
     def rjust(
             self,
             length: PyLegendUnion[int, "PyLegendInteger"],
@@ -211,6 +240,7 @@ class PyLegendString(PyLegendPrimitive):
         fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char, str) else fill_char.__value
         return PyLegendString(PyLegendStringLpadExpression([self.__value, length_op, fill_char_op]))
 
+    @grammar_method
     def ljust(
             self,
             length: PyLegendUnion[int, "PyLegendInteger"],
@@ -220,6 +250,7 @@ class PyLegendString(PyLegendPrimitive):
         fill_char_op = PyLegendStringLiteralExpression(fill_char) if isinstance(fill_char, str) else fill_char.__value
         return PyLegendString(PyLegendStringRpadExpression([self.__value, length_op, fill_char_op]))
 
+    @grammar_method
     def split_part(
             self,
             sep: PyLegendUnion[str, "PyLegendString"],
@@ -230,22 +261,26 @@ class PyLegendString(PyLegendPrimitive):
         part_op = PyLegendIntegerLiteralExpression(part) if isinstance(part, int) else part.value()
         return PyLegendString(PyLegendStringSplitPartExpression([self.__value, sep_op, part_op]))
 
+    @grammar_method
     def full_match(self, pattern: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
         PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "full_match parameter")
         pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(pattern, str) else pattern.__value
         return PyLegendBoolean(PyLegendStringFullMatchExpression(self.__value, pattern_op))
 
+    @grammar_method
     def match(self, pattern: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
         PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "match parameter")  # pragma: no cover
         pattern_op = PyLegendStringLiteralExpression(pattern) if isinstance(
             pattern, str) else pattern.__value  # pragma: no cover
         return PyLegendBoolean(PyLegendStringMatchExpression(self.__value, pattern_op))  # pragma: no cover
 
+    @grammar_method
     def repeat_string(self, times: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_int_or_int_expr(times, "repeatString parameter")
         times_op = PyLegendIntegerLiteralExpression(times) if isinstance(times, int) else times.value()
         return PyLegendString(PyLegendStringRepeatStringExpression(self.__value, times_op))
 
+    @grammar_method
     def coalesce(self, *other: PyLegendOptional[PyLegendUnion[str, "PyLegendString"]]) -> "PyLegendString":
         other_op = []
         for op in other:
@@ -256,31 +291,37 @@ class PyLegendString(PyLegendPrimitive):
 
         return PyLegendString(PyLegendStringCoalesceExpression([self.__value, *other_op]))
 
+    @grammar_method
     def __add__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String plus (+) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendString(PyLegendStringConcatExpression(self.__value, other_op))
 
+    @grammar_method
     def __radd__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String plus (+) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendString(PyLegendStringConcatExpression(other_op, self.__value))
 
+    @grammar_method
     def __lt__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String less than (<) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendBoolean(PyLegendStringLessThanExpression(self.__value, other_op))
 
+    @grammar_method
     def __le__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String less than equal (<=) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendBoolean(PyLegendStringLessThanEqualExpression(self.__value, other_op))
 
+    @grammar_method
     def __gt__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String greater than (>) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendBoolean(PyLegendStringGreaterThanExpression(self.__value, other_op))
 
+    @grammar_method
     def __ge__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendBoolean":
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String greater than equal (>=) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value

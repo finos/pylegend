@@ -75,10 +75,12 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        from pylegend.core.language.pandas_api.pandas_api_series import Series
         op_expr = self.__operand.to_pure_expression(config)
         if self.__operand_needs_to_be_non_nullable:
             op_expr = (
-                op_expr if self.__operand.is_non_nullable() else
+                op_expr if self.__operand.is_non_nullable()
+                or (isinstance(self.__operand, Series) and self.__operand.contains_expr()) else
                 f"toOne({op_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op_expr) else op_expr})"
             )
         return self.__to_pure_func(op_expr, config)

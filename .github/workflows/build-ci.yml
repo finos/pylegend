@@ -116,7 +116,7 @@ jobs:
           docker build -f ./deployment/snapshot/Dockerfile -t finos/pylegend:SNAPSHOT .
 
       - name: Scan Image with Trivy
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@0.34.0
         with:
           image-ref: finos/pylegend:SNAPSHOT
           format: table
@@ -190,11 +190,11 @@ jobs:
 
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload to GitHub Pages
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: docs/build/html
 

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
 import pandas as pd
@@ -25,6 +26,7 @@ from pylegend._typing import (
     PyLegendTypeVar,
     PyLegendUnion
 )
+from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
@@ -37,6 +39,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
+    PyLegendExpression,
 )
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.date import PyLegendDate
@@ -48,23 +51,33 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
 from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import (
-    Expression,
+    Expression, SingleColumn,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
-from pylegend.core.tds.result_handler import ResultHandler
+from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.extensions.tds.result_handler import PandasDfReadConfig
+from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "Series",
+    "BooleanSeries",
+    "StringSeries",
+    "NumberSeries",
+    "IntegerSeries",
+    "FloatSeries",
+    "DateSeries",
+    "DateTimeSeries",
+    "StrictDateSeries",
     "SupportsToSqlExpression",
     "SupportsToPureExpression",
 ]
@@ -88,27 +101,38 @@ class SupportsToPureExpression(Protocol):
         ...
 
 
+@add_primitive_methods
 class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, expr: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
         row = PandasApiTdsRow.from_tds_frame("c", base_frame)
         PyLegendColumnExpression.__init__(self, row=row, column=column)
 
-        self.__base_frame = base_frame
+        self._base_frame = base_frame
         filtered = base_frame.filter(items=[column])
         assert isinstance(filtered, PandasApiAppliedFunctionTdsFrame)
         self._filtered_frame: PandasApiAppliedFunctionTdsFrame = filtered
 
+        self._expr = expr
+
+    def contains_expr(self) -> bool:
+        return self._expr is not None
+
     def value(self) -> PyLegendColumnExpression:
         return self
 
-    def get_base_frame(self) -> "PandasApiTdsFrame":
-        return self.__base_frame
+    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
+        return self._base_frame
 
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
+        if self._expr is not None:
+            return self._expr.to_sql_expression(frame_name_to_base_query_map, config)
+
         applied_func = self._filtered_frame.get_applied_function()
         if not isinstance(applied_func, PandasApiFilterFunction):  # pragma: no cover
             if isinstance(applied_func, SupportsToSqlExpression):
@@ -121,6 +145,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        if self._expr is not None:
+            return self._expr.to_pure_expression(config)
+
         applied_func = self._filtered_frame.get_applied_function()
         if not isinstance(applied_func, PandasApiFilterFunction):  # pragma: no cover
             if isinstance(applied_func, SupportsToPureExpression):
@@ -136,36 +163,54 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame.columns()
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        return self._filtered_frame.to_sql_query(config)
+        query = self.to_sql_query_object(config)
+        sql_to_string_config = SqlToStringConfig(
+            format_=SqlToStringFormat(pretty=config.pretty)
+        )
+        return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
-        return self._filtered_frame.to_pure_query(config)
+        col_name = self.columns()[0].get_name()
+        return (
+            self.get_base_frame().to_pure_query(config) +
+            config.separator(1) + f"->project(~[{col_name}:c|{self.to_pure_expression(config)}])"
+        )
 
     def execute_frame(
             self,
             result_handler: ResultHandler[R],
             chunk_size: PyLegendOptional[int] = None
     ) -> R:
-        return self._filtered_frame.execute_frame(result_handler, chunk_size)  # pragma: no cover
+        return BaseTdsFrame.execute_frame(self, result_handler, chunk_size)
 
     def execute_frame_to_string(
             self,
             chunk_size: PyLegendOptional[int] = None
     ) -> str:
-        return self._filtered_frame.execute_frame_to_string(chunk_size)
+        return self.execute_frame(ToStringResultHandler(), chunk_size)
 
     def execute_frame_to_pandas_df(
             self,
             chunk_size: PyLegendOptional[int] = None,
             pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
     ) -> pd.DataFrame:
-        return self._filtered_frame.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
+        return self.execute_frame(ToPandasDfResultHandler(pandas_df_read_config), chunk_size)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self._filtered_frame.to_sql_query_object(config)
+        filtered_frame_query = self._filtered_frame.to_sql_query_object(config)
+        select_item = filtered_frame_query.select.selectItems[0]
+        if not isinstance(select_item, SingleColumn):  # pragma: no cover
+            raise RuntimeError("Series SQL query generation is not supported for queries with columns other than SingleColumn")
+        base_query = self.get_base_frame().to_sql_query_object(config)
+        new_select_item = SingleColumn(
+            select_item.alias,
+            self.to_sql_expression({'c': base_query}, config)
+        )
+        base_query.select.selectItems = [new_select_item]
+        return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        return self._filtered_frame.to_pure(config)
+        return self.to_pure_query(config)
 
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
         return self._filtered_frame.get_all_tds_frames()
@@ -177,6 +222,16 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        if self._expr is not None:  # pragma: no cover
+            error_msg = '''
+                Applying aggregate function to a computed series expression is not supported yet.
+                Please change the series itself before trying to apply aggregate function.
+                For example,
+                    instead of: (frame['col'] + 5).sum()
+                    do: frame['new_col'] = frame['col'] + 5; frame['new_col'].sum()
+            '''
+            error_msg = dedent(error_msg).strip()
+            raise NotImplementedError(error_msg)
         return self._filtered_frame.aggregate(func, axis, *args, **kwargs)
 
     def agg(
@@ -323,49 +378,73 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.aggregate("count", 0)
 
 
+@add_primitive_methods
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)  # pragma: no cover (Boolean column not supported in PURE)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)  # pragma: no cover (Boolean column not supported in PURE)
         PyLegendBoolean.__init__(self, self)  # pragma: no cover (Boolean column not supported in PURE)
 
 
+@add_primitive_methods
 class StringSeries(Series, PyLegendString, PyLegendExpressionStringReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
         PyLegendString.__init__(self, self)
 
 
+@add_primitive_methods
 class NumberSeries(Series, PyLegendNumber, PyLegendExpressionNumberReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
         PyLegendNumber.__init__(self, self)
 
 
+@add_primitive_methods
 class IntegerSeries(NumberSeries, PyLegendInteger, PyLegendExpressionIntegerReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
         PyLegendInteger.__init__(self, self)
 
 
+@add_primitive_methods
 class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
         PyLegendFloat.__init__(self, self)
 
 
+@add_primitive_methods
 class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
         PyLegendDate.__init__(self, self)
 
 
+@add_primitive_methods
 class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
         PyLegendDateTime.__init__(self, self)
 
 
+@add_primitive_methods
 class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):  # type: ignore
-    def __init__(self, base_frame: "PandasApiTdsFrame", column: str):
-        super().__init__(base_frame, column)
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
         PyLegendStrictDate.__init__(self, self)

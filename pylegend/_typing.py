@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any as PyLegendAny
 from typing import Callable as PyLegendCallable
 from typing import Dict as PyLegendDict
 from typing import Iterator as PyLegendIterator
@@ -31,6 +32,7 @@ from typing import TYPE_CHECKING
 
 
 __all__: PyLegendSequence[str] = [
+    "PyLegendAny",
     "PyLegendCallable",
     "PyLegendDict",
     "PyLegendIterator",

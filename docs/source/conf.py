@@ -89,19 +89,19 @@ exclude_patterns = []
 
 html_theme = 'alabaster'
 html_static_path = ['./_static']
-# html_favicon = './_static/img/favicon.ico'
+html_favicon = './_static/img/favicon.ico'
 html_show_copyright = False
 html_show_sphinx = False
-html_style = 'css/style.css'
+# html_style = 'css/style.css'
 html_output_encoding = 'ascii'
 html_theme_options = {
     'canonical_url': True,
-    # 'logo': "/img/logo.png",
+    'logo': "/img/logo.png",
     'logo_name': True,
     'logo_text_align': "center",
     "show_powered_by": False,
     "page_width": "1200px",
-    "sidebar_width": "240px",
+    "sidebar_width": "300px",
     "font_size": "17px",
     "fixed_sidebar": "true",
 }
