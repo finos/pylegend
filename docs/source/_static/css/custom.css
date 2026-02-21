@@ -30,15 +30,10 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
   line-height: 1.6;
 }
 
-*,
-*::before,
-*::after {
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-}
+
 
 
 /* ── Page scrollbar ── */
@@ -235,6 +230,73 @@ body.dark-mode .theme-toggle-container {
 
 .theme-toggle-btn.active::after {
   transform: translateX(20px);
+}
+
+/* ── Theme Switch Spinner ── */
+
+.theme-switch-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999 !important;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+body.dark-mode .theme-switch-overlay {
+  background: rgba(10, 10, 10, 0.8) !important;
+}
+
+.theme-switch-overlay.active {
+  display: flex !important;
+}
+
+.theme-dots-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.theme-dot {
+  width: 14px;
+  height: 14px;
+  background-color: #3b82f6;
+  border-radius: 50%;
+  animation: theme-pulse 1.4s ease-in-out infinite both;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  will-change: transform, opacity;
+}
+
+.theme-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.theme-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes theme-pulse {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+
+  40% {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+  }
 }
 
 /* ── Dark mode: layout backgrounds ── */
@@ -1077,7 +1139,6 @@ p.caption:hover>a.headerlink,
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.08) transparent;
-  transition: background 0.3s ease;
 }
 
 .sphinxsidebar::-webkit-scrollbar {
@@ -1170,7 +1231,6 @@ body.dark-mode .sphinxsidebar::-webkit-scrollbar-thumb {
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none !important;
-  transition: background 0.15s ease, color 0.15s ease;
   line-height: 1.4;
   border: none !important;
 }
@@ -1213,7 +1273,8 @@ body.dark-mode .sphinxsidebar li a.current::before {
 /* Search box */
 /* Search box - Modern "Pill" Style */
 .sphinxsidebar #searchbox {
-  margin-top: 12px;
+  margin-top: 32px !important;
+  padding-top: 0;
   position: relative;
 }
 
@@ -1221,89 +1282,80 @@ body.dark-mode .sphinxsidebar li a.current::before {
   display: flex !important;
   gap: 8px !important;
   align-items: center;
+  margin-top: -2px !important;
+  /* Pull up to reduce gap */
 }
 
 .sphinxsidebar input[type="text"] {
-  width: 100%;
-  padding: 10px 16px 10px 36px !important;
-  border: 1px solid rgba(16, 24, 40, 0.08) !important;
+  flex: 1;
+  padding: 0 16px !important;
+  height: 38px !important;
+  border: 1px solid rgba(16, 24, 40, 0.15) !important;
   border-radius: 99px !important;
-  background-color: rgba(255, 255, 255, 0.6) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239ca3af' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' /%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 10px center;
-  background-size: 16px;
+  background-color: #ffffff !important;
   font-size: 0.9rem !important;
   color: #1f2937 !important;
   outline: none !important;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: none !important;
+  transition: border-color 0.2s;
 }
 
 .sphinxsidebar input[type="text"]:focus {
-  background-color: #fff !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
-  transform: translateY(-1px);
+  border: 1.5px solid #3b82f6 !important;
+  padding: 0 15.5px !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
 }
 
 .sphinxsidebar input[type="text"]::placeholder {
   color: #9ca3af !important;
-  font-weight: 450;
 }
 
 .sphinxsidebar input[type="submit"] {
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: center;
-  padding: 0 !important;
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(16, 24, 40, 0.08) !important;
-  border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.6) !important;
-  color: transparent !important;
-  /* Hide text, show icon */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%234b5563'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 16px;
+  padding: 0 16px !important;
+  height: 38px !important;
+  /* Match input height */
+  border: none !important;
+  border-radius: 99px !important;
+  background-color: #2563eb !important;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  transition: background-color 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
 }
 
 .sphinxsidebar input[type="submit"]:hover {
-  background-color: #3b82f6 !important;
-  border-color: #3b82f6 !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+  background-color: #1d4ed8 !important;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
 }
 
 body.dark-mode .sphinxsidebar input[type="text"] {
-  background-color: rgba(0, 0, 0, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: #121212 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
   color: #f3f4f6 !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%236b7280' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z' /%3E%3C/svg%3E");
 }
 
 body.dark-mode .sphinxsidebar input[type="text"]:focus {
-  background-color: rgba(0, 0, 0, 0.4) !important;
-  border-color: #60a5fa !important;
-  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15) !important;
+  background-color: #0b0b0b !important;
+  border: 1.5px solid #60a5fa !important;
+  padding: 0 15.5px !important;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1) !important;
 }
 
 body.dark-mode .sphinxsidebar input[type="submit"] {
-  background-color: rgba(0, 0, 0, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
+  background-color: #3b82f6 !important;
+  border: none !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode .sphinxsidebar input[type="submit"]:hover {
   background-color: #3b82f6 !important;
   border-color: #3b82f6 !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3' /%3E%3C/svg%3E");
 }
 
 /* ── Modern code block card ── */
@@ -1617,7 +1669,6 @@ body.dark-mode div.ipython-output {
   padding: 15px;
   box-shadow: 4px 4px 4px 4px rgba(0, 0, 0, 0.2);
   perspective: 100px;
-  transition: 0.3s;
 }
 
 /* On mouse-over, add a deeper shadow */
@@ -1663,7 +1714,6 @@ body.dark-mode div.ipython-output {
   color: #334155;
   padding: 8px 12px;
   font-size: 0.9rem;
-  transition: background 0.2s ease;
 }
 
 .method dt:hover {
@@ -1684,7 +1734,6 @@ body.dark-mode div.ipython-output {
   color: #4c1d95;
   padding: 8px 12px;
   font-size: 0.9rem;
-  transition: background 0.2s ease;
 }
 
 .attribute dt:hover {

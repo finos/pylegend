@@ -22,7 +22,7 @@ import subprocess
 import logging
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
-from tests.test_helpers.dynamic_port_generator import generate_dynamic_port
+from pylegend.utils.dynamic_port_generator import generate_dynamic_port
 from pylegend._typing import (
     PyLegendGenerator,
     PyLegendDict,

@@ -155,23 +155,16 @@ jobs:
       - name: Poetry Install Dependencies
         uses: ./.github/workflows/actions/poetry_install_dependencies
 
-      - name: Set up JDK
-        uses: actions/setup-java@v5
-        with:
-          distribution: "zulu"
-          java-version: "11"
-
-      - name: Build Legend Server
-        shell: bash
-        run: |
-          mvn --batch-mode clean package -f ./tests/resources/legend/server/pylegend-sql-server/pom.xml
+      - name: Install Pandoc
+        run: sudo apt-get install -y pandoc
 
       - name: Install Sphinx and extensions
         shell: bash
         run: |
           source .venv/bin/activate
           python -m pip install -U pip
-          pip install sphinx sphinx_rtd_theme IPython sphinx-autodoc-typehints requests
+          pip install sphinx sphinx_rtd_theme IPython sphinx-autodoc-typehints tqdm nbsphinx nbformat jupyter ipykernel
+          python -m ipykernel install --user --name python3
 
       - name: Build Sphinx docs
         shell: bash

@@ -32,7 +32,7 @@ def generate_dynamic_port() -> int:
 def _is_port_not_in_use(port: int) -> bool:
     with socket.socket() as s:
         try:
-            s.bind(("localhost", port))
+            s.bind(("127.0.0.1", port))
             return True
         except socket.error:  # pragma: no cover
             return False  # pragma: no cover
