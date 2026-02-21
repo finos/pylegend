@@ -16,7 +16,7 @@ import pytest
 from threading import Thread
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pylegend.core.request.legend_client import LegendClient
-from tests.test_helpers.dynamic_port_generator import generate_dynamic_port
+from pylegend.utils.dynamic_port_generator import generate_dynamic_port
 
 
 class TestLegendClient:

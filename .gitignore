@@ -25,4 +25,6 @@ poetry.lock
 /temp/
 
 # Sphinx docs
+/docs/build/
 /docs/_build/
+/docs/source/tmp_notebooks/
