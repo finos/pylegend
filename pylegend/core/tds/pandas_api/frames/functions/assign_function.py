@@ -125,7 +125,7 @@ class AssignFunction(PandasApiAppliedFunction):
                         window_expr = window.to_pure_expression(config)
                         function_expr = c[1].to_pure_expression(config)
                         target_col_name = c[0] + temp_column_name_suffix
-                        extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)}"
+                        extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
                         extend_exprs.append(extend)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
             assigned_exprs[col] = res_expr.to_pure_expression(config)
