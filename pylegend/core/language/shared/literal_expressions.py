@@ -14,12 +14,10 @@
 
 
 from datetime import date, datetime
-
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
-    PyLegendList
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
@@ -76,7 +74,7 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     def is_non_nullable(self) -> bool:
         return True
 
-    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
@@ -100,7 +98,7 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
     def is_non_nullable(self) -> bool:
         return True
 
-    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
@@ -123,7 +121,7 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     def is_non_nullable(self) -> bool:
         return True
 
-    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
@@ -146,7 +144,7 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
     def is_non_nullable(self) -> bool:
         return True
 
-    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
@@ -172,7 +170,7 @@ class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
     def is_non_nullable(self) -> bool:
         return True
 
-    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
@@ -198,7 +196,7 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
     def is_non_nullable(self) -> bool:
         return True
 
-    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 

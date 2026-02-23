@@ -24,15 +24,13 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendSequence,
 )
+from pylegend.core.language.shared.expression import PyLegendExpression
 
 
 __all__: PyLegendSequence[str] = [
     "add_primitive_methods",
     "assert_max_one_window_in_expr",
 ]
-
-
-from pylegend.core.language.shared.expression import PyLegendExpression
 
 T = TypeVar("T")
 F = TypeVar("F", bound=PyLegendCallable[..., PyLegendAny])  # type: ignore[explicit-any]
@@ -44,8 +42,6 @@ def grammar_method(func: F) -> F:  # type: ignore[explicit-any]
 
 
 def add_primitive_methods(cls: Type[T]) -> Type[T]:
-    # REMOVED: from pylegend.core.language... import Series, GroupbySeries
-
     primitive_to_series_map = {
         "PyLegendBoolean": "BooleanSeries",
         "PyLegendString": "StringSeries",
@@ -85,7 +81,6 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
         target_map = primitive_to_series_map
         target_module_path = "pylegend.core.language.pandas_api.pandas_api_series"
 
-    # 2. Find all @grammar_method marked functions
     methods_to_wrap = {}
     for base in cls.__mro__:
         for name, attr in base.__dict__.items():
@@ -93,7 +88,6 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
                 if callable(attr) and getattr(attr, "_is_grammar_method", False):
                     methods_to_wrap[name] = attr
 
-    # 3. Create the wrappers
     for name, original_func in methods_to_wrap.items():
         if name in cls.__dict__ and not getattr(cls.__dict__[name], "_is_grammar_method", False):  # pragma: no cover
             continue
@@ -109,14 +103,12 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
                 result_primitive = func(self, *args, **kwargs)
                 primitive_type_name = type(result_primitive).__name__
 
-                # Use the target_map we determined outside the wrapper
                 if not hasattr(result_primitive, 'value') or primitive_type_name not in target_map:
                     return result_primitive  # pragma: no cover
 
                 base_frame = self.get_base_frame()
                 col_name = self.columns()[0].get_name()
 
-                # Dynamically load the correct class using the pre-determined path
                 target_class_str = target_map[primitive_type_name]
                 module = importlib.import_module(target_module_path)
                 TargetSeriesClass = getattr(module, target_class_str)

@@ -14,7 +14,6 @@
 
 import copy
 from textwrap import dedent
-
 import pandas as pd
 from pylegend._typing import (
     TYPE_CHECKING,
@@ -40,7 +39,8 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionNumberReturn,
     PyLegendExpressionStrictDateReturn,
-    PyLegendExpressionStringReturn, PyLegendExpression
+    PyLegendExpressionStringReturn,
+    PyLegendExpression,
 )
 from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
@@ -137,9 +137,6 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def get_base_frame(self) -> "PandasApiGroupbyTdsFrame":
         return self._base_groupby_frame
-
-    # def value(self) -> PyLegendExpression:
-    #     return self
 
     def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         if self.expr is not None:

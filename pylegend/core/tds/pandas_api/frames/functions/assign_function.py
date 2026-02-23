@@ -101,9 +101,6 @@ class AssignFunction(PandasApiAppliedFunction):
                 new_query.select.selectItems.append(SingleColumn(alias=alias, expression=new_col_expr))
         return new_query
 
-    def _process_pure_expr_to_extend(self, pure_expr: str, new_col_name: str) -> str:
-        return f"->extend({new_col_name}:{generate_pure_lambda('c', pure_expr)})"
-
     def to_pure(self, config: FrameToPureConfig) -> str:
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
