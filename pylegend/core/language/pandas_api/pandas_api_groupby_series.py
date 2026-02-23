@@ -113,9 +113,6 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         if self._expr is not None:
             assert_max_one_window_in_expr(self._expr)
 
-    def contains_expr(self) -> bool:
-        return self._expr is not None
-
     @property
     def expr(self) -> PyLegendOptional[PyLegendExpression]:
         return self._expr
