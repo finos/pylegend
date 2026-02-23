@@ -453,6 +453,9 @@ class TestRankFunctionOnBaseFrame:
         assert series.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
+    def test_series_rank_primitive_operations(self) -> None:
+        pass
+
 
 class TestRankFunctionOnGroupbyFrame:
 

@@ -241,21 +241,23 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
-        filtered_frame_query = self._filtered_frame.to_sql_query_object(config)
-        select_item = filtered_frame_query.select.selectItems[0]
-        if not isinstance(select_item, SingleColumn):  # pragma: no cover
-            raise RuntimeError("Series SQL query generation is not supported for queries with columns other than SingleColumn")
+        db_extension = config.sql_to_string_generator().get_db_extension()
+
         base_query = self.get_base_frame().to_sql_query_object(config)
-        temp_name = select_item.alias + temp_column_name_suffix if select_item.alias else temp_column_name_suffix
+        col_name = self.columns()[0].get_name()
+        temp_col_name = db_extension.quote_identifier(col_name + temp_column_name_suffix)
+
         new_select_item = SingleColumn(
-            temp_name,
+            temp_col_name,
             self.to_sql_expression({'c': base_query}, config)
         )
         base_query.select.selectItems = [new_select_item]
+
         new_query = create_sub_query(base_query, config, "root")
         new_query.select.selectItems = [
             SingleColumn(
-                select_item.alias, QualifiedNameReference(QualifiedName(["root", temp_name]))
+                db_extension.quote_identifier(col_name),
+                QualifiedNameReference(QualifiedName(["root", temp_col_name]))
             )
         ]
         return new_query
