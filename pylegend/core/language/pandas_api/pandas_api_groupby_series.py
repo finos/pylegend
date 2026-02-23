@@ -122,10 +122,6 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def applied_function_frame(self) -> PyLegendOptional[PandasApiAppliedFunctionTdsFrame]:
         return self._applied_function_frame
 
-    @applied_function_frame.setter
-    def applied_function_frame(self, value: PandasApiAppliedFunctionTdsFrame) -> None:
-        self._applied_function_frame = value
-
     def raise_exception_if_no_function_applied(self) -> PandasApiAppliedFunctionTdsFrame:
         if self._applied_function_frame is None:
             raise RuntimeError(
@@ -245,15 +241,16 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         if not isinstance(select_item, SingleColumn):  # pragma: no cover
             raise RuntimeError("Series SQL query generation is not supported for queries with columns other than SingleColumn")
         base_query = self.get_base_frame().base_frame().to_sql_query_object(config)
+        temp_name = select_item.alias + temp_column_name_suffix if select_item.alias else temp_column_name_suffix
         new_select_item = SingleColumn(
-            select_item.alias + temp_column_name_suffix,
+            temp_name,
             self.to_sql_expression({'c': base_query}, config)
         )
         base_query.select.selectItems = [new_select_item]
         new_query = create_sub_query(base_query, config, "root")
         new_query.select.selectItems = [
             SingleColumn(
-                select_item.alias, QualifiedNameReference(QualifiedName(["root", select_item.alias + temp_column_name_suffix]))
+                select_item.alias, QualifiedNameReference(QualifiedName(["root", temp_name]))
             )
         ]
         return new_query
