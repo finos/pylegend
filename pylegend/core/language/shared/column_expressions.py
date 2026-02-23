@@ -37,6 +37,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.language.shared.helpers import escape_column_name
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from pylegend.core.language.shared.tds_row import AbstractTdsRow
 
@@ -71,6 +72,9 @@ class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__row.to_pure_expression(config)}.{escape_column_name(self.__column)}"
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
     def get_column(self) -> str:
         return self.__column

@@ -115,7 +115,7 @@ class TestFilteringFunction:
         assert pure == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->project(~[col3:c|$c.col3])'''
+              ->select(~[col3])'''
         )
 
         # SQL Query
@@ -179,10 +179,10 @@ class TestFilteringFunction:
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->project(~[col1:c|$c.col1])'''
+              ->select(~[col1])'''
         )
         assert generate_pure_query_and_compile(newframe, FrameToPureConfig(pretty=False), self.legend_client) == \
-               "#Table(test_schema.test_table)#->project(~[col1:c|$c.col1])"
+               "#Table(test_schema.test_table)#->select(~[col1])"
 
     def test_filtering_function_on_list_input(self) -> None:
         columns = [

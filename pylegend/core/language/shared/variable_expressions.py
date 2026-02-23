@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
@@ -66,6 +67,9 @@ class PyLegendVariableExpression(PyLegendExpression, metaclass=ABCMeta):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__name}"
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendBooleanVariableExpression(PyLegendVariableExpression, PyLegendExpressionBooleanReturn):

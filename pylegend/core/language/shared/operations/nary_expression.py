@@ -94,7 +94,7 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
             if must_be_non_nullable:
                 expr = (
                     expr if operand.is_non_nullable()
-                    or (isinstance(operand, Series) and operand.contains_expr()) else
+                    or (isinstance(operand, Series) and operand.expr is not None) else
                     f"toOne({expr[1:-1] if expr_has_matching_start_and_end_parentheses(expr) else expr})"
                 )
 
@@ -104,3 +104,12 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
 
     def is_non_nullable(self) -> bool:
         return self.__non_nullable
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        sub_expressions: PyLegendList["PyLegendExpression"] = []
+        for operand in self.__operands:
+            sub_expressions += operand.get_sub_expressions()
+        return sub_expressions
+
+    def get_operands(self) -> PyLegendSequence[PyLegendExpression]:
+        return self.__operands

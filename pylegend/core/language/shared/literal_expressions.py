@@ -14,10 +14,12 @@
 
 
 from datetime import date, datetime
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    PyLegendList
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
@@ -74,6 +76,9 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     def is_non_nullable(self) -> bool:
         return True
 
+    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+        return [self]
+
 
 class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
     __value: str
@@ -95,6 +100,9 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
     def is_non_nullable(self) -> bool:
         return True
 
+    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+        return [self]
+
 
 class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     __value: int
@@ -115,6 +123,9 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     def is_non_nullable(self) -> bool:
         return True
 
+    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+        return [self]
+
 
 class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
     __value: float
@@ -134,6 +145,9 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
 
     def is_non_nullable(self) -> bool:
         return True
+
+    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
@@ -158,6 +172,9 @@ class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
     def is_non_nullable(self) -> bool:
         return True
 
+    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+        return [self]
+
 
 class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
     __value: date
@@ -181,6 +198,9 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
     def is_non_nullable(self) -> bool:
         return True
 
+    def get_sub_expressions(self) -> PyLegendList["PyLegendExpression"]:
+        return [self]
+
 
 class PyLegendNullLiteralExpression(PyLegendExpressionNullReturn):
     __value: None
@@ -197,6 +217,9 @@ class PyLegendNullLiteralExpression(PyLegendExpressionNullReturn):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return "[]"
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 def convert_literal_to_literal_expression(

@@ -13,10 +13,12 @@
 # limitations under the License.
 
 from abc import ABCMeta
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendCallable,
+    PyLegendList,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
@@ -88,17 +90,29 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
         if self.__first_operand_needs_to_be_non_nullable:
             op1_expr = (
                 op1_expr if self.__operand1.is_non_nullable()
-                or (isinstance(self.__operand1, Series) and self.__operand1.contains_expr()) else
+                or (isinstance(self.__operand1, Series) and self.__operand1.expr is not None) else
                 f"toOne({op1_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op1_expr) else op1_expr})"
             )
         op2_expr = self.__operand2.to_pure_expression(config)
         if self.__second_operand_needs_to_be_non_nullable:
             op2_expr = (
                 op2_expr if self.__operand2.is_non_nullable()
-                or (isinstance(self.__operand2, Series) and self.__operand2.contains_expr()) else
+                or (isinstance(self.__operand2, Series) and self.__operand2.expr is not None) else
                 f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
             )
         return self.__to_pure_func(op1_expr, op2_expr, config)
 
     def is_non_nullable(self) -> bool:
         return self.__non_nullable
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        sub_expressions: PyLegendList["PyLegendExpression"] = []
+        sub_expressions += self.__operand1.get_sub_expressions()
+        sub_expressions += self.__operand2.get_sub_expressions()
+        return sub_expressions
+
+    def get_operand_1(self) -> PyLegendExpression:
+        return self.__operand1
+
+    def get_operand_2(self) -> PyLegendExpression:
+        return self.__operand2

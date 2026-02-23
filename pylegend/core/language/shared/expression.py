@@ -56,6 +56,10 @@ class PyLegendExpression(metaclass=ABCMeta):
     def is_non_nullable(self) -> bool:
         return False
 
+    @abstractmethod
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        pass
+
 
 class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):
     pass

@@ -383,3 +383,25 @@ class PandasApiGroupbyTdsFrame:
 
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
+
+    def rank(
+            self,
+            method: str = 'min',
+            ascending: bool = True,
+            na_option: str = 'bottom',
+            pct: bool = False,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=axis,
+            method=method,
+            numeric_only=False,
+            na_option=na_option,
+            ascending=ascending,
+            pct=pct
+        ))

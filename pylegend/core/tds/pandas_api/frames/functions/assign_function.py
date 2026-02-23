@@ -31,12 +31,16 @@ from pylegend.core.language import (
     PyLegendDate,
     PyLegendDateTime
 )
+from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
 )
+from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -97,13 +101,35 @@ class AssignFunction(PandasApiAppliedFunction):
                 new_query.select.selectItems.append(SingleColumn(alias=alias, expression=new_col_expr))
         return new_query
 
+    def _process_pure_expr_to_extend(self, pure_expr: str, new_col_name: str) -> str:
+        return f"->extend({new_col_name}:{generate_pure_lambda('c', pure_expr)})"
+
     def to_pure(self, config: FrameToPureConfig) -> str:
+        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
 
+        extend_exprs: PyLegendList[str] = []
         assigned_exprs: PyLegendDict[str, str] = {}
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
+            if isinstance(res, (Series, GroupbySeries)):
+                sub_expressions = res.get_sub_expressions()
+                for expr in sub_expressions:
+                    if isinstance(expr, Series):
+                        applied_func = expr.get_filtered_frame().get_applied_function()
+                    elif isinstance(expr, GroupbySeries):
+                        applied_func = expr.raise_exception_if_no_function_applied().get_applied_function()
+                    else:
+                        continue
+
+                    if isinstance(applied_func, RankFunction):
+                        c, window = applied_func.construct_column_expression_and_window_tuples()[0]
+                        window_expr = window.to_pure_expression(config)
+                        function_expr = c[1].to_pure_expression(config)
+                        target_col_name = c[0] + temp_column_name_suffix
+                        extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)}"
+                        extend_exprs.append(extend)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
             assigned_exprs[col] = res_expr.to_pure_expression(config)
 
@@ -122,8 +148,74 @@ class AssignFunction(PandasApiAppliedFunction):
 
         return (
             f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
+            f"{config.separator(1).join(extend_exprs) + config.separator(1) if len(extend_exprs) > 0 else ''}"
             f"->project(~[{', '.join(clauses)}])"
         )
+
+        col_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+
+        tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
+        base_cols = {c.get_name() for c in self.__base_frame.columns()}
+
+        extends: PyLegendList[str] = []
+        projects: PyLegendList[str] = []
+
+        for col_name, func in self.__col_definitions.items():
+            res = func(tds_row)
+
+            is_existing_col = col_name in base_cols
+            target_col_name = col_name+col_name_suffix if is_existing_col else col_name
+            target_col_name = escape_column_name(target_col_name)
+
+            has_window_func = False
+            window_expr = ""
+            if isinstance(res, (Series, GroupbySeries)):
+                sub_expressions = res.get_sub_expressions()
+                for expr in sub_expressions:
+                    if isinstance(expr, Series):
+                        applied_func = expr.get_filtered_frame().get_applied_function()
+                    elif isinstance(expr, GroupbySeries):
+                        applied_func = expr.raise_exception_if_no_function_applied().get_applied_function()
+                    else:
+                        continue
+
+                    if isinstance(applied_func, RankFunction):
+                        assert has_window_func is False
+                        has_window_func = True
+                        _, window = applied_func.construct_column_expression_and_window_tuples()[0]
+                        window_expr = window.to_pure_expression(config)
+
+            if has_window_func:
+                assert isinstance(res, (Series, GroupbySeries))
+                pure_expr = res.to_pure_expression(config)
+                extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', pure_expr)}"
+            else:
+                res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
+                pure_expr = res_expr.to_pure_expression(config)
+                extend = f"->extend({target_col_name}:{generate_pure_lambda('c', pure_expr)})"
+
+            extends.append(extend)
+
+            if is_existing_col:
+                project_lambda = generate_pure_lambda("c", f"$c.{escape_column_name(target_col_name)}")
+                project = f"{escape_column_name(col_name)}:{project_lambda}"
+                projects.append(project)
+
+        combined_extend = ""
+        if len(extends) > 0:
+            combined_extend = (
+                config.separator(1) + config.separator(1).join(extends)
+            )
+
+        combined_project = ""
+        if len(projects) > 0:
+            combined_project = (
+                config.separator(1) + "->project(~[" +
+                config.separator(2) + config.separator(2).join(projects) +
+                config.separator(1) + "])"
+            )
+
+        return self.__base_frame.to_pure(config) + combined_extend + combined_project
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame

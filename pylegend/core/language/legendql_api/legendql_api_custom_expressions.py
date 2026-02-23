@@ -36,6 +36,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.language.shared.expression import PyLegendExpression
 from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
@@ -561,6 +562,9 @@ class LegendQLApiRowNumberExpression(PyLegendExpressionIntegerReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__partial_frame.to_pure_expression(config)}->rowNumber({self.__row.to_pure_expression(config)})"
 
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
+
 
 class LegendQLApiRankExpression(PyLegendExpressionIntegerReturn):
     if TYPE_CHECKING:
@@ -592,6 +596,9 @@ class LegendQLApiRankExpression(PyLegendExpressionIntegerReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->rank("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class LegendQLApiDenseRankExpression(PyLegendExpressionIntegerReturn):
@@ -625,6 +632,9 @@ class LegendQLApiDenseRankExpression(PyLegendExpressionIntegerReturn):
         return (f"{self.__partial_frame.to_pure_expression(config)}->denseRank("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
+
 
 class LegendQLApiPercentRankExpression(PyLegendExpressionFloatReturn):
     if TYPE_CHECKING:
@@ -657,6 +667,9 @@ class LegendQLApiPercentRankExpression(PyLegendExpressionFloatReturn):
         return (f"{self.__partial_frame.to_pure_expression(config)}->percentRank("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
+
 
 class LegendQLApiCumeDistExpression(PyLegendExpressionFloatReturn):
     if TYPE_CHECKING:
@@ -688,6 +701,9 @@ class LegendQLApiCumeDistExpression(PyLegendExpressionFloatReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->cumulativeDistribution("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class LegendQLApiNtileExpression(PyLegendExpressionIntegerReturn):
@@ -724,3 +740,6 @@ class LegendQLApiNtileExpression(PyLegendExpressionIntegerReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->ntile({self.__row.to_pure_expression(config)}, "
                 f"{self.__num_buckets})")
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
