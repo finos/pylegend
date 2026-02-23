@@ -935,7 +935,7 @@ class TestRankFunctionEndtoEnd:
         res = series.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-        series = frame["First Name"].rank()
+        series = frame["First Name"].rank()  # type: ignore[assignment]
         expected = {
             'columns': ['First Name'],
             'rows': [
