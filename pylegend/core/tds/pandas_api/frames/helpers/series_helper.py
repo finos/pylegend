@@ -152,5 +152,5 @@ def assert_max_one_window_in_expr(expr: PyLegendExpression) -> None:
             do: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
     '''
     error_msg = dedent(error_msg).strip()
-    if len(window_functions) <= 1:
+    if len(window_functions) > 1:
         raise ValueError(error_msg)

@@ -901,7 +901,7 @@ class TestRankFunctionEndtoEnd:
         series = frame.groupby("Firm/Legal Name")["First Name"].rank()
 
         expected = {
-            'columns': ['Firm/Legal Name', 'First Name', 'First Name Rank', 'Last Name', 'Last Name Rank', 'Age', 'Age Rank'],
+            'columns': ['First Name'],
             'rows': [
                 {'values': [4]},
                 {'values': [3]},
