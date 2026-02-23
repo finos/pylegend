@@ -73,18 +73,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Get first 5 rows (default)
             frame.head().to_pandas()
@@ -123,18 +114,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Limit to 2 rows
             frame.limit(2).to_pandas()
@@ -170,18 +152,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Skip first 5 rows (default), then show next 5
             frame.drop().head(5).to_pandas()
@@ -222,18 +195,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Get rows 0-4 (first 5 rows)
             frame.slice(0, 5).to_pandas()
@@ -292,18 +256,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Get distinct values for a single column
             frame.distinct("Ship Name").head(10).to_pandas()
@@ -312,7 +267,8 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             frame.distinct(["Ship Name", "Order Date"]).head(10).to_pandas()
 
             # Using a callable to specify columns
-            frame.distinct(lambda r: [r["Ship Name"], r["Order Date"]]).head(10).to_pandas()
+            (frame.distinct(lambda r: [r["Ship Name"], r["Order Date"]])
+                 .head(10).to_pandas())
 
         """
         pass  # pragma: no cover
@@ -361,27 +317,20 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Select a single column
             frame.select("Ship Name").head(5).to_pandas()
 
             # Select multiple columns
-            frame.select(["Order Id", "Ship Name", "Order Date"]).head(5).to_pandas()
+            (frame.select(["Order Id", "Ship Name", "Order Date"])
+                  .head(5).to_pandas())
 
             # Using a callable to select columns
-            frame.select(lambda r: [r["Order Id"], r["Ship Name"]]).head(5).to_pandas()
+            (frame.select(lambda r: [r["Order Id"], r["Ship Name"]])
+                  .head(5).to_pandas())
 
         """
         pass  # pragma: no cover
@@ -436,18 +385,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Sort by single column (ascending by default)
             frame.sort("Ship Name").head(5).to_pandas()
@@ -456,10 +396,12 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             frame.sort(["Ship Name", "Order Date"]).head(5).to_pandas()
 
             # Sort with explicit direction using callable
-            frame.sort(lambda r: r["Ship Name"].descending()).head(5).to_pandas()
+            (frame.sort(lambda r: r["Ship Name"].descending())
+                  .head(5).to_pandas())
 
             # Sort by multiple columns with different directions
-            frame.sort(lambda r: [r["Ship Name"].ascending(), r["Order Id"].descending()]).head(5).to_pandas()
+            (frame.sort(lambda r: [r["Ship Name"].ascending(), r["Order Id"].descending()])
+                  .head(5).to_pandas())
 
         """
         pass  # pragma: no cover
@@ -491,18 +433,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Get first 3 rows and rows 10-12, then concatenate
             first_rows = frame.head(3)
@@ -544,27 +477,21 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Filter by equality
-            frame.filter(lambda r: r["Ship Name"] == "Wolski Zajazd").head(5).to_pandas()
+            (frame.filter(lambda r: r["Ship Name"] == "Wolski Zajazd")
+                  .head(5).to_pandas())
 
             # Filter with comparison operators
-            frame.filter(lambda r: r["Order Id"] > 10500).head(5).to_pandas()
+            (frame.filter(lambda r: r["Order Id"] > 10500)
+                  .head(5).to_pandas())
 
             # Filter with multiple conditions (AND)
-            frame.filter(lambda r: (r["Order Id"] > 10250) & (r["Order Id"] < 10560)).head(5).to_pandas()
+            (frame.filter(lambda r: (r["Order Id"] > 10250) & (r["Order Id"] < 10560))
+                  .head(5).to_pandas())
 
         """
         pass  # pragma: no cover
@@ -615,27 +542,20 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Rename a single column
             frame.rename(("Ship Name", "Vessel Name")).head(3).to_pandas()
 
             # Rename multiple columns
-            frame.rename([("Ship Name", "Vessel Name"), ("Order Date", "Date Ordered")]).head(3).to_pandas()
+            (frame.rename([("Ship Name", "Vessel Name"), ("Order Date", "Date Ordered")])
+                .head(3).to_pandas())
 
             # Using a callable to rename columns
-            frame.rename(lambda r: (r["Ship Name"], "Vessel Name")).head(3).to_pandas()
+            (frame.rename(lambda r: (r["Ship Name"], "Vessel Name"))
+                .head(3).to_pandas())
 
         """
         pass  # pragma: no cover
@@ -701,18 +621,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Add a single computed column
             extended = frame.extend(("Ship Name Upper", lambda r: r["Ship Name"].upper()))
@@ -774,25 +685,18 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            orders = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            orders.schema()
+            orders = northwind_service_frame()
 
             # Self-join example: join orders with a filtered version
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered_orders = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames)
-            orders.join(filtered_orders, lambda l, r: l["Order Id"] == r["Right Order Id"], "INNER").head(5).to_pandas()
+            filtered_orders = (orders.filter(lambda r: r["Order Id"] > 10300)
+                                .select(cols).rename(renames))
+            (orders.join(filtered_orders, lambda l, r: l["Order Id"] == r["Right Order Id"], "INNER")
+                .head(5).to_pandas())
 
         """
         pass  # pragma: no cover
@@ -834,25 +738,18 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            orders = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            orders = northwind_service_frame()
 
             # Inner join with filtered data
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames)
-            orders.inner_join(filtered, lambda l, r: l["Order Id"] == r["Right Order Id"]).head(5).to_pandas()
+            filtered = (orders.filter(lambda r: r["Order Id"] > 10300)
+                        .select(cols).rename(renames))
+            (orders.inner_join(filtered, lambda l, r: l["Order Id"] == r["Right Order Id"])
+                .head(5).to_pandas())
 
         """
         pass  # pragma: no cover
@@ -896,25 +793,19 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            orders = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            orders = northwind_service_frame()
 
             # Left join - all orders with filtered info where available
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames).head(10)
-            orders.head(15).left_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"]).to_pandas()
+            filtered_info = (orders.filter(lambda r: r["Order Id"] > 10300)
+                            .select(cols).rename(renames).head(10))
+            (orders.head(15)
+                .left_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"])
+                .to_pandas())
 
         """
         pass  # pragma: no cover
@@ -958,25 +849,19 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            orders = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            orders = northwind_service_frame()
 
             # Right join example
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames).head(10)
-            orders.head(5).right_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"]).to_pandas()
+            filtered_info = (orders.filter(lambda r: r["Order Id"] > 10300)
+                            .select(cols).rename(renames).head(10))
+            (orders.head(5)
+                .right_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"])
+                .to_pandas())
 
         """
         pass  # pragma: no cover
@@ -1026,25 +911,18 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            orders = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            orders.schema()
+            orders = northwind_service_frame()
 
             # As-of join: match orders with closest order ID
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Ref Order Id"), ("Ship Name", "Ref Ship Name")]
             reference = orders.select(cols).rename(renames).head(10)
-            orders.head(5).as_of_join(reference, lambda l, r: l["Order Id"] >= r["Ref Order Id"]).to_pandas()
+            (orders.head(5)
+                .as_of_join(reference, lambda l, r: l["Order Id"] >= r["Ref Order Id"])
+                .to_pandas())
 
         """
         pass  # pragma: no cover
@@ -1117,18 +995,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Group by single column with count using lambda syntax
             frame.group_by(
@@ -1230,6 +1099,20 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         range : Create a range-based window frame.
         window_extend : Apply window functions using the window specification.
 
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            from northwind_service_frame import northwind_service_frame
+
+            frame = northwind_service_frame()
+
+            # Create a window partitioned by Ship Name, ordered by Order Id
+            win = frame.window(partition_by="Ship Name", order_by="Order Id")
+            result = frame.window_extend(win, ("RowNum", lambda p, w, r: p.row_number(r)))
+            result.select(["Ship Name", "Order Id", "RowNum"]).head(10).to_pandas()
+
         """
         pass
 
@@ -1316,18 +1199,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Add a single window function column
             win = frame.window(partition_by="Ship Name", order_by="Order Id")
@@ -1397,18 +1271,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         .. ipython:: python
 
             import pylegend
-            from legendql_api_local_tds_client import legendql_api_local_tds_client
+            from northwind_service_frame import northwind_service_frame
 
-            tds_client = legendql_api_local_tds_client()
-            frame = tds_client.legend_service_frame(
-                service_pattern="/allOrders",
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-northwind-models",
-                version="0.0.1-SNAPSHOT"
-            )
-
-            # View the schema to see available columns
-            frame.schema()
+            frame = northwind_service_frame()
 
             # Project single column (copy with new name)
             frame.project(("Order Number", lambda r: r["Order Id"])).head(5).to_pandas()
@@ -1470,6 +1335,35 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         window : Create a window specification.
         window_extend : Apply window functions.
 
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            from northwind_service_frame import northwind_service_frame
+
+            frame = northwind_service_frame()
+
+            # Window frame: current row only
+            frame_current = frame.rows(0, 0)
+
+            # Window frame: 2 rows before current to current row (3-row sliding window)
+            frame_sliding = frame.rows(-2, 0)
+
+            # Window frame: all rows from start of partition to current row (running total)
+            frame_running = frame.rows("unbounded", 0)
+
+            # Window frame: entire partition (all rows)
+            frame_all = frame.rows("unbounded", "unbounded")
+
+            # Using rows with window_extend for a running count
+            result = frame.window_extend(
+                frame.window(partition_by="Ship Name", frame=frame.rows("unbounded", 0)),
+                [("Running Count", lambda p, w, r: r["Order Id"], lambda col: col.count())]
+            )
+            (result.select(["Ship Name", "Order Id", "Running Count"])
+                .head(10).to_pandas())
+
         """
         pass  # pragma: no cover
 
@@ -1520,6 +1414,34 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         rows : Create a row-based window frame.
         window : Create a window specification.
         window_extend : Apply window functions.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            from northwind_service_frame import northwind_service_frame
+
+            frame = northwind_service_frame()
+
+            # Numeric range: include rows where Order Id is within 10 of current row's Order Id
+            frame_numeric = frame.range(number_start=-10, number_end=10)
+
+            # Numeric range: all rows from start up to current value (running calculation)
+            frame_running = frame.range(number_start="unbounded", number_end=0)
+
+            # Duration range: include rows within 7 days before current row's date
+            frame_duration = (frame.range(
+                            duration_start=-7, duration_start_unit="DAYS",
+                            duration_end=0, duration_end_unit="DAYS"))
+
+            # Using range with window_extend for aggregation over numeric range
+            result = frame.window_extend(
+                frame.window(partition_by="Ship Name", order_by="Order Id",
+                    frame=frame.range(number_start="unbounded", number_end=-1)),
+                [("Cnt", lambda p, w, r: r["Order Id"], lambda col: col.count())]
+            )
+            result.select(["Ship Name", "Order Id", "Cnt"]).head(10).to_pandas()
 
         """
         pass  # pragma: no cover

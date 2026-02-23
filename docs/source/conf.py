@@ -79,7 +79,16 @@ autoclass_content = 'init'
 autodoc_default_options = {
     'member-order': 'bysource',
 }
-ipython_savefig_dir = '.'
+
+# -- IPython directive configuration -----------------------------------------
+# Configure pandas to display DataFrames as nice HTML tables
+ipython_execlines = [
+    "import pandas as pd",
+    "pd.set_option('display.max_columns', None)",
+    "pd.set_option('display.width', None)",
+    "pd.set_option('display.max_colwidth', None)",
+    "pd.set_option('display.notebook_repr_html', True)",
+]
 
 templates_path = ['./_templates']
 exclude_patterns = []
