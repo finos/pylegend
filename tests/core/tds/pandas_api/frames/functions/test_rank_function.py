@@ -405,11 +405,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                root."height"__INTERNAL_PYLEGEND_COLUMN__ AS "height"
+                root."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
             FROM
                 (
                     SELECT
-                        rank() OVER (ORDER BY "root".height) AS "height"__INTERNAL_PYLEGEND_COLUMN__
+                        rank() OVER (ORDER BY "root".height) AS "height__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -432,11 +432,11 @@ class TestRankFunctionOnBaseFrame:
         series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
-                root."height"__INTERNAL_PYLEGEND_COLUMN__ AS "height"
+                root."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
             FROM
                 (
                     SELECT
-                        (rank() OVER (ORDER BY "root".height) + 5) AS "height"__INTERNAL_PYLEGEND_COLUMN__
+                        (rank() OVER (ORDER BY "root".height) + 5) AS "height__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -519,11 +519,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                root."val_col"__INTERNAL_PYLEGEND_COLUMN__ AS "val_col"
+                root."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
             FROM
                 (
                     SELECT
-                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col"__INTERNAL_PYLEGEND_COLUMN__
+                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -733,11 +733,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                root."val_col"__INTERNAL_PYLEGEND_COLUMN__ AS "val_col"
+                root."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
             FROM
                 (
                     SELECT
-                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col"__INTERNAL_PYLEGEND_COLUMN__
+                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -919,20 +919,20 @@ class TestRankFunctionEndtoEnd:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    def test_e2e_groupby_series(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    def test_e2e_series_full_query(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         series = frame.groupby("Firm/Legal Name")["First Name"].rank()
 
         expected = {
             'columns': ['First Name'],
             'rows': [
-                {'values': [4]},
-                {'values': [3]},
-                {'values': [2]},
-                {'values': [1]},
-                {'values': [1]},
-                {'values': [1]},
-                {'values': [1]}
+                {'values': [4]},  # Firm X, Peter
+                {'values': [2]},  # Firm X, John
+                {'values': [2]},  # Firm X, John
+                {'values': [1]},  # Firm X, Anthony
+                {'values': [1]},  # Firm A, Fabrice
+                {'values': [1]},  # Firm B, Oliver
+                {'values': [1]},  # Firm C, David
             ]
         }
         res = series.execute_frame_to_string()
@@ -942,14 +942,49 @@ class TestRankFunctionEndtoEnd:
         expected = {
             'columns': ['First Name'],
             'rows': [
-                {'values': [4]},
-                {'values': [3]},
-                {'values': [2]},
-                {'values': [1]},
-                {'values': [1]},
-                {'values': [1]},
-                {'values': [1]}
+                {'values': [7]},  # Peter
+                {'values': [4]},  # John
+                {'values': [4]},  # John
+                {'values': [1]},  # Anthony
+                {'values': [3]},  # Fabrice
+                {'values': [6]},  # Oliver
+                {'values': [2]},  # David
             ]
         }
         res = series.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+    # def test_e2e_series_assign(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    #     frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+    #     frame["First Name"] = frame.groupby("Firm/Legal Name")["First Name"].rank()
+    #
+    #     expected = {
+    #         'columns': ['First Name'],
+    #         'rows': [
+    #             {'values': [4]},  # Firm X, Peter
+    #             {'values': [2]},  # Firm X, John
+    #             {'values': [2]},  # Firm X, John
+    #             {'values': [1]},  # Firm X, Anthony
+    #             {'values': [1]},  # Firm A, Fabrice
+    #             {'values': [1]},  # Firm B, Oliver
+    #             {'values': [1]},  # Firm C, David
+    #         ]
+    #     }
+    #     res = frame.execute_frame_to_string()
+    #     assert json.loads(res)["result"] == expected
+    #
+    #     frame["Rank Last Name"] = frame["Last Name"].rank()  # type: ignore[assignment]
+    #     expected = {
+    #         'columns': ['First Name'],
+    #         'rows': [
+    #             {'values': [7]},  # Peter
+    #             {'values': [4]},  # John
+    #             {'values': [4]},  # John
+    #             {'values': [1]},  # Anthony
+    #             {'values': [3]},  # Fabrice
+    #             {'values': [6]},  # Oliver
+    #             {'values': [2]},  # David
+    #         ]
+    #     }
+    #     res = series.execute_frame_to_string()
+    #     assert json.loads(res)["result"] == expected
