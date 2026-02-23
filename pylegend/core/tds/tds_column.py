@@ -65,6 +65,19 @@ class PrimitiveType(Enum):
     Date = 8
     Integer = 9
     Decimal = 10
+    TinyInt = 11
+    UTinyInt = 12
+    SmallInt = 13
+    USmallInt = 14
+    Int = 15
+    UInt = 16
+    BigInt = 17
+    UBigInt = 18
+    Varchar = 19
+    Timestamp = 20
+    Float4 = 21
+    Double = 22
+    Numeric = 23
 
 
 class PrimitiveTdsColumn(TdsColumn):
@@ -114,6 +127,62 @@ class PrimitiveTdsColumn(TdsColumn):
     @classmethod
     def strictdate_column(cls, name: str) -> "PrimitiveTdsColumn":
         return PrimitiveTdsColumn(name, PrimitiveType.StrictDate)
+
+    @classmethod
+    def decimal_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Decimal)
+
+    @classmethod
+    def tinyint_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.TinyInt)
+
+    @classmethod
+    def utinyint_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.UTinyInt)
+
+    @classmethod
+    def smallint_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.SmallInt)
+
+    @classmethod
+    def usmallint_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.USmallInt)
+
+    @classmethod
+    def int_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Int)
+
+    @classmethod
+    def uint_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.UInt)
+
+    @classmethod
+    def bigint_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.BigInt)
+
+    @classmethod
+    def ubigint_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.UBigInt)
+
+    @classmethod
+    def varchar_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Varchar)
+
+    @classmethod
+    def timestamp_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Timestamp)
+
+    @classmethod
+    def float4_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Float4)
+
+    @classmethod
+    def double_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Double)
+
+    @classmethod
+    def numeric_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Numeric)
 
 
 class EnumTdsColumn(TdsColumn):

@@ -35,6 +35,7 @@ from pylegend.core.language import (
     PyLegendNumberColumnExpression,
     PyLegendIntegerColumnExpression,
     PyLegendFloatColumnExpression,
+    PyLegendDecimalColumnExpression,
     PyLegendDateColumnExpression,
     PyLegendDateTimeColumnExpression,
     PyLegendStrictDateColumnExpression,
@@ -44,9 +45,23 @@ from pylegend.core.language import (
     PyLegendNumber,
     PyLegendInteger,
     PyLegendFloat,
+    PyLegendDecimal,
     PyLegendDate,
     PyLegendDateTime,
     PyLegendStrictDate,
+    PyLegendTinyInt,
+    PyLegendUTinyInt,
+    PyLegendSmallInt,
+    PyLegendUSmallInt,
+    PyLegendInt,
+    PyLegendUInt,
+    PyLegendBigInt,
+    PyLegendUBigInt,
+    PyLegendVarchar,
+    PyLegendTimestamp,
+    PyLegendFloat4,
+    PyLegendDouble,
+    PyLegendNumeric,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -129,6 +144,15 @@ class AbstractTdsRow(metaclass=ABCMeta):
             )
         return PyLegendDateTime(col_expr)
 
+    def get_decimal(self, column: str) -> PyLegendDecimal:
+        col_expr = self.__get_col(column)
+        if not isinstance(col_expr, PyLegendDecimalColumnExpression):
+            raise RuntimeError(
+                f"Column expression for '{column}' is of type '{type(col_expr)}'. "
+                "get_decimal method is not valid on this column."
+            )
+        return PyLegendDecimal(col_expr)
+
     def get_strictdate(self, column: str) -> PyLegendStrictDate:
         col_expr = self.__get_col(column)
         if not isinstance(col_expr, PyLegendStrictDateColumnExpression):
@@ -152,6 +176,8 @@ class AbstractTdsRow(metaclass=ABCMeta):
             return PyLegendInteger(col_expr)
         if isinstance(col_expr, PyLegendFloatColumnExpression):
             return PyLegendFloat(col_expr)
+        if isinstance(col_expr, PyLegendDecimalColumnExpression):
+            return PyLegendDecimal(col_expr)
         if isinstance(col_expr, PyLegendNumberColumnExpression):
             return PyLegendNumber(col_expr)
         if isinstance(col_expr, PyLegendDateTimeColumnExpression):
@@ -177,12 +203,32 @@ class AbstractTdsRow(metaclass=ABCMeta):
                         return PyLegendIntegerColumnExpression(self, column)
                     if base_col.get_type() == "Float":
                         return PyLegendFloatColumnExpression(self, column)
+                    if base_col.get_type() == "Decimal":
+                        return PyLegendDecimalColumnExpression(self, column)
                     if base_col.get_type() == "Date":
                         return PyLegendDateColumnExpression(self, column)
                     if base_col.get_type() == "DateTime":
                         return PyLegendDateTimeColumnExpression(self, column)
                     if base_col.get_type() == "StrictDate":
                         return PyLegendStrictDateColumnExpression(self, column)
+                    # Precise integer types -> map to IntegerColumnExpression
+                    if base_col.get_type() in (
+                        "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+                        "Int", "UInt", "BigInt", "UBigInt"
+                    ):
+                        return PyLegendIntegerColumnExpression(self, column)
+                    # Precise string type -> map to StringColumnExpression
+                    if base_col.get_type() == "Varchar":
+                        return PyLegendStringColumnExpression(self, column)
+                    # Precise datetime type -> map to DateTimeColumnExpression
+                    if base_col.get_type() == "Timestamp":
+                        return PyLegendDateTimeColumnExpression(self, column)
+                    # Precise float types -> map to FloatColumnExpression
+                    if base_col.get_type() in ("Float4", "Double"):
+                        return PyLegendFloatColumnExpression(self, column)
+                    # Precise decimal type -> map to DecimalColumnExpression
+                    if base_col.get_type() == "Numeric":
+                        return PyLegendDecimalColumnExpression(self, column)
 
                 raise RuntimeError(f"Column '{column}' of type {base_col.get_type()} not supported yet")
 
