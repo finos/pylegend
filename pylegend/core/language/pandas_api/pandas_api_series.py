@@ -52,7 +52,7 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
 from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import (
-    Expression, SingleColumn,
+    Expression, SingleColumn, QualifiedNameReference, QualifiedName,
 )
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
@@ -62,6 +62,7 @@ from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primit
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
+from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -239,17 +240,24 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.execute_frame(ToPandasDfResultHandler(pandas_df_read_config), chunk_size)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
+        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         filtered_frame_query = self._filtered_frame.to_sql_query_object(config)
         select_item = filtered_frame_query.select.selectItems[0]
         if not isinstance(select_item, SingleColumn):  # pragma: no cover
             raise RuntimeError("Series SQL query generation is not supported for queries with columns other than SingleColumn")
         base_query = self.get_base_frame().to_sql_query_object(config)
         new_select_item = SingleColumn(
-            select_item.alias,
+            select_item.alias + temp_column_name_suffix,
             self.to_sql_expression({'c': base_query}, config)
         )
         base_query.select.selectItems = [new_select_item]
-        return base_query
+        new_query = create_sub_query(base_query, config, "root")
+        new_query.select.selectItems = [
+            SingleColumn(
+                select_item.alias, QualifiedNameReference(QualifiedName(["root", select_item.alias + temp_column_name_suffix]))
+            )
+        ]
+        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return self.to_pure_query(config)

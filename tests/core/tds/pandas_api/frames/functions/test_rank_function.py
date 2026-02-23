@@ -405,9 +405,14 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                rank() OVER (ORDER BY "root".height) AS "height"
+                root."height"__INTERNAL_PYLEGEND_COLUMN__ AS "height"
             FROM
-                test_schema.test_table AS "root"
+                (
+                    SELECT
+                        rank() OVER (ORDER BY "root".height) AS "height"__INTERNAL_PYLEGEND_COLUMN__
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
         '''
         expected = dedent(expected).strip()
         assert series.to_sql_query(FrameToSqlConfig()) == expected
@@ -427,9 +432,14 @@ class TestRankFunctionOnBaseFrame:
         series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
-                (rank() OVER (ORDER BY "root".height) + 5) AS "height"
+                root."height"__INTERNAL_PYLEGEND_COLUMN__ AS "height"
             FROM
-                test_schema.test_table AS "root"
+                (
+                    SELECT
+                        (rank() OVER (ORDER BY "root".height) + 5) AS "height"__INTERNAL_PYLEGEND_COLUMN__
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
         '''
         expected = dedent(expected).strip()
         assert series.to_sql_query(FrameToSqlConfig()) == expected
@@ -506,9 +516,14 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col"
+                root."val_col"__INTERNAL_PYLEGEND_COLUMN__ AS "val_col"
             FROM
-                test_schema.test_table AS "root"
+                (
+                    SELECT
+                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col"__INTERNAL_PYLEGEND_COLUMN__
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert series.to_sql_query(FrameToSqlConfig()) == expected
@@ -715,10 +730,15 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col"
+                root."val_col"__INTERNAL_PYLEGEND_COLUMN__ AS "val_col"
             FROM
-                test_schema.test_table AS "root"
-        '''
+                (
+                    SELECT
+                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col"__INTERNAL_PYLEGEND_COLUMN__
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert series.to_sql_query(FrameToSqlConfig()) == expected
 
@@ -896,11 +916,26 @@ class TestRankFunctionEndtoEnd:
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    @pytest.mark.skip(reason="SQL query unable to run on server")
     def test_e2e_groupby_series(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         series = frame.groupby("Firm/Legal Name")["First Name"].rank()
 
+        expected = {
+            'columns': ['First Name'],
+            'rows': [
+                {'values': [4]},
+                {'values': [3]},
+                {'values': [2]},
+                {'values': [1]},
+                {'values': [1]},
+                {'values': [1]},
+                {'values': [1]}
+            ]
+        }
+        res = series.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+        series = frame["First Name"].rank()
         expected = {
             'columns': ['First Name'],
             'rows': [
