@@ -207,7 +207,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         if has_window_func:
             pure_expr = full_expr.to_pure_expression(config)
             temp_name = escape_column_name(col_name + temp_column_name_suffix)
-            extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)}"
+            extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
             project = f"->project(~[{escape_column_name(col_name)}:c|{pure_expr}])"
         else:
             project = f"->project(~[{escape_column_name(col_name)}:c|{self.to_pure_expression(config)}])"

@@ -96,7 +96,7 @@ class TestRankFunctionErrors:
         ]
         frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        with pytest.raises(AssertionError) as v:
+        with pytest.raises(ValueError) as v:
             frame["col2"].rank() + frame["col1"].rank()  # type: ignore[operator]
 
         expected_msg = '''
@@ -367,9 +367,9 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~age)]), ~age__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)}
+              ->extend(over([ascending(~age)]), ~age__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
               ->project(~[name:c|$c.name, age:c|$c.age, height:c|$c.height, new_col:c|((toOne($c.age__INTERNAL_PYLEGEND_COLUMN__) + 2) + 5)])
-              ->extend(over([ascending(~name)]), ~name__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)}
+              ->extend(over([ascending(~name)]), ~name__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
               ->project(~[name:c|$c.name, age:c|$c.age, height:c|$c.height, new_col:c|(toOne($c.new_col) + toOne($c.name__INTERNAL_PYLEGEND_COLUMN__))])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -387,7 +387,7 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~'present height')]), ~present height__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)}
+              ->extend(over([ascending(~'present height')]), ~present height__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
               ->project(~[name:c|$c.name, present age:c|$c.present age, present height:c|$c.present height, ranked height:c|$c.present height__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -436,7 +436,7 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~height)]), ~height__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)}
+              ->extend(over([ascending(~height)]), ~height__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
               ->project(~[height:c|(toOne($c.height__INTERNAL_PYLEGEND_COLUMN__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -757,7 +757,7 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)}
+              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
               ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|$c.random_col, val_col_rank:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -779,9 +779,9 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)}
+              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
               ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|$c.random_col, val_col_rank:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)}
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
               ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|toOne($c.random_col__INTERNAL_PYLEGEND_COLUMN__)->rem(2), val_col_rank:c|$c.val_col_rank])
         '''  # noqa: E501
         expected = dedent(expected).strip()
