@@ -59,8 +59,8 @@ from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleCo
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
-    assert_and_find_window_in_expr,
-    add_primitive_methods,
+    assert_and_find_core_series,
+    add_primitive_methods, has_window_function,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -112,7 +112,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         self._expr = expr
         if self._expr is not None:
-            assert_and_find_window_in_expr(self._expr)
+            assert_and_find_core_series(self._expr)
 
     @property
     def expr(self) -> PyLegendOptional[PyLegendExpression]:
@@ -242,7 +242,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         if self.expr is None:
             return self.raise_exception_if_no_function_applied().to_sql_query_object(config)
 
-        expr_contains_window_func = assert_and_find_window_in_expr(self.expr) is not None
+        expr_contains_window_func = has_window_function(self)
 
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.get_base_frame().base_frame().to_sql_query_object(config)
@@ -264,7 +264,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             new_query.select.selectItems = [
                 SingleColumn(
                     db_extension.quote_identifier(col_name),
-                    QualifiedNameReference(QualifiedName(["root", temp_col_name]))
+                    QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), temp_col_name]))
                 )
             ]
             return new_query
@@ -275,8 +275,13 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.to_pure_query(config)
 
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
+        if self.expr is not None:
+            sub_expressions = self.expr.get_sub_expressions()
         applied_function_frame = self.raise_exception_if_no_function_applied()
         return applied_function_frame.get_all_tds_frames()
+
+    def has_applied_function(self) -> bool:
+        return self.applied_function_frame is not None
 
     def aggregate(
             self,

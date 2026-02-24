@@ -85,8 +85,13 @@ class TestRankFunctionErrors:
         with pytest.raises(RuntimeError) as v:
             (frame.groupby("col1")["col2"] + 5).rank()  # type: ignore[attr-defined, operator]
 
-        expected_msg = \
-            "The 'groupby' function requires at least one operation to be performed right after it (e.g. aggregate, rank)"
+        expected_msg = '''
+            Applying rank function to a computed series expression is not supported yet.
+            For example,
+                not supported: (frame.groupby('grp')['col'] + 5).rank()
+                supported: frame.groupby('grp')['col'].rank() + 5
+        '''
+        expected_msg = dedent(expected_msg).strip()
         assert v.value.args[0] == expected_msg
 
     def test_multiple_window_functions(self) -> None:
@@ -100,10 +105,10 @@ class TestRankFunctionErrors:
             frame["col2"].rank() + frame["col1"].rank()  # type: ignore[operator]
 
         expected_msg = '''
-            Cannot process multiple window expressions in a single PyLegend expression.
+            Cannot process multiple series operations in a single PyLegend expression.
             For example,
-                instead of: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
-                do: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
+                unsupported: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
+                supported: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
         '''
         expected_msg = dedent(expected_msg).strip()
         assert v.value.args[0] == expected_msg
@@ -351,7 +356,7 @@ class TestRankFunctionOnBaseFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame["new_col"] = frame["age"].rank() + 2 + 5  # type: ignore[operator]
-        frame["new_col"] += frame["name"].rank(pct=True)  # type: ignore[operator]
+        frame["new_col"] = frame["new_col"] + frame["name"].rank(pct=True)  # type: ignore[operator]
 
         expected = '''
             SELECT
@@ -453,7 +458,7 @@ class TestRankFunctionOnBaseFrame:
         series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
-                root."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
+                "root"."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
             FROM
                 (
                     SELECT
@@ -475,7 +480,19 @@ class TestRankFunctionOnBaseFrame:
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
     def test_series_rank_primitive_operations(self) -> None:
-        pass
+        columns = [
+            PrimitiveTdsColumn.string_column("first_name"),
+            PrimitiveTdsColumn.string_column("last_name"),
+            PrimitiveTdsColumn.integer_column("age"),
+            PrimitiveTdsColumn.float_column("height"),
+            PrimitiveTdsColumn.date_column("date"),
+            PrimitiveTdsColumn.boolean_column("is_active"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]
+        frame["is_fit"] = frame["is_active"] | (frame["age"] < 10)
+
 
 
 class TestRankFunctionOnGroupbyFrame:
@@ -720,7 +737,7 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                root."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
+                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
             FROM
                 (
                     SELECT

@@ -41,7 +41,7 @@ from pylegend.core.sql.metamodel import (
     SingleColumn,
 )
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import assert_and_find_window_in_expr
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import assert_and_find_core_series, has_window_function
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -98,28 +98,28 @@ class AssignFunction(PandasApiAppliedFunction):
                 for i, si in enumerate(new_query.select.selectItems):
                     if isinstance(si, SingleColumn) and si.alias == alias:
                         if isinstance(res, (Series, GroupbySeries)):
-                            alias = (alias if assert_and_find_window_in_expr(res) is None else
-                                     db_extension.quote_identifier(col + temp_column_name_suffix))
+                            alias = (db_extension.quote_identifier(col + temp_column_name_suffix) if has_window_function(res)
+                                     else alias)
                         new_query.select.selectItems[i] = SingleColumn(alias=alias, expression=new_col_expr)
 
             else:
                 if isinstance(res, (Series, GroupbySeries)):
-                    alias = (alias if assert_and_find_window_in_expr(res) is None else
-                             db_extension.quote_identifier(col + temp_column_name_suffix))
+                    alias = (db_extension.quote_identifier(col + temp_column_name_suffix) if has_window_function(res)
+                             else alias)
                 new_query.select.selectItems.append(SingleColumn(alias=alias, expression=new_col_expr))
 
         expr_contains_window_func = False
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             if isinstance(res, (Series, GroupbySeries)):
-                expr_contains_window_func |= assert_and_find_window_in_expr(res) is not None
+                expr_contains_window_func |= has_window_function(res)
 
         if expr_contains_window_func:
             final_query = create_sub_query(new_query, config, "root")
             for col, func in self.__col_definitions.items():
                 res = func(tds_row)
                 if isinstance(res, (Series, GroupbySeries)):
-                    if assert_and_find_window_in_expr(res) is not None:
+                    if has_window_function(res):
                         alias = db_extension.quote_identifier(col + temp_column_name_suffix)
                         new_alias = db_extension.quote_identifier(col)
                         for i, si in enumerate(final_query.select.selectItems):

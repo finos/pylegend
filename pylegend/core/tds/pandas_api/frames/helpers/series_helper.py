@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 __all__: PyLegendSequence[str] = [
     "add_primitive_methods",
-    "assert_and_find_window_in_expr",
+    "assert_and_find_core_series",
 ]
 
 T = TypeVar("T")
@@ -132,7 +132,7 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def assert_and_find_window_in_expr(expr: PyLegendExpression) -> PyLegendOptional[PyLegendUnion["Series", "GroupbySeries"]]:
+def assert_and_find_core_series(expr: PyLegendExpression) -> PyLegendOptional[PyLegendUnion["Series", "GroupbySeries"]]:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
@@ -140,8 +140,9 @@ def assert_and_find_window_in_expr(expr: PyLegendExpression) -> PyLegendOptional
 
     sub_expressions = expr.get_sub_expressions()
     for expr in sub_expressions:
-        if isinstance(expr, (Series, GroupbySeries)) and has_window_function(expr):
-            window_functions.append(expr)
+        if isinstance(expr, (Series, GroupbySeries)):
+            if expr.has_applied_function():
+                window_functions.append(expr)
 
     if len(window_functions) == 0:
         return None
@@ -149,10 +150,10 @@ def assert_and_find_window_in_expr(expr: PyLegendExpression) -> PyLegendOptional
         return window_functions[0]
     else:
         error_msg = '''
-            Cannot process multiple window expressions in a single PyLegend expression.
+            Cannot process multiple series operations in a single PyLegend expression.
             For example,
-                instead of: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
-                do: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
+                unsupported: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
+                supported: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
         '''
         error_msg = dedent(error_msg).strip()
         raise ValueError(error_msg)
@@ -163,7 +164,10 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 
-    assert series.expr is None
+    if series.expr is not None:
+        core_series = assert_and_find_core_series(series.expr)
+        return has_window_function(core_series)
+
     considered_window_functions = [RankFunction]
 
     if isinstance(series, Series):
