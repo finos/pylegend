@@ -73,7 +73,7 @@ class PyLegendExpressionStringReturn(PyLegendExpression, metaclass=ABCMeta):
 
 class PyLegendExpressionNumberReturn(PyLegendExpression, metaclass=ABCMeta):
     def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]
+        return [self]  # pragma: no cover (Covered by its subclasses)
 
 
 class PyLegendExpressionIntegerReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
@@ -88,7 +88,7 @@ class PyLegendExpressionFloatReturn(PyLegendExpressionNumberReturn, metaclass=AB
 
 class PyLegendExpressionDateReturn(PyLegendExpression, metaclass=ABCMeta):
     def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]
+        return [self]  # pragma: no cover (Covered by its subclasses)
 
 
 class PyLegendExpressionDateTimeReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
