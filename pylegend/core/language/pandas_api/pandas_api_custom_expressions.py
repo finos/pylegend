@@ -34,7 +34,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionFloatReturn,
-    PyLegendExpressionIntegerReturn, PyLegendExpression,
+    PyLegendExpressionIntegerReturn,
 )
 from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (

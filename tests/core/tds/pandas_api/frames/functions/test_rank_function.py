@@ -20,7 +20,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language.shared.functions import now
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
