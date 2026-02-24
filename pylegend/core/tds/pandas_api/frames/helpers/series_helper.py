@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 __all__: PyLegendSequence[str] = [
     "add_primitive_methods",
     "assert_and_find_core_series",
+    "has_window_function",
 ]
 
 T = TypeVar("T")
