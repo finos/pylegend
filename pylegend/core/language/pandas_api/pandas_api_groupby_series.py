@@ -276,7 +276,8 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
         if self.expr is not None:
-            sub_expressions = self.expr.get_sub_expressions()
+            core_groupby_series = assert_and_find_core_series(self)
+            return core_groupby_series.get_all_tds_frames()
         applied_function_frame = self.raise_exception_if_no_function_applied()
         return applied_function_frame.get_all_tds_frames()
 
