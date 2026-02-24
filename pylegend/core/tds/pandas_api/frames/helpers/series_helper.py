@@ -22,14 +22,22 @@ from typing import (
 from pylegend._typing import (
     PyLegendAny,
     PyLegendCallable,
+    PyLegendOptional,
     PyLegendSequence,
+    PyLegendUnion,
+    TYPE_CHECKING,
 )
 from pylegend.core.language.shared.expression import PyLegendExpression
+
+if TYPE_CHECKING:
+    from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
 
 __all__: PyLegendSequence[str] = [
     "add_primitive_methods",
-    "assert_max_one_window_in_expr",
+    "assert_and_find_window_in_expr",
 ]
 
 T = TypeVar("T")
@@ -126,31 +134,46 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def assert_max_one_window_in_expr(expr: PyLegendExpression) -> None:
+def assert_and_find_window_in_expr(expr: PyLegendExpression) -> PyLegendOptional[PyLegendUnion["Series", "GroupbySeries"]]:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
-    from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 
     window_functions = []
 
     sub_expressions = expr.get_sub_expressions()
     for expr in sub_expressions:
-        if isinstance(expr, Series):
-            applied_func = expr.get_filtered_frame().get_applied_function()
-        elif isinstance(expr, GroupbySeries):
-            applied_func = expr.raise_exception_if_no_function_applied().get_applied_function()
-        else:
-            continue
+        if isinstance(expr, (Series, GroupbySeries)) and has_window_function(expr):
+            window_functions.append(expr)
 
-        if isinstance(applied_func, RankFunction):
-            window_functions.append(applied_func)
-
-    error_msg = '''
-        Cannot process multiple window expressions in a single PyLegend expression.
-        For example,
-            instead of: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
-            do: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
-    '''
-    error_msg = dedent(error_msg).strip()
-    if len(window_functions) > 1:
+    if len(window_functions) == 0:
+        return None
+    elif len(window_functions) == 1:
+        return window_functions[0]
+    else:
+        error_msg = '''
+            Cannot process multiple window expressions in a single PyLegend expression.
+            For example,
+                instead of: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
+                do: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
+        '''
+        error_msg = dedent(error_msg).strip()
         raise ValueError(error_msg)
+
+
+def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+    from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+
+    assert series.expr is None
+    considered_window_functions = [RankFunction]
+
+    if isinstance(series, Series):
+        applied_func = series.get_filtered_frame().get_applied_function()
+        return any(isinstance(applied_func, window_function) for window_function in considered_window_functions)
+
+    elif isinstance(series, GroupbySeries):
+        applied_func = series.raise_exception_if_no_function_applied().get_applied_function()
+        return any(isinstance(applied_func, window_function) for window_function in considered_window_functions)
+
+    return False

@@ -59,7 +59,7 @@ from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleCo
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
-    assert_max_one_window_in_expr,
+    assert_and_find_window_in_expr,
     add_primitive_methods,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
@@ -112,7 +112,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         self._expr = expr
         if self._expr is not None:
-            assert_max_one_window_in_expr(self._expr)
+            assert_and_find_window_in_expr(self._expr)
 
     @property
     def expr(self) -> PyLegendOptional[PyLegendExpression]:
@@ -142,8 +142,8 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        if self._expr is not None:
-            return self._expr.to_sql_expression(frame_name_to_base_query_map, config)
+        if self.expr is not None:
+            return self.expr.to_sql_expression(frame_name_to_base_query_map, config)
 
         applied_function_frame = self.raise_exception_if_no_function_applied()
         applied_func = applied_function_frame.get_applied_function()
@@ -236,11 +236,19 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
-        db_extension = config.sql_to_string_generator().get_db_extension()
+        if self.expr is None:
+            return self.raise_exception_if_no_function_applied().to_sql_query_object(config)
 
+        expr_contains_window_func = assert_and_find_window_in_expr(self.expr) is not None
+
+        db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.get_base_frame().base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
-        temp_col_name = db_extension.quote_identifier(col_name + temp_column_name_suffix)
+
+        temp_col_name = (
+            db_extension.quote_identifier(col_name + temp_column_name_suffix) if expr_contains_window_func else
+            db_extension.quote_identifier(col_name)
+        )
 
         new_select_item = SingleColumn(
             temp_col_name,
@@ -248,14 +256,17 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         )
         base_query.select.selectItems = [new_select_item]
 
-        new_query = create_sub_query(base_query, config, "root")
-        new_query.select.selectItems = [
-            SingleColumn(
-                db_extension.quote_identifier(col_name),
-                QualifiedNameReference(QualifiedName(["root", temp_col_name]))
-            )
-        ]
-        return new_query
+        if expr_contains_window_func:
+            new_query = create_sub_query(base_query, config, "root")
+            new_query.select.selectItems = [
+                SingleColumn(
+                    db_extension.quote_identifier(col_name),
+                    QualifiedNameReference(QualifiedName(["root", temp_col_name]))
+                )
+            ]
+            return new_query
+        else:
+            return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return self.to_pure_query(config)

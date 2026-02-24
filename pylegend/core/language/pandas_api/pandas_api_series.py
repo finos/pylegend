@@ -58,7 +58,7 @@ from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_max_one_window_in_expr
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_window_in_expr
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
@@ -119,7 +119,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         self._expr = expr
         if self._expr is not None:
-            assert_max_one_window_in_expr(self._expr)
+            assert_and_find_window_in_expr(self._expr)
 
     @property
     def expr(self) -> PyLegendOptional[PyLegendExpression]:
@@ -135,8 +135,8 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self._filtered_frame
 
     def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        if self._expr is not None:
-            return self._expr.get_sub_expressions()
+        if self.expr is not None:
+            return self.expr.get_sub_expressions()
         return [self]
 
     def to_sql_expression(
@@ -144,8 +144,8 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        if self._expr is not None:
-            return self._expr.to_sql_expression(frame_name_to_base_query_map, config)
+        if self.expr is not None:
+            return self.expr.to_sql_expression(frame_name_to_base_query_map, config)
 
         applied_func = self._filtered_frame.get_applied_function()
         if not isinstance(applied_func, PandasApiFilterFunction):  # pragma: no cover
@@ -241,11 +241,19 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
-        db_extension = config.sql_to_string_generator().get_db_extension()
+        if self.expr is None:
+            return self.get_filtered_frame().to_sql_query_object(config)
 
+        expr_contains_window_func = assert_and_find_window_in_expr(self.expr) is not None
+
+        db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.get_base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
-        temp_col_name = db_extension.quote_identifier(col_name + temp_column_name_suffix)
+
+        temp_col_name = (
+            db_extension.quote_identifier(col_name + temp_column_name_suffix) if expr_contains_window_func else
+            db_extension.quote_identifier(col_name)
+        )
 
         new_select_item = SingleColumn(
             temp_col_name,
@@ -253,14 +261,17 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         )
         base_query.select.selectItems = [new_select_item]
 
-        new_query = create_sub_query(base_query, config, "root")
-        new_query.select.selectItems = [
-            SingleColumn(
-                db_extension.quote_identifier(col_name),
-                QualifiedNameReference(QualifiedName(["root", temp_col_name]))
-            )
-        ]
-        return new_query
+        if expr_contains_window_func:
+            new_query = create_sub_query(base_query, config, "root")
+            new_query.select.selectItems = [
+                SingleColumn(
+                    db_extension.quote_identifier(col_name),
+                    QualifiedNameReference(QualifiedName(["root", temp_col_name]))
+                )
+            ]
+            return new_query
+        else:
+            return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return self.to_pure_query(config)

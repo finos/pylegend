@@ -355,13 +355,29 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root".name AS "name",
-                "root".age AS "age",
-                "root".height AS "height",
-                (((rank() OVER (ORDER BY "root".age) + 2) + 5) + percent_rank() OVER (ORDER BY "root".name)) AS "new_col"
+                "root"."name" AS "name",
+                "root"."age" AS "age",
+                "root"."height" AS "height",
+                "root"."new_col__INTERNAL_PYLEGEND_COLUMN__" AS "new_col"
             FROM
-                test_schema.test_table AS "root"
-        '''
+                (
+                    SELECT
+                        "root"."name" AS "name",
+                        "root"."age" AS "age",
+                        "root"."height" AS "height",
+                        ("root"."new_col__INTERNAL_PYLEGEND_COLUMN__" + percent_rank() OVER (ORDER BY "root"."name")) AS "new_col__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root".name AS "name",
+                                "root".age AS "age",
+                                "root".height AS "height",
+                                ((rank() OVER (ORDER BY "root".age) + 2) + 5) AS "new_col__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
@@ -405,13 +421,18 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                root."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
+                "root"."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
             FROM
                 (
                     SELECT
-                        rank() OVER (ORDER BY "root".height) AS "height__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (ORDER BY "root"."height") AS "height__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
-                        test_schema.test_table AS "root"
+                        (
+                            SELECT
+                                "root".height AS "height"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
                 ) AS "root"
         '''
         expected = dedent(expected).strip()
@@ -507,40 +528,6 @@ class TestRankFunctionOnGroupbyFrame:
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
-
-    def test_groupby_rank_min_subset(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.string_column("group_col"),
-            PrimitiveTdsColumn.integer_column("val_col"),
-            PrimitiveTdsColumn.integer_column("random_col")
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        series = frame.groupby("group_col")["val_col"].rank(method='min')
-
-        expected = '''
-            SELECT
-                root."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
-            FROM
-                (
-                    SELECT
-                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected = dedent(expected).strip()
-        assert series.to_sql_query(FrameToSqlConfig()) == expected
-
-        expected = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__
-              ])
-        '''  # noqa: E501
-        expected = dedent(expected).strip()
-        assert series.to_pure_query(FrameToPureConfig()) == expected
-        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
     def test_groupby_rank_pct(self) -> None:
         columns = [
@@ -733,13 +720,20 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                root."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
+                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
             FROM
                 (
                     SELECT
-                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
-                        test_schema.test_table AS "root"
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
                 ) AS "root"
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -768,13 +762,21 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root".group_col AS "group_col",
-                "root".val_col AS "val_col",
-                "root".random_col AS "random_col",
-                (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank"
+                "root"."group_col" AS "group_col",
+                "root"."val_col" AS "val_col",
+                "root"."random_col" AS "random_col",
+                "root"."val_col_rank__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_rank"
             FROM
-                test_schema.test_table AS "root"
-        '''
+                (
+                    SELECT
+                        "root".group_col AS "group_col",
+                        "root".val_col AS "val_col",
+                        "root".random_col AS "random_col",
+                        (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
@@ -790,13 +792,29 @@ class TestRankFunctionOnGroupbyFrame:
         frame["random_col"] = frame.groupby("group_col")["random_col"].rank().rem(2)  # type: ignore[attr-defined]
         expected = '''
             SELECT
-                "root".group_col AS "group_col",
-                "root".val_col AS "val_col",
-                MOD(rank() OVER (PARTITION BY "root".group_col ORDER BY "root".random_col), 2) AS "random_col",
-                (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank"
+                "root"."group_col" AS "group_col",
+                "root"."val_col" AS "val_col",
+                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col",
+                "root"."val_col_rank" AS "val_col_rank"
             FROM
-                test_schema.test_table AS "root"
-        '''
+                (
+                    SELECT
+                        "root"."group_col" AS "group_col",
+                        "root"."val_col" AS "val_col",
+                        MOD(rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col"), 2) AS "random_col__INTERNAL_PYLEGEND_COLUMN__",
+                        "root"."val_col_rank__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_rank"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col",
+                                (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
@@ -954,37 +972,73 @@ class TestRankFunctionEndtoEnd:
         res = series.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    # def test_e2e_series_assign(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-    #     frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-    #     frame["First Name"] = frame.groupby("Firm/Legal Name")["First Name"].rank()
-    #
-    #     expected = {
-    #         'columns': ['First Name'],
-    #         'rows': [
-    #             {'values': [4]},  # Firm X, Peter
-    #             {'values': [2]},  # Firm X, John
-    #             {'values': [2]},  # Firm X, John
-    #             {'values': [1]},  # Firm X, Anthony
-    #             {'values': [1]},  # Firm A, Fabrice
-    #             {'values': [1]},  # Firm B, Oliver
-    #             {'values': [1]},  # Firm C, David
-    #         ]
-    #     }
-    #     res = frame.execute_frame_to_string()
-    #     assert json.loads(res)["result"] == expected
-    #
-    #     frame["Rank Last Name"] = frame["Last Name"].rank()  # type: ignore[assignment]
-    #     expected = {
-    #         'columns': ['First Name'],
-    #         'rows': [
-    #             {'values': [7]},  # Peter
-    #             {'values': [4]},  # John
-    #             {'values': [4]},  # John
-    #             {'values': [1]},  # Anthony
-    #             {'values': [3]},  # Fabrice
-    #             {'values': [6]},  # Oliver
-    #             {'values': [2]},  # David
-    #         ]
-    #     }
-    #     res = series.execute_frame_to_string()
-    #     assert json.loads(res)["result"] == expected
+    def test_e2e_series_assign(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        frame["First Name"] = frame.groupby("Firm/Legal Name")["First Name"].rank()
+        expected = {
+            'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+            'rows': [
+                {'values': [4, 'Smith', 23, 'Firm X']},    # Firm X, Peter
+                {'values': [2, 'Johnson', 22, 'Firm X']},  # Firm X, John
+                {'values': [2, 'Hill', 12, 'Firm X']},     # Firm X, John
+                {'values': [1, 'Allen', 22, 'Firm X']},    # Firm X, Anthony
+                {'values': [1, 'Roberts', 34, 'Firm A']},  # Firm A, Fabrice
+                {'values': [1, 'Hill', 32, 'Firm B']},     # Firm B, Oliver
+                {'values': [1, 'Harris', 35, 'Firm C']}    # Firm C, David
+            ]
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+        frame["Rank Last Name"] = frame["Last Name"].rank()  # type: ignore[assignment]
+        expected = {
+            'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name', 'Rank Last Name'],
+            'rows': [
+                {'values': [4, 'Smith', 23, 'Firm X', 7]},
+                {'values': [2, 'Johnson', 22, 'Firm X', 5]},
+                {'values': [2, 'Hill', 12, 'Firm X', 3]},
+                {'values': [1, 'Allen', 22, 'Firm X', 1]},
+                {'values': [1, 'Roberts', 34, 'Firm A', 6]},
+                {'values': [1, 'Hill', 32, 'Firm B', 3]},
+                {'values': [1, 'Harris', 35, 'Firm C', 2]}
+            ]
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    @pytest.mark.skip(reason="window functions not currently supported within function call")
+    def test_e2e_arithmetic_with_series(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        series = frame["First Name"].rank() - 1  # type: ignore[assignment]
+        expected = {
+            'columns': ['First Name'],
+            'rows': [
+                {'values': [6]},  # Peter
+                {'values': [3]},  # John
+                {'values': [3]},  # John
+                {'values': [0]},  # Anthony
+                {'values': [2]},  # Fabrice
+                {'values': [5]},  # Oliver
+                {'values': [1]},  # David
+            ]
+        }
+        res = series.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+        frame["First Name"] = frame.groupby("Firm/Legal Name")["First Name"].rank() - 1
+        expected = {
+            'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
+            'rows': [
+                {'values': [3, 'Smith', 23, 'Firm X']},    # Firm X, Peter
+                {'values': [1, 'Johnson', 22, 'Firm X']},  # Firm X, John
+                {'values': [1, 'Hill', 12, 'Firm X']},     # Firm X, John
+                {'values': [0, 'Allen', 22, 'Firm X']},    # Firm X, Anthony
+                {'values': [0, 'Roberts', 34, 'Firm A']},  # Firm A, Fabrice
+                {'values': [0, 'Hill', 32, 'Firm B']},     # Firm B, Oliver
+                {'values': [0, 'Harris', 35, 'Firm C']}    # Firm C, David
+            ]
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
