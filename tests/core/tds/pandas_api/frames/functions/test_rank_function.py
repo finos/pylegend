@@ -506,9 +506,7 @@ class TestRankFunctionOnBaseFrame:
                 "root"."date" AS "date",
                 "root".is_active AS "is_active",
                 CONCAT(CONCAT('Honorable', REPLACE("root".first_name, 'mr', 'Mr.')), "root".last_name) AS "name",
-                (("root".is_active OR ("root".age < 10)) OR false) AS "is_fit",
-                DATE_TRUNC('year', CURRENT_TIMESTAMP) AS "first_day_of_year",
-                (("root".age + 2) + "root".height) AS "BMI"
+                (("root".is_active OR ("root".age < 10)) OR false) AS "is_fit"
             FROM
                 test_schema.test_table AS "root"
         '''

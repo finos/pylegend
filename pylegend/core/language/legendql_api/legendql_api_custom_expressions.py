@@ -36,7 +36,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language.shared.expression import PyLegendExpression
 from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
