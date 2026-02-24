@@ -146,7 +146,7 @@ def assert_and_find_core_series(expr: PyLegendExpression) -> PyLegendOptional[Py
             core_series_list.append(expr)
 
     if len(core_series_list) == 0:
-        return None
+        return None  # pragma: no cover
     elif len(core_series_list) == 1:
         return core_series_list[0]
     else:

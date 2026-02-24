@@ -52,6 +52,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateTimeLiteralExpression",
     "PyLegendStrictDateLiteralExpression",
     "convert_literal_to_literal_expression",
+    "PyLegendNullLiteralExpression",
 ]
 
 

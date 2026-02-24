@@ -20,6 +20,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.language.shared.functions import now
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
@@ -483,19 +484,20 @@ class TestRankFunctionOnBaseFrame:
         assert series.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
-    def test_series_rank_primitive_operations(self) -> None:
+    def test_series_rank_with_literals(self) -> None:
         columns = [
             PrimitiveTdsColumn.string_column("first_name"),
             PrimitiveTdsColumn.string_column("last_name"),
             PrimitiveTdsColumn.integer_column("age"),
             PrimitiveTdsColumn.float_column("height"),
-            PrimitiveTdsColumn.date_column("date"),
+            PrimitiveTdsColumn.datetime_column("date"),
             PrimitiveTdsColumn.boolean_column("is_active"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]  # type: ignore[union-attr]
-        frame["is_fit"] = frame["is_active"] | (frame["age"] < 10)  # type: ignore[operator]
+        frame["is_fit"] = frame["is_active"] | (frame["age"] < 10) | False  # type: ignore[operator]
+        frame["date_and_time"] = now()  # type: ignore[operator]
 
         expected = '''
             SELECT
@@ -506,7 +508,8 @@ class TestRankFunctionOnBaseFrame:
                 "root"."date" AS "date",
                 "root".is_active AS "is_active",
                 CONCAT(CONCAT('Honorable', REPLACE("root".first_name, 'mr', 'Mr.')), "root".last_name) AS "name",
-                ("root".is_active OR ("root".age < 10)) AS "is_fit"
+                (("root".is_active OR ("root".age < 10)) OR false) AS "is_fit",
+                CURRENT_TIMESTAMP AS "date_and_time"
             FROM
                 test_schema.test_table AS "root"
         '''

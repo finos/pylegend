@@ -72,9 +72,6 @@ class PyLegendColumnExpression(PyLegendExpression, metaclass=ABCMeta):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__row.to_pure_expression(config)}.{escape_column_name(self.__column)}"
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]
-
     def get_column(self) -> str:
         return self.__column
 

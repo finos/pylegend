@@ -25,6 +25,7 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringDbExtension,
 )
+from pylegend.core.language.shared.literal_expressions import PyLegendNullLiteralExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.request.legend_client import LegendClient
@@ -87,6 +88,15 @@ class TestLiteralExpressions:
             config=self.sql_to_string_config
         ) == "'Hello,'' World!'"
         assert self.__generate_pure_string(expr) == "'Hello,\\\' World!'"
+
+    def test_null_literal_expr(self) -> None:
+        expr = PyLegendNullLiteralExpression()
+        assert self.db_extension.process_expression(
+            expr.to_sql_expression({}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == "null"
+        assert self.__generate_pure_string(expr) == "[]"
+        assert expr.get_sub_expressions() == [expr]
 
     def __generate_pure_string(self, expr) -> str:  # type: ignore
         e = str(expr.to_pure_expression(self.frame_to_pure_config))
