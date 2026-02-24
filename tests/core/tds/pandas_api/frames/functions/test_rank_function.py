@@ -497,7 +497,7 @@ class TestRankFunctionOnBaseFrame:
 
         frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]  # type: ignore[union-attr]
         frame["is_fit"] = frame["is_active"] | (frame["age"] < 10) | False  # type: ignore[operator]
-        frame["circumference"] = pi() * frame["height"]
+        frame["circumference"] = pi() * frame["height"]  # type: ignore[operator]
 
         expected = '''
             SELECT
@@ -755,7 +755,7 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("random_col")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        series = frame.groupby("group_col")["val_col"].rank()  # type: ignore[operator]
+        series = frame.groupby("group_col")["val_col"].rank()
 
         expected = '''
             SELECT
@@ -776,7 +776,7 @@ class TestRankFunctionOnGroupbyFrame:
                 ) AS "root"
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        assert series.to_sql_query(FrameToSqlConfig()) == expected  # type: ignore[attr-defined]
+        assert series.to_sql_query(FrameToSqlConfig()) == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -786,10 +786,10 @@ class TestRankFunctionOnGroupbyFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        assert series.to_pure_query(FrameToPureConfig()) == expected   # type: ignore[attr-defined]
+        assert series.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected  # type: ignore[arg-type]  # noqa: E501
 
-        series += 5
+        series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
                 "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
@@ -802,7 +802,7 @@ class TestRankFunctionOnGroupbyFrame:
                 ) AS "root"
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        assert series.to_sql_query(FrameToSqlConfig()) == expected  # type: ignore[attr-defined]
+        assert series.to_sql_query(FrameToSqlConfig()) == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -810,8 +810,8 @@ class TestRankFunctionOnGroupbyFrame:
               ->project(~[val_col:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        assert series.to_pure_query(FrameToPureConfig()) == expected  # type: ignore[attr-defined]
-        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected  # type: ignore[arg-type]  # noqa: E501
+        assert series.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
     def test_groupby_rank_with_assign(self) -> None:
         columns = [
