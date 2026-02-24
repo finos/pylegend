@@ -20,6 +20,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
+from pylegend.core.language.shared.functions import pi
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
@@ -496,6 +497,7 @@ class TestRankFunctionOnBaseFrame:
 
         frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]  # type: ignore[union-attr]
         frame["is_fit"] = frame["is_active"] | (frame["age"] < 10) | False  # type: ignore[operator]
+        frame["circumference"] = pi() * frame["height"]
 
         expected = '''
             SELECT
@@ -506,7 +508,8 @@ class TestRankFunctionOnBaseFrame:
                 "root"."date" AS "date",
                 "root".is_active AS "is_active",
                 CONCAT(CONCAT('Honorable', REPLACE("root".first_name, 'mr', 'Mr.')), "root".last_name) AS "name",
-                (("root".is_active OR ("root".age < 10)) OR false) AS "is_fit"
+                (("root".is_active OR ("root".age < 10)) OR false) AS "is_fit",
+                (PI() * "root".height) AS "circumference"
             FROM
                 test_schema.test_table AS "root"
         '''
@@ -752,8 +755,41 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("random_col")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        series = frame.groupby("group_col")["val_col"].rank() + 5  # type: ignore[operator]
+        series = frame.groupby("group_col")["val_col"].rank()  # type: ignore[operator]
 
+        expected = '''
+            SELECT
+                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
+            FROM
+                (
+                    SELECT
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root".group_col AS "group_col",
+                                "root".val_col AS "val_col",
+                                "root".random_col AS "random_col"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert series.to_sql_query(FrameToSqlConfig()) == expected  # type: ignore[attr-defined]
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
+              ->project(~[
+                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__
+              ])
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert series.to_pure_query(FrameToPureConfig()) == expected   # type: ignore[attr-defined]
+        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected  # type: ignore[arg-type]  # noqa: E501
+
+        series += 5
         expected = '''
             SELECT
                 "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
@@ -774,7 +810,7 @@ class TestRankFunctionOnGroupbyFrame:
               ->project(~[val_col:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        assert series.to_pure_query(FrameToPureConfig()) == expected   # type: ignore[attr-defined]
+        assert series.to_pure_query(FrameToPureConfig()) == expected  # type: ignore[attr-defined]
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected  # type: ignore[arg-type]  # noqa: E501
 
     def test_groupby_rank_with_assign(self) -> None:
