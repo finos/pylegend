@@ -382,7 +382,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             frame.sort(lambda r: r["Ship Name"].descending()).head(5).to_pandas()
 
             # Sort by multiple columns with different directions
-            frame.sort(lambda r: [r["Ship Name"].ascending(), r["Order Id"].descending()]).head(5).to_pandas()
+            frame.sort(
+                lambda r: [r["Ship Name"].ascending(), r["Order Id"].descending()]
+            ).head(5).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -465,7 +467,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             frame.filter(lambda r: r["Order Id"] > 10500).head(5).to_pandas()
 
             # Filter with multiple conditions (AND)
-            frame.filter(lambda r: (r["Order Id"] > 10250) & (r["Order Id"] < 10560)).head(5).to_pandas()
+            frame.filter(
+                lambda r: (r["Order Id"] > 10250) & (r["Order Id"] < 10560)
+            ).head(5).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -522,7 +526,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             frame.rename(("Ship Name", "Vessel Name")).head(3).to_pandas()
 
             # Rename multiple columns
-            frame.rename([("Ship Name", "Vessel Name"), ("Order Date", "Date Ordered")]).head(3).to_pandas()
+            frame.rename(
+                [("Ship Name", "Vessel Name"), ("Order Date", "Date Ordered")]
+            ).head(3).to_pandas()
 
             # Using a callable to rename columns
             frame.rename(lambda r: (r["Ship Name"], "Vessel Name")).head(3).to_pandas()
@@ -659,8 +665,14 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered_orders = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames)
-            orders.join(filtered_orders, lambda l, r: l["Order Id"] == r["Right Order Id"], "INNER").head(5).to_pandas()
+            filtered_orders = orders.filter(
+                lambda r: r["Order Id"] > 10300
+            ).select(cols).rename(renames)
+            orders.join(
+                filtered_orders,
+                lambda l, r: l["Order Id"] == r["Right Order Id"],
+                "INNER"
+            ).head(5).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -708,8 +720,13 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames)
-            orders.inner_join(filtered, lambda l, r: l["Order Id"] == r["Right Order Id"]).head(5).to_pandas()
+            filtered = orders.filter(
+                lambda r: r["Order Id"] > 10300
+            ).select(cols).rename(renames)
+            orders.inner_join(
+                filtered,
+                lambda l, r: l["Order Id"] == r["Right Order Id"]
+            ).head(5).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -759,8 +776,13 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames).head(10)
-            orders.head(15).left_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"]).to_pandas()
+            filtered_info = orders.filter(
+                lambda r: r["Order Id"] > 10300
+            ).select(cols).rename(renames).head(10)
+            orders.head(15).left_join(
+                filtered_info,
+                lambda l, r: l["Order Id"] == r["Right Order Id"]
+            ).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -810,8 +832,13 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             # Rename duplicate columns to avoid conflicts
             cols = ["Order Id", "Ship Name"]
             renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
-            filtered_info = orders.filter(lambda r: r["Order Id"] > 10300).select(cols).rename(renames).head(10)
-            orders.head(5).right_join(filtered_info, lambda l, r: l["Order Id"] == r["Right Order Id"]).to_pandas()
+            filtered_info = orders.filter(
+                lambda r: r["Order Id"] > 10300
+            ).select(cols).rename(renames).head(10)
+            orders.head(5).right_join(
+                filtered_info,
+                lambda l, r: l["Order Id"] == r["Right Order Id"]
+            ).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -1092,7 +1119,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             frame.window_extend(
                 win,
                 ("RowNumber", lambda p, w, r: p.row_number(r))
-            ).select(["Ship Name", "Order Id", "RowNumber"]).head(5).to_pandas()
+            ).select(
+                ["Ship Name", "Order Id", "RowNumber"]
+            ).head(5).to_pandas()
 
             # Add basic window function columns
             frame.window_extend(
@@ -1101,7 +1130,9 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                     ("RowNumber", lambda p, w, r: p.row_number(r)),
                     ("Rank", lambda p, w, r: p.rank(w, r))
                 ]
-            ).select(["Ship Name", "Order Id", "RowNumber", "Rank"]).head(5).to_pandas()
+            ).select(
+               ["Ship Name", "Order Id", "RowNumber", "Rank"]
+            ).head(5).to_pandas()
 
         """
         pass
