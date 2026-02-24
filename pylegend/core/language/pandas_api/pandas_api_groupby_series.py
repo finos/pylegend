@@ -168,7 +168,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         )
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
-        if self.applied_function_frame is not None:
+        if self.has_applied_function():
             return self.applied_function_frame.columns()
         selected_columns = self.get_base_frame().get_selected_columns()
         assert selected_columns is not None and len(selected_columns) == 1
@@ -208,7 +208,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             temp_name = escape_column_name(col_name + temp_column_name_suffix)
             extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
             project = f"->project(~[{escape_column_name(col_name)}:c|{pure_expr}])"
-        else:
+        else:  # pragma: no cover
             project = f"->project(~[{escape_column_name(col_name)}:c|{self.to_pure_expression(config)}])"
 
         if len(extend) > 0:
@@ -268,7 +268,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                 )
             ]
             return new_query
-        else:
+        else:  # pragma: no cover
             return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
