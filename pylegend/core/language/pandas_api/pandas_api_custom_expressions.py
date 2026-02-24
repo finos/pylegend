@@ -311,9 +311,6 @@ class PandasApiRowNumberExpression(PyLegendExpressionIntegerReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__partial_frame.to_pure_expression(config)}->rowNumber({self.__row.to_pure_expression(config)})"
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]
-
 
 class PandasApiRankExpression(PyLegendExpressionIntegerReturn):
     if TYPE_CHECKING:
@@ -345,9 +342,6 @@ class PandasApiRankExpression(PyLegendExpressionIntegerReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->rank("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
-
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]
 
 
 class PandasApiDenseRankExpression(PyLegendExpressionIntegerReturn):
@@ -381,9 +375,6 @@ class PandasApiDenseRankExpression(PyLegendExpressionIntegerReturn):
         return (f"{self.__partial_frame.to_pure_expression(config)}->denseRank("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]
-
 
 class PandasApiPercentRankExpression(PyLegendExpressionFloatReturn):
     if TYPE_CHECKING:
@@ -415,6 +406,3 @@ class PandasApiPercentRankExpression(PyLegendExpressionFloatReturn):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->percentRank("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
-
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]

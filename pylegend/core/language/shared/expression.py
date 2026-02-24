@@ -62,36 +62,45 @@ class PyLegendExpression(metaclass=ABCMeta):
 
 
 class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionStringReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionNumberReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionIntegerReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionFloatReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionDateReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionDateTimeReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionStrictDateReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionNullReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]

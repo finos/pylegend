@@ -67,9 +67,6 @@ class PyLegendVariableExpression(PyLegendExpression, metaclass=ABCMeta):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__name}"
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return [self]
-
 
 class PyLegendBooleanVariableExpression(PyLegendVariableExpression, PyLegendExpressionBooleanReturn):
     def __init__(self, name: str) -> None:
