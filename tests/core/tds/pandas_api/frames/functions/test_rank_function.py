@@ -497,7 +497,7 @@ class TestRankFunctionOnBaseFrame:
 
         frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]  # type: ignore[union-attr]
         frame["is_fit"] = frame["is_active"] | (frame["age"] < 10) | False  # type: ignore[operator]
-        frame["date_and_time"] = now()  # type: ignore[operator]
+        frame["date_and_time"] = now()
 
         expected = '''
             SELECT
