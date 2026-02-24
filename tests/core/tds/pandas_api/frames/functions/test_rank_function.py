@@ -787,7 +787,7 @@ class TestRankFunctionOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert series.to_pure_query(FrameToPureConfig()) == expected
-        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected  # type: ignore[arg-type]  # noqa: E501
+        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
         series += 5  # type: ignore[operator, assignment]
         expected = '''
