@@ -30,7 +30,6 @@ from pylegend._typing import (
 from pylegend.core.language.shared.expression import PyLegendExpression
 
 if TYPE_CHECKING:
-    from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
