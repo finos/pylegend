@@ -494,8 +494,8 @@ class TestRankFunctionOnBaseFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]
-        frame["is_fit"] = frame["is_active"] | (frame["age"] < 10)
+        frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]  # type: ignore[union-attr]
+        frame["is_fit"] = frame["is_active"] | (frame["age"] < 10)  # type: ignore[operator]
 
         expected = '''
             SELECT
