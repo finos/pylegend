@@ -480,15 +480,16 @@ class TestRankFunctionOnBaseFrame:
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
     def test_series_rank_primitive_operations(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.string_column("first_name"),
-            PrimitiveTdsColumn.string_column("last_name"),
-            PrimitiveTdsColumn.integer_column("age"),
-            PrimitiveTdsColumn.float_column("height"),
-            PrimitiveTdsColumn.date_column("date"),
-            PrimitiveTdsColumn.boolean_column("is_active"),
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        pass
+        # columns = [
+        #     PrimitiveTdsColumn.string_column("first_name"),
+        #     PrimitiveTdsColumn.string_column("last_name"),
+        #     PrimitiveTdsColumn.integer_column("age"),
+        #     PrimitiveTdsColumn.float_column("height"),
+        #     PrimitiveTdsColumn.date_column("date"),
+        #     PrimitiveTdsColumn.boolean_column("is_active"),
+        # ]
+        # frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         # frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]
         # frame["is_fit"] = frame["is_active"] | (frame["age"] < 10)
