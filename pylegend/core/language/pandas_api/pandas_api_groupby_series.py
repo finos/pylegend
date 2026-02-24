@@ -168,8 +168,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         )
 
     def columns(self) -> PyLegendSequence[TdsColumn]:
-        applied_function_frame = self.raise_exception_if_no_function_applied()
-        return applied_function_frame.columns()
+        return self.get_base_frame().get_selected_columns()
 
     def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
         query = self.to_sql_query_object(config)

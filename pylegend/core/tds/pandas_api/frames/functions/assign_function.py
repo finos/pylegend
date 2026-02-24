@@ -173,7 +173,7 @@ class AssignFunction(PandasApiAppliedFunction):
 
         return (
             f"{self.__base_frame.to_pure(config)}{config.separator(1)}"
-            f"{config.separator(1).join(extend_exprs) + config.separator(1) if len(extend_exprs) > 0 else ''}"
+            + config.separator(1).join(extend_exprs) + config.separator(1) if len(extend_exprs) > 0 else ''
             f"->project(~[{', '.join(clauses)}])"
         )
 

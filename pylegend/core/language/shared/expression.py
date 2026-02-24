@@ -58,7 +58,7 @@ class PyLegendExpression(metaclass=ABCMeta):
 
     @abstractmethod
     def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        pass
+        pass  # pragma: no cover
 
 
 class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):

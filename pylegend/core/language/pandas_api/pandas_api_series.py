@@ -144,8 +144,8 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        if self.expr is not None:
-            return self.expr.to_sql_expression(frame_name_to_base_query_map, config)
+        if self._expr is not None:
+            return self._expr.to_sql_expression(frame_name_to_base_query_map, config)
 
         applied_func = self._filtered_frame.get_applied_function()
         if not isinstance(applied_func, PandasApiFilterFunction):  # pragma: no cover

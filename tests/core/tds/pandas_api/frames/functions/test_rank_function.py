@@ -716,39 +716,30 @@ class TestRankFunctionOnGroupbyFrame:
             PrimitiveTdsColumn.integer_column("random_col")
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        series = frame.groupby("group_col")["val_col"].rank()
+        series = frame.groupby("group_col")["val_col"].rank() + 5  # type: ignore[operator]
 
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
+                root."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
             FROM
                 (
                     SELECT
-                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
+                        (rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) + 5) AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
-                        (
-                            SELECT
-                                "root".group_col AS "group_col",
-                                "root".val_col AS "val_col",
-                                "root".random_col AS "random_col"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
+                        test_schema.test_table AS "root"
                 ) AS "root"
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        assert series.to_sql_query(FrameToSqlConfig()) == expected
+        assert series.to_sql_query(FrameToSqlConfig()) == expected  # type: ignore[attr-defined]
 
         expected = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__
-              ])
+              ->project(~[val_col:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        assert series.to_pure_query(FrameToPureConfig()) == expected
-        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
+        assert series.to_pure_query(FrameToPureConfig()) == expected   # type: ignore[attr-defined]
+        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected  # type: ignore[arg-type]  # noqa: E501
 
     def test_groupby_rank_with_assign(self) -> None:
         columns = [

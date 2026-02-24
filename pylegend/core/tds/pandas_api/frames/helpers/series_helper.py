@@ -28,7 +28,6 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.expression import PyLegendExpression
-
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
@@ -79,7 +78,7 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
     elif "Series" in mro_names:
         series_type = "Series"
     else:
-        raise NotImplementedError(f"Can't add primitive methods to class of type: {cls.__name__}")
+        raise NotImplementedError(f"Can't add primitive methods to class of type: {cls.__name__}")  # pragma: no cover
 
     if series_type == "GroupbySeries":
         target_map = primitive_to_groupby_series_map
@@ -175,4 +174,5 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
         applied_func = series.raise_exception_if_no_function_applied().get_applied_function()
         return any(isinstance(applied_func, window_function) for window_function in considered_window_functions)
 
-    return False
+    else:
+        raise TypeError("Window function's existence can only be checked in a Series or a GroupbySeries")  # pragma: no cover

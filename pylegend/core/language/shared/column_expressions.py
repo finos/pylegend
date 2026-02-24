@@ -37,7 +37,6 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.language.shared.helpers import escape_column_name
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from pylegend.core.language.shared.tds_row import AbstractTdsRow
 
