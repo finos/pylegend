@@ -1011,7 +1011,7 @@ class TestRankFunctionEndtoEnd:
     def test_e2e_arithmetic_with_series(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        series = frame["First Name"].rank() - 1  # type: ignore[assignment]
+        series = frame["First Name"].rank() - 1  # type: ignore[operator]
         expected = {
             'columns': ['First Name'],
             'rows': [
@@ -1024,10 +1024,10 @@ class TestRankFunctionEndtoEnd:
                 {'values': [1]},  # David
             ]
         }
-        res = series.execute_frame_to_string()
+        res = series.execute_frame_to_string()  # type: ignore[attr-defined]
         assert json.loads(res)["result"] == expected
 
-        frame["First Name"] = frame.groupby("Firm/Legal Name")["First Name"].rank() - 1
+        frame["First Name"] = frame.groupby("Firm/Legal Name")["First Name"].rank() - 1  # type: ignore[operator]
         expected = {
             'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
             'rows': [
