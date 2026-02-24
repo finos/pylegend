@@ -280,6 +280,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
         if self.expr is not None:
             core_series = assert_and_find_core_series(self)
+            assert core_series is not None
             return core_series.get_all_tds_frames()
         return self._filtered_frame.get_all_tds_frames()
 
