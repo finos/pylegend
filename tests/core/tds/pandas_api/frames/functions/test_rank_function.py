@@ -105,10 +105,14 @@ class TestRankFunctionErrors:
             frame["col2"].rank() + frame["col1"].rank()  # type: ignore[operator]
 
         expected_msg = '''
-            Cannot process multiple series operations in a single PyLegend expression.
+            Only expressions with maximum one Series/GroupbySeries function call (such as .rank()) is supported.
+            If multiple Series/GroupbySeries need function calls, please compute them in separate steps.
             For example,
-                unsupported: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
-                supported: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
+                unsupported:
+                    frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
+                supported:
+                    frame['new_col'] = frame['col1'].rank() + 2
+                    frame['new_col'] += frame['col2'].rank()
         '''
         expected_msg = dedent(expected_msg).strip()
         assert v.value.args[0] == expected_msg

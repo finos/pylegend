@@ -22,6 +22,7 @@ from typing import (
 from pylegend._typing import (
     PyLegendAny,
     PyLegendCallable,
+    PyLegendList,
     PyLegendOptional,
     PyLegendSequence,
     PyLegendUnion,
@@ -137,24 +138,33 @@ def assert_and_find_core_series(expr: PyLegendExpression) -> PyLegendOptional[Py
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
-    window_functions = []
+    core_series_list: PyLegendList[PyLegendUnion[Series, GroupbySeries]] = []
 
     sub_expressions = expr.get_sub_expressions()
     for expr in sub_expressions:
         if isinstance(expr, (Series, GroupbySeries)):
-            if expr.has_applied_function():
-                window_functions.append(expr)
+            core_series_list.append(expr)
 
-    if len(window_functions) == 0:
+    if len(core_series_list) == 0:
         return None
-    elif len(window_functions) == 1:
-        return window_functions[0]
+    elif len(core_series_list) == 1:
+        return core_series_list[0]
     else:
+        core_series_with_applied_function = [series for series in core_series_list if series.has_applied_function()]
+        if len(core_series_with_applied_function) == 0:
+            return core_series_list[0]
+        elif len(core_series_with_applied_function) == 1:
+            return core_series_with_applied_function[0]
+
         error_msg = '''
-            Cannot process multiple series operations in a single PyLegend expression.
+            Only expressions with maximum one Series/GroupbySeries function call (such as .rank()) is supported.
+            If multiple Series/GroupbySeries need function calls, please compute them in separate steps.
             For example,
-                unsupported: frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
-                supported: frame['new_col'] = frame['col1'].rank() + 2; frame['new_col'] += frame['col2'].rank()
+                unsupported:
+                    frame['new_col'] = frame['col1'].rank() + 2 + frame['col2'].rank()
+                supported:
+                    frame['new_col'] = frame['col1'].rank() + 2
+                    frame['new_col'] += frame['col2'].rank()
         '''
         error_msg = dedent(error_msg).strip()
         raise ValueError(error_msg)
