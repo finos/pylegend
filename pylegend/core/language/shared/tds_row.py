@@ -49,19 +49,6 @@ from pylegend.core.language import (
     PyLegendDate,
     PyLegendDateTime,
     PyLegendStrictDate,
-    PyLegendTinyInt,
-    PyLegendUTinyInt,
-    PyLegendSmallInt,
-    PyLegendUSmallInt,
-    PyLegendInt,
-    PyLegendUInt,
-    PyLegendBigInt,
-    PyLegendUBigInt,
-    PyLegendVarchar,
-    PyLegendTimestamp,
-    PyLegendFloat4,
-    PyLegendDouble,
-    PyLegendNumeric,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -213,8 +200,8 @@ class AbstractTdsRow(metaclass=ABCMeta):
                         return PyLegendStrictDateColumnExpression(self, column)
                     # Precise integer types -> map to IntegerColumnExpression
                     if base_col.get_type() in (
-                        "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
-                        "Int", "UInt", "BigInt", "UBigInt"
+                            "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+                            "Int", "UInt", "BigInt", "UBigInt"
                     ):
                         return PyLegendIntegerColumnExpression(self, column)
                     # Precise string type -> map to StringColumnExpression

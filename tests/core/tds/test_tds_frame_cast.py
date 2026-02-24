@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+
 import pytest
+
+from pylegend._typing import (
+    PyLegendDict,
+    PyLegendUnion,
+)
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import (
     PrimitiveTdsColumn,
@@ -20,11 +27,15 @@ from pylegend.core.tds.tds_column import (
     EnumTdsColumn,
 )
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
+from pylegend.core.request.legend_client import LegendClient
 
 
 class TestTdsFrameCast:
 
-    # ---- Error / validation tests ----
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_cast_unknown_column_raises_error(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -120,8 +131,6 @@ class TestTdsFrameCast:
             frame.cast({"n": PrimitiveType.DateTime})
         assert "Cannot cast column 'n' from Integer to DateTime" in r.value.args[0]
 
-    # ---- Success / happy-path tests ----
-
     def test_cast_single_column_integer_to_float(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
@@ -208,3 +217,24 @@ class TestTdsFrameCast:
         assert "TdsColumn(Name: col1, Type: Integer)" == str(frame.columns()[0])
         frame.cast({"col1": PrimitiveType.Float})
         assert "TdsColumn(Name: col1, Type: Integer)" == str(frame.columns()[0])
+
+    def test_e2e_cast(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        # Cast Age from Integer to BigInt, then add 1
+        frame.cast({"Age": PrimitiveType.BigInt})
+        frame['Age'] = frame['Age'] + 1  # type: ignore
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+            "rows": [
+                {"values": ["Peter", "Smith", 24, "Firm X"]},
+                {"values": ["John", "Johnson", 23, "Firm X"]},
+                {"values": ["John", "Hill", 13, "Firm X"]},
+                {"values": ["Anthony", "Allen", 23, "Firm X"]},
+                {"values": ["Fabrice", "Roberts", 35, "Firm A"]},
+                {"values": ["Oliver", "Hill", 33, "Firm B"]},
+                {"values": ["David", "Harris", 36, "Firm C"]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected

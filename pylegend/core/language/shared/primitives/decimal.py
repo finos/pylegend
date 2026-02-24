@@ -15,8 +15,6 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
-    PyLegendUnion,
-    TYPE_CHECKING,
 )
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.expression import PyLegendExpressionDecimalReturn
@@ -25,8 +23,6 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-if TYPE_CHECKING:
-    from pylegend.core.language.shared.primitives import PyLegendInteger, PyLegendFloat
 
 __all__: PyLegendSequence[str] = [
     "PyLegendDecimal"
@@ -52,4 +48,3 @@ class PyLegendDecimal(PyLegendNumber):
 
     def value(self) -> PyLegendExpressionDecimalReturn:
         return self.__value_copy
-

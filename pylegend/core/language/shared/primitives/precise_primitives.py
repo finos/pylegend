@@ -52,11 +52,6 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Precise Integer types (all extend PyLegendInteger which extends PyLegendNumber)
-# Pure: Primitive TinyInt extends Integer [ $this >= -pow(2,7) && ($this < pow(2,7)) ]
-# ---------------------------------------------------------------------------
-
 class PyLegendTinyInt(PyLegendInteger):
     """Precise primitive: TinyInt – signed 8-bit integer (-128 .. 127)."""
 
@@ -169,11 +164,6 @@ class PyLegendUBigInt(PyLegendInteger):
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
-# ---------------------------------------------------------------------------
-# Precise String type
-# Pure: Primitive Varchar(x:Integer[1]) extends String [ $this->length() <= $x ]
-# ---------------------------------------------------------------------------
-
 class PyLegendVarchar(PyLegendString):
     """Precise primitive: Varchar(max_length) – variable-length string with max length constraint."""
     __max_length: int
@@ -194,11 +184,6 @@ class PyLegendVarchar(PyLegendString):
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
-# ---------------------------------------------------------------------------
-# Precise DateTime type
-# Pure: Primitive Timestamp extends DateTime
-# ---------------------------------------------------------------------------
-
 class PyLegendTimestamp(PyLegendDateTime):
     """Precise primitive: Timestamp – extends DateTime."""
 
@@ -212,12 +197,6 @@ class PyLegendTimestamp(PyLegendDateTime):
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
-
-# ---------------------------------------------------------------------------
-# Precise Float types
-# Pure: Primitive Float4 extends Float
-# Pure: Primitive Double extends Float
-# ---------------------------------------------------------------------------
 
 class PyLegendFloat4(PyLegendFloat):
     """Precise primitive: Float4 – single-precision float."""
@@ -247,12 +226,6 @@ class PyLegendDouble(PyLegendFloat):
         return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
-# ---------------------------------------------------------------------------
-# Precise Decimal type
-# Pure: Primitive Numeric(precision:Integer[1], scale:Integer[1]) extends Decimal
-#       [ $precision >= $scale, validate($this, $precision, $scale) ]
-# ---------------------------------------------------------------------------
-
 class PyLegendNumeric(PyLegendDecimal):
     """Precise primitive: Numeric(precision, scale) – fixed-point decimal with precision and scale constraints."""
     __precision: int
@@ -281,4 +254,3 @@ class PyLegendNumeric(PyLegendDecimal):
             config: FrameToSqlConfig
     ) -> Expression:
         return super().to_sql_expression(frame_name_to_base_query_map, config)
-
