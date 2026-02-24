@@ -484,19 +484,34 @@ class TestRankFunctionOnBaseFrame:
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == expected
 
     def test_series_rank_primitive_operations(self) -> None:
-        pass
-        # columns = [
-        #     PrimitiveTdsColumn.string_column("first_name"),
-        #     PrimitiveTdsColumn.string_column("last_name"),
-        #     PrimitiveTdsColumn.integer_column("age"),
-        #     PrimitiveTdsColumn.float_column("height"),
-        #     PrimitiveTdsColumn.date_column("date"),
-        #     PrimitiveTdsColumn.boolean_column("is_active"),
-        # ]
-        # frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        columns = [
+            PrimitiveTdsColumn.string_column("first_name"),
+            PrimitiveTdsColumn.string_column("last_name"),
+            PrimitiveTdsColumn.integer_column("age"),
+            PrimitiveTdsColumn.float_column("height"),
+            PrimitiveTdsColumn.date_column("date"),
+            PrimitiveTdsColumn.boolean_column("is_active"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        # frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]
-        # frame["is_fit"] = frame["is_active"] | (frame["age"] < 10)
+        frame["name"] = "Honorable" + frame["first_name"].replace("mr", "Mr.") + frame["last_name"]
+        frame["is_fit"] = frame["is_active"] | (frame["age"] < 10)
+
+        expected = '''
+            SELECT
+                "root".first_name AS "first_name",
+                "root".last_name AS "last_name",
+                "root".age AS "age",
+                "root".height AS "height",
+                "root"."date" AS "date",
+                "root".is_active AS "is_active",
+                CONCAT(CONCAT('Honorable', REPLACE("root".first_name, 'mr', 'Mr.')), "root".last_name) AS "name",
+                ("root".is_active OR ("root".age < 10)) AS "is_fit"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected
 
 
 class TestRankFunctionOnGroupbyFrame:
