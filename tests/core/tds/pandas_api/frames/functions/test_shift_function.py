@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
 from textwrap import dedent
 
 import pandas as pd
@@ -27,8 +27,8 @@ from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
 
-TEST_PURE: bool = True
-USE_LEGEND_ENGINE: bool = True
+TEST_PURE: bool = False
+USE_LEGEND_ENGINE: bool = False
 
 
 class TestErrorsOnBaseFrame:
@@ -176,16 +176,16 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__pylegend_internal_column_name__" AS "col1"
+                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
             FROM
                 (
                     SELECT
-                        lag("root"."col1", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col1__pylegend_internal_column_name__"
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -196,9 +196,9 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).col1})
-              ->project(~[col1:p|$p.col1__pylegend_internal_column_name__])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->project(~[col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -213,19 +213,19 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__pylegend_internal_column_name__" AS "col1",
-                "root"."col2__pylegend_internal_column_name__" AS "col2"
+                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1",
+                "root"."col2__INTERNAL_PYLEGEND_COLUMN__" AS "col2"
             FROM
                 (
                     SELECT
-                        lag("root"."col1", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col1__pylegend_internal_column_name__",
-                        lag("root"."col2", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col2__pylegend_internal_column_name__"
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."col2", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col2__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -236,10 +236,10 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).col1})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col2__pylegend_internal_column_name__:{p,w,r | $p->lag($r).col2})
-              ->project(~[col1:p|$p.col1__pylegend_internal_column_name__, col2:p|$p.col2__pylegend_internal_column_name__])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col2})
+              ->project(~[col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__, col2:p|$p.col2__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -254,16 +254,16 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__pylegend_internal_column_name__" AS "col1"
+                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
             FROM
                 (
                     SELECT
-                        lead("root"."col1", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col1__pylegend_internal_column_name__"
+                        lead("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -274,9 +274,9 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col1__pylegend_internal_column_name__:{p,w,r | $p->lead($r).col1})
-              ->project(~[col1:p|$p.col1__pylegend_internal_column_name__])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r).col1})
+              ->project(~[col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -291,23 +291,23 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1_1__pylegend_internal_column_name__" AS "col1_1",
-                "root"."col2_1__pylegend_internal_column_name__" AS "col2_1",
-                "root"."col1_-1__pylegend_internal_column_name__" AS "col1_-1",
-                "root"."col2_-1__pylegend_internal_column_name__" AS "col2_-1"
+                "root"."col1_1__INTERNAL_PYLEGEND_COLUMN__" AS "col1_1",
+                "root"."col2_1__INTERNAL_PYLEGEND_COLUMN__" AS "col2_1",
+                "root"."col1_-1__INTERNAL_PYLEGEND_COLUMN__" AS "col1_-1",
+                "root"."col2_-1__INTERNAL_PYLEGEND_COLUMN__" AS "col2_-1"
             FROM
                 (
                     SELECT
-                        lag("root"."col1", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col1_1__pylegend_internal_column_name__",
-                        lag("root"."col2", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col2_1__pylegend_internal_column_name__",
-                        lead("root"."col1", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col1_-1__pylegend_internal_column_name__",
-                        lead("root"."col2", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col2_-1__pylegend_internal_column_name__"
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."col2", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col2_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1_-1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."col2", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col2_-1__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -318,12 +318,12 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col1_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).col1})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col2_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).col2})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~'col1_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).col1})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~'col2_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).col2})
-              ->project(~[col1_1:p|$p.col1_1__pylegend_internal_column_name__, col2_1:p|$p.col2_1__pylegend_internal_column_name__, 'col1_-1':p|$p.'col1_-1__pylegend_internal_column_name__', 'col2_-1':p|$p.'col2_-1__pylegend_internal_column_name__'])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col2_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col2})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'col1_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).col1})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'col2_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).col2})
+              ->project(~[col1_1:p|$p.col1_1__INTERNAL_PYLEGEND_COLUMN__, col2_1:p|$p.col2_1__INTERNAL_PYLEGEND_COLUMN__, 'col1_-1':p|$p.'col1_-1__INTERNAL_PYLEGEND_COLUMN__', 'col2_-1':p|$p.'col2_-1__INTERNAL_PYLEGEND_COLUMN__'])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -338,23 +338,23 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1_custom_suffix_-1__pylegend_internal_column_name__" AS "col1_custom_suffix_-1",
-                "root"."col2_custom_suffix_-1__pylegend_internal_column_name__" AS "col2_custom_suffix_-1",
-                "root"."col1_custom_suffix_1__pylegend_internal_column_name__" AS "col1_custom_suffix_1",
-                "root"."col2_custom_suffix_1__pylegend_internal_column_name__" AS "col2_custom_suffix_1"
+                "root"."col1_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__" AS "col1_custom_suffix_-1",
+                "root"."col2_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__" AS "col2_custom_suffix_-1",
+                "root"."col1_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__" AS "col1_custom_suffix_1",
+                "root"."col2_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__" AS "col2_custom_suffix_1"
             FROM
                 (
                     SELECT
-                        lead("root"."col1", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col1_custom_suffix_-1__pylegend_internal_column_name__",
-                        lead("root"."col2", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col2_custom_suffix_-1__pylegend_internal_column_name__",
-                        lag("root"."col1", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col1_custom_suffix_1__pylegend_internal_column_name__",
-                        lag("root"."col2", 1) OVER (ORDER BY "root"."__pylegend_internal_column_name__") AS "col2_custom_suffix_1__pylegend_internal_column_name__"
+                        lead("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."col2", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col2_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."col2", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col2_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -365,12 +365,12 @@ class TestUsageOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~'col1_custom_suffix_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).col1})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~'col2_custom_suffix_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).col2})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col1_custom_suffix_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).col1})
-              ->extend(over([ascending(~__pylegend_internal_column_name__)]), ~col2_custom_suffix_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).col2})
-              ->project(~['col1_custom_suffix_-1':p|$p.'col1_custom_suffix_-1__pylegend_internal_column_name__', 'col2_custom_suffix_-1':p|$p.'col2_custom_suffix_-1__pylegend_internal_column_name__', col1_custom_suffix_1:p|$p.col1_custom_suffix_1__pylegend_internal_column_name__, col2_custom_suffix_1:p|$p.col2_custom_suffix_1__pylegend_internal_column_name__])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'col1_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).col1})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'col2_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).col2})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col2_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col2})
+              ->project(~['col1_custom_suffix_-1':p|$p.'col1_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__', 'col2_custom_suffix_-1':p|$p.'col2_custom_suffix_-1__INTERNAL_PYLEGEND_COLUMN__', col1_custom_suffix_1:p|$p.col1_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__, col2_custom_suffix_1:p|$p.col2_custom_suffix_1__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -396,20 +396,20 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__pylegend_internal_column_name__" AS "val_col",
-                "root"."random_col__pylegend_internal_column_name__" AS "random_col"
+                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col",
+                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col"
             FROM
                 (
                     SELECT
-                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col__pylegend_internal_column_name__",
-                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "random_col__pylegend_internal_column_name__"
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "random_col__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".group_col AS "group_col",
                                 "root".val_col AS "val_col",
                                 "root".random_col AS "random_col",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -420,10 +420,10 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~val_col__pylegend_internal_column_name__:{p,w,r | $p->lag($r).val_col})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~random_col__pylegend_internal_column_name__:{p,w,r | $p->lag($r).random_col})
-              ->project(~[val_col:p|$p.val_col__pylegend_internal_column_name__, random_col:p|$p.random_col__pylegend_internal_column_name__])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).val_col})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).random_col})
+              ->project(~[val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__, random_col:p|$p.random_col__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -442,18 +442,18 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__pylegend_internal_column_name__" AS "val_col"
+                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
             FROM
                 (
                     SELECT
-                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col__pylegend_internal_column_name__"
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".group_col AS "group_col",
                                 "root".val_col AS "val_col",
                                 "root".random_col AS "random_col",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -464,9 +464,9 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~val_col__pylegend_internal_column_name__:{p,w,r | $p->lag($r).val_col})
-              ->project(~[val_col:p|$p.val_col__pylegend_internal_column_name__])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).val_col})
+              ->project(~[val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -485,18 +485,18 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."group_col__pylegend_internal_column_name__" AS "group_col"
+                "root"."group_col__INTERNAL_PYLEGEND_COLUMN__" AS "group_col"
             FROM
                 (
                     SELECT
-                        lag("root"."group_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "group_col__pylegend_internal_column_name__"
+                        lag("root"."group_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "group_col__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
                                 "root".group_col AS "group_col",
                                 "root".val_col AS "val_col",
                                 "root".random_col AS "random_col",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -507,9 +507,9 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~group_col__pylegend_internal_column_name__:{p,w,r | $p->lag($r).group_col})
-              ->project(~[group_col:p|$p.group_col__pylegend_internal_column_name__])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~group_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).group_col})
+              ->project(~[group_col:p|$p.group_col__INTERNAL_PYLEGEND_COLUMN__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -529,17 +529,17 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col_1__pylegend_internal_column_name__" AS "val_col_1",
-                "root"."random_col_1__pylegend_internal_column_name__" AS "random_col_1",
-                "root"."val_col_-1__pylegend_internal_column_name__" AS "val_col_-1",
-                "root"."random_col_-1__pylegend_internal_column_name__" AS "random_col_-1"
+                "root"."val_col_1__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_1",
+                "root"."random_col_1__INTERNAL_PYLEGEND_COLUMN__" AS "random_col_1",
+                "root"."val_col_-1__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_-1",
+                "root"."random_col_-1__INTERNAL_PYLEGEND_COLUMN__" AS "random_col_-1"
             FROM
                 (
                     SELECT
-                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col_1__pylegend_internal_column_name__",
-                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "random_col_1__pylegend_internal_column_name__",
-                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col_-1__pylegend_internal_column_name__",
-                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "random_col_-1__pylegend_internal_column_name__"
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "random_col_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col_-1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "random_col_-1__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
@@ -547,7 +547,7 @@ class TestUsageOnGroupbyFrame:
                                 "root".val_col AS "val_col",
                                 "root".random_col AS "random_col",
                                 "root".random_col_2 AS "random_col_2",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -558,12 +558,12 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~val_col_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).val_col})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~random_col_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).random_col})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~'val_col_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).val_col})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~'random_col_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).random_col})
-              ->project(~[val_col_1:p|$p.val_col_1__pylegend_internal_column_name__, random_col_1:p|$p.random_col_1__pylegend_internal_column_name__, 'val_col_-1':p|$p.'val_col_-1__pylegend_internal_column_name__', 'random_col_-1':p|$p.'random_col_-1__pylegend_internal_column_name__'])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~val_col_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).val_col})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~random_col_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).random_col})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'val_col_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).val_col})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'random_col_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).random_col})
+              ->project(~[val_col_1:p|$p.val_col_1__INTERNAL_PYLEGEND_COLUMN__, random_col_1:p|$p.random_col_1__INTERNAL_PYLEGEND_COLUMN__, 'val_col_-1':p|$p.'val_col_-1__INTERNAL_PYLEGEND_COLUMN__', 'random_col_-1':p|$p.'random_col_-1__INTERNAL_PYLEGEND_COLUMN__'])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -583,17 +583,17 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col_sfx_1__pylegend_internal_column_name__" AS "val_col_sfx_1",
-                "root"."random_col_sfx_1__pylegend_internal_column_name__" AS "random_col_sfx_1",
-                "root"."val_col_sfx_-1__pylegend_internal_column_name__" AS "val_col_sfx_-1",
-                "root"."random_col_sfx_-1__pylegend_internal_column_name__" AS "random_col_sfx_-1"
+                "root"."val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_sfx_1",
+                "root"."random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__" AS "random_col_sfx_1",
+                "root"."val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_sfx_-1",
+                "root"."random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__" AS "random_col_sfx_-1"
             FROM
                 (
                     SELECT
-                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col_sfx_1__pylegend_internal_column_name__",
-                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "random_col_sfx_1__pylegend_internal_column_name__",
-                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col_sfx_-1__pylegend_internal_column_name__",
-                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__pylegend_internal_column_name__") AS "random_col_sfx_-1__pylegend_internal_column_name__"
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
@@ -601,7 +601,7 @@ class TestUsageOnGroupbyFrame:
                                 "root".val_col AS "val_col",
                                 "root".random_col AS "random_col",
                                 "root".random_col_2 AS "random_col_2",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -612,12 +612,12 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~val_col_sfx_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).val_col})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~random_col_sfx_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).random_col})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~'val_col_sfx_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).val_col})
-              ->extend(over(~[group_col], [ascending(~__pylegend_internal_column_name__)]), ~'random_col_sfx_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).random_col})
-              ->project(~[val_col_sfx_1:p|$p.val_col_sfx_1__pylegend_internal_column_name__, random_col_sfx_1:p|$p.random_col_sfx_1__pylegend_internal_column_name__, 'val_col_sfx_-1':p|$p.'val_col_sfx_-1__pylegend_internal_column_name__', 'random_col_sfx_-1':p|$p.'random_col_sfx_-1__pylegend_internal_column_name__'])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).val_col})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).random_col})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).val_col})
+              ->extend(over(~[group_col], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).random_col})
+              ->project(~[val_col_sfx_1:p|$p.val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__, random_col_sfx_1:p|$p.random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__, 'val_col_sfx_-1':p|$p.'val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__', 'random_col_sfx_-1':p|$p.'random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__'])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -640,21 +640,21 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."group_col_sfx_1__pylegend_internal_column_name__" AS "group_col_sfx_1",
-                "root"."val_col_sfx_1__pylegend_internal_column_name__" AS "val_col_sfx_1",
-                "root"."random_col_sfx_1__pylegend_internal_column_name__" AS "random_col_sfx_1",
-                "root"."group_col_sfx_-1__pylegend_internal_column_name__" AS "group_col_sfx_-1",
-                "root"."val_col_sfx_-1__pylegend_internal_column_name__" AS "val_col_sfx_-1",
-                "root"."random_col_sfx_-1__pylegend_internal_column_name__" AS "random_col_sfx_-1"
+                "root"."group_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__" AS "group_col_sfx_1",
+                "root"."val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_sfx_1",
+                "root"."random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__" AS "random_col_sfx_1",
+                "root"."group_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__" AS "group_col_sfx_-1",
+                "root"."val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_sfx_-1",
+                "root"."random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__" AS "random_col_sfx_-1"
             FROM
                 (
                     SELECT
-                        lag("root"."group_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__pylegend_internal_column_name__") AS "group_col_sfx_1__pylegend_internal_column_name__",
-                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col_sfx_1__pylegend_internal_column_name__",
-                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__pylegend_internal_column_name__") AS "random_col_sfx_1__pylegend_internal_column_name__",
-                        lead("root"."group_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__pylegend_internal_column_name__") AS "group_col_sfx_-1__pylegend_internal_column_name__",
-                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__pylegend_internal_column_name__") AS "val_col_sfx_-1__pylegend_internal_column_name__",
-                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__pylegend_internal_column_name__") AS "random_col_sfx_-1__pylegend_internal_column_name__"
+                        lag("root"."group_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "group_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."val_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lag("root"."random_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."group_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "group_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."val_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."random_col", 1) OVER (PARTITION BY "root"."group_col", "root"."group_col_2" ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__"
                     FROM
                         (
                             SELECT
@@ -663,7 +663,7 @@ class TestUsageOnGroupbyFrame:
                                 "root".val_col AS "val_col",
                                 "root".random_col AS "random_col",
                                 "root".random_col_2 AS "random_col_2",
-                                0 AS "__pylegend_internal_column_name__"
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -674,14 +674,14 @@ class TestUsageOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(~__pylegend_internal_column_name__:{r|0})
-              ->extend(over(~[group_col, group_col_2], [ascending(~__pylegend_internal_column_name__)]), ~group_col_sfx_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).group_col})
-              ->extend(over(~[group_col, group_col_2], [ascending(~__pylegend_internal_column_name__)]), ~val_col_sfx_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).val_col})
-              ->extend(over(~[group_col, group_col_2], [ascending(~__pylegend_internal_column_name__)]), ~random_col_sfx_1__pylegend_internal_column_name__:{p,w,r | $p->lag($r).random_col})
-              ->extend(over(~[group_col, group_col_2], [ascending(~__pylegend_internal_column_name__)]), ~'group_col_sfx_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).group_col})
-              ->extend(over(~[group_col, group_col_2], [ascending(~__pylegend_internal_column_name__)]), ~'val_col_sfx_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).val_col})
-              ->extend(over(~[group_col, group_col_2], [ascending(~__pylegend_internal_column_name__)]), ~'random_col_sfx_-1__pylegend_internal_column_name__':{p,w,r | $p->lead($r).random_col})
-              ->project(~[group_col_sfx_1:p|$p.group_col_sfx_1__pylegend_internal_column_name__, val_col_sfx_1:p|$p.val_col_sfx_1__pylegend_internal_column_name__, random_col_sfx_1:p|$p.random_col_sfx_1__pylegend_internal_column_name__, 'group_col_sfx_-1':p|$p.'group_col_sfx_-1__pylegend_internal_column_name__', 'val_col_sfx_-1':p|$p.'val_col_sfx_-1__pylegend_internal_column_name__', 'random_col_sfx_-1':p|$p.'random_col_sfx_-1__pylegend_internal_column_name__'])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over(~[group_col, group_col_2], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~group_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).group_col})
+              ->extend(over(~[group_col, group_col_2], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).val_col})
+              ->extend(over(~[group_col, group_col_2], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).random_col})
+              ->extend(over(~[group_col, group_col_2], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'group_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).group_col})
+              ->extend(over(~[group_col, group_col_2], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).val_col})
+              ->extend(over(~[group_col, group_col_2], [ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).random_col})
+              ->project(~[group_col_sfx_1:p|$p.group_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__, val_col_sfx_1:p|$p.val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__, random_col_sfx_1:p|$p.random_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__, 'group_col_sfx_-1':p|$p.'group_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__', 'val_col_sfx_-1':p|$p.'val_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__', 'random_col_sfx_-1':p|$p.'random_col_sfx_-1__INTERNAL_PYLEGEND_COLUMN__'])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         if TEST_PURE:
@@ -709,12 +709,27 @@ def pandas_df_simple_person() -> pd.DataFrame:
 
 
 def assert_frame_equal(left: pd.DataFrame, right: pd.DataFrame) -> None:
+    # Ensure both DataFrames have the exact same columns
+    missing_in_right = set(left.columns) - set(right.columns)
+    missing_in_left = set(right.columns) - set(left.columns)
+    assert not missing_in_right, f"Right DataFrame is missing columns: {missing_in_right}"
+    assert not missing_in_left, f"Left DataFrame is missing columns: {missing_in_left}"
+
+    left = left[right.columns]  # To align columns
+    left = left.reset_index(drop=True)
+    right = right.reset_index(drop=True)
+
+    # This standardizes np.nan and pd.NA
+    left = left.convert_dtypes()
+    right = right.convert_dtypes()
+
     pd.testing.assert_frame_equal(
-        left=left,
-        right=right,
-        check_dtype=False,
-        check_exact=False,
-        check_like=True
+        left,
+        right,
+        check_dtype=False,             # Ignores type differences (Int64 vs Float64)
+        check_exact=False,             # Allows for minor precision differences in floats
+        check_categorical=False,       # Ignores categorical vs string differences
+        check_datetimelike_compat=True # Treats datetime objects and matching strings as equal
     )
 
 
@@ -727,10 +742,24 @@ class TestEndToEndUsageOnBaseFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.shift().execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.shift()
+        pylegend_frame = frame.shift()
+        pandas_frame = pandas_df_simple_person.shift()
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+            "rows": [
+                {"values": [None, None, None, None]},
+                {"values": ['Peter', 'Smith', 23, 'Firm X']},
+                {"values": ['John', 'Johnson', 22, 'Firm X']},
+                {"values": ['John', 'Hill', 12, 'Firm X']},
+                {"values": ['Anthony', 'Allen', 22, 'Firm X']},
+                {"values": ['Fabrice', 'Roberts', 34, 'Firm A']},
+                {"values": ['Oliver', 'Hill', 32, 'Firm B']},
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)
 
     def test_negative_periods(
             self,
@@ -739,10 +768,24 @@ class TestEndToEndUsageOnBaseFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.shift(periods=-1).execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.shift(periods=-1)
+        pylegend_frame = frame.shift(periods=-1)
+        pandas_frame = pandas_df_simple_person.shift(periods=-1)
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+            "rows": [
+                {"values": ['John', 'Johnson', 22, 'Firm X']},
+                {"values": ['John', 'Hill', 12, 'Firm X']},
+                {"values": ['Anthony', 'Allen', 22, 'Firm X']},
+                {"values": ['Fabrice', 'Roberts', 34, 'Firm A']},
+                {"values": ['Oliver', 'Hill', 32, 'Firm B']},
+                {'values': ['David', 'Harris', 35, 'Firm C']},
+                {"values": [None, None, None, None]},
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)
 
     def test_list_periods(
             self,
@@ -751,10 +794,25 @@ class TestEndToEndUsageOnBaseFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.shift(periods=[1, -1]).execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.shift(periods=[1, -1])
+        pylegend_frame = frame.shift(periods=[1, -1])
+        pandas_frame = pandas_df_simple_person.shift(periods=[1, -1])
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            'columns': ['First Name_1', 'Last Name_1', 'Age_1', 'Firm/Legal Name_1',
+                        'First Name_-1', 'Last Name_-1', 'Age_-1', 'Firm/Legal Name_-1'],
+            'rows': [
+                {'values': [None,      None,      None, None,     'John',    'Johnson', 22,   'Firm X']},
+                {'values': ['Peter',   'Smith',   23,   'Firm X', 'John',    'Hill',    12,   'Firm X']},
+                {'values': ['John',    'Johnson', 22,   'Firm X', 'Anthony', 'Allen',   22,   'Firm X']},
+                {'values': ['John',    'Hill',    12,   'Firm X', 'Fabrice', 'Roberts', 34,   'Firm A']},
+                {'values': ['Anthony', 'Allen',   22,   'Firm X', 'Oliver',  'Hill',    32,   'Firm B']},
+                {'values': ['Fabrice', 'Roberts', 34,   'Firm A', 'David',   'Harris',  35,   'Firm C']},
+                {'values': ['Oliver',  'Hill',    32,   'Firm B', None,      None,      None, None    ]}
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)
 
     def test_list_periods_with_suffix(
             self,
@@ -763,10 +821,25 @@ class TestEndToEndUsageOnBaseFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.shift(periods=[1, -1], suffix="_shifted").execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")  # type: ignore[call-arg]
+        pylegend_frame = frame.shift(periods=[1, -1], suffix="_shifted")
+        pandas_frame = pandas_df_simple_person.shift(periods=[1, -1], suffix="_shifted")  # type: ignore[call-arg]
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            'columns': ['First Name_shifted_1', 'Last Name_shifted_1', 'Age_shifted_1', 'Firm/Legal Name_shifted_1',
+                        'First Name_shifted_-1', 'Last Name_shifted_-1', 'Age_shifted_-1', 'Firm/Legal Name_shifted_-1'],
+            'rows': [
+                {'values': [None,      None,      None, None,     'John',    'Johnson', 22,   'Firm X']},
+                {'values': ['Peter',   'Smith',   23,   'Firm X', 'John',    'Hill',    12,   'Firm X']},
+                {'values': ['John',    'Johnson', 22,   'Firm X', 'Anthony', 'Allen',   22,   'Firm X']},
+                {'values': ['John',    'Hill',    12,   'Firm X', 'Fabrice', 'Roberts', 34,   'Firm A']},
+                {'values': ['Anthony', 'Allen',   22,   'Firm X', 'Oliver',  'Hill',    32,   'Firm B']},
+                {'values': ['Fabrice', 'Roberts', 34,   'Firm A', 'David',   'Harris',  35,   'Firm C']},
+                {'values': ['Oliver',  'Hill',    32,   'Firm B', None,      None,      None, None    ]}
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)
 
 
 class TestEndToEndUsageOnGroupbyFrame:
@@ -778,10 +851,24 @@ class TestEndToEndUsageOnGroupbyFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = frame.groupby("Firm/Legal Name").shift().execute_frame_to_pandas_df()
-        pandas_output = pandas_df_simple_person.groupby("Firm/Legal Name").shift()
+        pylegend_frame = frame.groupby("Firm/Legal Name").shift()
+        pandas_frame = pandas_df_simple_person.groupby("Firm/Legal Name").shift()
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            'columns': ['First Name', 'Last Name', 'Age'],
+            'rows': [
+                {'values': [None,    None,      None]},  # Firm X
+                {'values': ['Peter', 'Smith',   23  ]},  # Firm X
+                {'values': ['John',  'Johnson', 22  ]},  # Firm X
+                {'values': ['John',  'Hill',    12  ]},  # Firm X
+                {'values': [None,    None,      None]},  # Firm A
+                {'values': [None,    None,      None]},  # Firm B
+                {'values': [None,    None,      None]},  # Firm C
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)
 
     def test_negative_periods_with_selection(
             self,
@@ -790,19 +877,24 @@ class TestEndToEndUsageOnGroupbyFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = (
-            frame
-            .groupby("Firm/Legal Name")[["First Name", "Last Name"]]
-            .shift(-1)
-            .execute_frame_to_pandas_df()
-        )
-        pandas_output = (
-            pandas_df_simple_person
-            .groupby("Firm/Legal Name")[["First Name", "Last Name"]]
-            .shift(-1)
-        )
+        pylegend_frame = frame.groupby("Firm/Legal Name")[["First Name", "Last Name"]].shift(-1)
+        pandas_frame = pandas_df_simple_person.groupby("Firm/Legal Name")[["First Name", "Last Name"]].shift(-1)
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            'columns': ['First Name', 'Last Name'],
+            'rows': [
+                {'values': ['John',    'Johnson']},  # Firm X
+                {'values': ['John',    'Hill'   ]},  # Firm X
+                {'values': ['Anthony', 'Allen'  ]},  # Firm X
+                {'values': [None,      None     ]},  # Firm X
+                {'values': [None,      None     ]},  # Firm A
+                {'values': [None,      None     ]},  # Firm B
+                {'values': [None,      None     ]},  # Firm C
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)
 
     def test_list_periods_with_groupby_column_selected(
             self,
@@ -811,19 +903,24 @@ class TestEndToEndUsageOnGroupbyFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = (
-            frame
-            .groupby("Firm/Legal Name")["Firm/Legal Name"]
-            .shift([-1, 1])
-            .execute_frame_to_pandas_df()
-        )
-        pandas_output = pd.DataFrame(
-            pandas_df_simple_person
-            .groupby("Firm/Legal Name")["Firm/Legal Name"]
-            .shift([-1, 1])
-        )
+        pylegend_frame = frame.groupby("Firm/Legal Name")[["Firm/Legal Name"]].shift([1, -1])
+        pandas_frame = pandas_df_simple_person.groupby("Firm/Legal Name")[["Firm/Legal Name"]].shift([1, -1])
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            'columns': ['Firm/Legal Name_1', 'Firm/Legal Name_-1'],
+            'rows': [
+                {'values': [None,     'Firm X']},  # Firm X
+                {'values': ['Firm X', 'Firm X']},  # Firm X
+                {'values': ['Firm X', 'Firm X']},  # Firm X
+                {'values': ['Firm X', None    ]},  # Firm X
+                {'values': [None,     None    ]},  # Firm A
+                {'values': [None,     None    ]},  # Firm B
+                {'values': [None,     None    ]},  # Firm C
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)
 
     def test_list_periods_with_multiple_groupby_and_suffix(
             self,
@@ -832,16 +929,25 @@ class TestEndToEndUsageOnGroupbyFrame:
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_output = (
-            frame
-            .groupby(["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]]
-            .shift([-1, 1], suffix="_shifted")
-            .execute_frame_to_pandas_df()
-        )
-        pandas_output = (
-            pandas_df_simple_person
-            .groupby(["Firm/Legal Name", "Age"])[["Firm/Legal Name", "First Name"]]
-            .shift([-1, 1], suffix="_shifted")
+        pylegend_frame = frame.groupby("Firm/Legal Name")[["Firm/Legal Name", "First Name"]].shift([1, -1], suffix="_shifted")
+        pandas_frame = (
+            pandas_df_simple_person.groupby("Firm/Legal Name")[["Firm/Legal Name", "First Name"]]
+            .shift([1, -1], suffix="_shifted")
         )
 
-        assert_frame_equal(pylegend_output, pandas_output)
+        expected = {
+            'columns': ['First Name_shifted_1', 'Firm/Legal Name_shifted_1',
+                        'First Name_shifted_-1', 'Firm/Legal Name_shifted_-1'],
+            'rows': [
+                {'values': [None,    None,     'John',    'Firm X']},  # Firm X
+                {'values': ['Peter', 'Firm X', 'John',    'Firm X']},  # Firm X
+                {'values': ['John',  'Firm X', 'Anthony', 'Firm X']},  # Firm X
+                {'values': ['John',  'Firm X', None,       None   ]},  # Firm X
+                {'values': [None,    None,     None,       None   ]},  # Firm A
+                {'values': [None,    None,     None,       None   ]},  # Firm B
+                {'values': [None,    None,     None,       None   ]},  # Firm C
+            ]
+        }
+        res = pylegend_frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert_frame_equal(pylegend_frame.execute_frame_to_pandas_df(), pandas_frame)

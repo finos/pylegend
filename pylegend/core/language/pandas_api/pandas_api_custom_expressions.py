@@ -241,6 +241,9 @@ class PandasApiPartialFrame:
         self.__base_frame = base_frame
         self.__var_name = var_name
 
+    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
+        return self.__base_frame
+
     def row_number(
             self,
             row: "PandasApiTdsRow"
