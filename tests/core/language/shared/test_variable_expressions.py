@@ -47,6 +47,7 @@ class TestPyLegendVariableExpressions:
         var1 = PyLegendString(PyLegendStringVariableExpression("var1"))
         assert var1.to_pure_expression(self.frame_to_pure_config) == '$var1'
         assert (var1 + '__').to_pure_expression(self.frame_to_pure_config) == "(toOne($var1) + '__')"
+        assert var1.value().get_sub_expressions() == [var1.value()]
 
     def test_number_variable_expressions(self) -> None:
         var1 = PyLegendNumber(PyLegendNumberVariableExpression("var1"))
