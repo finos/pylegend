@@ -84,6 +84,7 @@ jobs:
         env:
           TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
+          TESTCONTAINERS_RYUK_DISABLED: true
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
@@ -120,6 +121,21 @@ jobs:
         with:
           name: event-file-${{ matrix.os }}-${{ matrix.python-version }}
           path: ${{ github.event_path }}
+
+      - name: Dump Docker Logs on Failure
+        if: failure()
+        run: |
+          echo "=== DOCKER PROCESSES ==="
+          docker ps -a
+          
+          echo "=== CONTAINER LOGS ==="
+          # This grabs the ID of the most recently created container and dumps its logs
+          LATEST_CONTAINER=$(docker ps -a -q | head -n 1)
+          if [ -n "$LATEST_CONTAINER" ]; then
+            docker logs "$LATEST_CONTAINER"
+          else
+            echo "No containers found."
+          fi
 
   build:
     name: Poetry Build
