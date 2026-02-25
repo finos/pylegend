@@ -43,27 +43,42 @@ jobs:
     needs: [ lint, typing_check ]
     strategy:
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-14 ]
+        os: [ ubuntu-latest, ubuntu-24.04-arm, windows-latest]
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
     runs-on: ${{ matrix.os }}
+    env:
+      # Common Testcontainers settings for Podman compatibility
+      TESTCONTAINERS_RYUK_DISABLED: "true"
+      TESTCONTAINERS_CHECKS_DISABLE: "true"
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Setup and configure colima on macOS
-        if: runner.os == 'macOS'
-        uses: douglascamata/setup-docker-macos-action@v1
+      # 1. Use the official Red Hat Action
+      - name: Install Podman (Red Hat Action)
+        uses: redhat-actions/podman-setup@v1
 
-      - name: Set Testcontainers environment variables
+      # 2. Windows-specific: Start the VM and set the Pipe
+      - name: Initialize Podman Machine (Windows)
+        if: runner.os == 'Windows'
         run: |
-          # The DOCKER_HOST is set by the setup-docker-macos-action internally
-          # We need to export other variables for Testcontainers
-          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> $GITHUB_ENV
-          # Optional: disable Ryuk (Testcontainers' container reaper) if needed for specific setups
-          # echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
+          podman machine init --cpus 2 --memory 2048
+          podman machine start
+          # Map the Podman named pipe for Testcontainers
+          echo "DOCKER_HOST=npipe:////./pipe/docker_engine" >> $env:GITHUB_ENV
 
+      # 3. Linux-specific: Enable the User Socket
+      - name: Enable Podman Socket (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          systemctl --user enable --now podman.socket
+          # Map the Unix socket for Testcontainers
+          echo "DOCKER_HOST=unix:///run/user/$(id -u)/podman.podman.sock" >> $GITHUB_ENV
+
+      # --- VERIFICATION & EXECUTION ---
+      - name: Verify Podman Connection
+        run: podman info
+      
       - name: PyTest
-        if: runner.os == 'macOS'
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
