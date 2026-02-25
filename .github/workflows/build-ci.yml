@@ -50,11 +50,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
+      - name: Setup and configure colima on macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew install colima
+          brew install docker
+          colima start
+          colima status
+          export DOCKER_HOST="unix://${HOME}/.colima/docker.sock"
+          export TESTCONTAINERS_HOST_OVERRIDE=$(colima ls -j | jq -r '.address')
+          export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+          export TESTCONTAINERS_RYUK_DISABLED=true
+
       - name: PyTest
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
           python-version: ${{ matrix.python-version }}
+
+      - name: Stop colima on macOS
+        if: runner.os == 'macOS'
+        run: colima stop
 
       - name: Upload Test Results
         if: always()
