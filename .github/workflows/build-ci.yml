@@ -53,17 +53,22 @@ jobs:
       - name: Setup and configure colima on macOS
         if: runner.os == 'macOS'
         run: |
-          brew install docker colima
-          colima start --cpu 2 --memory 4
-          echo "DOCKER_SOCK=$(colima status -p default | grep unix | cut -d' ' -f4)" >> $GITHUB_ENV
-
+          brew install colima docker qemu
+          # Using 'qemu' VM type is often more stable on Intel Runners than 'vz'
+          colima start --cpu 2 --memory 4 --vm-type=qemu --mount-type=sshfs
+          
+          # Wait until the socket file actually appears on disk
+          timeout 60s bash -c 'until [ -S ~/.colima/default/docker.sock ]; do sleep 2; done'
+          
+          # Export the dynamic path to the runner environment
+          echo "DOCKER_SOCK=$HOME/.colima/default/docker.sock" >> $GITHUB_ENV
       - name: PyTest
         if: runner.os == 'macOS'
         env:
-          # Tell the Docker SDK (used by Testcontainers) exactly where to look
           DOCKER_HOST: unix://${{ env.DOCKER_SOCK }}
-          # Some Testcontainers versions specifically look for this override
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: ${{ env.DOCKER_SOCK }}
+          # Force localhost to avoid macOS 15 networking bridge issues
+          TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
