@@ -56,9 +56,20 @@ jobs:
           brew install colima docker qemu
           # Using 'qemu' VM type is often more stable on Intel Runners than 'vz'
           colima start --cpu 2 --memory 4 --vm-type=qemu --mount-type=sshfs
-          
-          # Wait until the socket file actually appears on disk
-          timeout 60s bash -c 'until [ -S ~/.colima/default/docker.sock ]; do sleep 2; done'
+
+          # Pure bash wait loop (Max 60 seconds)
+          echo "Waiting for Docker socket..."
+          max_retries=30
+          count=0
+          while [ ! -S ~/.colima/default/docker.sock ]; do
+            sleep 2
+            count=$((count+1))
+            if [ $count -ge $max_retries ]; then
+              echo "Error: Timeout waiting for Colima socket"
+              exit 1
+            fi
+          done
+          echo "Docker socket is ready!"
           
           # Export the dynamic path to the runner environment
           echo "DOCKER_SOCK=$HOME/.colima/default/docker.sock" >> $GITHUB_ENV
