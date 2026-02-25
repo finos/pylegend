@@ -55,9 +55,16 @@ jobs:
         run: |
           # 1. Download the specific Intel DMG directly from OrbStack
           curl -L -o orbstack.dmg https://cdn-updates.orbstack.dev/amd64/OrbStack_v1.5.1_16857_amd64.dmg
-
+          # 2. Mount the DMG virtual drive
+          hdiutil attach orbstack.dmg -mountpoint /Volumes/OrbStack
+          
+          # 3. Copy the App OUT of the virtual drive and into the system Applications folder
+          sudo cp -R /Volumes/OrbStack/OrbStack.app /Applications/
+          
+          # 4. Safely eject the virtual drive
+          hdiutil detach /Volumes/OrbStack
           # 2. Start OrbStack in the background 
-          nohup ./orbstack.dmg/OrbStack.app/Contents/MacOS/bin/orb start &
+          nohup /Applications/OrbStack.app/Contents/MacOS/bin/orb start &
           
           # 3. Wait a few seconds until the Docker engine is fully responsive
           while ! docker ps > /dev/null 2>&1; do 
