@@ -135,9 +135,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def get_filtered_frame(self) -> PandasApiAppliedFunctionTdsFrame:
         return self._filtered_frame
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         if self.expr is not None:
-            return self.expr.get_sub_expressions()
+            return self.expr.get_leaf_expressions()
         return [self]
 
     def to_sql_expression(
@@ -194,7 +194,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         has_window_func = False
         window_expr = ""
         function_expr = ""
-        sub_expressions = self.get_sub_expressions()
+        sub_expressions = self.get_leaf_expressions()
         for expr in sub_expressions:
             if isinstance(expr, Series):
                 applied_func = expr.get_filtered_frame().get_applied_function()

@@ -139,7 +139,7 @@ class AssignFunction(PandasApiAppliedFunction):
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             if isinstance(res, (Series, GroupbySeries)):
-                sub_expressions = res.get_sub_expressions()
+                sub_expressions = res.get_leaf_expressions()
                 for expr in sub_expressions:
                     if isinstance(expr, Series):
                         applied_func = expr.get_filtered_frame().get_applied_function()
