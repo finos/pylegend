@@ -96,7 +96,7 @@ class TestLiteralExpressions:
             config=self.sql_to_string_config
         ) == "null"
         assert self.__generate_pure_string(expr) == "[]"
-        assert expr.get_sub_expressions() == [expr]
+        assert expr.get_leaf_expressions() == [expr]
 
     def __generate_pure_string(self, expr) -> str:  # type: ignore
         e = str(expr.to_pure_expression(self.frame_to_pure_config))

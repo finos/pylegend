@@ -57,50 +57,50 @@ class PyLegendExpression(metaclass=ABCMeta):
         return False
 
     @abstractmethod
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         pass  # pragma: no cover
 
 
 class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
 class PyLegendExpressionStringReturn(PyLegendExpression, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
 class PyLegendExpressionNumberReturn(PyLegendExpression, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]  # pragma: no cover (Covered by its subclasses)
 
 
 class PyLegendExpressionIntegerReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
 class PyLegendExpressionFloatReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
 class PyLegendExpressionDateReturn(PyLegendExpression, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]  # pragma: no cover (Covered by its subclasses)
 
 
 class PyLegendExpressionDateTimeReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
 class PyLegendExpressionStrictDateReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
 
 
 class PyLegendExpressionNullReturn(PyLegendExpression, metaclass=ABCMeta):
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
