@@ -25,6 +25,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.shared.operations.integer_operation_expressions import (
     PyLegendIntegerAddExpression,
@@ -33,7 +34,13 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
     PyLegendIntegerSubtractExpression,
     PyLegendIntegerMultiplyExpression,
     PyLegendIntegerModuloExpression,
-    PyLegendIntegerCharExpression
+    PyLegendIntegerCharExpression,
+    PyLegendIntegerBitAndExpression,
+    PyLegendIntegerBitOrExpression,
+    PyLegendIntegerBitXorExpression,
+    PyLegendIntegerBitShiftLeftExpression,
+    PyLegendIntegerBitShiftRightExpression,
+    PyLegendIntegerBitNotExpression
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendFloat
@@ -68,6 +75,7 @@ class PyLegendInteger(PyLegendNumber):
     def value(self) -> PyLegendExpressionIntegerReturn:
         return self.__value_copy
 
+    @grammar_method
     def __add__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -79,6 +87,7 @@ class PyLegendInteger(PyLegendNumber):
         else:
             return super().__add__(other)
 
+    @grammar_method
     def __radd__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -90,6 +99,7 @@ class PyLegendInteger(PyLegendNumber):
         else:
             return super().__radd__(other)
 
+    @grammar_method
     def __sub__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -101,6 +111,7 @@ class PyLegendInteger(PyLegendNumber):
         else:
             return super().__sub__(other)
 
+    @grammar_method
     def __rsub__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -112,6 +123,7 @@ class PyLegendInteger(PyLegendNumber):
         else:
             return super().__rsub__(other)
 
+    @grammar_method
     def __mul__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -123,6 +135,7 @@ class PyLegendInteger(PyLegendNumber):
         else:
             return super().__mul__(other)
 
+    @grammar_method
     def __rmul__(
             self,
             other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
@@ -134,6 +147,7 @@ class PyLegendInteger(PyLegendNumber):
         else:
             return super().__rmul__(other)
 
+    @grammar_method
     def __mod__(
             self,
             other: PyLegendUnion[int, "PyLegendInteger"]
@@ -142,6 +156,7 @@ class PyLegendInteger(PyLegendNumber):
         other_op = PyLegendInteger.__convert_to_integer_expr(other)
         return PyLegendInteger(PyLegendIntegerModuloExpression(self.__value_copy, other_op))
 
+    @grammar_method
     def __rmod__(
             self,
             other: PyLegendUnion[int, "PyLegendInteger"]
@@ -150,14 +165,75 @@ class PyLegendInteger(PyLegendNumber):
         other_op = PyLegendInteger.__convert_to_integer_expr(other)
         return PyLegendInteger(PyLegendIntegerModuloExpression(other_op, self.__value_copy))
 
+    @grammar_method
     def __abs__(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendIntegerAbsoluteExpression(self.__value_copy))
 
+    @grammar_method
     def __neg__(self) -> "PyLegendInteger":
         return PyLegendInteger(PyLegendIntegerNegativeExpression(self.__value_copy))
 
+    @grammar_method
     def __pos__(self) -> "PyLegendInteger":
         return self
+
+    @grammar_method
+    def __invert__(self) -> "PyLegendInteger":
+        return PyLegendInteger(PyLegendIntegerBitNotExpression(self.__value_copy))
+
+    @grammar_method
+    def __and__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitAndExpression, "and (&)")
+
+    @grammar_method
+    def __rand__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitAndExpression, "and (&)", reverse=True)
+
+    @grammar_method
+    def __or__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitOrExpression, "or (|)")
+
+    @grammar_method
+    def __ror__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitOrExpression, "or (|)", reverse=True)
+
+    @grammar_method
+    def __xor__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitXorExpression, "xor (^)")
+
+    @grammar_method
+    def __rxor__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitXorExpression, "xor (^)", reverse=True)
+
+    @grammar_method
+    def __lshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftLeftExpression, "left shift (<<)")
+
+    @grammar_method
+    def __rlshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftLeftExpression, "left shift (<<)", reverse=True)
+
+    @grammar_method
+    def __rshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftRightExpression, "right shift (>>)")
+
+    @grammar_method
+    def __rrshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
+        return self._create_binary_expression(other, PyLegendIntegerBitShiftRightExpression, "right shift (>>)", reverse=True)
+
+    def _create_binary_expression(
+            self,
+            other: PyLegendUnion[int, "PyLegendInteger"],
+            expression_class: type,
+            operation_name: str,
+            reverse: bool = False
+    ) -> "PyLegendInteger":
+        PyLegendInteger.__validate__param_to_be_integer(other, f"Integer {operation_name} parameter")
+        other_op = PyLegendInteger.__convert_to_integer_expr(other)
+
+        if reverse:
+            return PyLegendInteger(expression_class(other_op, self.__value_copy))
+        return PyLegendInteger(expression_class(self.__value_copy, other_op))
 
     @staticmethod
     def __convert_to_integer_expr(

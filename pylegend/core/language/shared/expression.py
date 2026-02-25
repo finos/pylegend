@@ -36,6 +36,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendExpressionDateReturn",
     "PyLegendExpressionDateTimeReturn",
     "PyLegendExpressionStrictDateReturn",
+    "PyLegendExpressionNullReturn"
 ]
 
 
@@ -55,34 +56,51 @@ class PyLegendExpression(metaclass=ABCMeta):
     def is_non_nullable(self) -> bool:
         return False
 
+    @abstractmethod
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        pass  # pragma: no cover
+
 
 class PyLegendExpressionBooleanReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionStringReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionNumberReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]  # pragma: no cover (Covered by its subclasses)
 
 
 class PyLegendExpressionIntegerReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionFloatReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionDateReturn(PyLegendExpression, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]  # pragma: no cover (Covered by its subclasses)
 
 
 class PyLegendExpressionDateTimeReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
 
 
 class PyLegendExpressionStrictDateReturn(PyLegendExpressionDateReturn, metaclass=ABCMeta):
-    pass
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
+
+
+class PyLegendExpressionNullReturn(PyLegendExpression, metaclass=ABCMeta):
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]

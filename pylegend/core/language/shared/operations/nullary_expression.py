@@ -69,3 +69,6 @@ class PyLegendNullaryExpression(PyLegendExpression, metaclass=ABCMeta):
 
     def is_non_nullable(self) -> bool:
         return self.__non_nullable
+
+    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]

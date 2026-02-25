@@ -14,7 +14,6 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import TYPE_CHECKING
 from pylegend.core.language import (
     PyLegendPrimitive,
     PyLegendBoolean,
@@ -31,9 +30,12 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendList,
     PyLegendDict,
+    TYPE_CHECKING,
 )
-from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
-from pylegend.core.language.shared.expression import PyLegendExpressionFloatReturn, PyLegendExpressionIntegerReturn
+from pylegend.core.language.shared.expression import (
+    PyLegendExpressionFloatReturn,
+    PyLegendExpressionIntegerReturn,
+)
 from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -46,7 +48,10 @@ from pylegend.core.sql.metamodel import (
     SortItemOrdering,
     Window
 )
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import (
+    FrameToPureConfig,
+    FrameToSqlConfig,
+)
 
 __all__: PyLegendSequence[str] = [
     "PandasApiPrimitive",
@@ -58,6 +63,16 @@ __all__: PyLegendSequence[str] = [
     "PandasApiDate",
     "PandasApiDateTime",
     "PandasApiStrictDate",
+    "PandasApiSortInfo",
+    "PandasApiSortDirection",
+    "PandasApiWindow",
+    "PandasApiWindowReference",
+    "PandasApiWindowFrame",
+    "PandasApiRankExpression",
+    "PandasApiDenseRankExpression",
+    "PandasApiRowNumberExpression",
+    "PandasApiPartialFrame",
+    "PandasApiPercentRankExpression",
 ]
 
 
@@ -106,24 +121,24 @@ class PandasApiStrictDate(PandasApiPrimitive, PyLegendStrictDate):
 
 
 class PandasApiSortDirection(Enum):
-    ASC = 1,
+    ASC = 1
     DESC = 2
 
 
 class PandasApiSortInfo:
-    _column: str
-    _direction: PandasApiSortDirection
-    _null_ordering: SortItemNullOrdering
+    __column: str
+    __direction: PandasApiSortDirection
+    __null_ordering: SortItemNullOrdering
 
     def __init__(
             self,
-            column_expr: PyLegendColumnExpression,
+            column_name: str,
             direction: PandasApiSortDirection,
             null_ordering: SortItemNullOrdering = SortItemNullOrdering.UNDEFINED
     ) -> None:
-        self._column = column_expr.get_column()
-        self._direction = direction
-        self._null_ordering = null_ordering
+        self.__column = column_name
+        self.__direction = direction
+        self.__null_ordering = null_ordering
 
     def to_sql_node(
             self,
@@ -132,9 +147,9 @@ class PandasApiSortInfo:
     ) -> SortItem:
         return SortItem(
             sortKey=self.__find_column_expression(query, config),
-            ordering=(SortItemOrdering.ASCENDING if self._direction == PandasApiSortDirection.ASC
+            ordering=(SortItemOrdering.ASCENDING if self.__direction == PandasApiSortDirection.ASC
                       else SortItemOrdering.DESCENDING),
-            nullOrdering=self._null_ordering
+            nullOrdering=self.__null_ordering
         )
 
     def __find_column_expression(self, query: QuerySpecification, config: FrameToSqlConfig) -> Expression:
@@ -142,31 +157,15 @@ class PandasApiSortInfo:
         filtered = [
             s for s in query.select.selectItems
             if (isinstance(s, SingleColumn) and
-                s.alias == db_extension.quote_identifier(self._column))
+                s.alias == db_extension.quote_identifier(self.__column))
         ]
         if len(filtered) == 0:
-            raise RuntimeError("Cannot find column: " + self._column)  # pragma: no cover
+            raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
         return filtered[0].expression
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        func = 'ascending' if self._direction == PandasApiSortDirection.ASC else 'descending'
-        return f"{func}(~{escape_column_name(self._column)})"
-
-
-class PandasApiDirectSortInfo(PandasApiSortInfo):
-    _column: str
-    _direction: PandasApiSortDirection
-    _null_ordering: SortItemNullOrdering
-
-    def __init__(
-            self,
-            column_name: str,
-            direction: PandasApiSortDirection,
-            null_ordering: SortItemNullOrdering = SortItemNullOrdering.UNDEFINED
-    ) -> None:
-        self._column = column_name
-        self._direction = direction
-        self._null_ordering = null_ordering
+        func = 'ascending' if self.__direction == PandasApiSortDirection.ASC else 'descending'
+        return f"{func}(~{escape_column_name(self.__column)})"
 
 
 class PandasApiWindowFrame(metaclass=ABCMeta):
@@ -287,9 +286,6 @@ class PandasApiPartialFrame:
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__var_name}"
-
-    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
-        return self.__base_frame
 
 
 class PandasApiWindowReference:

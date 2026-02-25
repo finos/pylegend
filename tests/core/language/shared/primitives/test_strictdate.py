@@ -46,6 +46,22 @@ class TestPyLegendStrictDate:
         assert self.__generate_sql_string(lambda x: x.get_strictdate("col2")) == '"root".col2'
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2")) == '$t.col2'
 
+    def test_date_time_bucket_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1, "YEARS")) == \
+               'make_date(1970,1,1) + (FLOOR((EXTRACT(YEAR FROM "root".col2) - 1970) / 1) * 1) * INTERVAL \'1 year\''
+        assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").time_bucket(1, "YEARS")) == \
+               'toOne($t.col2)->timeBucket(1, DurationUnit.\'YEARS\')'
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1.0, "YEARS"))
+        assert t.value.args[0] == (
+            'time bucket quantity parameter should be a int or an integer expression (PyLegendInteger).'
+            ' Got value 1.0 of type: <class \'float\'>')
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1, "HOURS"))
+        assert v.value.args[0] == 'Unknown duration unit - HOURS. Supported values are - YEARS, MONTHS, WEEKS, DAYS'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

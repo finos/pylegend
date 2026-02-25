@@ -38,6 +38,7 @@ __all__: PyLegendSequence[str] = [
     "simple_product_service_frame_legendql_api",
     "simple_relation_person_service_frame_legendql_api",
     "simple_relation_trade_service_frame_legendql_api",
+    "simple_relation_person_service_frame_pandas_api",
 ]
 
 

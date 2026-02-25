@@ -72,6 +72,14 @@ from pylegend.core.sql.metamodel import (
     Window,
     TableFunction,
     Union,
+    WindowFrame,
+    WindowFrameMode,
+    FrameBound,
+    FrameBoundType,
+    BitwiseShiftExpression,
+    BitwiseShiftDirection,
+    BitwiseBinaryExpression,
+    BitwiseBinaryOperator
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -133,6 +141,11 @@ from pylegend.core.sql.metamodel_extension import (
     WindowExpression,
     ConstantExpression,
     StringSubStringExpression,
+    DateAdjustExpression,
+    BitwiseNotExpression,
+    DateDiffExpression,
+    DateTimeBucketExpression,
+    DateType,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -456,6 +469,18 @@ def expression_processor(
         return expression.name
     elif isinstance(expression, StringSubStringExpression):
         return extension.process_string_substring_expression(expression, config)
+    elif isinstance(expression, DateAdjustExpression):
+        return extension.process_date_adjust_expression(expression, config)
+    elif isinstance(expression, DateDiffExpression):
+        return extension.process_date_diff_expression(expression, config)
+    elif isinstance(expression, DateTimeBucketExpression):
+        return extension.process_date_time_bucket_expression(expression, config)
+    elif isinstance(expression, BitwiseNotExpression):
+        return extension.process_bitwise_not_expression(expression, config)
+    elif isinstance(expression, BitwiseShiftExpression):
+        return extension.process_bitwise_shift_expression(expression, config)
+    elif isinstance(expression, BitwiseBinaryExpression):
+        return extension.process_bitwise_binary_expression(expression, config)
 
     else:
         raise ValueError("Unsupported expression type: " + str(type(expression)))  # pragma: no cover
@@ -514,6 +539,139 @@ def logical_binary_expression_processor(
     left = extension.process_expression(logical.left, config)
     right = extension.process_expression(logical.right, config)
     return f"({left} {op} {right})"
+
+
+def bitwise_binary_expression_processor(
+        bitwise: BitwiseBinaryExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    op_type = bitwise.operator
+    if op_type == BitwiseBinaryOperator.AND:
+        op = "&"
+    elif op_type == BitwiseBinaryOperator.OR:
+        op = "|"
+    elif op_type == BitwiseBinaryOperator.XOR:
+        op = "#"
+    else:
+        raise ValueError("Unknown bitwise binary operator type: " + str(op_type))  # pragma: no cover
+
+    left = extension.process_expression(bitwise.left, config)
+    right = extension.process_expression(bitwise.right, config)
+    return f"({left} {op} {right})"
+
+
+def date_diff_processor(
+        date_diff: DateDiffExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    unit = date_diff.duration_unit.value
+
+    end = extension.process_expression(date_diff.end_date, config)
+    start = extension.process_expression(date_diff.start_date, config)
+
+    def extract_diff(part: str) -> str:
+        return f"(EXTRACT({part} FROM {end}) - EXTRACT({part} FROM {start}))"
+
+    year_diff = extract_diff("YEAR")
+    month_diff = extract_diff("MONTH")
+    # d1 - d2 → Pure dateDiff(d1, d2) → evaluated as d2 - d1
+    # Reverse to preserve expected semantics.
+    # only for days
+    day_diff = f"CAST(CAST({start} AS DATE) - CAST({end} AS DATE) AS INTEGER)"
+    epoch_diff = f"(EXTRACT(EPOCH FROM {end}) - EXTRACT(EPOCH FROM {start}))"
+
+    if unit == "YEARS":
+        return year_diff
+
+    if unit == "MONTHS":
+        return f"({year_diff} * 12 + {month_diff})"
+
+    if unit == "DAYS":
+        return day_diff
+
+    if unit == "WEEKS":
+        return f"CAST(FLOOR({day_diff} / 7) AS INTEGER)"
+
+    if unit == "HOURS":
+        return f"CAST(FLOOR({epoch_diff} / 3600) AS INTEGER)"
+
+    if unit == "MINUTES":
+        return f"CAST(FLOOR({epoch_diff} / 60) AS INTEGER)"
+
+    if unit == "SECONDS":
+        return f"CAST({epoch_diff} AS BIGINT)"
+
+    if unit == "MILLISECONDS":
+        return f"CAST({epoch_diff} * 1000 AS BIGINT)"
+
+    raise ValueError(f"Unsupported DATE DIFF unit: {unit}")  # pragma: no cover
+
+
+def date_time_bucket_processor(
+        expression: DateTimeBucketExpression,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig
+) -> str:
+    unit = expression.duration_unit.value
+    ts = extension.process_expression(expression.date, config)
+    q = extension.process_expression(expression.quantity, config)
+
+    def coerce_to_datetime(sql: str) -> str:
+        return (
+            f"(({sql}) + INTERVAL '0 second')"
+            if expression.date_type == DateType.DateTime
+            else sql
+        )
+
+    def epoch() -> str:
+        return (
+            f"EXTRACT(EPOCH FROM {ts})"
+        )
+
+    if unit == "YEARS":
+        return coerce_to_datetime(
+            f"make_date(1970,1,1) + "
+            f"(FLOOR((EXTRACT(YEAR FROM {ts}) - 1970) / {q}) * {q}) * INTERVAL '1 year'"
+        )
+
+    if unit == "MONTHS":
+        total_months_sql = f"((EXTRACT(YEAR FROM {ts}) - 1970) * 12 + (EXTRACT(MONTH FROM {ts}) - 1))"
+        return coerce_to_datetime(
+            f"make_date(1970,1,1) + "
+            f"(FLOOR({total_months_sql} / {q}) * {q}) * INTERVAL '1 month'"
+        )
+
+    if unit == "WEEKS":
+        return coerce_to_datetime(
+            f"make_date(1969,12,29) + ("
+            f"FLOOR(("
+            f"{epoch()} - EXTRACT(EPOCH FROM make_date(1969,12,29))"
+            f") / (86400 * {q} * 7))"
+            f") * ({q} * 7) * INTERVAL '1 day'"
+        )
+
+    if unit == "DAYS":
+        days_from_1970 = f"({epoch()} / 86400)"
+        return coerce_to_datetime(
+            f"make_date(1970,1,1) + "
+            f"(FLOOR({days_from_1970} / {q}) * {q}) * INTERVAL '1 day'"
+        )
+
+    unit_seconds_map = {
+        "HOURS": 3600,
+        "MINUTES": 60,
+        "SECONDS": 1
+    }
+
+    if unit in unit_seconds_map:
+        seconds_per_unit = unit_seconds_map[unit]
+        return (f"(make_date(1970,1,1) + "
+                f"(FLOOR({epoch()} / ({q} * {seconds_per_unit})) * ({q} * {seconds_per_unit})) "
+                f"* INTERVAL '1 second')")
+
+    raise ValueError(f"Unsupported TIME BUCKET unit: {unit}")  # pragma: no cover
 
 
 def not_expression_processor(
@@ -864,14 +1022,27 @@ def window_processor(
     if window.windowRef:
         return window.windowRef
 
-    partitions = "PARTITION BY " + (", ".join([extension.process_expression(e, config) for e in window.partitions])) \
-        if window.partitions else ""
+    clauses: list[str] = []
 
-    order_by = "ORDER BY " + (", ".join([extension.process_sort_item(o, config) for o in window.orderBy])) \
-        if window.orderBy else ""
+    if window.partitions:
+        partition_clause = ", ".join(
+            extension.process_expression(expr, config)
+            for expr in window.partitions
+        )
+        clauses.append(f"PARTITION BY {partition_clause}")
 
-    # TODO: Handle window frame
-    return f"OVER ({partitions}{' ' if (partitions != '') and (order_by != '') else ''}{order_by}){''}"
+    if window.orderBy:
+        order_clause = ", ".join(
+            extension.process_sort_item(item, config)
+            for item in window.orderBy
+        )
+        clauses.append(f"ORDER BY {order_clause}")
+
+    if window.windowFrame:
+        frame_clause = extension.process_window_frame(window.windowFrame, config)
+        clauses.append(frame_clause)
+
+    return f"OVER ({' '.join(clauses)})"
 
 
 def table_function_processor(
@@ -899,6 +1070,45 @@ def union_processor(
     union_str = "UNION" if union.distinct else "UNION ALL"
     right = extension.process_relation(union.right, config)
     return f"{left}{sep0}{union_str}{sep0}{right}"
+
+
+def frame_bound_processor(
+        frame_bound: FrameBound,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig,
+) -> str:
+    bound_sql = {
+        FrameBoundType.UNBOUNDED_PRECEDING: "UNBOUNDED PRECEDING",
+        FrameBoundType.PRECEDING: "PRECEDING",
+        FrameBoundType.FOLLOWING: "FOLLOWING",
+        FrameBoundType.CURRENT_ROW: "CURRENT ROW",
+        FrameBoundType.UNBOUNDED_FOLLOWING: "UNBOUNDED FOLLOWING",
+    }[frame_bound.type_]
+
+    if frame_bound.value is None:
+        return bound_sql
+
+    offset_expr = extension.process_expression(frame_bound.value, config)
+
+    offset_sql = (
+        f"INTERVAL '{offset_expr} {frame_bound.duration_unit.value}'"
+        if frame_bound.duration_unit
+        else offset_expr
+    )
+
+    return f"{offset_sql} {bound_sql}"
+
+
+def window_frame_processor(
+        frame: WindowFrame,
+        extension: "SqlToStringDbExtension",
+        config: SqlToStringConfig,
+) -> str:
+    mode = "ROWS" if frame.mode == WindowFrameMode.ROWS else "RANGE"
+    start = extension.process_frame_bound(frame.start, config)
+    end = extension.process_frame_bound(frame.end, config) if frame.end else "UNBOUNDED FOLLOWING"
+
+    return f"{mode} BETWEEN {start} AND {end}"
 
 
 class SqlToStringDbExtension:
@@ -1260,3 +1470,31 @@ class SqlToStringDbExtension:
 
     def process_union(self, union: Union, config: SqlToStringConfig, nested_subquery: bool = False) -> str:
         return union_processor(union, self, config, nested_subquery)
+
+    def process_window_frame(self, frame: WindowFrame, config: SqlToStringConfig) -> str:
+        return window_frame_processor(frame, self, config)
+
+    def process_frame_bound(self, frame_bound: FrameBound, config: SqlToStringConfig) -> str:
+        return frame_bound_processor(frame_bound, self, config)
+
+    def process_date_adjust_expression(self, expr: DateAdjustExpression, config: SqlToStringConfig) -> str:
+        return (f"({self.process_expression(expr.date, config)}::DATE + "
+                f"(INTERVAL '{self.process_expression(expr.number, config)} "
+                f"{expr.duration_unit.value.upper()}'))::DATE")
+
+    def process_bitwise_not_expression(self, expr: BitwiseNotExpression, config: SqlToStringConfig) -> str:
+        return f"~({self.process_expression(expr.value, config)})"
+
+    def process_bitwise_shift_expression(self, expr: BitwiseShiftExpression, config: SqlToStringConfig) -> str:
+        return (f"({self.process_expression(expr.value, config)} "
+                f"{'>>' if expr.direction == BitwiseShiftDirection.RIGHT else '<<'} "
+                f"{self.process_expression(expr.shift, config)})")
+
+    def process_bitwise_binary_expression(self, expr: BitwiseBinaryExpression, config: SqlToStringConfig) -> str:
+        return bitwise_binary_expression_processor(expr, self, config)
+
+    def process_date_diff_expression(self, expr: DateDiffExpression, config: SqlToStringConfig) -> str:
+        return date_diff_processor(expr, self, config)
+
+    def process_date_time_bucket_expression(self, expr: DateTimeBucketExpression, config: SqlToStringConfig) -> str:
+        return date_time_bucket_processor(expr, self, config)

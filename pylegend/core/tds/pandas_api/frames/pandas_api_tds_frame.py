@@ -48,6 +48,8 @@ from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+    from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+    from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsFrame"
@@ -302,6 +304,16 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
+    @property
+    @abstractmethod
+    def iloc(self) -> "PandasApiIlocIndexer":
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def loc(self) -> "PandasApiLocIndexer":
+        pass  # pragma: no cover
+
     @abstractmethod
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
@@ -309,6 +321,31 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @property
     @abstractmethod
     def shape(self) -> PyLegendTuple[int, int]:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def dropna(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            how: str = "any",
+            thresh: PyLegendOptional[int] = None,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            inplace: bool = False,
+            ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def fillna(
+            self,
+            value: PyLegendUnion[
+                int, float, str, bool, date, datetime,
+                PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
+            ] = None,  # type: ignore
+            axis: PyLegendOptional[PyLegendUnion[int, str]] = 0,
+            inplace: bool = False,
+            limit: PyLegendOptional[int] = None
+    ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod

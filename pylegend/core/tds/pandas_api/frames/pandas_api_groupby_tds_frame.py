@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from typing import overload
 
 from pylegend._typing import (
     PyLegendOptional,
@@ -30,6 +30,7 @@ from pylegend.core.tds.tds_column import TdsColumn
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
 
 class PandasApiGroupbyTdsFrame:
@@ -115,7 +116,7 @@ class PandasApiGroupbyTdsFrame:
                 f"The 'by' parameter in groupby function must be a string or a list of strings."
                 f"but got: {self.__by} (type: {type(self.__by).__name__})"
             )  # pragma: no cover
-        group_by_names: list[str]
+        group_by_names: PyLegendList[str]
         if isinstance(self.__by, str):
             group_by_names = [self.__by]
         elif isinstance(self.__by, list):
@@ -146,7 +147,18 @@ class PandasApiGroupbyTdsFrame:
                 f"Current frame columns: {sorted(available_columns)}"
             )
 
-    def __getitem__(self, item: PyLegendUnion[str, PyLegendList[str]]) -> "PandasApiGroupbyTdsFrame":
+    @overload
+    def __getitem__(self, key: str) -> "GroupbySeries":
+        ...
+
+    @overload
+    def __getitem__(self, key: PyLegendList[str]) -> "PandasApiGroupbyTdsFrame":
+        ...
+
+    def __getitem__(
+            self,
+            item: PyLegendUnion[str, PyLegendList[str]]
+    ) -> PyLegendUnion["PandasApiGroupbyTdsFrame", "GroupbySeries"]:
         columns_to_select: PyLegendSet[str]
 
         if isinstance(item, str):
@@ -185,6 +197,37 @@ class PandasApiGroupbyTdsFrame:
         )
 
         new_frame.__selected_columns = selected_columns
+
+        if selected_columns is not None and isinstance(item, str):
+            column: TdsColumn = selected_columns[0]
+            col_type = column.get_type()
+            if col_type == "Boolean":  # pragma: no cover (Boolean column not supported in PURE)
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import BooleanGroupbySeries
+                return BooleanGroupbySeries(new_frame)
+            elif col_type == "String":
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import StringGroupbySeries
+                return StringGroupbySeries(new_frame)
+            elif col_type == "Number":
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import NumberGroupbySeries
+                return NumberGroupbySeries(new_frame)
+            elif col_type == "Integer":
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import IntegerGroupbySeries
+                return IntegerGroupbySeries(new_frame)
+            elif col_type == "Float":
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries
+                return FloatGroupbySeries(new_frame)
+            elif col_type == "Date":
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateGroupbySeries
+                return DateGroupbySeries(new_frame)
+            elif col_type == "DateTime":
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateTimeGroupbySeries
+                return DateTimeGroupbySeries(new_frame)
+            elif col_type == "StrictDate":
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import StrictDateGroupbySeries
+                return StrictDateGroupbySeries(new_frame)
+            else:
+                raise ValueError(f"Unsupported column type '{col_type}' for column '{column.get_name()}'")  # pragma: no cover
+
         return new_frame
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
@@ -355,7 +398,6 @@ class PandasApiGroupbyTdsFrame:
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-
         return PandasApiAppliedFunctionTdsFrame(RankFunction(
             base_frame=self,
             axis=axis,

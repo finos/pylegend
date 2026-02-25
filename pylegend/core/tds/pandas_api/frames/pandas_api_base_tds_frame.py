@@ -15,7 +15,7 @@
 import copy
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
@@ -70,6 +70,8 @@ from pylegend.extensions.tds.result_handler import (
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+    from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+    from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
 
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
@@ -94,6 +96,14 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         if self._transformed_frame is None:
             return [c.copy() for c in self.__columns]
         return self._transformed_frame.columns()
+
+    @overload  # type: ignore[override]
+    def __getitem__(self, key: str) -> "Series":
+        ...
+
+    @overload
+    def __getitem__(self, key: PyLegendList[str]) -> "PandasApiTdsFrame":
+        ...
 
     def __getitem__(
             self,
@@ -121,6 +131,9 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                     elif col_type == "String":
                         from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
                         return StringSeries(self, key)
+                    elif col_type == "Number":  # pragma: no cover
+                        from pylegend.core.language.pandas_api.pandas_api_series import NumberSeries
+                        return NumberSeries(self, key)
                     elif col_type == "Integer":
                         from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
                         return IntegerSeries(self, key)
@@ -664,7 +677,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             # Compute row callable via func on the Series
             def _row_callable(
                     _row: PandasApiTdsRow,
-                    _s: Series = series,  # type: ignore
+                    _s: Series = series,
                     _a: PyLegendTuple[PyLegendPrimitiveOrPythonPrimitive, ...] = args,
                     _k: PyLegendPrimitiveOrPythonPrimitive = kwargs  # type: ignore
             ) -> PyLegendPrimitiveOrPythonPrimitive:
@@ -675,6 +688,44 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         return PandasApiAppliedFunctionTdsFrame(
             AssignFunction(self, col_definitions=col_definitions)  # type: ignore
         )
+
+    @property
+    def iloc(self) -> "PandasApiIlocIndexer":
+        """
+        Purely integer-location based indexing for selection by position.
+        .iloc[] is primarily integer position based (from 0 to length-1 of the axis).
+
+        Allowed inputs are:
+        - An integer, e.g. 5.
+        - A slice object with ints, e.g. 1:7.
+        - A tuple of row and column indexes, e.g., (slice(1, 5), slice(0, 2))
+
+        Other pandas iloc features such as list of integers, boolean arrays, and callables
+        are not supported and will raise a NotImplementedError.
+        """
+        from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
+        return PandasApiIlocIndexer(self)
+
+    @property
+    def loc(self) -> "PandasApiLocIndexer":
+        """
+        Access a group of rows and columns by label(s) or a boolean array.
+        .loc[] is primarily label based, but may also be used with a boolean array.
+
+        Allowed inputs are:
+        - A single label, e.g. 5 or 'a', (note that 5 is interpreted as a
+          label of the index, not as an integer position along the index).
+        - A list or array of labels, e.g. ['a', 'b', 'c'].
+        - A slice object with labels, e.g. 'a':'f'.
+        - A boolean array of the same length as the axis being sliced.
+        - A callable function with one argument (the calling Series or
+          DataFrame) and that returns valid output for indexing (one of the above).
+
+        Currently, for row selection, only callable function or complete slice are supported.
+        For column selection, string labels, lists of string labels, and slices of string labels are supported.
+        """
+        from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
+        return PandasApiLocIndexer(self)
 
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
         """
@@ -704,6 +755,107 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         total_cols = len(self.columns())
 
         return (total_rows, total_cols)  # type: ignore
+
+    def dropna(
+            self,
+            axis: PyLegendUnion[int, str] = 0,
+            how: str = "any",
+            thresh: PyLegendOptional[int] = None,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            inplace: bool = False,
+            ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        """
+        Remove missing values.
+
+        Parameters
+        ----------
+        axis : {0 or 'index'}, default 0
+            Determine if rows or columns which contain missing values are removed.
+            * 0, or 'index' : Drop rows which contain missing values.
+            Currently, only `axis=0` is supported.
+        how : {'any', 'all'}, default 'any'
+            Determine if row is removed from TdsFrame, when we have at least one NA or all NA.
+            * 'any' : If any NA values are present, drop that row.
+            * 'all' : If all values are NA, drop that row.
+        thresh : int, optional
+            Not implemented yet.
+        subset : list-like, optional
+            Labels along other axis to consider, e.g. if you are dropping rows
+            these would be a list of columns to include.
+        inplace : bool, default False
+            Not implemented yet.
+        ignore_index : bool, default False
+            Not implemented yet.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            TdsFrame with NA entries dropped.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.dropna import PandasApiDropnaFunction
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiDropnaFunction(
+                base_frame=self,
+                axis=axis,
+                how=how,
+                thresh=thresh,
+                subset=subset,
+                inplace=inplace,
+                ignore_index=ignore_index
+            )
+        )
+
+    def fillna(
+            self,
+            value: PyLegendUnion[
+                int, float, str, bool, date, datetime,
+                PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]]
+            ] = None,  # type: ignore
+            axis: PyLegendOptional[PyLegendUnion[int, str]] = 0,
+            inplace: bool = False,
+            limit: PyLegendOptional[int] = None
+    ) -> "PandasApiTdsFrame":
+        """
+        Fill missing values.
+
+        Parameters
+        ----------
+        base_frame : PandasApiBaseTdsFrame
+            The base frame to apply fillna on.
+        value : scalar, dict, default None
+            Value to use to fill holes (e.g. 0), alternately a dict of values specifying
+            which value to use for each column of TdsFrame.
+        axis : {0 or 'index'}, default 0
+            Axis along which to fill missing values.
+            * 0, or 'index' : Fill missing values for each column.
+            Currently, only `axis=0` is supported.
+        inplace : bool, default False
+            Not implemented yet.
+        limit : int, optional
+            Not implemented yet.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            TdsFrame with NA entries filled.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.fillna import PandasApiFillnaFunction
+        return PandasApiAppliedFunctionTdsFrame(
+            PandasApiFillnaFunction(
+                base_frame=self,
+                value=value,
+                axis=axis,
+                inplace=inplace,
+                limit=limit
+            )
+        )
 
     def rank(
             self,

@@ -42,6 +42,7 @@ from pylegend.core.language import (
     today,
     current_user,
 )
+from pylegend import samples
 
 
 __all__: PyLegendSequence[str] = [
@@ -68,6 +69,8 @@ __all__: PyLegendSequence[str] = [
     "now",
     "today",
     "current_user",
+
+    "samples",
 ]
 
 

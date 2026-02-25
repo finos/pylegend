@@ -21,7 +21,9 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 import pytest
+
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
@@ -144,6 +146,7 @@ class TestAggregateFunction:
     def test_convenience_methods_error_invalid_axis(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
@@ -151,9 +154,14 @@ class TestAggregateFunction:
                 getattr(frame, method)(axis=1)
             assert f"The 'axis' parameter must be 0 or 'index' in {method} function, but got: 1" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(axis=1)
+            assert f"The 'axis' parameter must be 0 or 'index' in {method} function, but got: 1" in v.value.args[0]
+
     def test_convenience_methods_error_skipna_false(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var']
         for method in methods:
@@ -161,9 +169,14 @@ class TestAggregateFunction:
                 getattr(frame, method)(skipna=False)
             assert f"skipna=False is not currently supported in {method} function" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(skipna=False)
+            assert f"skipna=False is not currently supported in {method} function" in v.value.args[0]
+
     def test_convenience_methods_error_numeric_only_true(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
@@ -171,9 +184,14 @@ class TestAggregateFunction:
                 getattr(frame, method)(numeric_only=True)
             assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(numeric_only=True)
+            assert f"numeric_only=True is not currently supported in {method} function" in v.value.args[0]
+
     def test_convenience_methods_error_extra_kwargs(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         methods = ['sum', 'mean', 'min', 'max', 'std', 'var', 'count']
         for method in methods:
@@ -181,28 +199,47 @@ class TestAggregateFunction:
                 getattr(frame, method)(dummy_arg=1)
             assert f"Additional keyword arguments not supported in {method} function: ['dummy_arg']" in v.value.args[0]
 
+            with pytest.raises(NotImplementedError) as v:
+                getattr(series, method)(dummy_arg=1)
+            assert f"Additional keyword arguments not supported in {method} function: ['dummy_arg']" in v.value.args[0]
+
     def test_sum_error_min_count_nonzero(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             frame.sum(min_count=5)
         assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
 
+        with pytest.raises(NotImplementedError) as v:
+            series.sum(min_count=5)
+        assert "min_count must be 0 in sum function, but got: 5" in v.value.args[0]
+
     def test_std_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             frame.std(ddof=0)
         assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
 
+        with pytest.raises(NotImplementedError) as v:
+            series.std(ddof=0)
+        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+
     def test_var_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        series = frame["col1"]
 
         with pytest.raises(NotImplementedError) as v:
             frame.var(ddof=2)
+        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+
+        with pytest.raises(NotImplementedError) as v:
+            series.var(ddof=2)
         assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
 
     def test_aggregate_simple_query_generation(self) -> None:
@@ -329,98 +366,119 @@ class TestAggregateFunction:
         )
 
     def test_aggregate_convenience_methods_all(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.number_column("col2")]
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         res = frame.sum()
+        res_series = frame["col1"].sum()
         expected_sql = """\
             SELECT
-                SUM("root".col1) AS "col1",
-                SUM("root".col2) AS "col2"
+                SUM("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}, "
-            "col2:{r | $r.col2}:{c | $c->sum()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->sum()}])"
         )
 
         res = frame.mean()
+        res_series = frame["col1"].mean()
         expected_sql = """\
             SELECT
-                AVG("root".col1) AS "col1",
-                AVG("root".col2) AS "col2"
+                AVG("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}, "
-            "col2:{r | $r.col2}:{c | $c->average()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->average()}])"
         )
 
         res = frame.min()
+        res_series = frame["col1"].min()
         expected_sql = """\
             SELECT
-                MIN("root".col1) AS "col1",
-                MIN("root".col2) AS "col2"
+                MIN("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}, "
-            "col2:{r | $r.col2}:{c | $c->min()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->min()}])"
         )
 
         res = frame.max()
+        res_series = frame["col1"].max()
         expected_sql = """\
             SELECT
-                MAX("root".col1) AS "col1",
-                MAX("root".col2) AS "col2"
+                MAX("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}, "
-            "col2:{r | $r.col2}:{c | $c->max()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->max()}])"
         )
 
         res = frame.std()
+        res_series = frame["col1"].std()
         expected_sql = """\
             SELECT
-                STDDEV_SAMP("root".col1) AS "col1",
-                STDDEV_SAMP("root".col2) AS "col2"
+                STDDEV_SAMP("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}, "
-            "col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
         )
 
         res = frame.var()
+        res_series = frame["col1"].var()
         expected_sql = """\
             SELECT
-                VAR_SAMP("root".col1) AS "col1",
-                VAR_SAMP("root".col2) AS "col2"
+                VAR_SAMP("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}, "
-            "col2:{r | $r.col2}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
         )
 
         res = frame.count()
+        res_series = frame["col1"].count()
         expected_sql = """\
             SELECT
-                COUNT("root".col1) AS "col1",
-                COUNT("root".col2) AS "col2"
+                COUNT("root".col1) AS "col1"
             FROM
                 test_schema.test_table AS "root\""""
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}, "
-            "col2:{r | $r.col2}:{c | $c->count()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}])"
+        )
+        assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->count()}])"
         )
 
     def test_e2e_aggregate_single_column(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
@@ -625,3 +683,102 @@ class TestAggregateFunction:
             "rows": [{"values": ['2014-12-01', '2014-12-05T21:00:00.000000000+0000']}]
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+
+class TestAggregateFunctionOnSeries:
+
+    def test_error_for_invalid_column_on_series(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("int_col"),
+            PrimitiveTdsColumn.string_column("str_col"),
+            PrimitiveTdsColumn.date_column("date_col")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as v:
+            frame["int_col"].agg({"int_col": "sum", "str_col": "count"})
+        expected = '''\
+            Invalid `func` argument for the aggregate function.
+            When a dictionary is provided, all keys must be column names.
+            Available columns are: ['int_col']
+            But got key: 'str_col' (type: str)
+        '''
+        expected = dedent(expected)
+        assert v.value.args[0] == expected
+
+        with pytest.raises(ValueError) as v:
+            frame["int_col"].agg({"date_col": "count"})
+        expected = '''\
+            Invalid `func` argument for the aggregate function.
+            When a dictionary is provided, all keys must be column names.
+            Available columns are: ['int_col']
+            But got key: 'date_col' (type: str)
+        '''
+        expected = dedent(expected)
+        assert v.value.args[0] == expected
+
+    def test_single_aggregation_on_series(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("int_col"),
+            PrimitiveTdsColumn.string_column("str_col"),
+            PrimitiveTdsColumn.date_column("date_col")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame1 = frame["int_col"].sum()
+        frame2 = frame["int_col"].agg({"int_col": "sum"})
+
+        expected = '''
+            SELECT
+                SUM("root".int_col) AS "int_col"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_sql_query(FrameToSqlConfig()) == expected
+        assert frame2.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->select(~[int_col])
+              ->aggregate(
+                ~[int_col:{r | $r.int_col}:{c | $c->sum()}]
+              )
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_pure_query(FrameToPureConfig()) == expected
+        assert frame2.to_pure_query(FrameToPureConfig()) == expected
+
+    def test_multiple_aggregations_on_series(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("int_col"),
+            PrimitiveTdsColumn.string_column("str_col"),
+            PrimitiveTdsColumn.date_column("date_col")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame1 = frame["int_col"].agg(["mean", "min", "var"])
+        frame2 = frame["int_col"].agg({"int_col": ["mean", "min", "var"]})
+
+        assert isinstance(frame1, PandasApiAppliedFunctionTdsFrame)
+
+        expected = '''
+            SELECT
+                AVG("root".int_col) AS "mean(int_col)",
+                MIN("root".int_col) AS "min(int_col)",
+                VAR_SAMP("root".int_col) AS "var(int_col)"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected = dedent(expected).strip()
+        assert frame1.to_sql_query(FrameToSqlConfig()) == expected
+        assert frame2.to_sql_query(FrameToSqlConfig()) == expected
+
+        expected = '''
+            #Table(test_schema.test_table)#
+              ->select(~[int_col])
+              ->aggregate(
+                ~['mean(int_col)':{r | $r.int_col}:{c | $c->average()}, 'min(int_col)':{r | $r.int_col}:{c | $c->min()}, 'var(int_col)':{r | $r.int_col}:{c | $c->varianceSample()}]
+              )
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        assert frame1.to_pure_query(FrameToPureConfig()) == expected
+        assert frame2.to_pure_query(FrameToPureConfig()) == expected
