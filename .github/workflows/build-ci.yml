@@ -53,16 +53,11 @@ jobs:
       - name: Setup and configure colima on macOS
         if: runner.os == 'macOS'
         run: |
-          # Download the historical Homebrew formula for version 1.5.1
-          curl -O https://raw.githubusercontent.com/Homebrew/homebrew-cask/65da904d37b45eb3f0644e6419ebde37ef927f20/Casks/o/orbstack.rb
-          
-          # Install from the downloaded formula file
-          brew install --cask ./orbstack.rb
-          # 1. Disable the UI admin permission prompt so the CI doesn't hang
-          orb config set setup.use_admin false
-          
+          # 1. Download the specific Intel DMG directly from OrbStack
+          curl -L -o orbstack.dmg https://cdn-updates.orbstack.dev/amd64/OrbStack_v1.5.1_16857_amd64.dmg
+
           # 2. Start OrbStack in the background 
-          nohup orb start &
+          nohup /orbstack.dmg/OrbStack.app/Contents/MacOS/bin/orb start &
           
           # 3. Wait a few seconds until the Docker engine is fully responsive
           while ! docker ps > /dev/null 2>&1; do 
