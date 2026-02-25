@@ -57,12 +57,10 @@ jobs:
           brew install colima docker
           echo "Starting colima ..."
           colima start
-          colima status
           echo "Configuring testcontainers to work with colima ..."
-          export DOCKER_HOST="unix://${HOME}/.colima/docker.sock"
-          export TESTCONTAINERS_HOST_OVERRIDE=$(colima ls -j | jq -r '.address')
-          export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
-          export TESTCONTAINERS_RYUK_DISABLED=true
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> $GITHUB_ENV
+          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> $GITHUB_ENV
 
       - name: PyTest
         uses: ./.github/workflows/actions/pytest
