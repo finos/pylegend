@@ -53,38 +53,17 @@ jobs:
       - name: Setup and configure colima on macOS
         if: runner.os == 'macOS'
         run: |
-          # 1. Download the specific Intel DMG directly from OrbStack
-          curl -L -o orbstack.dmg https://cdn-updates.orbstack.dev/amd64/OrbStack_v1.5.1_16857_amd64.dmg
-          # 2. Mount the DMG virtual drive
-          hdiutil attach orbstack.dmg -mountpoint /Volumes/OrbStack
+          brew install docker colima
+          colima start --cpu 2 --memory 4
           
-          # 3. Copy the App OUT of the virtual drive and into the system Applications folder
-          sudo cp -R /Volumes/OrbStack/OrbStack.app /Applications/
-          
-          # 4. Safely eject the virtual drive
-          hdiutil detach /Volumes/OrbStack
-          # 2. Start OrbStack in the background
-          # 1. Apply config and start the engine
-          /Applications/OrbStack.app/Contents/MacOS/bin/orb config set setup.use_admin false
-          nohup /Applications/OrbStack.app/Contents/MacOS/bin/orb start &
-          
-          # 2. Set the socket location for THIS step and ALL FUTURE steps
-          export DOCKER_HOST="unix://${HOME}/.orbstack/run/docker.sock"
-          echo "DOCKER_HOST=$DOCKER_HOST" >> $GITHUB_ENV
-          
-          # 3. Wait until the Docker daemon responds
-          while ! /Applications/OrbStack.app/Contents/MacOS/xbin/docker ps > /dev/null 2>&1; do 
-            echo "Waiting for OrbStack to boot..."
-            sleep 2
-          done
-          
-          echo "OrbStack is fully online and responsive!"
+          # Link the Colima socket to the default location for Testcontainers
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
       - name: PyTest
         env:
-          TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
+          DOCKER_HOST: unix://${HOME}/.colima/default/docker.sock
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
-          TESTCONTAINERS_RYUK_DISABLED: true
+          TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
