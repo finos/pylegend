@@ -55,16 +55,15 @@ jobs:
         run: |
           brew install docker colima
           colima start --cpu 2 --memory 4
-          
-          # Link the Colima socket to the default location for Testcontainers
-          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+          echo "DOCKER_SOCK=$(colima status -p default | grep unix | cut -d' ' -f4)" >> $GITHUB_ENV
 
       - name: PyTest
         if: runner.os == 'macOS'
         env:
-          DOCKER_HOST: unix://${HOME}/.colima/default/docker.sock
-          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
-          TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
+          # Tell the Docker SDK (used by Testcontainers) exactly where to look
+          DOCKER_HOST: unix://${{ env.DOCKER_SOCK }}
+          # Some Testcontainers versions specifically look for this override
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: ${{ env.DOCKER_SOCK }}
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
