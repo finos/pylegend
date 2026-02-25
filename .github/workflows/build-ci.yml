@@ -57,7 +57,7 @@ jobs:
           brew install colima
           brew install docker
           echo "Starting colima ..."
-          colima start --cpu 1 --memory 5 --disk 10
+          colima start --cpu 1 --memory 5 --disk 10 --vm-type qemu
           colima status
           echo "Configuring testcontainers to work with colima ..."
           export DOCKER_HOST="unix://${HOME}/.colima/docker.sock"
