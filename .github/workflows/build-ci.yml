@@ -43,7 +43,7 @@ jobs:
     needs: [ lint, typing_check ]
     strategy:
       matrix:
-        os: [ ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-26 ]
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
     runs-on: ${{ matrix.os }}
     steps:
@@ -54,11 +54,9 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           echo "Installing colima and docker ..."
-          brew install colima
-          brew install docker
-          brew install qemu
+          brew install colima docker
           echo "Starting colima ..."
-          colima start --cpu 1 --memory 5 --disk 10 --vm-type qemu
+          colima start --cpu 1 --memory 5 --disk 10
           colima status
           echo "Configuring testcontainers to work with colima ..."
           export DOCKER_HOST="unix://${HOME}/.colima/docker.sock"
