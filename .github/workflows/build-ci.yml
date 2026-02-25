@@ -52,34 +52,20 @@ jobs:
 
       - name: Setup and configure colima on macOS
         if: runner.os == 'macOS'
-        run: |
-          brew install colima docker qemu
-          # Using 'qemu' VM type is often more stable on Intel Runners than 'vz'
-          colima start --cpu 2 --memory 4 --vm-type=qemu --mount-type=sshfs
+        uses: douglascamata/setup-docker-macos-action@v1
+        with:
+          colima-network-address: true
 
-          # Pure bash wait loop (Max 60 seconds)
-          echo "Waiting for Docker socket..."
-          max_retries=30
-          count=0
-          while [ ! -S ~/.colima/default/docker.sock ]; do
-            sleep 2
-            count=$((count+1))
-            if [ $count -ge $max_retries ]; then
-              echo "Error: Timeout waiting for Colima socket"
-              exit 1
-            fi
-          done
-          echo "Docker socket is ready!"
-          
-          # Export the dynamic path to the runner environment
-          echo "DOCKER_SOCK=$HOME/.colima/default/docker.sock" >> $GITHUB_ENV
+      - name: Set Testcontainers environment variables
+        run: |
+          # The DOCKER_HOST is set by the setup-docker-macos-action internally
+          # We need to export other variables for Testcontainers
+          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> $GITHUB_ENV
+          # Optional: disable Ryuk (Testcontainers' container reaper) if needed for specific setups
+          # echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
+
       - name: PyTest
         if: runner.os == 'macOS'
-        env:
-          DOCKER_HOST: unix://${{ env.DOCKER_SOCK }}
-          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: ${{ env.DOCKER_SOCK }}
-          # Force localhost to avoid macOS 15 networking bridge issues
-          TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
