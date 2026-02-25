@@ -25,6 +25,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionNullReturn,
@@ -49,6 +50,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLiteralExpression",
     "PyLegendIntegerLiteralExpression",
     "PyLegendFloatLiteralExpression",
+    "PyLegendDecimalLiteralExpression",
     "PyLegendDateTimeLiteralExpression",
     "PyLegendStrictDateLiteralExpression",
     "convert_literal_to_literal_expression",
@@ -117,6 +119,26 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
 
 
 class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
+    __value: float
+
+    def __init__(self, value: float) -> None:
+        self.__value = value
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return DoubleLiteral(value=self.__value)
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
+class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
     __value: float
 
     def __init__(self, value: float) -> None:

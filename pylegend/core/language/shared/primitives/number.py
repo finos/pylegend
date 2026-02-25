@@ -382,7 +382,8 @@ class PyLegendNumber(PyLegendPrimitive):
     ) -> None:
         from pylegend.core.language.shared.primitives.integer import PyLegendInteger
         from pylegend.core.language.shared.primitives.float import PyLegendFloat
-        if not isinstance(param, (int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber)):
-            raise TypeError(desc + " should be a int/float or a int/float/number expression"
-                                   " (PyLegendInteger/PyLegendFloat/PyLegendNumber)."
+        from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
+        if not isinstance(param, (int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber)):
+            raise TypeError(desc + " should be a int/float or a int/float/decimal/number expression"
+                                   " (PyLegendInteger/PyLegendFloat/PyLegendDecimal/PyLegendNumber)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))
