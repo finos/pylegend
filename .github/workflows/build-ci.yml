@@ -53,14 +53,18 @@ jobs:
       - name: Setup and configure colima on macOS
         if: runner.os == 'macOS'
         run: |
-          echo "Installing colima and docker ..."
-          brew install podman
-          echo "Starting colima ..."
-          podman machine init
-          podman machine start
-          echo "Configuring testcontainers to work with colima ..."
-          PODMAN_SOCKET=$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')
-          echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
+          brew install --cask orbstack
+          # 1. Disable the UI admin permission prompt so the CI doesn't hang
+          orb config set setup.use_admin false
+          
+          # 2. Start OrbStack in the background 
+          nohup orb start &
+          
+          # 3. Wait a few seconds until the Docker engine is fully responsive
+          while ! docker ps > /dev/null 2>&1; do 
+            echo "Waiting for OrbStack to boot..."
+            sleep 2
+          done
 
       - name: PyTest
         env:
