@@ -63,7 +63,8 @@ jobs:
           
           # 4. Safely eject the virtual drive
           hdiutil detach /Volumes/OrbStack
-          # 2. Start OrbStack in the background 
+          # 2. Start OrbStack in the background
+          /Applications/OrbStack.app/Contents/MacOS/bin/orb config set setup.use_admin false
           nohup /Applications/OrbStack.app/Contents/MacOS/bin/orb start &
           
           # 3. Wait a few seconds until the Docker engine is fully responsive
