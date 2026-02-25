@@ -30,7 +30,8 @@ from pylegend.core.language import (
     PyLegendBoolean,
     PyLegendString,
     PyLegendDate,
-    PyLegendDateTime
+    PyLegendDateTime,
+    PyLegendDecimal,
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
@@ -146,6 +147,8 @@ class AssignFunction(PandasApiAppliedFunction):
                 new_cols.append(PrimitiveTdsColumn.integer_column(col))
             elif isinstance(res, (float, PyLegendFloat)):
                 new_cols.append(PrimitiveTdsColumn.float_column(col))
+            elif isinstance(res, (PythonDecimal, PyLegendDecimal)):
+                new_cols.append(PrimitiveTdsColumn.decimal_column(col))
             elif isinstance(res, PyLegendNumber):
                 new_cols.append(PrimitiveTdsColumn.number_column(col))  # pragma: no cover
             elif isinstance(res, (bool, PyLegendBoolean)):
