@@ -60,6 +60,7 @@ jobs:
           sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
 
       - name: PyTest
+        if: runner.os == 'macOS'
         env:
           DOCKER_HOST: unix://${HOME}/.colima/default/docker.sock
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
