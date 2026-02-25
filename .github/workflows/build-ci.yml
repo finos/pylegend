@@ -56,6 +56,7 @@ jobs:
           echo "Installing colima and docker ..."
           brew install colima
           brew install docker
+          brew install qemu
           echo "Starting colima ..."
           colima start --cpu 1 --memory 5 --disk 10 --vm-type qemu
           colima status
