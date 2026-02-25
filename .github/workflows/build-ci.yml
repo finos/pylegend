@@ -52,9 +52,19 @@ jobs:
 
       - name: Setup and configure colima on macOS
         if: runner.os == 'macOS'
-        uses: douglascamata/setup-docker-macos-action@v1
+        run: |
+          echo "Installing colima and docker ..."
+          brew install colima docker
+          echo "Starting colima ..."
+          colima start
+          echo "Configuring testcontainers to work with colima ..."
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> $GITHUB_ENV
+          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> $GITHUB_ENV
 
       - name: PyTest
+        env:
+          TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
