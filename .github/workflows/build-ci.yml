@@ -54,13 +54,13 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           echo "Installing colima and docker ..."
-          brew install colima docker
+          brew install podman
           echo "Starting colima ..."
-          colima start
+          podman machine init
+          podman machine start
           echo "Configuring testcontainers to work with colima ..."
-          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
-          echo "DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock" >> $GITHUB_ENV
-          echo "TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock" >> $GITHUB_ENV
+          PODMAN_SOCKET=$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')
+          echo "TESTCONTAINERS_RYUK_DISABLED=true" >> $GITHUB_ENV
 
       - name: PyTest
         env:
