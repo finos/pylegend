@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+from decimal import Decimal as PythonDecimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
@@ -80,14 +81,14 @@ class PyLegendPrimitiveCollection(metaclass=ABCMeta):
         self.__nested = nested
 
     def count(self) -> "PyLegendInteger":
-        if isinstance(self.__nested, (bool, int, float, str, date, datetime)):
+        if isinstance(self.__nested, (bool, int, float, str, date, datetime, PythonDecimal)):
             nested_expr = convert_literal_to_literal_expression(self.__nested)
         else:
             nested_expr = self.__nested.value()
         return PyLegendInteger(PyLegendCountExpression(nested_expr))
 
     def distinct_count(self) -> "PyLegendInteger":
-        if isinstance(self.__nested, (bool, int, float, str, date, datetime)):
+        if isinstance(self.__nested, (bool, int, float, str, date, datetime, PythonDecimal)):
             nested_expr = convert_literal_to_literal_expression(self.__nested)
         else:
             nested_expr = self.__nested.value()

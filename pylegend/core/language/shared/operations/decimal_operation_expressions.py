@@ -182,4 +182,3 @@ class PyLegendDecimalNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )
-

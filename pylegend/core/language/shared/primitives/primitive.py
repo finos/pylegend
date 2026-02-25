@@ -14,6 +14,7 @@
 
 
 from abc import ABCMeta, abstractmethod
+from decimal import Decimal as PythonDecimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
@@ -64,11 +65,11 @@ class PyLegendPrimitive(metaclass=ABCMeta):
     @grammar_method
     def __eq__(  # type: ignore
             self,
-            other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]"
+            other: "PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]"
     ) -> "PyLegendBoolean":
         PyLegendPrimitive.__validate_param_to_be_primitive(other, "Equals (==) parameter")
 
-        if isinstance(other, (int, float, bool, str, date, datetime)):
+        if isinstance(other, (int, float, bool, str, date, datetime, PythonDecimal)):
             other_op = convert_literal_to_literal_expression(other)
         else:
             other_op = other.value()
@@ -79,11 +80,11 @@ class PyLegendPrimitive(metaclass=ABCMeta):
     @grammar_method
     def __ne__(  # type: ignore
             self,
-            other: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]"
+            other: "PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]"
     ) -> "PyLegendBoolean":
         PyLegendPrimitive.__validate_param_to_be_primitive(other, "Not Equals (!=) parameter")
 
-        if isinstance(other, (int, float, bool, str, date, datetime)):
+        if isinstance(other, (int, float, bool, str, date, datetime, PythonDecimal)):
             other_op = convert_literal_to_literal_expression(other)
         else:
             other_op = other.value()
@@ -116,12 +117,13 @@ class PyLegendPrimitive(metaclass=ABCMeta):
 
     @staticmethod
     def __validate_param_to_be_primitive(
-            param: "PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]",
+            param: "PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]",
             desc: str
     ) -> None:
-        if not isinstance(param, (int, float, bool, str, date, datetime, PyLegendPrimitive)):
+        if not isinstance(param, (int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive)):
             raise TypeError(
-                desc + " should be a int/float/bool/str/datetime.date/datetime.datetime or a primitive expression."
+                desc + " should be a int/float/bool/str/datetime.date/datetime.datetime/decimal.Decimal"
+                       " or a primitive expression."
                        " Got value " + str(param) + " of type: " + str(type(param)))
 
     @abstractmethod
@@ -129,4 +131,4 @@ class PyLegendPrimitive(metaclass=ABCMeta):
         pass
 
 
-PyLegendPrimitiveOrPythonPrimitive = PyLegendUnion[int, float, str, bool, date, datetime, PyLegendPrimitive]
+PyLegendPrimitiveOrPythonPrimitive = PyLegendUnion[int, float, str, bool, date, datetime, PythonDecimal, PyLegendPrimitive]

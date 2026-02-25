@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import date, datetime
+from decimal import Decimal as PythonDecimal
 
 from pylegend._typing import (
     PyLegendList,
@@ -48,7 +49,10 @@ class AssignFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
     __col_definitions: PyLegendDict[
         str,
-        PyLegendCallable[[PandasApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+        PyLegendCallable[
+            [PandasApiTdsRow],
+            PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]
+        ],
     ]
 
     @classmethod
@@ -61,7 +65,9 @@ class AssignFunction(PandasApiAppliedFunction):
             col_definitions: PyLegendDict[
                 str,
                 PyLegendCallable[
-                    [PandasApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+                    [PandasApiTdsRow],
+                    PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]
+                ],
             ]
     ) -> None:
         self.__base_frame = base_frame

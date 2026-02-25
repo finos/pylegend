@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from decimal import Decimal as PythonDecimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
@@ -139,9 +140,9 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
 
 
 class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
-    __value: float
+    __value: PyLegendUnion[float, PythonDecimal]
 
-    def __init__(self, value: float) -> None:
+    def __init__(self, value: PyLegendUnion[float, PythonDecimal]) -> None:
         self.__value = value
 
     def to_sql_expression(
@@ -149,10 +150,16 @@ class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return DoubleLiteral(value=self.__value)
+        return Cast(
+            expression=StringLiteral(value=str(self.__value), quoted=False),
+            type_=ColumnType(name="DECIMAL", parameters=[])
+        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
+        s = str(self.__value)
+        if s.startswith('-'):
+            return f"minus({s[1:]}D)"
+        return f"{s}D"
 
     def is_non_nullable(self) -> bool:
         return True
@@ -222,12 +229,14 @@ class PyLegendNullLiteralExpression(PyLegendExpressionNullReturn):
 
 
 def convert_literal_to_literal_expression(
-        literal: PyLegendUnion[int, float, bool, str, datetime, date, None]
+        literal: PyLegendUnion[int, float, bool, str, datetime, date, PythonDecimal, None]
 ) -> PyLegendExpression:
     if isinstance(literal, bool):
         return PyLegendBooleanLiteralExpression(literal)
     if isinstance(literal, int):
         return PyLegendIntegerLiteralExpression(literal)
+    if isinstance(literal, PythonDecimal):
+        return PyLegendDecimalLiteralExpression(literal)
     if isinstance(literal, float):
         return PyLegendFloatLiteralExpression(literal)
     if isinstance(literal, str):

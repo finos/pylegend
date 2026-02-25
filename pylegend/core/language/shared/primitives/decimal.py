@@ -18,6 +18,7 @@ from pylegend._typing import (
     PyLegendUnion,
     TYPE_CHECKING,
 )
+from decimal import Decimal as PythonDecimal
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.expression import PyLegendExpressionDecimalReturn
 from pylegend.core.language.shared.literal_expressions import PyLegendDecimalLiteralExpression
@@ -55,10 +56,12 @@ class PyLegendDecimal(PyLegendNumber):
     @grammar_method
     def __add__(
             self,
-            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"]
+            other: PyLegendUnion[
+                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
+            ]
     ) -> "PyLegendUnion[PyLegendNumber, PyLegendDecimal]":
         PyLegendNumber.validate_param_to_be_number(other, "Decimal plus (+) parameter")
-        if isinstance(other, (float, PyLegendDecimal)):
+        if isinstance(other, (float, PythonDecimal, PyLegendDecimal)):
             other_op = PyLegendDecimal.__convert_to_decimal_expr(other)
             return PyLegendDecimal(PyLegendDecimalAddExpression(self.__value_copy, other_op))
         else:
@@ -67,10 +70,12 @@ class PyLegendDecimal(PyLegendNumber):
     @grammar_method
     def __radd__(
             self,
-            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"]
+            other: PyLegendUnion[
+                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
+            ]
     ) -> "PyLegendUnion[PyLegendNumber, PyLegendDecimal]":
         PyLegendNumber.validate_param_to_be_number(other, "Decimal plus (+) parameter")
-        if isinstance(other, (float, PyLegendDecimal)):
+        if isinstance(other, (float, PythonDecimal, PyLegendDecimal)):
             other_op = PyLegendDecimal.__convert_to_decimal_expr(other)
             return PyLegendDecimal(PyLegendDecimalAddExpression(other_op, self.__value_copy))
         else:
@@ -79,10 +84,12 @@ class PyLegendDecimal(PyLegendNumber):
     @grammar_method
     def __sub__(
             self,
-            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"]
+            other: PyLegendUnion[
+                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
+            ]
     ) -> "PyLegendUnion[PyLegendNumber, PyLegendDecimal]":
         PyLegendNumber.validate_param_to_be_number(other, "Decimal minus (-) parameter")
-        if isinstance(other, (float, PyLegendDecimal)):
+        if isinstance(other, (float, PythonDecimal, PyLegendDecimal)):
             other_op = PyLegendDecimal.__convert_to_decimal_expr(other)
             return PyLegendDecimal(PyLegendDecimalSubtractExpression(self.__value_copy, other_op))
         else:
@@ -91,10 +98,12 @@ class PyLegendDecimal(PyLegendNumber):
     @grammar_method
     def __rsub__(
             self,
-            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"]
+            other: PyLegendUnion[
+                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
+            ]
     ) -> "PyLegendUnion[PyLegendNumber, PyLegendDecimal]":
         PyLegendNumber.validate_param_to_be_number(other, "Decimal minus (-) parameter")
-        if isinstance(other, (float, PyLegendDecimal)):
+        if isinstance(other, (float, PythonDecimal, PyLegendDecimal)):
             other_op = PyLegendDecimal.__convert_to_decimal_expr(other)
             return PyLegendDecimal(PyLegendDecimalSubtractExpression(other_op, self.__value_copy))
         else:
@@ -103,10 +112,12 @@ class PyLegendDecimal(PyLegendNumber):
     @grammar_method
     def __mul__(
             self,
-            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"]
+            other: PyLegendUnion[
+                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
+            ]
     ) -> "PyLegendUnion[PyLegendNumber, PyLegendDecimal]":
         PyLegendNumber.validate_param_to_be_number(other, "Decimal multiply (*) parameter")
-        if isinstance(other, (float, PyLegendDecimal)):
+        if isinstance(other, (float, PythonDecimal, PyLegendDecimal)):
             other_op = PyLegendDecimal.__convert_to_decimal_expr(other)
             return PyLegendDecimal(PyLegendDecimalMultiplyExpression(self.__value_copy, other_op))
         else:
@@ -115,10 +126,12 @@ class PyLegendDecimal(PyLegendNumber):
     @grammar_method
     def __rmul__(
             self,
-            other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"]
+            other: PyLegendUnion[
+                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
+            ]
     ) -> "PyLegendUnion[PyLegendNumber, PyLegendDecimal]":
         PyLegendNumber.validate_param_to_be_number(other, "Decimal multiply (*) parameter")
-        if isinstance(other, (float, PyLegendDecimal)):
+        if isinstance(other, (float, PythonDecimal, PyLegendDecimal)):
             other_op = PyLegendDecimal.__convert_to_decimal_expr(other)
             return PyLegendDecimal(PyLegendDecimalMultiplyExpression(other_op, self.__value_copy))
         else:
@@ -138,9 +151,9 @@ class PyLegendDecimal(PyLegendNumber):
 
     @staticmethod
     def __convert_to_decimal_expr(
-            val: PyLegendUnion[float, "PyLegendDecimal"]
+            val: PyLegendUnion[float, PythonDecimal, "PyLegendDecimal"]
     ) -> PyLegendExpressionDecimalReturn:
-        if isinstance(val, float):
+        if isinstance(val, (float, PythonDecimal)):
             return PyLegendDecimalLiteralExpression(val)
         return val.__value_copy
 
@@ -157,4 +170,3 @@ class PyLegendDecimal(PyLegendNumber):
     @staticmethod
     def __validate__param_to_be_decimal(params, desc):  # type: ignore
         PyLegendNumber.validate_param_to_be_number(params, desc)
-

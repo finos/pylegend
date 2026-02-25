@@ -15,6 +15,7 @@
 import copy
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
+from decimal import Decimal as PythonDecimal
 from typing import TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
@@ -200,7 +201,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             self,
             **kwargs: PyLegendCallable[
                 [PandasApiTdsRow],
-                PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]
+                PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]
             ],
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (

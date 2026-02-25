@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import date, datetime
+from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
@@ -75,7 +76,7 @@ class LegacyApiExtendFunction(LegacyApiAppliedFunction):
         for (func, name) in zip(self.__functions_list, self.__column_names_list):
             col_expr = func(tds_row)
 
-            if isinstance(col_expr, (bool, int, float, str, date, datetime)):
+            if isinstance(col_expr, (bool, int, float, str, date, datetime, PythonDecimal)):
                 col_sql_expr = convert_literal_to_literal_expression(col_expr).to_sql_expression(
                     {"frame": new_query},
                     config
