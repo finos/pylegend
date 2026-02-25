@@ -55,7 +55,7 @@ jobs:
 
       # 1. Use the official Red Hat Action
       - name: Install Podman (Red Hat Action)
-        uses: redhat-actions/podman-setup@v1
+        uses: redhat-actions/podman-install@main
 
       # 2. Windows-specific: Start the VM and set the Pipe
       - name: Initialize Podman Machine (Windows)
