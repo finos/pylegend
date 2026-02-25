@@ -83,6 +83,7 @@ jobs:
       - name: PyTest
         env:
           TESTCONTAINERS_HOST_OVERRIDE: 127.0.0.1
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
         uses: ./.github/workflows/actions/pytest
         with:
           os: ${{ matrix.os }}
