@@ -53,8 +53,6 @@ jobs:
       - name: Setup and configure colima on macOS
         if: runner.os == 'macOS'
         uses: douglascamata/setup-docker-macos-action@v1
-        with:
-          colima-network-address: true
 
       - name: Set Testcontainers environment variables
         run: |
