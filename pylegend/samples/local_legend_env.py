@@ -63,7 +63,7 @@ class LocalLegendEnv:
         self,
         image: str = _DEFAULT_IMAGE,
         metadata_port: PyLegendOptional[int] = None,
-        max_wait_seconds: int = 120,
+        max_wait_seconds: int = 600,
     ) -> None:
         self._image = image
         self._metadata_port = metadata_port or generate_dynamic_port()
