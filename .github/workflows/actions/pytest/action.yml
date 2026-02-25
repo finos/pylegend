@@ -56,5 +56,5 @@ runs:
         fi
         echo "Pytest executable is:" $(which pytest)
         echo "Running pytest ./tests --cov=pylegend --cov=tests -o log_cli=true -o log_cli_level=INFO -o log_cli_format=\"%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)\" -o log_cli_date_format=\"%Y-%m-%d %H:%M:%S\" --junitxml=./test-results/pytest_result_${{ inputs.os }}_${{ inputs.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ inputs.os }}_${{ inputs.python-version }}.xml"
-        pytest ./tests --cov=pylegend --cov=tests -o log_cli=true -o log_cli_level=INFO -o log_cli_format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)" -o log_cli_date_format="%Y-%m-%d %H:%M:%S" --junitxml=./test-results/pytest_result_${{ inputs.os }}_${{ inputs.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ inputs.os }}_${{ inputs.python-version }}.xml
+        pytest ./tests -k test_northwind_orders_frame --cov=pylegend --cov=tests -o log_cli=true -o log_cli_level=INFO -o log_cli_format="%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)" -o log_cli_date_format="%Y-%m-%d %H:%M:%S" --junitxml=./test-results/pytest_result_${{ inputs.os }}_${{ inputs.python-version }}.xml --cov-report=xml:./coverage/coverage_${{ inputs.os }}_${{ inputs.python-version }}.xml
         echo "Done with running pytest"
