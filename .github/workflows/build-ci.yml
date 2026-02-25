@@ -64,14 +64,21 @@ jobs:
           # 4. Safely eject the virtual drive
           hdiutil detach /Volumes/OrbStack
           # 2. Start OrbStack in the background
+          # 1. Apply config and start the engine
           /Applications/OrbStack.app/Contents/MacOS/bin/orb config set setup.use_admin false
           nohup /Applications/OrbStack.app/Contents/MacOS/bin/orb start &
           
-          # 3. Wait a few seconds until the Docker engine is fully responsive
-          while ! docker ps > /dev/null 2>&1; do 
+          # 2. Set the socket location for THIS step and ALL FUTURE steps
+          export DOCKER_HOST="unix://${HOME}/.orbstack/run/docker.sock"
+          echo "DOCKER_HOST=$DOCKER_HOST" >> $GITHUB_ENV
+          
+          # 3. Wait until the Docker daemon responds
+          while ! /Applications/OrbStack.app/Contents/MacOS/xbin/docker ps > /dev/null 2>&1; do 
             echo "Waiting for OrbStack to boot..."
             sleep 2
           done
+          
+          echo "OrbStack is fully online and responsive!"
 
       - name: PyTest
         env:
