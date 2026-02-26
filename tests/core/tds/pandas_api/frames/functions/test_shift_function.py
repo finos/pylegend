@@ -18,6 +18,7 @@ import pandas as pd
 import pytest
 
 from pylegend._typing import PyLegendDict, PyLegendUnion
+from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -379,6 +380,80 @@ class TestUsageOnBaseFrame:
                 assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
 
+    def test_series_datatype_conversion_and_full_query_generation(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame1 = frame["col1"].shift(1)
+        assert isinstance(frame1, Series)
+        expected_sql = '''
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame1.to_sql_query() == expected_sql
+        expected_pure = '''
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame1.to_pure_query() == expected_pure
+
+        frame1 += 5
+        assert isinstance(frame1, Series)
+        expected_sql = '''
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame1.to_sql_query() == expected_sql
+        expected_pure = '''
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame1.to_pure_query() == expected_pure
+
+        frame2 = frame["col1"].shift([1])
+        assert isinstance(frame2, PandasApiTdsFrame)
+        expected_sql = '''
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame2.to_sql_query() == expected_sql
+        expected_pure = '''
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame2.to_pure_query() == expected_pure
+
+        frame3 = frame["col1"].shift([1, -1])
+        assert isinstance(frame3, PandasApiTdsFrame)
+        expected_sql = '''
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame3.to_sql_query() == expected_sql
+        expected_pure = '''
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame3.to_pure_query() == expected_pure
+
+
+    def test_series_assign(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame["shifted_col1"] = frame["col1"].shift(1)
+        expected_sql = '''
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+        expected_pure = '''
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+        frame["shifted_col2"] = frame["col2"].shift(1) + 5
+        expected_sql = '''
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+        expected_pure = '''
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+
 class TestUsageOnGroupbyFrame:
     if USE_LEGEND_ENGINE:
         @pytest.fixture(autouse=True)
@@ -386,7 +461,7 @@ class TestUsageOnGroupbyFrame:
             self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_no_selection(self) -> None:
-        columns = columns = [
+        columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
@@ -475,7 +550,7 @@ class TestUsageOnGroupbyFrame:
                 assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_selection_same_as_groupby(self) -> None:
-        columns = columns = [
+        columns = [
             PrimitiveTdsColumn.string_column("group_col"),
             PrimitiveTdsColumn.integer_column("val_col"),
             PrimitiveTdsColumn.integer_column("random_col")
