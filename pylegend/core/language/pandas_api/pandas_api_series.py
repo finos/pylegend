@@ -11,20 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from copy import copy
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
-
 import pandas as pd
-
 from pylegend._typing import (
     PyLegendDict,
-)
-from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
     PyLegendTypeVar,
-    PyLegendUnion
+    PyLegendUnion,
+    PyLegendHashable,
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -58,6 +55,7 @@ from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_core_series, \
     has_window_function
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
@@ -198,10 +196,10 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         for expr in sub_expressions:
             if isinstance(expr, Series):
                 applied_func = expr.get_filtered_frame().get_applied_function()
-                if isinstance(applied_func, RankFunction):
+                if isinstance(applied_func, (RankFunction, ShiftFunction)):
                     assert has_window_func is False
                     has_window_func = True
-                    c, window = applied_func.construct_column_expression_and_window_tuples()[0]
+                    c, window = applied_func.construct_column_expression_and_window_tuples("r")[0]
                     window_expr = window.to_pure_expression(config)
                     function_expr = c[1].to_pure_expression(config)
 
@@ -241,6 +239,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.execute_frame(ToPandasDfResultHandler(pandas_df_read_config), chunk_size)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
+        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         if self.expr is None:
             return self.get_filtered_frame().to_sql_query_object(config)
@@ -260,18 +259,24 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             temp_col_name,
             self.to_sql_expression({'c': base_query}, config)
         )
-        base_query.select.selectItems = [new_select_item]
 
         if expr_contains_window_func:
+            base_frame = copy(self.get_base_frame())
+            if isinstance(assert_and_find_core_series(self).get_filtered_frame().get_applied_function(), ShiftFunction):
+                base_frame = base_frame.assign(**{zero_column_name:lambda row: 0})
+            base_query = base_frame.to_sql_query_object(config)
             new_query = create_sub_query(base_query, config, "root")
-            new_query.select.selectItems = [
+            new_query.select.selectItems = [new_select_item]
+            final_query = create_sub_query(new_query, config, "root")
+            final_query.select.selectItems = [
                 SingleColumn(
                     db_extension.quote_identifier(col_name),
                     QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), temp_col_name]))
                 )
             ]
-            return new_query
+            return final_query
         else:
+            base_query.select.selectItems = [new_select_item]
             return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -481,6 +486,33 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         new_series._filtered_frame = applied_function_frame
         return new_series
+
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> PyLegendUnion["Series", "PandasApiTdsFrame"]:
+        if self._expr is not None:  # pragma: no cover
+            error_msg = '''
+                Applying shift function to a computed series expression is not supported yet.
+                For example,
+                    not supported: (frame['col'] + 5).shift()
+                    supported: frame['col'].shift() + 5
+            '''
+            error_msg = dedent(error_msg).strip()
+            raise NotImplementedError(error_msg)
+
+        if isinstance(periods, int):
+            new_series = self.__class__(self.get_base_frame(), self.columns()[0].get_name())
+            applied_function_frame = self._filtered_frame.shift(periods, freq, axis, fill_value, suffix)
+            assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+            new_series._filtered_frame = applied_function_frame
+            return new_series
+        else:
+            return self._filtered_frame.shift(periods, freq, axis, fill_value, suffix)
 
 
 @add_primitive_methods

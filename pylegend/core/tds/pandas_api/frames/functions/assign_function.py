@@ -38,10 +38,11 @@ from pylegend.core.language.shared.helpers import generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    SingleColumn,
+    SingleColumn, IntegerLiteral,
 )
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import has_window_function
+from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import has_window_function, assert_and_find_core_series
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -73,6 +74,7 @@ class AssignFunction(PandasApiAppliedFunction):
         self.__col_definitions = col_definitions
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.__base_frame.to_sql_query_object(config)
@@ -83,8 +85,28 @@ class AssignFunction(PandasApiAppliedFunction):
             copy_query(base_query)
         )
 
-        base_cols = {c.get_name() for c in self.__base_frame.columns()}
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
+
+        expr_contains_window_func = False
+        expr_contains_shift_func = False
+        for col, func in self.__col_definitions.items():
+            res = func(tds_row)
+            if isinstance(res, (Series, GroupbySeries)):
+                expr_contains_window_func |= has_window_function(res)
+                core_series = assert_and_find_core_series(res)
+                applied_func = (
+                    core_series.get_filtered_frame().get_applied_function() if isinstance(core_series, Series) else
+                    core_series.applied_function_frame.get_applied_function()
+                )
+                expr_contains_shift_func |= isinstance(applied_func, ShiftFunction)
+
+        if expr_contains_shift_func:
+            new_query.select.selectItems.append(
+                SingleColumn(alias=db_extension.quote_identifier(zero_column_name), expression=IntegerLiteral(0))
+            )
+            new_query = create_sub_query(new_query, config, "root")
+
+        base_cols = {c.get_name() for c in self.__base_frame.columns()}
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
@@ -108,11 +130,12 @@ class AssignFunction(PandasApiAppliedFunction):
                              else alias)
                 new_query.select.selectItems.append(SingleColumn(alias=alias, expression=new_col_expr))
 
-        expr_contains_window_func = False
-        for col, func in self.__col_definitions.items():
-            res = func(tds_row)
-            if isinstance(res, (Series, GroupbySeries)):
-                expr_contains_window_func |= has_window_function(res)
+        if expr_contains_shift_func:
+            zero_column_alias = db_extension.quote_identifier(zero_column_name)
+            new_query.select.selectItems = [
+                si for si in new_query.select.selectItems
+                if not (isinstance(si, SingleColumn) and si.alias == zero_column_alias)
+            ]
 
         if expr_contains_window_func:
             final_query = create_sub_query(new_query, config, "root")
@@ -148,8 +171,8 @@ class AssignFunction(PandasApiAppliedFunction):
                     else:
                         continue
 
-                    if isinstance(applied_func, RankFunction):
-                        c, window = applied_func.construct_column_expression_and_window_tuples()[0]
+                    if isinstance(applied_func, (RankFunction, ShiftFunction)):
+                        c, window = applied_func.construct_column_expression_and_window_tuples("r")[0]
                         window_expr = window.to_pure_expression(config)
                         function_expr = c[1].to_pure_expression(config)
                         target_col_name = c[0] + temp_column_name_suffix

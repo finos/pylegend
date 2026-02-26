@@ -381,53 +381,153 @@ class TestUsageOnBaseFrame:
 
 
     def test_series_datatype_conversion_and_full_query_generation(self) -> None:
-        columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         frame1 = frame["col1"].shift(1)
         assert isinstance(frame1, Series)
         expected_sql = '''
-        '''
+            SELECT
+                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
+            FROM
+                (
+                    SELECT
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected_sql = dedent(expected_sql).strip()
         assert frame1.to_sql_query() == expected_sql
         expected_pure = '''
-        '''
+            #Table(test_schema.test_table)#
+              ->select(~[col1])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->project(~[
+                col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__
+              ])
+        '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
 
         frame1 += 5
         assert isinstance(frame1, Series)
         expected_sql = '''
-        '''
+            SELECT
+                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
+            FROM
+                (
+                    SELECT
+                        (lag("root".col1, 1) OVER (ORDER BY "root".__INTERNAL_PYLEGEND_COLUMN__) + 5) AS "col1__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected_sql = dedent(expected_sql).strip()
         assert frame1.to_sql_query() == expected_sql
         expected_pure = '''
-        '''
+            #Table(test_schema.test_table)#
+              ->select(~[col1])
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->project(~[col1:c|(toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__) + 5)])
+        '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
 
         frame2 = frame["col1"].shift([1])
         assert isinstance(frame2, PandasApiTdsFrame)
         expected_sql = '''
-        '''
+            SELECT
+                "root"."col1_1__INTERNAL_PYLEGEND_COLUMN__" AS "col1_1"
+            FROM
+                (
+                    SELECT
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1_1__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected_sql = dedent(expected_sql).strip()
         assert frame2.to_sql_query() == expected_sql
         expected_pure = '''
-        '''
+            #Table(test_schema.test_table)#
+              ->select(~[col1])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->project(~[
+                col1_1:p|$p.col1_1__INTERNAL_PYLEGEND_COLUMN__
+              ])
+        '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame2.to_pure_query() == expected_pure
 
         frame3 = frame["col1"].shift([1, -1])
         assert isinstance(frame3, PandasApiTdsFrame)
         expected_sql = '''
-        '''
+            SELECT
+                "root"."col1_1__INTERNAL_PYLEGEND_COLUMN__" AS "col1_1",
+                "root"."col1_-1__INTERNAL_PYLEGEND_COLUMN__" AS "col1_-1"
+            FROM
+                (
+                    SELECT
+                        lag("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1_1__INTERNAL_PYLEGEND_COLUMN__",
+                        lead("root"."col1", 1) OVER (ORDER BY "root"."__INTERNAL_PYLEGEND_COLUMN__") AS "col1_-1__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected_sql = dedent(expected_sql).strip()
         assert frame3.to_sql_query() == expected_sql
         expected_pure = '''
-        '''
+            #Table(test_schema.test_table)#
+              ->select(~[col1])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r|0})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~'col1_-1__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r).col1})
+              ->project(~[
+                col1_1:p|$p.col1_1__INTERNAL_PYLEGEND_COLUMN__,
+                'col1_-1':p|$p.'col1_-1__INTERNAL_PYLEGEND_COLUMN__'
+              ])
+        '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame3.to_pure_query() == expected_pure
 
+        frame4 = frame["col1"].shift(1, suffix="_shifted") + 5
+        assert isinstance(frame4, Series)
+        expected_sql = '''
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame4.to_sql_query() == expected_sql
+        expected_pure = '''
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame4.to_pure_query() == expected_pure
 
     def test_series_assign(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
@@ -435,21 +535,86 @@ class TestUsageOnBaseFrame:
 
         frame["shifted_col1"] = frame["col1"].shift(1)
         expected_sql = '''
-        '''
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."shifted_col1__INTERNAL_PYLEGEND_COLUMN__" AS "shifted_col1"
+            FROM
+                (
+                    SELECT
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        lag("root".col1, 1) OVER (ORDER BY "root".__INTERNAL_PYLEGEND_COLUMN__) AS "shifted_col1__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected_sql = dedent(expected_sql).strip()
         assert frame.to_sql_query() == expected_sql
         expected_pure = '''
-        '''
+            #Table(test_schema.test_table)#
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, shifted_col1:c|$c.col1__INTERNAL_PYLEGEND_COLUMN__])
+        '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
 
-        frame["shifted_col2"] = frame["col2"].shift(1) + 5
+        frame["shifted_col2"] = frame["col2"].shift(-1) + 5
         expected_sql = '''
-        '''
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."shifted_col1" AS "shifted_col1",
+                "root"."shifted_col2__INTERNAL_PYLEGEND_COLUMN__" AS "shifted_col2"
+            FROM
+                (
+                    SELECT
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        "root"."shifted_col1" AS "shifted_col1",
+                        (lead("root"."col2", 1) OVER (ORDER BY "root".__INTERNAL_PYLEGEND_COLUMN__) + 5) AS "shifted_col2__INTERNAL_PYLEGEND_COLUMN__"
+                    FROM
+                        (
+                            SELECT
+                                "root"."col1" AS "col1",
+                                "root"."col2" AS "col2",
+                                "root"."shifted_col1__INTERNAL_PYLEGEND_COLUMN__" AS "shifted_col1",
+                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
+                            FROM
+                                (
+                                    SELECT
+                                        "root"."col1" AS "col1",
+                                        "root"."col2" AS "col2",
+                                        lag("root".col1, 1) OVER (ORDER BY "root".__INTERNAL_PYLEGEND_COLUMN__) AS "shifted_col1__INTERNAL_PYLEGEND_COLUMN__"
+                                    FROM
+                                        (
+                                            SELECT
+                                                "root".col1 AS "col1",
+                                                "root".col2 AS "col2",
+                                                0 AS "__INTERNAL_PYLEGEND_COLUMN__"
+                                            FROM
+                                                test_schema.test_table AS "root"
+                                        ) AS "root"
+                                ) AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
         expected_sql = dedent(expected_sql).strip()
         assert frame.to_sql_query() == expected_sql
         expected_pure = '''
-        '''
+            #Table(test_schema.test_table)#
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r).col1})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, shifted_col1:c|$c.col1__INTERNAL_PYLEGEND_COLUMN__])
+              ->extend(over([ascending(~__INTERNAL_PYLEGEND_COLUMN__)]), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r).col2})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, shifted_col1:c|$c.shifted_col1, shifted_col2:c|(toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__) + 5)])
+        '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
 

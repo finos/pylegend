@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from pylegend._typing import (
+    PyLegendDict,
     PyLegendCallable,
     PyLegendHashable,
     PyLegendList,
@@ -130,6 +131,31 @@ class ShiftFunction(PandasApiAppliedFunction):
         final_query.select.selectItems = final_select_items
         return final_query
 
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
+
+        self._assert_single_column_in_base_frame()
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        base_query = frame_name_to_base_query_map['c']
+        base_query.select.selectItems.append(
+            SingleColumn(alias=db_extension.quote_identifier(zero_column_name), expression=IntegerLiteral(0))
+        )
+
+        c, window = self.construct_column_expression_and_window_tuples("c")[0]
+        col_sql_expr: Expression = c[1].to_sql_expression(frame_name_to_base_query_map, config)
+        window_node = window.to_sql_node(base_query, config)
+        window_node.orderBy[0].sortKey = QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), zero_column_name]))
+        window_expr = WindowExpression(
+            nested=col_sql_expr,
+            window=window_node,
+        )
+
+        return window_expr
+
     @staticmethod
     def _render_single_column_expression(
             c: PyLegendTuple[str, PyLegendPrimitive], col_name: str, config: FrameToPureConfig
@@ -170,6 +196,12 @@ class ShiftFunction(PandasApiAppliedFunction):
             config.separator(1) + extend_str +
             config.separator(1) + project_str
         )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        self._assert_single_column_in_base_frame()
+        c, window = self.__column_expression_and_window_tuples[0]
+        return f"$c.{escape_column_name(c[0] + temp_column_name_suffix)}"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
@@ -252,11 +284,11 @@ class ShiftFunction(PandasApiAppliedFunction):
                 "Cannot specify the 'suffix' argument of the shift function if the 'periods' argument is an int."
             )
 
-        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples()
+        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples("r")
 
         return True
 
-    def construct_column_expression_and_window_tuples(self) -> PyLegendList[
+    def construct_column_expression_and_window_tuples(self, frame_name: str) -> PyLegendList[
         PyLegendTuple[
             PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
@@ -319,7 +351,7 @@ class ShiftFunction(PandasApiAppliedFunction):
 
                 extend_columns.append((current_col_name, lambda_func))
 
-        tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+        tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.base_frame())
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
 
         column_expression_and_window_tuples: PyLegendList[
@@ -347,3 +379,18 @@ class ShiftFunction(PandasApiAppliedFunction):
             column_expression_and_window_tuples.append((column_expression, window))
 
         return column_expression_and_window_tuples
+
+    def _assert_single_column_in_base_frame(self) -> None:
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+
+        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
+            selected_columns = self.__base_frame.get_selected_columns()
+            assert selected_columns is not None, "To get an SQL or a pure expression, exactly one column must be selected."
+            base_frame_columns = selected_columns
+        else:
+            base_frame_columns = list(self.__base_frame.columns())
+
+        assert len(base_frame_columns) == 1, (
+            "To get an SQL or a pure expression, the base frame must have exactly one column, but got "
+            f"{len(base_frame_columns)} columns: {[str(col) for col in base_frame_columns]}"
+        )

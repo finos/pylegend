@@ -174,13 +174,14 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+    from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
 
     if series.expr is not None:
         core_series = assert_and_find_core_series(series.expr)
         assert core_series is not None
         return has_window_function(core_series)
 
-    considered_window_functions = [RankFunction]
+    considered_window_functions = [RankFunction, ShiftFunction]
 
     if isinstance(series, Series):
         applied_func = series.get_filtered_frame().get_applied_function()
