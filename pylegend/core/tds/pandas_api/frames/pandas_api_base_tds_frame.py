@@ -59,7 +59,7 @@ from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
 )
-from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, PyLegendTdsFrame
 from pylegend.extensions.tds.result_handler import (
@@ -196,6 +196,18 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
         self._transformed_frame = assign_applied  # type: ignore
         self.__columns = assign_applied.columns()
+
+    def cast(
+            self,
+            column_type_map: PyLegendDict[str, PrimitiveType]
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.cast_function import (
+            PandasApiCastFunction
+        )
+        return PandasApiAppliedFunctionTdsFrame(PandasApiCastFunction(self, column_type_map))
 
     def assign(
             self,

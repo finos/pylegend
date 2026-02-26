@@ -21,6 +21,7 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
+    PyLegendDict,
 )
 from pylegend.core.language import (
     LegacyApiTdsRow,
@@ -30,7 +31,7 @@ from pylegend.core.language import (
 )
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 
 __all__: PyLegendSequence[str] = [
     "LegacyApiBaseTdsFrame"
@@ -43,6 +44,18 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         BaseTdsFrame.__init__(self, columns=columns)
+
+    def cast(
+            self,
+            column_type_map: PyLegendDict[str, PrimitiveType]
+    ) -> "LegacyApiTdsFrame":
+        from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
+            LegacyApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_cast_function import (
+            LegacyApiCastFunction
+        )
+        return LegacyApiAppliedFunctionTdsFrame(LegacyApiCastFunction(self, column_type_map))
 
     def head(self, row_count: int = 5) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (

@@ -54,15 +54,15 @@ class TestPyLegendDecimal:
         assert self.__generate_sql_string(lambda x: x.get_decimal("col2") + x.get_decimal("col1")) == \
                '("root".col2 + "root".col1)'
         assert self.__generate_sql_string(lambda x: x.get_decimal("col2") + 1.2) == \
-               '("root".col2 + CAST(\'1.2\' AS DECIMAL))'
+               '("root".col2 + 1.2)'
         assert self.__generate_sql_string(lambda x: 1.2 + x.get_decimal("col2")) == \
-               '(CAST(\'1.2\' AS DECIMAL) + "root".col2)'
+               '(1.2 + "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_decimal("col2") + x.get_decimal("col1")) == \
                '(toOne($t.col2) + toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_decimal("col2") + 1.2) == \
-               '(toOne($t.col2) + 1.2D)'
+               '(toOne($t.col2) + 1.2)'
         assert self.__generate_pure_string(lambda x: 1.2 + x.get_decimal("col2")) == \
-               '(1.2D + toOne($t.col2))'
+               '(1.2 + toOne($t.col2))'
 
     def test_decimal_integer_add_expr(self) -> None:
         assert self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2") + 10) == \
@@ -78,15 +78,15 @@ class TestPyLegendDecimal:
         assert self.__generate_sql_string(lambda x: x.get_decimal("col2") - x.get_decimal("col1")) == \
                '("root".col2 - "root".col1)'
         assert self.__generate_sql_string(lambda x: x.get_decimal("col2") - 1.2) == \
-               '("root".col2 - CAST(\'1.2\' AS DECIMAL))'
+               '("root".col2 - 1.2)'
         assert self.__generate_sql_string(lambda x: 1.2 - x.get_decimal("col2")) == \
-               '(CAST(\'1.2\' AS DECIMAL) - "root".col2)'
+               '(1.2 - "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_decimal("col2") - x.get_decimal("col1")) == \
                '(toOne($t.col2) - toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_decimal("col2") - 1.2) == \
-               '(toOne($t.col2) - 1.2D)'
+               '(toOne($t.col2) - 1.2)'
         assert self.__generate_pure_string(lambda x: 1.2 - x.get_decimal("col2")) == \
-               '(1.2D - toOne($t.col2))'
+               '(1.2 - toOne($t.col2))'
 
     def test_decimal_integer_subtract_expr(self) -> None:
         assert self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2") - 10) == \
@@ -102,15 +102,15 @@ class TestPyLegendDecimal:
         assert self.__generate_sql_string(lambda x: x.get_decimal("col2") * x.get_decimal("col1")) == \
                '("root".col2 * "root".col1)'
         assert self.__generate_sql_string(lambda x: x.get_decimal("col2") * 1.2) == \
-               '("root".col2 * CAST(\'1.2\' AS DECIMAL))'
+               '("root".col2 * 1.2)'
         assert self.__generate_sql_string(lambda x: 1.2 * x.get_decimal("col2")) == \
-               '(CAST(\'1.2\' AS DECIMAL) * "root".col2)'
+               '(1.2 * "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_decimal("col2") * x.get_decimal("col1")) == \
                '(toOne($t.col2) * toOne($t.col1))'
         assert self.__generate_pure_string(lambda x: x.get_decimal("col2") * 1.2) == \
-               '(toOne($t.col2) * 1.2D)'
+               '(toOne($t.col2) * 1.2)'
         assert self.__generate_pure_string(lambda x: 1.2 * x.get_decimal("col2")) == \
-               '(1.2D * toOne($t.col2))'
+               '(1.2 * toOne($t.col2))'
 
     def test_decimal_integer_multiply_expr(self) -> None:
         assert self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2") * 10) == \

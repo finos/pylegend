@@ -150,16 +150,20 @@ class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return Cast(
-            expression=StringLiteral(value=str(self.__value), quoted=False),
-            type_=ColumnType(name="DECIMAL", parameters=[])
-        )
+        if isinstance(self.__value, PythonDecimal):
+            return Cast(
+                expression=StringLiteral(value=str(self.__value), quoted=False),
+                type_=ColumnType(name="DECIMAL", parameters=[])
+            )
+        return DoubleLiteral(value=self.__value)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        s = str(self.__value)
-        if s.startswith('-'):
-            return f"minus({s[1:]}D)"
-        return f"{s}D"
+        if isinstance(self.__value, PythonDecimal):
+            s = str(self.__value)
+            if s.startswith('-'):
+                return f"minus({s[1:]}D)"
+            return f"{s}D"
+        return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
 
     def is_non_nullable(self) -> bool:
         return True
