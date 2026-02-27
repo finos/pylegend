@@ -102,7 +102,7 @@ def _normalize_target(target: CastTarget) -> PyLegendTuple[PrimitiveType, PyLege
     if isinstance(target, PrimitiveType):
         return target, ()
     ptype = target[0]
-    params = tuple(target[1:])  # type: ignore
+    params = tuple(target[1:])
     return ptype, params  # type: ignore
 
 

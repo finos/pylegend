@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+
 import json
 from textwrap import dedent
 
@@ -60,16 +62,11 @@ _ALL_FRAME_FACTORIES = pytest.mark.parametrize(
 )
 
 
-# =============================================================================
-# Validation: errors for bad inputs and disallowed casts (subclass check)
-# =============================================================================
 class TestTdsFrameCastValidation:
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
-
-    # -- unknown / wrong column errors --
 
     @_ALL_FRAME_FACTORIES
     def test_cast_unknown_column_raises_error(
@@ -94,8 +91,6 @@ class TestTdsFrameCastValidation:
         frame = frame_factory([EnumTdsColumn("city", "my::CityType", ["Tier1", "Tier2"])])
         with pytest.raises(TypeError, match="Cannot cast non-primitive column 'city'"):
             frame.cast({"city": PrimitiveType.String})
-
-    # -- cross-branch / cross-family casts (not subclass related) --
 
     @_ALL_FRAME_FACTORIES
     def test_cast_string_to_integer_not_allowed(
@@ -169,8 +164,6 @@ class TestTdsFrameCastValidation:
         with pytest.raises(ValueError, match="Cannot cast column 'n' from Integer to DateTime"):
             frame.cast({"n": PrimitiveType.DateTime})
 
-    # -- sibling branches under Number (not subclass of each other) --
-
     @_ALL_FRAME_FACTORIES
     def test_cast_integer_to_float_not_allowed(
             self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
@@ -204,9 +197,6 @@ class TestTdsFrameCastValidation:
             frame.cast({"n": PrimitiveType.String})
 
 
-# =============================================================================
-# Allowed casts: column type changes
-# =============================================================================
 class TestTdsFrameCastColumns:
 
     @pytest.fixture(autouse=True)
@@ -330,9 +320,6 @@ class TestTdsFrameCastColumns:
         assert "TdsColumn(Name: col1, Type: Integer)" == str(frame.columns()[0])
 
 
-# =============================================================================
-# SQL and Pure query generation
-# =============================================================================
 class TestTdsFrameCastQueryGeneration:
 
     @pytest.fixture(autouse=True)
@@ -478,9 +465,6 @@ class TestTdsFrameCastQueryGeneration:
         assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
 
 
-# =============================================================================
-# End-to-end (pandas API only – uses execute_frame_to_string)
-# =============================================================================
 class TestTdsFrameCastE2E:
 
     _COLUMNS = ["First Name", "Last Name", "Age", "Firm/Legal Name"]
@@ -504,12 +488,11 @@ class TestTdsFrameCastE2E:
     ) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.cast({"Age": target_type})
-        frame['Age'] = frame['Age'] + 1  # type: ignore
+        frame['Age'] = frame['Age'] + 1
         expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
-    # Age is Integer in the service frame → all these are within the Integer branch
     def test_e2e_cast_integer(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self._cast_age_and_add_one(legend_test_server, PrimitiveType.Integer)
 
@@ -540,11 +523,10 @@ class TestTdsFrameCastE2E:
     def test_e2e_cast_number(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self._cast_age_and_add_one(legend_test_server, PrimitiveType.Number)
 
-    # First Name is String → Varchar is within the String branch
     def test_e2e_cast_varchar(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.cast({"First Name": (PrimitiveType.Varchar, 200)})
-        frame["First Name"] = frame["First Name"].len()  # type: ignore[union-attr]
+        frame["First Name"] = frame["First Name"].len()
         expected = {
             "columns": self._COLUMNS,
             "rows": [
@@ -559,3 +541,20 @@ class TestTdsFrameCastE2E:
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+    def test_e2e_cast_decimal_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.cast({"Age": PrimitiveType.Number})
+        frame = frame.cast({"Age": PrimitiveType.Decimal})
+        frame = frame.groupby("Firm/Legal Name")["Age"].aggregate("sum")
+        expected = {
+            "columns": ["Firm/Legal Name", "Age"],
+            "rows": [
+                {"values": ["Firm A", 34]},
+                {"values": ["Firm B", 32]},
+                {"values": ["Firm C", 35]},
+                {"values": ["Firm X", 79]},
+            ],
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected
+

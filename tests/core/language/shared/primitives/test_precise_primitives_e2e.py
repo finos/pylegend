@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+
 import pytest
 
 from pylegend.core.database.sql_to_string import (
