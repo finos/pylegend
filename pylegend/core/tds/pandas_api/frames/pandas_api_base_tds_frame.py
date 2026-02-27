@@ -901,6 +901,11 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             suffix=suffix
         ))
 
+    def diff(self) -> "PandasApiTdsFrame":
+        for col in self.columns():
+            self[col.get_name()] = self[col.get_name()].shift() - self[col.get_name()]
+        return self
+
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
         pass  # pragma: no cover

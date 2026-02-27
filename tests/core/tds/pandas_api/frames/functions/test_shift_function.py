@@ -618,6 +618,14 @@ class TestUsageOnBaseFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
 
+    def test_diff(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame = frame.diff()
+
+        assert frame.to_sql_query() == ""
+
 
 class TestUsageOnGroupbyFrame:
     if USE_LEGEND_ENGINE:
