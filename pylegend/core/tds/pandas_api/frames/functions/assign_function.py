@@ -78,7 +78,6 @@ class AssignFunction(PandasApiAppliedFunction):
         self.__col_definitions = col_definitions
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.__base_frame.to_sql_query_object(config)
@@ -89,29 +88,8 @@ class AssignFunction(PandasApiAppliedFunction):
             copy_query(base_query)
         )
 
-        tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
-
-        expr_contains_window_func = False
-        expr_contains_shift_func = False
-        for col, func in self.__col_definitions.items():
-            res = func(tds_row)
-            if isinstance(res, (Series, GroupbySeries)):
-                expr_contains_window_func |= has_window_function(res)
-                core_series = assert_and_find_core_series(res)
-                assert core_series is not None
-                applied_func = (
-                    core_series.get_filtered_frame().get_applied_function() if isinstance(core_series, Series) else
-                    core_series.raise_exception_if_no_function_applied().get_applied_function()
-                )
-                expr_contains_shift_func |= isinstance(applied_func, ShiftFunction)
-
-        if expr_contains_shift_func:
-            new_query.select.selectItems.append(
-                SingleColumn(alias=db_extension.quote_identifier(zero_column_name), expression=IntegerLiteral(0))
-            )
-            new_query = create_sub_query(new_query, config, "root")
-
         base_cols = {c.get_name() for c in self.__base_frame.columns()}
+        tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
@@ -135,12 +113,11 @@ class AssignFunction(PandasApiAppliedFunction):
                              else alias)
                 new_query.select.selectItems.append(SingleColumn(alias=alias, expression=new_col_expr))
 
-        if expr_contains_shift_func:
-            zero_column_alias = db_extension.quote_identifier(zero_column_name)
-            new_query.select.selectItems = [
-                si for si in new_query.select.selectItems
-                if not (isinstance(si, SingleColumn) and si.alias == zero_column_alias)
-            ]
+        expr_contains_window_func = False
+        for col, func in self.__col_definitions.items():
+            res = func(tds_row)
+            if isinstance(res, (Series, GroupbySeries)):
+                expr_contains_window_func |= has_window_function(res)
 
         if expr_contains_window_func:
             final_query = create_sub_query(new_query, config, "root")

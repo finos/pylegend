@@ -107,6 +107,16 @@ class TestErrorsOnBaseFrame:
         expected_msg = "SQL query execution is not supported for the shift function"
         assert v.value.args[0] == expected_msg
 
+    def test_sql_assign(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame["new_col"] = frame["col1"].shift().to_sql_query()
+
+        expected_msg = "SQL query execution is not supported for the shift function"
+        assert v.value.args[0] == expected_msg
+
 
 class TestErrorsOnGroupbyFrame:
     def test_invalid_axis(self) -> None:

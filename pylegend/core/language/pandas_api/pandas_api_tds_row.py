@@ -106,7 +106,7 @@ class PandasApiLeadRow(PandasApiTdsRow):
             column: str,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
-    ) -> Expression:
+    ) -> Expression:  # pragma: no cover (SQL query execution is not supported for the shift function)
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
             IntegerLiteral(self.__num_rows_to_lead_by)
@@ -148,7 +148,7 @@ class PandasApiLagRow(PandasApiTdsRow):
             column: str,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
-    ) -> Expression:
+    ) -> Expression:  # pragma: no cover (SQL query execution is not supported for the shift function)
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
             IntegerLiteral(self.__num_rows_to_lag_by)
