@@ -280,7 +280,7 @@ class TestUsageOnBaseFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
 
-        frame1 += 5  # type: ignore[operator]
+        frame1 += 5  # type: ignore[operator, assignment]
         assert isinstance(frame1, Series)
         expected_pure = '''
             #Table(test_schema.test_table)#
@@ -539,7 +539,7 @@ class TestUsageOnGroupbyFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
 
-        frame1 += 5  # type: ignore[operator]
+        frame1 += 5  # type: ignore[operator, assignment]
         assert isinstance(frame1, GroupbySeries)
         expected_pure = '''
             #Table(test_schema.test_table)#
