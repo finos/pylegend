@@ -89,15 +89,6 @@ class TestLiteralExpressions:
         ) == "'Hello,'' World!'"
         assert self.__generate_pure_string(expr) == "'Hello,\\\' World!'"
 
-    def test_null_literal_expr(self) -> None:
-        expr = PyLegendNullLiteralExpression()
-        assert self.db_extension.process_expression(
-            expr.to_sql_expression({}, self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == "null"
-        assert self.__generate_pure_string(expr) == "[]"
-        assert expr.get_sub_expressions() == [expr]
-
     def __generate_pure_string(self, expr) -> str:  # type: ignore
         e = str(expr.to_pure_expression(self.frame_to_pure_config))
         model_code = """

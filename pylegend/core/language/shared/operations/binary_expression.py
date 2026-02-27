@@ -105,7 +105,7 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
     def is_non_nullable(self) -> bool:
         return self.__non_nullable
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         sub_expressions: PyLegendList["PyLegendExpression"] = []
         sub_expressions += self.__operand1.get_sub_expressions()
         sub_expressions += self.__operand2.get_sub_expressions()

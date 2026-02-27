@@ -106,8 +106,8 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
     def is_non_nullable(self) -> bool:
         return self.__non_nullable
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         sub_expressions: PyLegendList["PyLegendExpression"] = []
         for operand in self.__operands:
-            sub_expressions += operand.get_sub_expressions()
+            sub_expressions += operand.get_leaf_expressions()
         return sub_expressions

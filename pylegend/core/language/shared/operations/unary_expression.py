@@ -89,5 +89,5 @@ class PyLegendUnaryExpression(PyLegendExpression, metaclass=ABCMeta):
     def is_non_nullable(self) -> bool:
         return self.__non_nullable
 
-    def get_sub_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
-        return self.__operand.get_sub_expressions()
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return self.__operand.get_leaf_expressions()
