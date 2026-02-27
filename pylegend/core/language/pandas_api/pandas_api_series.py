@@ -183,6 +183,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
+        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         if self.expr is None:
             return self.get_filtered_frame().to_pure_query(config)
@@ -205,9 +206,11 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         extend = ""
         if has_window_func:
+            if isinstance(assert_and_find_core_series(self).get_filtered_frame().get_applied_function(), ShiftFunction):
+                extend += f"->extend(~{zero_column_name}:{{r | 0}})" + config.separator(1)
             pure_expr = full_expr.to_pure_expression(config)
             temp_name = escape_column_name(col_name + temp_column_name_suffix)
-            extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
+            extend += f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
             project = f"->project(~[{escape_column_name(col_name)}:c|{pure_expr}])"
         else:
             project = f"->project(~[{escape_column_name(col_name)}:c|{self.to_pure_expression(config)}])"

@@ -44,6 +44,8 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyL
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsRow",
+    "PandasApiLagRow",
+    "PandasApiLeadRow",
 ]
 
 
@@ -94,7 +96,10 @@ class PandasApiLeadRow(PandasApiTdsRow):
         self.__num_rows_to_lead_by = num_rows_to_lead_by
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return f"{self.__partial_frame.to_pure_expression(config)}->lead({self.__row.to_pure_expression(config)})"
+        return (
+            f"{self.__partial_frame.to_pure_expression(config)}"
+            f"->lead({self.__row.to_pure_expression(config)}, {self.__num_rows_to_lead_by})"
+        )
 
     def column_sql_expression(
             self,
@@ -104,7 +109,8 @@ class PandasApiLeadRow(PandasApiTdsRow):
     ) -> Expression:
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
-            IntegerLiteral(self.__num_rows_to_lead_by)]
+            IntegerLiteral(self.__num_rows_to_lead_by)
+        ]
 
         return FunctionCall(
             name=QualifiedName(parts=["lead"]),
@@ -132,7 +138,10 @@ class PandasApiLagRow(PandasApiTdsRow):
         self.__num_rows_to_lag_by = num_rows_to_lag_by
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        return f"{self.__partial_frame.to_pure_expression(config)}->lag({self.__row.to_pure_expression(config)})"
+        return (
+            f"{self.__partial_frame.to_pure_expression(config)}"
+            f"->lag({self.__row.to_pure_expression(config)}, {self.__num_rows_to_lag_by})"
+        )
 
     def column_sql_expression(
             self,
@@ -142,7 +151,8 @@ class PandasApiLagRow(PandasApiTdsRow):
     ) -> Expression:
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
-            IntegerLiteral(self.__num_rows_to_lag_by)]
+            IntegerLiteral(self.__num_rows_to_lag_by)
+        ]
 
         return FunctionCall(
             name=QualifiedName(parts=["lag"]),

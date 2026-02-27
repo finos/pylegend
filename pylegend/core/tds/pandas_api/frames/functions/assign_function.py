@@ -153,6 +153,7 @@ class AssignFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
+        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
@@ -177,6 +178,8 @@ class AssignFunction(PandasApiAppliedFunction):
                         function_expr = c[1].to_pure_expression(config)
                         target_col_name = c[0] + temp_column_name_suffix
                         extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
+                        if isinstance(applied_func, ShiftFunction):
+                            extend = f"->extend(~{zero_column_name}:{{r | 0}})" + config.separator(1) + extend
                         extend_exprs.append(extend)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
             assigned_exprs[col] = res_expr.to_pure_expression(config)

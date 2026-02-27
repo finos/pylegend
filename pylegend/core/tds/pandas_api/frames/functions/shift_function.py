@@ -89,72 +89,14 @@ class ShiftFunction(PandasApiAppliedFunction):
         self.__suffix = suffix
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
-        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
-
-        base_query = self.base_frame().to_sql_query_object(config)
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        base_query.select.selectItems.append(
-            SingleColumn(alias=db_extension.quote_identifier(zero_column_name), expression=IntegerLiteral(0))
-        )
-
-        new_query = create_sub_query(base_query, config, "root")
-        new_select_items: list[SelectItem] = []
-        for c, window in self.__column_expression_and_window_tuples:
-            col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
-            window_expr = WindowExpression(
-                nested=col_sql_expr,
-                window=window.to_sql_node(new_query, config)
-            )
-            new_select_items.append(
-                SingleColumn(
-                    alias=db_extension.quote_identifier(c[0] + temp_column_name_suffix),
-                    expression=window_expr
-                )
-            )
-        new_query.select.selectItems = new_select_items
-
-        final_query = create_sub_query(new_query, config, "root")
-        final_select_items: list[SelectItem] = []
-        for col in self.calculate_columns():
-            col_name = col.get_name()
-            col_expr = QualifiedNameReference(QualifiedName([
-                db_extension.quote_identifier("root"),
-                db_extension.quote_identifier(col_name + temp_column_name_suffix)
-            ]))
-            final_select_items.append(
-                SingleColumn(
-                    alias=db_extension.quote_identifier(col_name),
-                    expression=col_expr
-                )
-            )
-        final_query.select.selectItems = final_select_items
-        return final_query
+        raise NotImplementedError("SQL query execution is not supported for the shift function")
 
     def to_sql_expression(
             self,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
-
-        self._assert_single_column_in_base_frame()
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        base_query = frame_name_to_base_query_map['c']
-        base_query.select.selectItems.append(
-            SingleColumn(alias=db_extension.quote_identifier(zero_column_name), expression=IntegerLiteral(0))
-        )
-
-        c, window = self.construct_column_expression_and_window_tuples("c")[0]
-        col_sql_expr: Expression = c[1].to_sql_expression(frame_name_to_base_query_map, config)
-        window_node = window.to_sql_node(base_query, config)
-        window_node.orderBy[0].sortKey = QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), zero_column_name]))
-        window_expr = WindowExpression(
-            nested=col_sql_expr,
-            window=window_node,
-        )
-
-        return window_expr
+        raise NotImplementedError("SQL query execution is not supported for the shift function")
 
     @staticmethod
     def _render_single_column_expression(
@@ -168,7 +110,7 @@ class ShiftFunction(PandasApiAppliedFunction):
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
 
-        extend_0_column = f"->extend(~{zero_column_name}:{{r|0}})"
+        extend_0_column = f"->extend(~{zero_column_name}:{{r | 0}})"
 
         extend_exprs: PyLegendList[str] = []
         for c, window in self.__column_expression_and_window_tuples:
@@ -192,7 +134,7 @@ class ShiftFunction(PandasApiAppliedFunction):
 
         return (
             self.base_frame().to_pure(config) +
-            config.separator(1) + extend_0_column +
+            (config.separator(1) + extend_0_column if not isinstance(self.__base_frame, PandasApiGroupbyTdsFrame) else "") +
             config.separator(1) + extend_str +
             config.separator(1) + project_str
         )
@@ -243,21 +185,7 @@ class ShiftFunction(PandasApiAppliedFunction):
         return new_columns
 
     def validate(self) -> bool:
-
-        valid_periods: PyLegendList[int] = [1, -1]
-        if isinstance(self.__periods, int):
-            if self.__periods not in valid_periods:
-                raise NotImplementedError(
-                    f"The 'periods' argument of the shift function is only supported for the values of {valid_periods}"
-                    f" or a list of these, but got: periods={self.__periods!r}"
-                )
-        else:
-            for period in self.__periods:
-                if period not in valid_periods:
-                    raise NotImplementedError(
-                        f"The 'periods' argument of the shift function is only supported for the values of {valid_periods}"
-                        f" or a list of these, but got: periods={self.__periods!r}"
-                    )
+        if isinstance(self.__periods, PyLegendSequence):
             if len(self.__periods) != len(set(self.__periods)):
                 raise ValueError(
                     f"The 'periods' argument of the shift function cannot contain duplicate values, but got: "
@@ -364,13 +292,12 @@ class ShiftFunction(PandasApiAppliedFunction):
         for extend_column in extend_columns:
             current_column_name: str = extend_column[0]
 
-            partition_by: PyLegendOptional[PyLegendList[str]] = None
             if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
                 partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
+            else:
+                partition_by = [zero_column_name]
 
-            order_by = PandasApiSortInfo(zero_column_name, PandasApiSortDirection.ASC)
-
-            window = PandasApiWindow(partition_by, [order_by], frame=None)
+            window = PandasApiWindow(partition_by, [], frame=None)
 
             window_ref = PandasApiWindowReference(window=window, var_name="w")
             result: PyLegendPrimitive = extend_column[1](partial_frame, window_ref, tds_row)
