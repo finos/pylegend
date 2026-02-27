@@ -280,7 +280,7 @@ class TestUsageOnBaseFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
 
-        frame1 += 5
+        frame1 += 5  # type: ignore[operator]
         assert isinstance(frame1, Series)
         expected_pure = '''
             #Table(test_schema.test_table)#
@@ -325,7 +325,7 @@ class TestUsageOnBaseFrame:
         columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        frame["shifted_col1"] = frame["col1"].shift(10)
+        frame["shifted_col1"] = frame["col1"].shift(10)  # type: ignore[assignment]
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
@@ -335,7 +335,7 @@ class TestUsageOnBaseFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
 
-        frame["col2"] = frame["col2"].shift(-3) + 5
+        frame["col2"] = frame["col2"].shift(-3) + 5  # type: ignore[operator]
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
@@ -539,7 +539,7 @@ class TestUsageOnGroupbyFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
 
-        frame1 += 5
+        frame1 += 5  # type: ignore[operator]
         assert isinstance(frame1, GroupbySeries)
         expected_pure = '''
             #Table(test_schema.test_table)#
@@ -584,7 +584,7 @@ class TestUsageOnGroupbyFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        frame["shifted_col1"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(10)
+        frame["shifted_col1"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(10)  # type: ignore[assignment]
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).val_col})
@@ -593,7 +593,7 @@ class TestUsageOnGroupbyFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
 
-        frame["col2"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(-3) + 5
+        frame["col2"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(-3) + 5  # type: ignore[operator]
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).val_col})

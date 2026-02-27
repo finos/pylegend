@@ -268,8 +268,10 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         if expr_contains_window_func:
             base_frame = copy(self.get_base_frame())
-            if isinstance(assert_and_find_core_series(self).get_filtered_frame().get_applied_function(), ShiftFunction):
-                base_frame = base_frame.assign(**{zero_column_name: lambda row: 0})
+            core_series = assert_and_find_core_series(self)
+            assert isinstance(core_series, Series)
+            if isinstance(core_series.get_filtered_frame().get_applied_function(), ShiftFunction):
+                base_frame = base_frame.assign(**{zero_column_name: lambda row: 0})  # type: ignore[assignment]
             base_query = base_frame.to_sql_query_object(config)
             new_query = create_sub_query(base_query, config, "root")
             new_query.select.selectItems = [new_select_item]

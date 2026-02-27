@@ -94,6 +94,7 @@ class AssignFunction(PandasApiAppliedFunction):
             if isinstance(res, (Series, GroupbySeries)):
                 expr_contains_window_func |= has_window_function(res)
                 core_series = assert_and_find_core_series(res)
+                assert core_series is not None
                 applied_func = (
                     core_series.get_filtered_frame().get_applied_function() if isinstance(core_series, Series) else
                     core_series.raise_exception_if_no_function_applied().get_applied_function()

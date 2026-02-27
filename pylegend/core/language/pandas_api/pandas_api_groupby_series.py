@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from copy import copy
+import copy
 from textwrap import dedent
 import pandas as pd
 from pylegend._typing import (
