@@ -29,11 +29,12 @@ from pylegend.core.tds.tds_column import (
     TdsColumn,
     EnumTdsColumn,
 )
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
 from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
+from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import (
     simple_person_service_frame_pandas_api,
 )
@@ -248,7 +249,7 @@ class TestTdsFrameCastColumns:
         assert "TdsColumn(Name: n, Type: BigInt)" == str(frame.cast({"n": PrimitiveType.BigInt}).columns()[0])
         assert "TdsColumn(Name: n, Type: Double)" == str(frame.cast({"n": PrimitiveType.Double}).columns()[0])
         assert "TdsColumn(Name: n, Type: Decimal)" == str(frame.cast({"n": PrimitiveType.Decimal}).columns()[0])
-        assert "TdsColumn(Name: n, Type: Numeric)" == str(frame.cast({"n": PrimitiveType.Numeric}).columns()[0])
+        assert "TdsColumn(Name: n, Type: Numeric)" == str(frame.cast({"n": (PrimitiveType.Numeric, 10, 2)}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
     def test_cast_numeric_to_string_allowed(
@@ -257,7 +258,7 @@ class TestTdsFrameCastColumns:
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
         assert "TdsColumn(Name: n, Type: String)" == str(frame.cast({"n": PrimitiveType.String}).columns()[0])
-        assert "TdsColumn(Name: n, Type: Varchar)" == str(frame.cast({"n": PrimitiveType.Varchar}).columns()[0])
+        assert "TdsColumn(Name: n, Type: Varchar)" == str(frame.cast({"n": (PrimitiveType.Varchar, 200)}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
     def test_cast_string_to_string_within_family(
@@ -265,7 +266,7 @@ class TestTdsFrameCastColumns:
             frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.string_column("s")])
-        assert "TdsColumn(Name: s, Type: Varchar)" == str(frame.cast({"s": PrimitiveType.Varchar}).columns()[0])
+        assert "TdsColumn(Name: s, Type: Varchar)" == str(frame.cast({"s": (PrimitiveType.Varchar, 200)}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
     def test_cast_date_within_family(
@@ -336,90 +337,347 @@ class TestTdsFrameCastColumns:
         assert "TdsColumn(Name: col1, Type: Integer)" == str(frame.columns()[0])
 
 
-class TestTdsFrameCastSqlGeneration:
-    """SQL generation tests that apply to all three API flavours."""
+class TestTdsFrameCastQueryGeneration:
+    """SQL and Pure query generation tests that apply to all three API flavours."""
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_single_column_sql(
+    def test_cast_sql_generation(
             self,
             frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        frame = frame_factory([
+        columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
-        ])
-        result = frame.cast({"col1": PrimitiveType.BigInt})
-        expected = dedent('''\
-            SELECT
-                CAST("root".col1 AS BIGINT) AS "col1",
-                "root".col2 AS "col2"
-            FROM
-                test_schema.test_table AS "root"''')
-        assert result.to_sql_query(FrameToSqlConfig()) == expected
-
-    @_ALL_FRAME_FACTORIES
-    def test_cast_multiple_columns_sql(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
-    ) -> None:
-        frame = frame_factory([
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.string_column("col 2"),
             PrimitiveTdsColumn.float_column("col3"),
-        ])
-        result = frame.cast({"col1": PrimitiveType.Double, "col3": PrimitiveType.Varchar})
-        expected = dedent('''\
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({"col1": PrimitiveType.BigInt, "col3": PrimitiveType.Double})
+
+        expected_sql = '''\
             SELECT
-                CAST("root".col1 AS DOUBLE PRECISION) AS "col1",
-                "root".col2 AS "col2",
-                CAST("root".col3 AS VARCHAR) AS "col3"
+                "root".col1 AS "col1",
+                "root".col 2 AS "col 2",
+                "root".col3 AS "col3"
             FROM
-                test_schema.test_table AS "root"''')
-        assert result.to_sql_query(FrameToSqlConfig()) == expected
+                test_schema.test_table AS "root"'''
+
+        assert result.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_empty_map_sql_unchanged(
+    def test_cast_pure_generation(
             self,
             frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        frame = frame_factory([PrimitiveTdsColumn.integer_column("col1")])
-        result = frame.cast({})
-        expected = dedent('''\
-            SELECT
-                "root".col1 AS "col1"
-            FROM
-                test_schema.test_table AS "root"''')
-        assert result.to_sql_query(FrameToSqlConfig()) == expected
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col 2"),
+            PrimitiveTdsColumn.float_column("col3"),
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({"col1": PrimitiveType.BigInt, "col3": PrimitiveType.Double})
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<(col1:BigInt, 'col 2':String, col3:Double)>)"
+        )
+
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_pure_generation_precise_integer_types(
+            self,
+            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("a"),
+            PrimitiveTdsColumn.integer_column("b"),
+            PrimitiveTdsColumn.integer_column("c"),
+            PrimitiveTdsColumn.integer_column("d"),
+            PrimitiveTdsColumn.integer_column("e"),
+            PrimitiveTdsColumn.integer_column("f"),
+            PrimitiveTdsColumn.integer_column("g"),
+            PrimitiveTdsColumn.integer_column("h"),
+            PrimitiveTdsColumn.integer_column("i"),
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({
+            "a": PrimitiveType.TinyInt,
+            "b": PrimitiveType.UTinyInt,
+            "c": PrimitiveType.SmallInt,
+            "d": PrimitiveType.USmallInt,
+            "e": PrimitiveType.Int,
+            "f": PrimitiveType.UInt,
+            "g": PrimitiveType.BigInt,
+            "h": PrimitiveType.UBigInt,
+            "i": PrimitiveType.Integer,
+        })
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<("
+            "a:TinyInt, b:UTinyInt, c:SmallInt, d:USmallInt, "
+            "e:Int, f:UInt, g:BigInt, h:UBigInt, i:Integer)>)"
+        )
+
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_pure_generation_precise_float_types(
+            self,
+            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        columns = [
+            PrimitiveTdsColumn.float_column("x"),
+            PrimitiveTdsColumn.float_column("y"),
+            PrimitiveTdsColumn.float_column("z"),
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({
+            "x": PrimitiveType.Float4,
+            "y": PrimitiveType.Double,
+            "z": PrimitiveType.Float,
+        })
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<(x:Float4, y:Double, z:Float)>)"
+        )
+
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_pure_generation_precise_decimal_types(
+            self,
+            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        columns = [
+            PrimitiveTdsColumn.decimal_column("a"),
+            PrimitiveTdsColumn.decimal_column("b"),
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({
+            "a": (PrimitiveType.Numeric, 10, 2),
+            "b": PrimitiveType.Decimal,
+        })
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<(a:Numeric(10, 2), b:Decimal)>)"
+        )
+
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_pure_generation_precise_string_types(
+            self,
+            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("a"),
+            PrimitiveTdsColumn.string_column("b"),
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({
+            "a": (PrimitiveType.Varchar, 200),
+            "b": PrimitiveType.String,
+        })
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<(a:Varchar(200), b:String)>)"
+        )
+
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_pure_generation_precise_date_types(
+            self,
+            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        columns = [
+            PrimitiveTdsColumn.datetime_column("a"),
+            PrimitiveTdsColumn.datetime_column("b"),
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({
+            "a": PrimitiveType.Timestamp,
+            "b": PrimitiveType.DateTime,
+        })
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<(a:Timestamp, b:DateTime)>)"
+        )
+
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_pure_generation_numeric_to_string(
+            self,
+            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame = frame_factory(columns)
+        result = frame.cast({"col1": (PrimitiveType.Varchar, 100)})
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<(col1:Varchar(100))>)"
+        )
+
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
 
 
 class TestTdsFrameCastE2E:
     """End-to-end tests (pandas API only, since it supports execute_frame_to_string)."""
 
+    _COLUMNS = ["First Name", "Last Name", "Age", "Firm/Legal Name"]
+
+    _AGE_PLUS_1_ROWS = [
+        {"values": ["Peter", "Smith", 24, "Firm X"]},
+        {"values": ["John", "Johnson", 23, "Firm X"]},
+        {"values": ["John", "Hill", 13, "Firm X"]},
+        {"values": ["Anthony", "Allen", 23, "Firm X"]},
+        {"values": ["Fabrice", "Roberts", 35, "Firm A"]},
+        {"values": ["Oliver", "Hill", 33, "Firm B"]},
+        {"values": ["David", "Harris", 36, "Firm C"]},
+    ]
+
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_e2e_cast(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    def _cast_age_and_add_one(
+            self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]], target_type: PrimitiveType
+    ) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-
-        # Cast Age from Integer to BigInt, then add 1
-        frame = frame.cast({"Age": PrimitiveType.BigInt})
+        frame = frame.cast({"Age": target_type})
         frame['Age'] = frame['Age'] + 1  # type: ignore
+        print(f"sql is: {frame.to_sql_query()}\n")
+        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_cast_integer(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.Integer)
+
+    def test_e2e_cast_tinyint(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.TinyInt)
+
+    def test_e2e_cast_utinyint(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.UTinyInt)
+
+    def test_e2e_cast_smallint(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.SmallInt)
+
+    def test_e2e_cast_usmallint(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.USmallInt)
+
+    def test_e2e_cast_int(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.Int)
+
+    def test_e2e_cast_uint(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.UInt)
+
+    def test_e2e_cast_bigint(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.BigInt)
+
+    def test_e2e_cast_ubigint(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.UBigInt)
+
+    def test_e2e_cast_number(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.Number)
+
+    def test_e2e_cast_decimal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self._cast_age_and_add_one(legend_test_server, PrimitiveType.Decimal)
+
+    def test_e2e_cast_numeric(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.cast({"Age": (PrimitiveType.Numeric, 10, 2)})
+        frame['Age'] = frame['Age'] + 1  # type: ignore
+        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_cast_float(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.cast({"Age": PrimitiveType.Float})
+        frame['Age'] = frame['Age'] + 0.5  # type: ignore
         expected = {
-            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
+            "columns": self._COLUMNS,
             "rows": [
-                {"values": ["Peter", "Smith", 24, "Firm X"]},
-                {"values": ["John", "Johnson", 23, "Firm X"]},
-                {"values": ["John", "Hill", 13, "Firm X"]},
-                {"values": ["Anthony", "Allen", 23, "Firm X"]},
-                {"values": ["Fabrice", "Roberts", 35, "Firm A"]},
-                {"values": ["Oliver", "Hill", 33, "Firm B"]},
-                {"values": ["David", "Harris", 36, "Firm C"]},
+                {"values": ["Peter", "Smith", 23.5, "Firm X"]},
+                {"values": ["John", "Johnson", 22.5, "Firm X"]},
+                {"values": ["John", "Hill", 12.5, "Firm X"]},
+                {"values": ["Anthony", "Allen", 22.5, "Firm X"]},
+                {"values": ["Fabrice", "Roberts", 34.5, "Firm A"]},
+                {"values": ["Oliver", "Hill", 32.5, "Firm B"]},
+                {"values": ["David", "Harris", 35.5, "Firm C"]},
             ],
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+    def test_e2e_cast_float4(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.cast({"Age": PrimitiveType.Float4})
+        frame['Age'] = frame['Age'] + 0.5  # type: ignore
+        expected = {
+            "columns": self._COLUMNS,
+            "rows": [
+                {"values": ["Peter", "Smith", 23.5, "Firm X"]},
+                {"values": ["John", "Johnson", 22.5, "Firm X"]},
+                {"values": ["John", "Hill", 12.5, "Firm X"]},
+                {"values": ["Anthony", "Allen", 22.5, "Firm X"]},
+                {"values": ["Fabrice", "Roberts", 34.5, "Firm A"]},
+                {"values": ["Oliver", "Hill", 32.5, "Firm B"]},
+                {"values": ["David", "Harris", 35.5, "Firm C"]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_cast_double(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.cast({"Age": PrimitiveType.Double})
+        frame['Age'] = frame['Age'] + 0.5  # type: ignore
+        expected = {
+            "columns": self._COLUMNS,
+            "rows": [
+                {"values": ["Peter", "Smith", 23.5, "Firm X"]},
+                {"values": ["John", "Johnson", 22.5, "Firm X"]},
+                {"values": ["John", "Hill", 12.5, "Firm X"]},
+                {"values": ["Anthony", "Allen", 22.5, "Firm X"]},
+                {"values": ["Fabrice", "Roberts", 34.5, "Firm A"]},
+                {"values": ["Oliver", "Hill", 32.5, "Firm B"]},
+                {"values": ["David", "Harris", 35.5, "Firm C"]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_cast_varchar(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame.cast({"First Name": (PrimitiveType.Varchar, 200)})
+        frame["First Name"] = frame["First Name"].len()  # type: ignore[union-attr]
+        expected = {
+            "columns": self._COLUMNS,
+            "rows": [
+                {"values": [5, "Smith", 23, "Firm X"]},
+                {"values": [4, "Johnson", 22, "Firm X"]},
+                {"values": [4, "Hill", 12, "Firm X"]},
+                {"values": [7, "Allen", 22, "Firm X"]},
+                {"values": [7, "Roberts", 34, "Firm A"]},
+                {"values": [6, "Hill", 32, "Firm B"]},
+                {"values": [5, "Harris", 35, "Firm C"]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+

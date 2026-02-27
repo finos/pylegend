@@ -12,194 +12,419 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-
 import pytest
 
-from pylegend._typing import (
-    PyLegendDict,
-    PyLegendUnion,
+from pylegend.core.database.sql_to_string import (
+    SqlToStringFormat,
+    SqlToStringConfig,
+    SqlToStringDbExtension,
 )
-from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn, PrimitiveType
-from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
-from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_pandas_api
+from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
+from pylegend._typing import PyLegendDict, PyLegendUnion
+from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
 
 
-class TestPrecisePrimitivesE2E:
-
-    _AGE_PLUS_1_ROWS = [
-        {"values": ["Peter", "Smith", 24, "Firm X"]},
-        {"values": ["John", "Johnson", 23, "Firm X"]},
-        {"values": ["John", "Hill", 13, "Firm X"]},
-        {"values": ["Anthony", "Allen", 23, "Firm X"]},
-        {"values": ["Fabrice", "Roberts", 35, "Firm A"]},
-        {"values": ["Oliver", "Hill", 33, "Firm B"]},
-        {"values": ["David", "Harris", 36, "Firm C"]},
-    ]
-
-    _AGE_MINUS_5_ROWS = [
-        {"values": ["Peter", "Smith", 18, "Firm X"]},
-        {"values": ["John", "Johnson", 17, "Firm X"]},
-        {"values": ["John", "Hill", 7, "Firm X"]},
-        {"values": ["Anthony", "Allen", 17, "Firm X"]},
-        {"values": ["Fabrice", "Roberts", 29, "Firm A"]},
-        {"values": ["Oliver", "Hill", 27, "Firm B"]},
-        {"values": ["David", "Harris", 30, "Firm C"]},
-    ]
-
-    _AGE_TIMES_2_ROWS = [
-        {"values": ["Peter", "Smith", 46, "Firm X"]},
-        {"values": ["John", "Johnson", 44, "Firm X"]},
-        {"values": ["John", "Hill", 24, "Firm X"]},
-        {"values": ["Anthony", "Allen", 44, "Firm X"]},
-        {"values": ["Fabrice", "Roberts", 68, "Firm A"]},
-        {"values": ["Oliver", "Hill", 64, "Firm B"]},
-        {"values": ["David", "Harris", 70, "Firm C"]},
-    ]
-
-    _COLUMNS = ["First Name", "Last Name", "Age", "Firm/Legal Name"]
+class TestPreciseIntegerTypes:
+    frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
+    db_extension = SqlToStringDbExtension()
+    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_e2e_tinyint_addition(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.TinyInt})
-        frame['Age'] = frame['Age'] + 1  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.tinyint_column, "TinyInt"),
+        (PrimitiveTdsColumn.utinyint_column, "UTinyInt"),
+        (PrimitiveTdsColumn.smallint_column, "SmallInt"),
+        (PrimitiveTdsColumn.usmallint_column, "USmallInt"),
+        (PrimitiveTdsColumn.int_column, "Int"),
+        (PrimitiveTdsColumn.uint_column, "UInt"),
+        (PrimitiveTdsColumn.bigint_column, "BigInt"),
+        (PrimitiveTdsColumn.ubigint_column, "UBigInt"),
+    ], ids=["TinyInt", "UTinyInt", "SmallInt", "USmallInt", "Int", "UInt", "BigInt", "UBigInt"])
+    def test_col_access(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_integer("col1")) == '"root".col1'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_integer("col1")) == '$t.col1'
 
-    def test_e2e_utinyint_subtraction(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.UTinyInt})
-        frame['Age'] = frame['Age'] - 5  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_MINUS_5_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.tinyint_column, "TinyInt"),
+        (PrimitiveTdsColumn.utinyint_column, "UTinyInt"),
+        (PrimitiveTdsColumn.smallint_column, "SmallInt"),
+        (PrimitiveTdsColumn.usmallint_column, "USmallInt"),
+        (PrimitiveTdsColumn.int_column, "Int"),
+        (PrimitiveTdsColumn.uint_column, "UInt"),
+        (PrimitiveTdsColumn.bigint_column, "BigInt"),
+        (PrimitiveTdsColumn.ubigint_column, "UBigInt"),
+    ], ids=["TinyInt", "UTinyInt", "SmallInt", "USmallInt", "Int", "UInt", "BigInt", "UBigInt"])
+    def test_add(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_integer("col1") + x.get_integer("col2")) == \
+               '("root".col1 + "root".col2)'
+        assert self.__sql(frame, row, base_query, lambda x: x.get_integer("col1") + 5) == \
+               '("root".col1 + 5)'
+        assert self.__pure(frame, row, base_query, type_name,
+                           lambda x: x.get_integer("col1") + x.get_integer("col2")) == \
+               '(toOne($t.col1) + toOne($t.col2))'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_integer("col1") + 5) == \
+               '(toOne($t.col1) + 5)'
 
-    def test_e2e_smallint_addition(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.SmallInt})
-        frame['Age'] = frame['Age'] + 1  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.tinyint_column, "TinyInt"),
+        (PrimitiveTdsColumn.utinyint_column, "UTinyInt"),
+        (PrimitiveTdsColumn.smallint_column, "SmallInt"),
+        (PrimitiveTdsColumn.usmallint_column, "USmallInt"),
+        (PrimitiveTdsColumn.int_column, "Int"),
+        (PrimitiveTdsColumn.uint_column, "UInt"),
+        (PrimitiveTdsColumn.bigint_column, "BigInt"),
+        (PrimitiveTdsColumn.ubigint_column, "UBigInt"),
+    ], ids=["TinyInt", "UTinyInt", "SmallInt", "USmallInt", "Int", "UInt", "BigInt", "UBigInt"])
+    def test_subtract(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_integer("col1") - 3) == \
+               '("root".col1 - 3)'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_integer("col1") - 3) == \
+               '(toOne($t.col1) - 3)'
 
-    def test_e2e_usmallint_multiplication(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.USmallInt})
-        frame['Age'] = frame['Age'] * 2  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_TIMES_2_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.tinyint_column, "TinyInt"),
+        (PrimitiveTdsColumn.utinyint_column, "UTinyInt"),
+        (PrimitiveTdsColumn.smallint_column, "SmallInt"),
+        (PrimitiveTdsColumn.usmallint_column, "USmallInt"),
+        (PrimitiveTdsColumn.int_column, "Int"),
+        (PrimitiveTdsColumn.uint_column, "UInt"),
+        (PrimitiveTdsColumn.bigint_column, "BigInt"),
+        (PrimitiveTdsColumn.ubigint_column, "UBigInt"),
+    ], ids=["TinyInt", "UTinyInt", "SmallInt", "USmallInt", "Int", "UInt", "BigInt", "UBigInt"])
+    def test_multiply(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_integer("col1") * 2) == \
+               '("root".col1 * 2)'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_integer("col1") * 2) == \
+               '(toOne($t.col1) * 2)'
 
-    def test_e2e_int_addition(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.Int})
-        frame['Age'] = frame['Age'] + 1  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.tinyint_column, "TinyInt"),
+        (PrimitiveTdsColumn.utinyint_column, "UTinyInt"),
+        (PrimitiveTdsColumn.smallint_column, "SmallInt"),
+        (PrimitiveTdsColumn.usmallint_column, "USmallInt"),
+        (PrimitiveTdsColumn.int_column, "Int"),
+        (PrimitiveTdsColumn.uint_column, "UInt"),
+        (PrimitiveTdsColumn.bigint_column, "BigInt"),
+        (PrimitiveTdsColumn.ubigint_column, "UBigInt"),
+    ], ids=["TinyInt", "UTinyInt", "SmallInt", "USmallInt", "Int", "UInt", "BigInt", "UBigInt"])
+    def test_lt(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_integer("col1") < 10) == \
+               '("root".col1 < 10)'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_integer("col1") < 10) == \
+               '($t.col1 < 10)'
 
-    def test_e2e_uint_subtraction(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.UInt})
-        frame['Age'] = frame['Age'] - 5  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_MINUS_5_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    def __make_frame(self, col_factory):
+        frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+            col_factory("col1"), col_factory("col2")
+        ])
+        row = TestTdsRow.from_tds_frame("t", frame)
+        base_query = frame.to_sql_query_object(self.frame_to_sql_config)
+        return frame, row, base_query
 
-    def test_e2e_bigint_addition(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.BigInt})
-        frame['Age'] = frame['Age'] + 1  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    def __sql(self, frame, row, base_query, f) -> str:
+        return self.db_extension.process_expression(
+            f(row).to_sql_expression({"t": base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
 
-    def test_e2e_ubigint_multiplication(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.UBigInt})
-        frame['Age'] = frame['Age'] * 2  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_TIMES_2_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    def __pure(self, frame, row, base_query, type_name, f) -> str:
+        expr = str(f(row).to_pure_expression(self.frame_to_pure_config))
+        model_code = (
+            "function test::testFunc(): Any[*]\n"
+            "{\n"
+            "    []->toOne()->cast(\n"
+            f"        @meta::pure::metamodel::relation::Relation<(col1: {type_name}[0..1], col2: {type_name}[0..1])>\n"
+            "    )\n"
+            "    ->extend(~new_col:t|<<expression>>)\n"
+            "}"
+        )
+        self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
+        return expr
 
-    def test_e2e_varchar_string_length(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"First Name": PrimitiveType.Varchar})
-        frame["First Name"] = frame["First Name"].len()  # type: ignore[union-attr]
-        expected = {
-            "columns": self._COLUMNS,
-            "rows": [
-                {"values": [5, "Smith", 23, "Firm X"]},
-                {"values": [4, "Johnson", 22, "Firm X"]},
-                {"values": [4, "Hill", 12, "Firm X"]},
-                {"values": [7, "Allen", 22, "Firm X"]},
-                {"values": [7, "Roberts", 34, "Firm A"]},
-                {"values": [6, "Hill", 32, "Firm B"]},
-                {"values": [5, "Harris", 35, "Firm C"]},
-            ],
-        }
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
 
-    def test_e2e_timestamp_cast(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.datetime_column("event_time"),
-            PrimitiveTdsColumn.string_column("name"),
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        result = frame.cast({"event_time": PrimitiveType.Timestamp})
-        assert "TdsColumn(Name: event_time, Type: Timestamp)" == str(result[0])
-        assert "TdsColumn(Name: name, Type: String)" == str(result[1])
+class TestPreciseFloatTypes:
+    frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
+    db_extension = SqlToStringDbExtension()
+    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
 
-    def test_e2e_float4_addition(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.Float4})
-        frame['Age'] = frame['Age'] + 0.5  # type: ignore
-        expected = {
-            "columns": self._COLUMNS,
-            "rows": [
-                {"values": ["Peter", "Smith", 23.5, "Firm X"]},
-                {"values": ["John", "Johnson", 22.5, "Firm X"]},
-                {"values": ["John", "Hill", 12.5, "Firm X"]},
-                {"values": ["Anthony", "Allen", 22.5, "Firm X"]},
-                {"values": ["Fabrice", "Roberts", 34.5, "Firm A"]},
-                {"values": ["Oliver", "Hill", 32.5, "Firm B"]},
-                {"values": ["David", "Harris", 35.5, "Firm C"]},
-            ],
-        }
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_e2e_double_subtraction(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.Double})
-        frame['Age'] = frame['Age'] - 0.5  # type: ignore
-        expected = {
-            "columns": self._COLUMNS,
-            "rows": [
-                {"values": ["Peter", "Smith", 22.5, "Firm X"]},
-                {"values": ["John", "Johnson", 21.5, "Firm X"]},
-                {"values": ["John", "Hill", 11.5, "Firm X"]},
-                {"values": ["Anthony", "Allen", 21.5, "Firm X"]},
-                {"values": ["Fabrice", "Roberts", 33.5, "Firm A"]},
-                {"values": ["Oliver", "Hill", 31.5, "Firm B"]},
-                {"values": ["David", "Harris", 34.5, "Firm C"]},
-            ],
-        }
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.float4_column, "Float4"),
+        (PrimitiveTdsColumn.double_column, "Double"),
+    ], ids=["Float4", "Double"])
+    def test_col_access(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_float("col1")) == '"root".col1'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_float("col1")) == '$t.col1'
 
-    def test_e2e_numeric_addition(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame.cast({"Age": PrimitiveType.Numeric})
-        frame['Age'] = frame['Age'] + 1  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.float4_column, "Float4"),
+        (PrimitiveTdsColumn.double_column, "Double"),
+    ], ids=["Float4", "Double"])
+    def test_add(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_float("col1") + 0.5) == \
+               '("root".col1 + 0.5)'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_float("col1") + 0.5) == \
+               '(toOne($t.col1) + 0.5)'
+
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.float4_column, "Float4"),
+        (PrimitiveTdsColumn.double_column, "Double"),
+    ], ids=["Float4", "Double"])
+    def test_subtract(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_float("col1") - 1.5) == \
+               '("root".col1 - 1.5)'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_float("col1") - 1.5) == \
+               '(toOne($t.col1) - 1.5)'
+
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.float4_column, "Float4"),
+        (PrimitiveTdsColumn.double_column, "Double"),
+    ], ids=["Float4", "Double"])
+    def test_multiply(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_float("col1") * 2.0) == \
+               '("root".col1 * 2.0)'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_float("col1") * 2.0) == \
+               '(toOne($t.col1) * 2.0)'
+
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.float4_column, "Float4"),
+        (PrimitiveTdsColumn.double_column, "Double"),
+    ], ids=["Float4", "Double"])
+    def test_gt(self, col_factory, type_name) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        assert self.__sql(frame, row, base_query, lambda x: x.get_float("col1") > 3.14) == \
+               '("root".col1 > 3.14)'
+        assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_float("col1") > 3.14) == \
+               '($t.col1 > 3.14)'
+
+    def __make_frame(self, col_factory):
+        frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+            col_factory("col1"), col_factory("col2")
+        ])
+        row = TestTdsRow.from_tds_frame("t", frame)
+        base_query = frame.to_sql_query_object(self.frame_to_sql_config)
+        return frame, row, base_query
+
+    def __sql(self, frame, row, base_query, f) -> str:
+        return self.db_extension.process_expression(
+            f(row).to_sql_expression({"t": base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+
+    def __pure(self, frame, row, base_query, type_name, f) -> str:
+        expr = str(f(row).to_pure_expression(self.frame_to_pure_config))
+        model_code = (
+            "function test::testFunc(): Any[*]\n"
+            "{\n"
+            "    []->toOne()->cast(\n"
+            f"        @meta::pure::metamodel::relation::Relation<(col1: {type_name}[0..1], col2: {type_name}[0..1])>\n"
+            "    )\n"
+            "    ->extend(~new_col:t|<<expression>>)\n"
+            "}"
+        )
+        self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
+        return expr
+
+
+class TestPreciseNumericType:
+    frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
+    db_extension = SqlToStringDbExtension()
+    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
+    test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+        PrimitiveTdsColumn.numeric_column("col1"),
+        PrimitiveTdsColumn.numeric_column("col2"),
+    ])
+    tds_row = TestTdsRow.from_tds_frame("t", test_frame)
+    base_query = test_frame.to_sql_query_object(frame_to_sql_config)
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_numeric_col_access(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col1")) == '"root".col1'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col1")) == '$t.col1'
+
+    def test_numeric_add(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col1") + x.get_decimal("col2")) == \
+               '("root".col1 + "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col1") + 10) == \
+               '("root".col1 + 10)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col1") + x.get_decimal("col2")) == \
+               '(toOne($t.col1) + toOne($t.col2))'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col1") + 10) == \
+               '(toOne($t.col1) + 10)'
+
+    def test_numeric_subtract(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col1") - 3) == \
+               '("root".col1 - 3)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col1") - 3) == \
+               '(toOne($t.col1) - 3)'
+
+    def test_numeric_multiply(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col1") * 2) == \
+               '("root".col1 * 2)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col1") * 2) == \
+               '(toOne($t.col1) * 2)'
+
+    def test_numeric_lt(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col1") < 100) == \
+               '("root".col1 < 100)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col1") < 100) == \
+               '($t.col1 < 100)'
+
+    def __generate_sql_string(self, f) -> str:
+        return self.db_extension.process_expression(
+            f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+
+    def __generate_pure_string(self, f) -> str:
+        expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
+        model_code = (
+            "function test::testFunc(): Any[*]\n"
+            "{\n"
+            "    []->toOne()->cast(\n"
+            "        @meta::pure::metamodel::relation::Relation<(col1: Numeric(20, 6)[0..1], col2: Numeric(20, 6)[0..1])>\n"
+            "    )\n"
+            "    ->extend(~new_col:t|<<expression>>)\n"
+            "}"
+        )
+        self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
+        return expr
+
+
+class TestPreciseVarcharType:
+    frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
+    db_extension = SqlToStringDbExtension()
+    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
+    test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+        PrimitiveTdsColumn.varchar_column("col1"),
+        PrimitiveTdsColumn.varchar_column("col2"),
+    ])
+    tds_row = TestTdsRow.from_tds_frame("t", test_frame)
+    base_query = test_frame.to_sql_query_object(frame_to_sql_config)
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_varchar_col_access(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col1")) == '"root".col1'
+        assert self.__generate_pure_string(lambda x: x.get_string("col1")) == '$t.col1'
+
+    def test_varchar_length(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col1").len()) == 'CHAR_LENGTH("root".col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col1").len()) == 'toOne($t.col1)->length()'
+
+    def test_varchar_concat(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col1") + x.get_string("col2")) == \
+               'CONCAT("root".col1, "root".col2)'
+        assert self.__generate_sql_string(lambda x: x.get_string("col1") + "abc") == \
+               "CONCAT(\"root\".col1, 'abc')"
+        assert self.__generate_pure_string(lambda x: x.get_string("col1") + x.get_string("col2")) == \
+               '(toOne($t.col1) + toOne($t.col2))'
+        assert self.__generate_pure_string(lambda x: x.get_string("col1") + "abc") == \
+               "(toOne($t.col1) + 'abc')"
+
+    def test_varchar_upper(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col1").upper()) == 'UPPER("root".col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col1").upper()) == 'toOne($t.col1)->toUpper()'
+
+    def test_varchar_lower(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col1").lower()) == 'LOWER("root".col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col1").lower()) == 'toOne($t.col1)->toLower()'
+
+    def test_varchar_lt(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col1") < x.get_string("col2")) == \
+               '("root".col1 < "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col1") < x.get_string("col2")) == \
+               '($t.col1 < $t.col2)'
+
+    def __generate_sql_string(self, f) -> str:
+        return self.db_extension.process_expression(
+            f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+
+    def __generate_pure_string(self, f) -> str:
+        expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
+        model_code = (
+            "function test::testFunc(): Any[*]\n"
+            "{\n"
+            "    []->toOne()->cast(\n"
+            "        @meta::pure::metamodel::relation::Relation<(col1: Varchar(200)[0..1], col2: Varchar(200)[0..1])>\n"
+            "    )\n"
+            "    ->extend(~new_col:t|<<expression>>)\n"
+            "}"
+        )
+        self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
+        return expr
+
+
+class TestPreciseTimestampType:
+    frame_to_sql_config = FrameToSqlConfig()
+    frame_to_pure_config = FrameToPureConfig()
+    db_extension = SqlToStringDbExtension()
+    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
+    test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+        PrimitiveTdsColumn.timestamp_column("col1"),
+        PrimitiveTdsColumn.timestamp_column("col2"),
+    ])
+    tds_row = TestTdsRow.from_tds_frame("t", test_frame)
+    base_query = test_frame.to_sql_query_object(frame_to_sql_config)
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_timestamp_col_access(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_datetime("col1")) == '"root".col1'
+        assert self.__generate_pure_string(lambda x: x.get_datetime("col1")) == '$t.col1'
+
+    def test_timestamp_lt(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_datetime("col1") < x.get_datetime("col2")) == \
+               '("root".col1 < "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_datetime("col1") < x.get_datetime("col2")) == \
+               '($t.col1 < $t.col2)'
+
+    def __generate_sql_string(self, f) -> str:
+        return self.db_extension.process_expression(
+            f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+
+    def __generate_pure_string(self, f) -> str:
+        expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))
+        model_code = (
+            "function test::testFunc(): Any[*]\n"
+            "{\n"
+            "    []->toOne()->cast(\n"
+            "        @meta::pure::metamodel::relation::Relation<(col1: Timestamp[0..1], col2: Timestamp[0..1])>\n"
+            "    )\n"
+            "    ->extend(~new_col:t|<<expression>>)\n"
+            "}"
+        )
+        self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
+        return expr

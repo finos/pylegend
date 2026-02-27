@@ -41,6 +41,7 @@ from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApi
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
+from pylegend.core.tds.cast_helpers import CastTarget
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiBaseTdsFrame"
@@ -55,7 +56,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
     def cast(
             self,
-            column_type_map: PyLegendDict[str, PrimitiveType]
+            column_type_map: PyLegendDict[str, CastTarget]
     ) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame

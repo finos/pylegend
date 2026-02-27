@@ -17,19 +17,28 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendList,
     PyLegendSet,
+    PyLegendUnion,
+    PyLegendTuple,
 )
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, PrimitiveType
 
+# Type that users pass as a cast target value:
+#   - PrimitiveType.Integer                   (simple)
+#   - (PrimitiveType.Numeric, 10, 2)          (with precision, scale)
+#   - (PrimitiveType.Varchar, 200)            (with max length)
+CastTarget = PyLegendUnion[PrimitiveType, PyLegendTuple[PrimitiveType, ...]]
+
 __all__: PyLegendSequence[str] = [
+    "CastTarget",
     "NUMERIC_TYPES",
     "STRING_TYPES",
     "DATE_TYPES",
     "BOOLEAN_TYPES",
     "ALLOWED_CAST_TARGETS",
-    "PRIMITIVE_TYPE_TO_SQL_TYPE",
     "type_family",
     "is_cast_allowed",
     "validate_and_build_cast_columns",
+    "pure_type_spec",
 ]
 
 NUMERIC_TYPES: PyLegendSet[PrimitiveType] = {
@@ -54,7 +63,6 @@ BOOLEAN_TYPES: PyLegendSet[PrimitiveType] = {
 }
 
 # Allowed cast: source family -> set of target families it can cast into.
-# Key = frozenset id of the source family, Value = list of allowed target family sets.
 ALLOWED_CAST_TARGETS: PyLegendDict[str, PyLegendList[PyLegendSet[PrimitiveType]]] = {
     "numeric": [NUMERIC_TYPES, STRING_TYPES],   # numeric -> numeric or string
     "string":  [STRING_TYPES],                   # string -> string only
@@ -62,32 +70,29 @@ ALLOWED_CAST_TARGETS: PyLegendDict[str, PyLegendList[PyLegendSet[PrimitiveType]]
     "boolean": [BOOLEAN_TYPES],                  # boolean -> boolean only
 }
 
-# Mapping from PrimitiveType to the SQL type name used in CAST expressions.
-PRIMITIVE_TYPE_TO_SQL_TYPE: PyLegendDict[PrimitiveType, str] = {
-    PrimitiveType.Boolean:    "BOOLEAN",
-    PrimitiveType.StrictDate: "DATE",
-    PrimitiveType.Number:     "NUMERIC",
-    PrimitiveType.String:     "TEXT",
-    PrimitiveType.LatestDate: "TIMESTAMP",
-    PrimitiveType.Float:      "DOUBLE PRECISION",
-    PrimitiveType.DateTime:   "TIMESTAMP",
-    PrimitiveType.Date:       "DATE",
-    PrimitiveType.Integer:    "INTEGER",
-    PrimitiveType.Decimal:    "DECIMAL",
-    PrimitiveType.TinyInt:    "SMALLINT",
-    PrimitiveType.UTinyInt:   "SMALLINT",
-    PrimitiveType.SmallInt:   "SMALLINT",
-    PrimitiveType.USmallInt:  "INTEGER",
-    PrimitiveType.Int:        "INTEGER",
-    PrimitiveType.UInt:       "BIGINT",
-    PrimitiveType.BigInt:     "BIGINT",
-    PrimitiveType.UBigInt:    "BIGINT",
-    PrimitiveType.Varchar:    "VARCHAR",
-    PrimitiveType.Timestamp:  "TIMESTAMP",
-    PrimitiveType.Float4:     "REAL",
-    PrimitiveType.Double:     "DOUBLE PRECISION",
-    PrimitiveType.Numeric:    "NUMERIC",
+
+# Types that require parameters in Pure syntax.
+_PARAMETERIZED_TYPES: PyLegendSet[PrimitiveType] = {
+    PrimitiveType.Numeric,
+    PrimitiveType.Varchar,
 }
+
+
+def _normalize_target(target: CastTarget) -> PyLegendTuple[PrimitiveType, PyLegendTuple[int, ...]]:
+    """Extract (PrimitiveType, params) from a CastTarget."""
+    if isinstance(target, PrimitiveType):
+        return target, ()
+    ptype = target[0]
+    params = tuple(target[1:])  # type: ignore
+    return ptype, params  # type: ignore
+
+
+def pure_type_spec(ptype: PrimitiveType, params: PyLegendTuple[int, ...] = ()) -> str:
+    """Return the Pure type string, e.g. 'Integer', 'Numeric(10, 2)', 'Varchar(200)'."""
+    if params:
+        param_str = ", ".join(str(p) for p in params)
+        return f"{ptype.name}({param_str})"
+    return ptype.name
 
 
 def type_family(t: PrimitiveType) -> str:
@@ -110,7 +115,7 @@ def is_cast_allowed(source: PrimitiveType, target: PrimitiveType) -> bool:
 
 def validate_and_build_cast_columns(
         current_columns: PyLegendSequence[TdsColumn],
-        column_type_map: PyLegendDict[str, PrimitiveType],
+        column_type_map: PyLegendDict[str, CastTarget],
 ) -> PyLegendList[TdsColumn]:
     """Validate the cast request and return the new column list.
 
@@ -134,7 +139,13 @@ def validate_and_build_cast_columns(
                     f"(type: {col.get_type()}). Only PrimitiveTdsColumn can be cast."
                 )
             source_type = PrimitiveType[col.get_type()]
-            target_type = column_type_map[col.get_name()]
+            target_type, params = _normalize_target(column_type_map[col.get_name()])
+            if target_type in _PARAMETERIZED_TYPES and not params:
+                raise ValueError(
+                    f"Cast to {target_type.name} requires parameters. "
+                    f"Use a tuple, e.g. (PrimitiveType.{target_type.name}, ...) "
+                    f"instead of PrimitiveType.{target_type.name}"
+                )
             if not is_cast_allowed(source_type, target_type):
                 source_family = type_family(source_type)
                 allowed_families = sorted({

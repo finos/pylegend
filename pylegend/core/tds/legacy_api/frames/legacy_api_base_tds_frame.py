@@ -32,6 +32,7 @@ from pylegend.core.language import (
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
+from pylegend.core.tds.cast_helpers import CastTarget
 
 __all__: PyLegendSequence[str] = [
     "LegacyApiBaseTdsFrame"
@@ -47,7 +48,7 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def cast(
             self,
-            column_type_map: PyLegendDict[str, PrimitiveType]
+            column_type_map: PyLegendDict[str, CastTarget]
     ) -> "LegacyApiTdsFrame":
         from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
             LegacyApiAppliedFunctionTdsFrame

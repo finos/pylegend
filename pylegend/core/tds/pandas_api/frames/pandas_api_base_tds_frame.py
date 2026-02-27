@@ -72,6 +72,7 @@ if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
     from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
+    from pylegend.core.tds.cast_helpers import CastTarget
 
 __all__: PyLegendSequence[str] = [
     "PandasApiBaseTdsFrame"
@@ -128,22 +129,26 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                         from pylegend.core.language.pandas_api.pandas_api_series import \
                             BooleanSeries  # pragma: no cover
                         return BooleanSeries(self, key)  # pragma: no cover (Boolean column not supported in PURE)
-                    elif col_type == "String":
+                    elif col_type in ("String", "Varchar"):
                         from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
                         return StringSeries(self, key)
                     elif col_type == "Number":  # pragma: no cover
                         from pylegend.core.language.pandas_api.pandas_api_series import NumberSeries
                         return NumberSeries(self, key)
-                    elif col_type == "Integer":
+                    elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+                                      "Int", "UInt", "BigInt", "UBigInt"):
                         from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
                         return IntegerSeries(self, key)
-                    elif col_type == "Float":
+                    elif col_type in ("Float", "Float4", "Double"):
                         from pylegend.core.language.pandas_api.pandas_api_series import FloatSeries
                         return FloatSeries(self, key)
+                    elif col_type in ("Decimal", "Numeric"):
+                        from pylegend.core.language.pandas_api.pandas_api_series import DecimalSeries
+                        return DecimalSeries(self, key)
                     elif col_type == "Date":
                         from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
                         return DateSeries(self, key)
-                    elif col_type == "DateTime":
+                    elif col_type in ("DateTime", "Timestamp"):
                         from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
                         return DateTimeSeries(self, key)
                     elif col_type == "StrictDate":
@@ -199,7 +204,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def cast(
             self,
-            column_type_map: PyLegendDict[str, PrimitiveType]
+            column_type_map: PyLegendDict[str, "CastTarget"]
     ) -> "PandasApiTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame

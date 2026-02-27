@@ -19,9 +19,8 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
     PyLegendOptional,
-    PyLegendDict,
 )
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.database.sql_to_string import SqlToStringGenerator
 from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig
@@ -125,36 +124,6 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
             chunk_size: PyLegendOptional[int] = None,
             pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
     ) -> pd.DataFrame:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def cast(
-            self,
-            column_type_map: PyLegendDict[str, PrimitiveType]
-    ) -> "PyLegendTdsFrame":
-        """Cast columns to new types.
-
-        Takes a mapping of column name -> PrimitiveType and returns a new frame
-        with the specified columns cast to the target types.
-
-        Allowed casts:
-            - Numeric -> Numeric (any numeric family type to any other)
-            - Numeric -> String  (number to text representation)
-            - String  -> String  (String <-> Varchar)
-            - Date    -> Date    (any date family type to any other)
-            - Boolean -> Boolean (identity only)
-
-        Args:
-            column_type_map: A dictionary mapping column names to their target PrimitiveType.
-
-        Returns:
-            A new TdsFrame with the cast types applied.
-
-        Raises:
-            ValueError: If a column name in the map does not exist in the frame,
-                        or if the cast is not allowed between the source and target types.
-            TypeError: If a column in the map is not a PrimitiveTdsColumn (e.g. EnumTdsColumn).
-        """
         pass  # pragma: no cover
 
     def to_pandas_df(
