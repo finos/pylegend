@@ -107,6 +107,6 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
 
     def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         sub_expressions: PyLegendList["PyLegendExpression"] = []
-        sub_expressions += self.__operand1.get_sub_expressions()
-        sub_expressions += self.__operand2.get_sub_expressions()
+        sub_expressions += self.__operand1.get_leaf_expressions()
+        sub_expressions += self.__operand2.get_leaf_expressions()
         return sub_expressions

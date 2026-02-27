@@ -140,7 +140,7 @@ def assert_and_find_core_series(expr: PyLegendExpression) -> PyLegendOptional[Py
 
     core_series_list: PyLegendList[PyLegendUnion[Series, GroupbySeries]] = []
 
-    sub_expressions = expr.get_sub_expressions()
+    sub_expressions = expr.get_leaf_expressions()
     for expr in sub_expressions:
         if isinstance(expr, (Series, GroupbySeries)):
             core_series_list.append(expr)
