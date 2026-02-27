@@ -141,9 +141,9 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
 
 
 class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
-    __value: PyLegendUnion[float, PythonDecimal]
+    __value: PythonDecimal
 
-    def __init__(self, value: PyLegendUnion[float, PythonDecimal]) -> None:
+    def __init__(self, value: PythonDecimal) -> None:
         self.__value = value
 
     def to_sql_expression(
@@ -151,20 +151,16 @@ class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        if isinstance(self.__value, PythonDecimal):
-            return Cast(
-                expression=StringLiteral(value=str(self.__value), quoted=False),
-                type_=ColumnType(name="DECIMAL", parameters=[])
-            )
-        return DoubleLiteral(value=self.__value)
+        return Cast(
+            expression=StringLiteral(value=str(self.__value), quoted=False),
+            type_=ColumnType(name="DECIMAL", parameters=[])
+        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        if isinstance(self.__value, PythonDecimal):
-            s = str(self.__value)
-            if s.startswith('-'):
-                return f"minus({s[1:]}D)"
-            return f"{s}D"
-        return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
+        s = str(self.__value)
+        if s.startswith('-'):
+            return f"minus({s[1:]}D)"
+        return f"{s}D"
 
     def is_non_nullable(self) -> bool:
         return True

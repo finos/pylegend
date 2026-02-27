@@ -22,7 +22,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.cast_helpers import CastTarget, validate_and_build_cast_columns, pure_type_spec, _normalize_target
 from pylegend.core.language.shared.helpers import escape_column_name
@@ -87,4 +87,3 @@ class LegendQLApiCastFunction(LegendQLApiAppliedFunction):
             self.__base_frame.columns(), self.__column_type_map
         )
         return True
-

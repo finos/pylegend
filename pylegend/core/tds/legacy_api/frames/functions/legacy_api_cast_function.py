@@ -17,16 +17,16 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
 )
+from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
 )
+from pylegend.core.tds.cast_helpers import CastTarget, validate_and_build_cast_columns, pure_type_spec, \
+    _normalize_target
 from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import LegacyApiAppliedFunction
 from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
-from pylegend.core.tds.cast_helpers import CastTarget, validate_and_build_cast_columns, pure_type_spec, _normalize_target
-from pylegend.core.language.shared.helpers import escape_column_name
-
 
 __all__: PyLegendSequence[str] = [
     "LegacyApiCastFunction"
@@ -87,4 +87,3 @@ class LegacyApiCastFunction(LegacyApiAppliedFunction):
             self.__base_frame.columns(), self.__column_type_map
         )
         return True
-

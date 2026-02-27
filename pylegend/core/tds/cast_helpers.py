@@ -1,4 +1,4 @@
-# Copyright 2023 Goldman Sachs
+# Copyright 2026 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,34 @@ from pylegend._typing import (
     PyLegendSet,
     PyLegendUnion,
     PyLegendTuple,
+    PyLegendType,
 )
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, PrimitiveType
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.shared.primitives.string import PyLegendString
+from pylegend.core.language.shared.primitives.number import PyLegendNumber
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
+from pylegend.core.language.shared.primitives.date import PyLegendDate
+from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
+from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+from pylegend.core.language.shared.primitives.precise_primitives import (
+    PyLegendTinyInt,
+    PyLegendUTinyInt,
+    PyLegendSmallInt,
+    PyLegendUSmallInt,
+    PyLegendInt,
+    PyLegendUInt,
+    PyLegendBigInt,
+    PyLegendUBigInt,
+    PyLegendVarchar,
+    PyLegendTimestamp,
+    PyLegendFloat4,
+    PyLegendDouble,
+    PyLegendNumeric,
+)
 
 # Type that users pass as a cast target value:
 #   - PrimitiveType.Integer                   (simple)
@@ -30,46 +56,39 @@ CastTarget = PyLegendUnion[PrimitiveType, PyLegendTuple[PrimitiveType, ...]]
 
 __all__: PyLegendSequence[str] = [
     "CastTarget",
-    "NUMERIC_TYPES",
-    "STRING_TYPES",
-    "DATE_TYPES",
-    "BOOLEAN_TYPES",
-    "ALLOWED_CAST_TARGETS",
-    "type_family",
+    "PRIMITIVE_TYPE_TO_PYLEGEND_CLASS",
     "is_cast_allowed",
     "validate_and_build_cast_columns",
     "pure_type_spec",
 ]
 
-NUMERIC_TYPES: PyLegendSet[PrimitiveType] = {
-    PrimitiveType.Number, PrimitiveType.Integer, PrimitiveType.Float,
-    PrimitiveType.Decimal, PrimitiveType.TinyInt, PrimitiveType.UTinyInt,
-    PrimitiveType.SmallInt, PrimitiveType.USmallInt, PrimitiveType.Int,
-    PrimitiveType.UInt, PrimitiveType.BigInt, PrimitiveType.UBigInt,
-    PrimitiveType.Float4, PrimitiveType.Double, PrimitiveType.Numeric,
+# Map each PrimitiveType enum to its corresponding PyLegend class.
+# Cast validity is determined by whether the source and target classes
+# have a subclass relationship (one is a subclass of the other).
+PRIMITIVE_TYPE_TO_PYLEGEND_CLASS: PyLegendDict[PrimitiveType, PyLegendType[PyLegendPrimitive]] = {
+    PrimitiveType.Boolean:    PyLegendBoolean,
+    PrimitiveType.String:     PyLegendString,
+    PrimitiveType.Number:     PyLegendNumber,
+    PrimitiveType.Integer:    PyLegendInteger,
+    PrimitiveType.Float:      PyLegendFloat,
+    PrimitiveType.Decimal:    PyLegendDecimal,
+    PrimitiveType.Date:       PyLegendDate,
+    PrimitiveType.DateTime:   PyLegendDateTime,
+    PrimitiveType.StrictDate: PyLegendStrictDate,
+    PrimitiveType.TinyInt:    PyLegendTinyInt,
+    PrimitiveType.UTinyInt:   PyLegendUTinyInt,
+    PrimitiveType.SmallInt:   PyLegendSmallInt,
+    PrimitiveType.USmallInt:  PyLegendUSmallInt,
+    PrimitiveType.Int:        PyLegendInt,
+    PrimitiveType.UInt:       PyLegendUInt,
+    PrimitiveType.BigInt:     PyLegendBigInt,
+    PrimitiveType.UBigInt:    PyLegendUBigInt,
+    PrimitiveType.Varchar:    PyLegendVarchar,
+    PrimitiveType.Timestamp:  PyLegendTimestamp,
+    PrimitiveType.Float4:     PyLegendFloat4,
+    PrimitiveType.Double:     PyLegendDouble,
+    PrimitiveType.Numeric:    PyLegendNumeric,
 }
-
-STRING_TYPES: PyLegendSet[PrimitiveType] = {
-    PrimitiveType.String, PrimitiveType.Varchar,
-}
-
-DATE_TYPES: PyLegendSet[PrimitiveType] = {
-    PrimitiveType.Date, PrimitiveType.DateTime,
-    PrimitiveType.StrictDate, PrimitiveType.Timestamp,
-}
-
-BOOLEAN_TYPES: PyLegendSet[PrimitiveType] = {
-    PrimitiveType.Boolean,
-}
-
-# Allowed cast: source family -> set of target families it can cast into.
-ALLOWED_CAST_TARGETS: PyLegendDict[str, PyLegendList[PyLegendSet[PrimitiveType]]] = {
-    "numeric": [NUMERIC_TYPES, STRING_TYPES],   # numeric -> numeric or string
-    "string":  [STRING_TYPES],                   # string -> string only
-    "date":    [DATE_TYPES],                     # date -> date only
-    "boolean": [BOOLEAN_TYPES],                  # boolean -> boolean only
-}
-
 
 # Types that require parameters in Pure syntax.
 _PARAMETERIZED_TYPES: PyLegendSet[PrimitiveType] = {
@@ -95,22 +114,14 @@ def pure_type_spec(ptype: PrimitiveType, params: PyLegendTuple[int, ...] = ()) -
     return ptype.name
 
 
-def type_family(t: PrimitiveType) -> str:
-    if t in NUMERIC_TYPES:
-        return "numeric"
-    if t in STRING_TYPES:
-        return "string"
-    if t in DATE_TYPES:
-        return "date"
-    if t in BOOLEAN_TYPES:
-        return "boolean"
-    return "unknown"  # pragma: no cover
-
-
 def is_cast_allowed(source: PrimitiveType, target: PrimitiveType) -> bool:
-    family = type_family(source)
-    allowed_target_sets = ALLOWED_CAST_TARGETS.get(family, [])
-    return any(target in s for s in allowed_target_sets)
+    """A cast is allowed if the source and target PyLegend classes have
+    a subclass relationship (one is a subclass of the other)."""
+    source_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(source)
+    target_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(target)
+    if source_cls is None or target_cls is None:
+        return False  # pragma: no cover
+    return issubclass(source_cls, target_cls) or issubclass(target_cls, source_cls)
 
 
 def validate_and_build_cast_columns(
@@ -147,15 +158,13 @@ def validate_and_build_cast_columns(
                     f"instead of PrimitiveType.{target_type.name}"
                 )
             if not is_cast_allowed(source_type, target_type):
-                source_family = type_family(source_type)
-                allowed_families = sorted({
-                    type_family(t)
-                    for sets in ALLOWED_CAST_TARGETS.get(source_family, [])
-                    for t in sets
-                })
+                source_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(source_type)
+                target_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(target_type)
                 raise ValueError(
                     f"Cannot cast column '{col.get_name()}' from {source_type.name} to {target_type.name}. "
-                    f"{source_family.capitalize()} types can only be cast to: {allowed_families}"
+                    f"{source_cls.__name__ if source_cls else source_type.name} and "
+                    f"{target_cls.__name__ if target_cls else target_type.name} "
+                    f"do not share a subclass relationship."
                 )
             new_columns.append(
                 PrimitiveTdsColumn(col.get_name(), target_type)

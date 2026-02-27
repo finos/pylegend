@@ -59,7 +59,7 @@ from pylegend.core.tds.result_handler import (
     ResultHandler,
     ToStringResultHandler,
 )
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
+from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, PyLegendTdsFrame
 from pylegend.extensions.tds.result_handler import (

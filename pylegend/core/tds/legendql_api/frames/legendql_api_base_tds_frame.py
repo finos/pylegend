@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -39,9 +40,9 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 from pylegend.core.tds.cast_helpers import CastTarget
+from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
+from pylegend.core.tds.tds_column import TdsColumn
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiBaseTdsFrame"
@@ -293,7 +294,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_asofjoin_function import (
             LegendQLApiAsOfJoinFunction
         )
-        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiAsOfJoinFunction(self, other, match_function, join_condition))
+        return LegendQLApiAppliedFunctionTdsFrame(
+            LegendQLApiAsOfJoinFunction(self, other, match_function, join_condition))
 
     def group_by(
             self,

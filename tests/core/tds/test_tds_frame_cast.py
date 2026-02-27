@@ -60,174 +60,171 @@ _ALL_FRAME_FACTORIES = pytest.mark.parametrize(
 )
 
 
+# =============================================================================
+# Validation: errors for bad inputs and disallowed casts (subclass check)
+# =============================================================================
 class TestTdsFrameCastValidation:
-    """Validation tests that apply to all three API flavours."""
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    # -- unknown / wrong column errors --
 
     @_ALL_FRAME_FACTORIES
     def test_cast_unknown_column_raises_error(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.integer_column("col1")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Column.*not found.*nonexistent"):
             frame.cast({"nonexistent": PrimitiveType.Float})
-        assert "Column(s) not found in frame: ['nonexistent']" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_unknown_column_error_shows_available(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        frame = frame_factory([
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
-        ])
-        with pytest.raises(ValueError) as r:
+        frame = frame_factory([PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")])
+        with pytest.raises(ValueError, match="Available columns.*col1.*col2"):
             frame.cast({"bad_col": PrimitiveType.Float})
-        assert "Available columns: ['col1', 'col2']" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_enum_column_raises_type_error(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        frame = frame_factory([
-            EnumTdsColumn("city", "my::CityType", ["Tier1", "Tier2"]),
-            PrimitiveTdsColumn.integer_column("pop"),
-        ])
-        with pytest.raises(TypeError) as r:
+        frame = frame_factory([EnumTdsColumn("city", "my::CityType", ["Tier1", "Tier2"])])
+        with pytest.raises(TypeError, match="Cannot cast non-primitive column 'city'"):
             frame.cast({"city": PrimitiveType.String})
-        assert "Cannot cast non-primitive column 'city'" in r.value.args[0]
+
+    # -- cross-branch / cross-family casts (not subclass related) --
 
     @_ALL_FRAME_FACTORIES
     def test_cast_string_to_integer_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.string_column("s")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 's' from String to Integer"):
             frame.cast({"s": PrimitiveType.Integer})
-        assert "Cannot cast column 's' from String to Integer" in r.value.args[0]
-
-    @_ALL_FRAME_FACTORIES
-    def test_cast_string_to_tinyint_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
-    ) -> None:
-        frame = frame_factory([PrimitiveTdsColumn.string_column("s")])
-        with pytest.raises(ValueError) as r:
-            frame.cast({"s": PrimitiveType.TinyInt})
-        assert "Cannot cast column 's' from String to TinyInt" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_string_to_boolean_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.string_column("s")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 's' from String to Boolean"):
             frame.cast({"s": PrimitiveType.Boolean})
-        assert "Cannot cast column 's' from String to Boolean" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_string_to_date_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.string_column("s")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 's' from String to DateTime"):
             frame.cast({"s": PrimitiveType.DateTime})
-        assert "Cannot cast column 's' from String to DateTime" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_boolean_to_integer_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.boolean_column("b")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 'b' from Boolean to Integer"):
             frame.cast({"b": PrimitiveType.Integer})
-        assert "Cannot cast column 'b' from Boolean to Integer" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_boolean_to_string_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.boolean_column("b")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 'b' from Boolean to String"):
             frame.cast({"b": PrimitiveType.String})
-        assert "Cannot cast column 'b' from Boolean to String" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_date_to_integer_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.date_column("d")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 'd' from Date to Integer"):
             frame.cast({"d": PrimitiveType.Integer})
-        assert "Cannot cast column 'd' from Date to Integer" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
     def test_cast_date_to_string_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.date_column("d")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 'd' from Date to String"):
             frame.cast({"d": PrimitiveType.String})
-        assert "Cannot cast column 'd' from Date to String" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_numeric_to_boolean_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    def test_cast_integer_to_boolean_not_allowed(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 'n' from Integer to Boolean"):
             frame.cast({"n": PrimitiveType.Boolean})
-        assert "Cannot cast column 'n' from Integer to Boolean" in r.value.args[0]
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_numeric_to_date_not_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    def test_cast_integer_to_date_not_allowed(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
-        with pytest.raises(ValueError) as r:
+        with pytest.raises(ValueError, match="Cannot cast column 'n' from Integer to DateTime"):
             frame.cast({"n": PrimitiveType.DateTime})
-        assert "Cannot cast column 'n' from Integer to DateTime" in r.value.args[0]
+
+    # -- sibling branches under Number (not subclass of each other) --
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_integer_to_float_not_allowed(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
+        with pytest.raises(ValueError, match="Cannot cast column 'n' from Integer to Float"):
+            frame.cast({"n": PrimitiveType.Float})
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_integer_to_decimal_not_allowed(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
+        with pytest.raises(ValueError, match="Cannot cast column 'n' from Integer to Decimal"):
+            frame.cast({"n": PrimitiveType.Decimal})
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_float_to_integer_not_allowed(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        frame = frame_factory([PrimitiveTdsColumn.float_column("n")])
+        with pytest.raises(ValueError, match="Cannot cast column 'n' from Float to Integer"):
+            frame.cast({"n": PrimitiveType.Integer})
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_integer_to_string_not_allowed(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
+        with pytest.raises(ValueError, match="Cannot cast column 'n' from Integer to String"):
+            frame.cast({"n": PrimitiveType.String})
 
 
+# =============================================================================
+# Allowed casts: column type changes
+# =============================================================================
 class TestTdsFrameCastColumns:
-    """Column-type tests that apply to all three API flavours."""
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_single_column_integer_to_float(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    def test_cast_integer_to_bigint(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        frame = frame_factory([
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
-        ])
-        result = frame.cast({"col1": PrimitiveType.Float})
-        assert "TdsColumn(Name: col1, Type: Float)" == str(result.columns()[0])
+        frame = frame_factory([PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")])
+        result = frame.cast({"col1": PrimitiveType.BigInt})
+        assert "TdsColumn(Name: col1, Type: BigInt)" == str(result.columns()[0])
         assert "TdsColumn(Name: col2, Type: String)" == str(result.columns()[1])
 
     @_ALL_FRAME_FACTORIES
     def test_cast_multiple_columns(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([
             PrimitiveTdsColumn.integer_column("col1"),
@@ -240,38 +237,43 @@ class TestTdsFrameCastColumns:
         assert "TdsColumn(Name: col3, Type: Double)" == str(result.columns()[2])
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_numeric_to_numeric_within_family(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    def test_cast_within_integer_branch(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
         assert "TdsColumn(Name: n, Type: TinyInt)" == str(frame.cast({"n": PrimitiveType.TinyInt}).columns()[0])
         assert "TdsColumn(Name: n, Type: BigInt)" == str(frame.cast({"n": PrimitiveType.BigInt}).columns()[0])
-        assert "TdsColumn(Name: n, Type: Double)" == str(frame.cast({"n": PrimitiveType.Double}).columns()[0])
-        assert "TdsColumn(Name: n, Type: Decimal)" == str(frame.cast({"n": PrimitiveType.Decimal}).columns()[0])
-        assert "TdsColumn(Name: n, Type: Numeric)" == str(frame.cast({"n": (PrimitiveType.Numeric, 10, 2)}).columns()[0])
+        assert "TdsColumn(Name: n, Type: Number)" == str(frame.cast({"n": PrimitiveType.Number}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_numeric_to_string_allowed(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    def test_cast_within_float_branch(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        frame = frame_factory([PrimitiveTdsColumn.integer_column("n")])
-        assert "TdsColumn(Name: n, Type: String)" == str(frame.cast({"n": PrimitiveType.String}).columns()[0])
-        assert "TdsColumn(Name: n, Type: Varchar)" == str(frame.cast({"n": (PrimitiveType.Varchar, 200)}).columns()[0])
+        frame = frame_factory([PrimitiveTdsColumn.float_column("n")])
+        assert "TdsColumn(Name: n, Type: Float4)" == str(frame.cast({"n": PrimitiveType.Float4}).columns()[0])
+        assert "TdsColumn(Name: n, Type: Double)" == str(frame.cast({"n": PrimitiveType.Double}).columns()[0])
+        assert "TdsColumn(Name: n, Type: Number)" == str(frame.cast({"n": PrimitiveType.Number}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_string_to_string_within_family(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    def test_cast_within_decimal_branch(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    ) -> None:
+        frame = frame_factory([PrimitiveTdsColumn.decimal_column("n")])
+        assert "TdsColumn(Name: n, Type: Numeric)" == str(
+            frame.cast({"n": (PrimitiveType.Numeric, 10, 2)}).columns()[0])
+        assert "TdsColumn(Name: n, Type: Number)" == str(frame.cast({"n": PrimitiveType.Number}).columns()[0])
+
+    @_ALL_FRAME_FACTORIES
+    def test_cast_within_string_branch(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.string_column("s")])
-        assert "TdsColumn(Name: s, Type: Varchar)" == str(frame.cast({"s": (PrimitiveType.Varchar, 200)}).columns()[0])
+        assert "TdsColumn(Name: s, Type: Varchar)" == str(
+            frame.cast({"s": (PrimitiveType.Varchar, 200)}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_date_within_family(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+    def test_cast_within_date_branch(
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.date_column("d")])
         assert "TdsColumn(Name: d, Type: DateTime)" == str(frame.cast({"d": PrimitiveType.DateTime}).columns()[0])
@@ -280,39 +282,31 @@ class TestTdsFrameCastColumns:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_boolean_to_boolean(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.boolean_column("b")])
         assert "TdsColumn(Name: b, Type: Boolean)" == str(frame.cast({"b": PrimitiveType.Boolean}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
     def test_cast_same_type_is_noop(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.integer_column("col1")])
         assert "TdsColumn(Name: col1, Type: Integer)" == str(
-            frame.cast({"col1": PrimitiveType.Integer}).columns()[0]
-        )
+            frame.cast({"col1": PrimitiveType.Integer}).columns()[0])
 
     @_ALL_FRAME_FACTORIES
     def test_cast_empty_map_returns_copy(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        frame = frame_factory([
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
-        ])
+        frame = frame_factory([PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")])
         result = frame.cast({})
         assert "TdsColumn(Name: col1, Type: Integer)" == str(result.columns()[0])
         assert "TdsColumn(Name: col2, Type: String)" == str(result.columns()[1])
 
     @_ALL_FRAME_FACTORIES
     def test_cast_preserves_column_order(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([
             PrimitiveTdsColumn.integer_column("a"),
@@ -328,17 +322,18 @@ class TestTdsFrameCastColumns:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_does_not_mutate_original_frame(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         frame = frame_factory([PrimitiveTdsColumn.integer_column("col1")])
         assert "TdsColumn(Name: col1, Type: Integer)" == str(frame.columns()[0])
-        frame.cast({"col1": PrimitiveType.Float})
+        frame.cast({"col1": PrimitiveType.BigInt})
         assert "TdsColumn(Name: col1, Type: Integer)" == str(frame.columns()[0])
 
 
+# =============================================================================
+# SQL and Pure query generation
+# =============================================================================
 class TestTdsFrameCastQueryGeneration:
-    """SQL and Pure query generation tests that apply to all three API flavours."""
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
@@ -346,8 +341,7 @@ class TestTdsFrameCastQueryGeneration:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_sql_generation(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -369,8 +363,7 @@ class TestTdsFrameCastQueryGeneration:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -389,8 +382,7 @@ class TestTdsFrameCastQueryGeneration:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation_precise_integer_types(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("a"),
@@ -405,14 +397,10 @@ class TestTdsFrameCastQueryGeneration:
         ]
         frame = frame_factory(columns)
         result = frame.cast({
-            "a": PrimitiveType.TinyInt,
-            "b": PrimitiveType.UTinyInt,
-            "c": PrimitiveType.SmallInt,
-            "d": PrimitiveType.USmallInt,
-            "e": PrimitiveType.Int,
-            "f": PrimitiveType.UInt,
-            "g": PrimitiveType.BigInt,
-            "h": PrimitiveType.UBigInt,
+            "a": PrimitiveType.TinyInt, "b": PrimitiveType.UTinyInt,
+            "c": PrimitiveType.SmallInt, "d": PrimitiveType.USmallInt,
+            "e": PrimitiveType.Int, "f": PrimitiveType.UInt,
+            "g": PrimitiveType.BigInt, "h": PrimitiveType.UBigInt,
             "i": PrimitiveType.Integer,
         })
 
@@ -427,8 +415,7 @@ class TestTdsFrameCastQueryGeneration:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation_precise_float_types(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
         columns = [
             PrimitiveTdsColumn.float_column("x"),
@@ -436,11 +423,7 @@ class TestTdsFrameCastQueryGeneration:
             PrimitiveTdsColumn.float_column("z"),
         ]
         frame = frame_factory(columns)
-        result = frame.cast({
-            "x": PrimitiveType.Float4,
-            "y": PrimitiveType.Double,
-            "z": PrimitiveType.Float,
-        })
+        result = frame.cast({"x": PrimitiveType.Float4, "y": PrimitiveType.Double, "z": PrimitiveType.Float})
 
         expected_pure = (
             "#Table(test_schema.test_table)#\n"
@@ -451,18 +434,11 @@ class TestTdsFrameCastQueryGeneration:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation_precise_decimal_types(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        columns = [
-            PrimitiveTdsColumn.decimal_column("a"),
-            PrimitiveTdsColumn.decimal_column("b"),
-        ]
+        columns = [PrimitiveTdsColumn.decimal_column("a"), PrimitiveTdsColumn.decimal_column("b")]
         frame = frame_factory(columns)
-        result = frame.cast({
-            "a": (PrimitiveType.Numeric, 10, 2),
-            "b": PrimitiveType.Decimal,
-        })
+        result = frame.cast({"a": (PrimitiveType.Numeric, 10, 2), "b": PrimitiveType.Decimal})
 
         expected_pure = (
             "#Table(test_schema.test_table)#\n"
@@ -473,18 +449,11 @@ class TestTdsFrameCastQueryGeneration:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation_precise_string_types(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        columns = [
-            PrimitiveTdsColumn.string_column("a"),
-            PrimitiveTdsColumn.string_column("b"),
-        ]
+        columns = [PrimitiveTdsColumn.string_column("a"), PrimitiveTdsColumn.string_column("b")]
         frame = frame_factory(columns)
-        result = frame.cast({
-            "a": (PrimitiveType.Varchar, 200),
-            "b": PrimitiveType.String,
-        })
+        result = frame.cast({"a": (PrimitiveType.Varchar, 200), "b": PrimitiveType.String})
 
         expected_pure = (
             "#Table(test_schema.test_table)#\n"
@@ -495,18 +464,11 @@ class TestTdsFrameCastQueryGeneration:
 
     @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation_precise_date_types(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
+            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
-        columns = [
-            PrimitiveTdsColumn.datetime_column("a"),
-            PrimitiveTdsColumn.datetime_column("b"),
-        ]
+        columns = [PrimitiveTdsColumn.datetime_column("a"), PrimitiveTdsColumn.datetime_column("b")]
         frame = frame_factory(columns)
-        result = frame.cast({
-            "a": PrimitiveType.Timestamp,
-            "b": PrimitiveType.DateTime,
-        })
+        result = frame.cast({"a": PrimitiveType.Timestamp, "b": PrimitiveType.DateTime})
 
         expected_pure = (
             "#Table(test_schema.test_table)#\n"
@@ -515,27 +477,11 @@ class TestTdsFrameCastQueryGeneration:
 
         assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
 
-    @_ALL_FRAME_FACTORIES
-    def test_cast_pure_generation_numeric_to_string(
-            self,
-            frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
-    ) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-        ]
-        frame = frame_factory(columns)
-        result = frame.cast({"col1": (PrimitiveType.Varchar, 100)})
 
-        expected_pure = (
-            "#Table(test_schema.test_table)#\n"
-            "  ->cast(@meta::pure::metamodel::relation::Relation<(col1:Varchar(100))>)"
-        )
-
-        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
-
-
+# =============================================================================
+# End-to-end (pandas API only – uses execute_frame_to_string)
+# =============================================================================
 class TestTdsFrameCastE2E:
-    """End-to-end tests (pandas API only, since it supports execute_frame_to_string)."""
 
     _COLUMNS = ["First Name", "Last Name", "Age", "Firm/Legal Name"]
 
@@ -559,11 +505,11 @@ class TestTdsFrameCastE2E:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.cast({"Age": target_type})
         frame['Age'] = frame['Age'] + 1  # type: ignore
-        print(f"sql is: {frame.to_sql_query()}\n")
         expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
+    # Age is Integer in the service frame → all these are within the Integer branch
     def test_e2e_cast_integer(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self._cast_age_and_add_one(legend_test_server, PrimitiveType.Integer)
 
@@ -594,74 +540,7 @@ class TestTdsFrameCastE2E:
     def test_e2e_cast_number(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self._cast_age_and_add_one(legend_test_server, PrimitiveType.Number)
 
-    def test_e2e_cast_decimal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        self._cast_age_and_add_one(legend_test_server, PrimitiveType.Decimal)
-
-    def test_e2e_cast_numeric(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.cast({"Age": (PrimitiveType.Numeric, 10, 2)})
-        frame['Age'] = frame['Age'] + 1  # type: ignore
-        expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
-
-    def test_e2e_cast_float(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.cast({"Age": PrimitiveType.Float})
-        frame['Age'] = frame['Age'] + 0.5  # type: ignore
-        expected = {
-            "columns": self._COLUMNS,
-            "rows": [
-                {"values": ["Peter", "Smith", 23.5, "Firm X"]},
-                {"values": ["John", "Johnson", 22.5, "Firm X"]},
-                {"values": ["John", "Hill", 12.5, "Firm X"]},
-                {"values": ["Anthony", "Allen", 22.5, "Firm X"]},
-                {"values": ["Fabrice", "Roberts", 34.5, "Firm A"]},
-                {"values": ["Oliver", "Hill", 32.5, "Firm B"]},
-                {"values": ["David", "Harris", 35.5, "Firm C"]},
-            ],
-        }
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
-
-    def test_e2e_cast_float4(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.cast({"Age": PrimitiveType.Float4})
-        frame['Age'] = frame['Age'] + 0.5  # type: ignore
-        expected = {
-            "columns": self._COLUMNS,
-            "rows": [
-                {"values": ["Peter", "Smith", 23.5, "Firm X"]},
-                {"values": ["John", "Johnson", 22.5, "Firm X"]},
-                {"values": ["John", "Hill", 12.5, "Firm X"]},
-                {"values": ["Anthony", "Allen", 22.5, "Firm X"]},
-                {"values": ["Fabrice", "Roberts", 34.5, "Firm A"]},
-                {"values": ["Oliver", "Hill", 32.5, "Firm B"]},
-                {"values": ["David", "Harris", 35.5, "Firm C"]},
-            ],
-        }
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
-
-    def test_e2e_cast_double(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        frame = frame.cast({"Age": PrimitiveType.Double})
-        frame['Age'] = frame['Age'] + 0.5  # type: ignore
-        expected = {
-            "columns": self._COLUMNS,
-            "rows": [
-                {"values": ["Peter", "Smith", 23.5, "Firm X"]},
-                {"values": ["John", "Johnson", 22.5, "Firm X"]},
-                {"values": ["John", "Hill", 12.5, "Firm X"]},
-                {"values": ["Anthony", "Allen", 22.5, "Firm X"]},
-                {"values": ["Fabrice", "Roberts", 34.5, "Firm A"]},
-                {"values": ["Oliver", "Hill", 32.5, "Firm B"]},
-                {"values": ["David", "Harris", 35.5, "Firm C"]},
-            ],
-        }
-        res = frame.execute_frame_to_string()
-        assert json.loads(res)["result"] == expected
-
+    # First Name is String → Varchar is within the String branch
     def test_e2e_cast_varchar(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.cast({"First Name": (PrimitiveType.Varchar, 200)})
@@ -680,4 +559,3 @@ class TestTdsFrameCastE2E:
         }
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
-

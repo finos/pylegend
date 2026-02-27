@@ -30,9 +30,9 @@ from pylegend.core.language import (
     LegacyApiAggregateSpecification,
 )
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveType
 from pylegend.core.tds.cast_helpers import CastTarget
+from pylegend.core.tds.legacy_api.frames.legacy_api_tds_frame import LegacyApiTdsFrame
+from pylegend.core.tds.tds_column import TdsColumn
 
 __all__: PyLegendSequence[str] = [
     "LegacyApiBaseTdsFrame"
@@ -142,7 +142,8 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.tds.legacy_api.frames.functions.legacy_api_rename_columns_function import (
             LegacyApiRenameColumnsFunction
         )
-        return LegacyApiAppliedFunctionTdsFrame(LegacyApiRenameColumnsFunction(self, column_names, renamed_column_names))
+        return LegacyApiAppliedFunctionTdsFrame(
+            LegacyApiRenameColumnsFunction(self, column_names, renamed_column_names))
 
     def filter(
             self,
