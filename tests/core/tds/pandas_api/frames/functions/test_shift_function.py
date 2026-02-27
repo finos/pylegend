@@ -148,10 +148,9 @@ class TestErrorsOnGroupbyFrame:
 
 
 class TestUsageOnBaseFrame:
-    if USE_LEGEND_ENGINE:
-        @pytest.fixture(autouse=True)
-        def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-            self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_no_arguments(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -167,10 +166,8 @@ class TestUsageOnBaseFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_periods_argument_multiple_columns(self) -> None:
         columns = [PrimitiveTdsColumn.number_column("col1"), PrimitiveTdsColumn.float_column("col2")]
@@ -188,10 +185,8 @@ class TestUsageOnBaseFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_negative_periods_argument(self) -> None:
         columns = [PrimitiveTdsColumn.date_column("col1")]
@@ -207,10 +202,8 @@ class TestUsageOnBaseFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_list_periods_no_suffix(self) -> None:
         columns = [PrimitiveTdsColumn.strictdate_column("col1"), PrimitiveTdsColumn.datetime_column("col2")]
@@ -232,10 +225,8 @@ class TestUsageOnBaseFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_list_periods_with_suffix(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
@@ -257,10 +248,8 @@ class TestUsageOnBaseFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_series_datatype_conversion_and_full_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
@@ -279,6 +268,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame1 += 5  # type: ignore[operator, assignment]
         assert isinstance(frame1, Series)
@@ -290,6 +280,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame2 = frame["col1"].shift([1])
         assert isinstance(frame2, PandasApiTdsFrame)
@@ -304,6 +295,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame2.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame3 = frame["col1"].shift([5, -3])
         assert isinstance(frame3, PandasApiTdsFrame)
@@ -320,6 +312,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame3.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_series_assign(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
@@ -334,6 +327,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame["col2"] = frame["col2"].shift(-3) + 5  # type: ignore[operator]
         expected_pure = '''
@@ -347,13 +341,13 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
 
 class TestUsageOnGroupbyFrame:
-    if USE_LEGEND_ENGINE:
-        @pytest.fixture(autouse=True)
-        def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-            self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_no_selection(self) -> None:
         columns = [
@@ -374,10 +368,8 @@ class TestUsageOnGroupbyFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_single_selection(self) -> None:
         columns = [
@@ -396,10 +388,8 @@ class TestUsageOnGroupbyFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_selection_same_as_groupby(self) -> None:
         columns = [
@@ -418,10 +408,8 @@ class TestUsageOnGroupbyFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_multiple_periods(self) -> None:
         columns = [
@@ -447,10 +435,8 @@ class TestUsageOnGroupbyFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_suffix(self) -> None:
         columns = [
@@ -476,10 +462,8 @@ class TestUsageOnGroupbyFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_multiple_grouping(self) -> None:
         columns = [
@@ -513,10 +497,8 @@ class TestUsageOnGroupbyFrame:
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
-        if TEST_PURE:
-            assert frame.to_pure_query(FrameToPureConfig()) == expected
-            if USE_LEGEND_ENGINE:
-                assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert frame.to_pure_query(FrameToPureConfig()) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_series_datatype_conversion_and_full_query_generation(self) -> None:
         columns = [
@@ -538,6 +520,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame1 += 5  # type: ignore[operator, assignment]
         assert isinstance(frame1, GroupbySeries)
@@ -548,6 +531,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame1.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame2 = frame.groupby("group_col")["val_col"].shift([1])
         assert isinstance(frame2, PandasApiTdsFrame)
@@ -560,6 +544,7 @@ class TestUsageOnGroupbyFrame:
         '''
         expected_pure = dedent(expected_pure).strip()
         assert frame2.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame3 = frame.groupby(["group_col", "group_col_2"])["val_col"].shift([5, -3])
         assert isinstance(frame3, PandasApiTdsFrame)
@@ -574,6 +559,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame3.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_series_assign(self) -> None:
         columns = [
@@ -592,6 +578,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame["col2"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(-3) + 5  # type: ignore[operator]
         expected_pure = '''
@@ -603,3 +590,4 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure

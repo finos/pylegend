@@ -38,11 +38,15 @@ from pylegend.core.language.shared.helpers import generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
-    SingleColumn, IntegerLiteral,
+    SingleColumn,
+    IntegerLiteral,
 )
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import has_window_function, assert_and_find_core_series
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
+    has_window_function,
+    assert_and_find_core_series,
+)
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query

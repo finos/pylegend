@@ -15,9 +15,13 @@
 from copy import copy
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
+
 import pandas as pd
+
 from pylegend._typing import (
     PyLegendDict,
+)
+from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
     PyLegendTypeVar,
@@ -245,7 +249,6 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.execute_frame(ToPandasDfResultHandler(pandas_df_read_config), chunk_size)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         if self.expr is None:
             return self.get_filtered_frame().to_sql_query_object(config)
@@ -265,26 +268,18 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             temp_col_name,
             self.to_sql_expression({'c': base_query}, config)
         )
+        base_query.select.selectItems = [new_select_item]
 
         if expr_contains_window_func:
-            base_frame = copy(self.get_base_frame())
-            core_series = assert_and_find_core_series(self)
-            assert isinstance(core_series, Series)
-            if isinstance(core_series.get_filtered_frame().get_applied_function(), ShiftFunction):
-                base_frame = base_frame.assign(**{zero_column_name: lambda row: 0})  # type: ignore[assignment]
-            base_query = base_frame.to_sql_query_object(config)
             new_query = create_sub_query(base_query, config, "root")
-            new_query.select.selectItems = [new_select_item]
-            final_query = create_sub_query(new_query, config, "root")
-            final_query.select.selectItems = [
+            new_query.select.selectItems = [
                 SingleColumn(
                     db_extension.quote_identifier(col_name),
                     QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), temp_col_name]))
                 )
             ]
-            return final_query
+            return new_query
         else:
-            base_query.select.selectItems = [new_select_item]
             return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
