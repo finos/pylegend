@@ -48,6 +48,5 @@ __all__: PyLegendSequence[str] = [
     "PyLegendGeneric",
     "PyLegendMapping",
     "PyLegendHashable",
-    "PyLegendAny",
     "TYPE_CHECKING",
 ]

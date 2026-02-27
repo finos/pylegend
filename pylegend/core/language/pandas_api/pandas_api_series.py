@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from copy import copy
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
