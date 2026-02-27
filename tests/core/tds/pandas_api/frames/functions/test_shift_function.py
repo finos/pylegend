@@ -11,22 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
+
 from textwrap import dedent
-
-import pandas as pd
 import pytest
-
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
-from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
 
 TEST_PURE: bool = True
@@ -265,7 +261,6 @@ class TestUsageOnBaseFrame:
             assert frame.to_pure_query(FrameToPureConfig()) == expected
             if USE_LEGEND_ENGINE:
                 assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
-
 
     def test_series_datatype_conversion_and_full_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]

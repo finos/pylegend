@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from copy import copy
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
@@ -54,10 +55,7 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
-from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_core_series, \
-    has_window_function
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_core_series, \
     has_window_function
@@ -269,7 +267,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         if expr_contains_window_func:
             base_frame = copy(self.get_base_frame())
             if isinstance(assert_and_find_core_series(self).get_filtered_frame().get_applied_function(), ShiftFunction):
-                base_frame = base_frame.assign(**{zero_column_name:lambda row: 0})
+                base_frame = base_frame.assign(**{zero_column_name: lambda row: 0})
             base_query = base_frame.to_sql_query_object(config)
             new_query = create_sub_query(base_query, config, "root")
             new_query.select.selectItems = [new_select_item]

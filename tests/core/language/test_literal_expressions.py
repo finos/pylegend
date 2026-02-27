@@ -25,7 +25,6 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringDbExtension,
 )
-from pylegend.core.language.shared.literal_expressions import PyLegendNullLiteralExpression
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.request.legend_client import LegendClient

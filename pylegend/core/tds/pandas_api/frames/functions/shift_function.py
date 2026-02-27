@@ -24,31 +24,22 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiPartialFrame,
-    PandasApiSortDirection,
     PandasApiWindow,
-    PandasApiWindowReference, PandasApiSortInfo
+    PandasApiWindowReference,
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import (
     escape_column_name,
     generate_pure_lambda,
 )
-from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
-    IntegerLiteral,
-    QualifiedName,
-    QualifiedNameReference,
     QuerySpecification,
-    SelectItem,
-    SingleColumn,
 )
-from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
-from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
