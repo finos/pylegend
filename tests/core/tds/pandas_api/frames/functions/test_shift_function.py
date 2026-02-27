@@ -18,6 +18,7 @@ import pandas as pd
 import pytest
 
 from pylegend._typing import PyLegendDict, PyLegendUnion
+from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -521,3 +522,89 @@ class TestUsageOnGroupbyFrame:
             assert frame.to_pure_query(FrameToPureConfig()) == expected
             if USE_LEGEND_ENGINE:
                 assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+
+    def test_series_datatype_conversion_and_full_query_generation(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.string_column("group_col_2"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame1 = frame.groupby("group_col")["val_col"].shift(5)
+        assert isinstance(frame1, GroupbySeries)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).val_col})
+              ->project(~[
+                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__
+              ])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame1.to_pure_query() == expected_pure
+
+        frame1 += 5
+        assert isinstance(frame1, GroupbySeries)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).val_col})
+              ->project(~[val_col:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame1.to_pure_query() == expected_pure
+
+        frame2 = frame.groupby("group_col")["val_col"].shift([1])
+        assert isinstance(frame2, PandasApiTdsFrame)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col], []), ~val_col_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).val_col})
+              ->project(~[
+                val_col_1:p|$p.val_col_1__INTERNAL_PYLEGEND_COLUMN__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame2.to_pure_query() == expected_pure
+
+        frame3 = frame.groupby(["group_col", "group_col_2"])["val_col"].shift([5, -3])
+        assert isinstance(frame3, PandasApiTdsFrame)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col, group_col_2], []), ~val_col_5__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).val_col})
+              ->extend(over(~[group_col, group_col_2], []), ~'val_col_-3__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r, 3).val_col})
+              ->project(~[
+                val_col_5:p|$p.val_col_5__INTERNAL_PYLEGEND_COLUMN__,
+                'val_col_-3':p|$p.'val_col_-3__INTERNAL_PYLEGEND_COLUMN__'
+              ])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame3.to_pure_query() == expected_pure
+
+    def test_series_assign(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("group_col"),
+            PrimitiveTdsColumn.string_column("group_col_2"),
+            PrimitiveTdsColumn.integer_column("val_col"),
+            PrimitiveTdsColumn.integer_column("random_col"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        frame["shifted_col1"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(10)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).val_col})
+              ->project(~[group_col:c|$c.group_col, group_col_2:c|$c.group_col_2, val_col:c|$c.val_col, random_col:c|$c.random_col, shifted_col1:c|$c.val_col__INTERNAL_PYLEGEND_COLUMN__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+        frame["col2"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(-3) + 5
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).val_col})
+              ->project(~[group_col:c|$c.group_col, group_col_2:c|$c.group_col_2, val_col:c|$c.val_col, random_col:c|$c.random_col, shifted_col1:c|$c.val_col__INTERNAL_PYLEGEND_COLUMN__])
+              ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r, 3).val_col})
+              ->project(~[group_col:c|$c.group_col, group_col_2:c|$c.group_col_2, val_col:c|$c.val_col, random_col:c|$c.random_col, shifted_col1:c|$c.shifted_col1, col2:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure

@@ -178,7 +178,7 @@ class AssignFunction(PandasApiAppliedFunction):
                         function_expr = c[1].to_pure_expression(config)
                         target_col_name = c[0] + temp_column_name_suffix
                         extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
-                        if isinstance(applied_func, ShiftFunction):
+                        if isinstance(applied_func, ShiftFunction) and not isinstance(expr, GroupbySeries):
                             extend = f"->extend(~{zero_column_name}:{{r | 0}})" + config.separator(1) + extend
                         extend_exprs.append(extend)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)

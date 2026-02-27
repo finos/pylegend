@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
+from copy import copy
 from textwrap import dedent
 import pandas as pd
 from pylegend._typing import (
@@ -21,7 +21,8 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendSequence,
     PyLegendTypeVar,
-    PyLegendUnion
+    PyLegendUnion,
+    PyLegendHashable,
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -58,6 +59,7 @@ from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleColumn, QualifiedNameReference, QualifiedName
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function,
@@ -196,10 +198,10 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         for expr in sub_expressions:
             if isinstance(expr, GroupbySeries):
                 applied_func = expr.raise_exception_if_no_function_applied().get_applied_function()
-                if isinstance(applied_func, RankFunction):
+                if isinstance(applied_func, (RankFunction, ShiftFunction)):
                     assert has_window_func is False
                     has_window_func = True
-                    c, window = applied_func.construct_column_expression_and_window_tuples()[0]
+                    c, window = applied_func.construct_column_expression_and_window_tuples("r")[0]
                     window_expr = window.to_pure_expression(config)
                     function_expr = c[1].to_pure_expression(config)
 
@@ -445,6 +447,32 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
         else:
             return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> PyLegendUnion["GroupbySeries", "PandasApiTdsFrame"]:
+        if self._expr is not None:  # pragma: no cover
+            error_msg = '''
+                Applying shift function to a computed series expression is not supported yet.
+                For example,
+                    not supported: (frame.groupby('grp')['col'] + 5).shift()
+                    supported: frame.groupby('grp')['col'].shift() + 5
+            '''
+            error_msg = dedent(error_msg).strip()
+            raise NotImplementedError(error_msg)
+
+        if isinstance(periods, int):
+            applied_function_frame = self._base_groupby_frame.shift(periods, freq, axis, fill_value, suffix)
+            assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+            new_series = self.__class__(self.get_base_frame(), applied_function_frame)
+            return new_series
+        else:
+            return self._base_groupby_frame.shift(periods, freq, axis, fill_value, suffix)
 
 
 @add_primitive_methods
