@@ -207,7 +207,9 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         extend = ""
         if has_window_func:
-            if isinstance(assert_and_find_core_series(self).get_filtered_frame().get_applied_function(), ShiftFunction):
+            core_series = assert_and_find_core_series(self)
+            assert isinstance(core_series, Series)
+            if isinstance(core_series.get_filtered_frame().get_applied_function(), ShiftFunction):
                 extend += f"->extend(~{zero_column_name}:{{r | 0}})" + config.separator(1)
             pure_expr = full_expr.to_pure_expression(config)
             temp_name = escape_column_name(col_name + temp_column_name_suffix)

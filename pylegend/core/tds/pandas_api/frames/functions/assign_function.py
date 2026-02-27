@@ -96,7 +96,7 @@ class AssignFunction(PandasApiAppliedFunction):
                 core_series = assert_and_find_core_series(res)
                 applied_func = (
                     core_series.get_filtered_frame().get_applied_function() if isinstance(core_series, Series) else
-                    core_series.applied_function_frame.get_applied_function()
+                    core_series.raise_exception_if_no_function_applied().get_applied_function()
                 )
                 expr_contains_shift_func |= isinstance(applied_func, ShiftFunction)
 
