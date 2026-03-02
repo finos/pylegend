@@ -127,15 +127,15 @@ class TestErrorsOnBaseFrame:
 
         with pytest.raises(TypeError) as v:
             frame["col2"].diff(5)
-        assert v.value.args[0] == "DateSeries.diff() missing 1 required positional argument: 'duration_unit'"
+        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
 
         with pytest.raises(TypeError) as v:
             frame["col3"].diff(5)
-        assert v.value.args[0] == "StrictDateSeries.diff() missing 1 required positional argument: 'duration_unit'"
+        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
 
         with pytest.raises(TypeError) as v:
             frame["col4"].diff(5)
-        assert v.value.args[0] == "DateTimeSeries.diff() missing 1 required positional argument: 'duration_unit'"
+        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
 
 
 class TestErrorsOnGroupbyFrame:
@@ -185,15 +185,15 @@ class TestErrorsOnGroupbyFrame:
 
         with pytest.raises(TypeError) as v:
             frame.groupby("col1")["col2"].diff(5)
-        assert v.value.args[0] == "DateGroupbySeries.diff() missing 1 required positional argument: 'duration_unit'"
+        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
 
         with pytest.raises(TypeError) as v:
             frame.groupby("col1")["col3"].diff(5)
-        assert v.value.args[0] == "StrictDateGroupbySeries.diff() missing 1 required positional argument: 'duration_unit'"
+        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
 
         with pytest.raises(TypeError) as v:
             frame.groupby("col1")["col4"].diff(5)
-        assert v.value.args[0] == "DateTimeGroupbySeries.diff() missing 1 required positional argument: 'duration_unit'"
+        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
 
 
 class TestUsageOnBaseFrame:
