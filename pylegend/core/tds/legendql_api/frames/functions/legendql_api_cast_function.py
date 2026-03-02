@@ -39,7 +39,7 @@ class LegendQLApiCastFunction(LegendQLApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "cast"
+        return "cast"  # pragma: no cover
 
     def __init__(
             self,
