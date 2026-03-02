@@ -13,10 +13,8 @@
 # limitations under the License.
 
 import copy
-import importlib
 from datetime import date, datetime
 from textwrap import dedent
-from typing import overload
 
 import pandas as pd
 from pylegend._typing import (
@@ -75,7 +73,6 @@ from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasD
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-    from pylegend.core.language.pandas_api.pandas_api_series import Series
 
 __all__: PyLegendSequence[str] = [
     "GroupbySeries",
@@ -446,7 +443,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         else:
             return self._base_groupby_frame.shift(periods, freq, axis, fill_value, suffix)
 
-    def diff(self, periods: int) -> "Series":
+    def diff(self, periods: int) -> "GroupbySeries":
         true_base_frame = copy.copy(self.get_base_frame().base_frame())
         current_col_name = self.columns()[0].get_name()
 
@@ -455,25 +452,9 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         groupby_frame_copy = true_base_frame.groupby(grouping_cols)[selected_col]
 
         new_series = true_base_frame[current_col_name] - groupby_frame_copy.shift(periods)  # type: ignore[operator]
-
-        groupby_series_to_series_map = {
-            "BooleanGroupbySeries": "BooleanSeries",
-            "StringGroupbySeries": "StringSeries",
-            "NumberGroupbySeries": "NumberSeries",
-            "IntegerGroupbySeries": "IntegerSeries",
-            "FloatGroupbySeries": "FloatSeries",
-            "DateGroupbySeries": "DateSeries",
-            "DateTimeGroupbySeries": "DateTimeSeries",
-            "StrictDateGroupbySeries": "StrictDateSeries",
-        }
-        target_class_str = groupby_series_to_series_map[self.__class__.__name__]
-        target_module_path = "pylegend.core.language.pandas_api.pandas_api_series"
-        module = importlib.import_module(target_module_path)
-        TargetSeriesClass = getattr(module, target_class_str)
-
         expr = new_series.expr
 
-        return TargetSeriesClass(self.get_base_frame().base_frame(), current_col_name, expr)  # type: ignore[no-any-return]
+        return self.__class__(self.get_base_frame(), None, expr)
 
 
 @add_primitive_methods
@@ -547,23 +528,16 @@ class DateGroupbySeries(GroupbySeries, PyLegendDate, PyLegendExpressionDateRetur
         super().__init__(base_groupby_frame, applied_function_frame, expr)
         PyLegendDate.__init__(self, self)
 
-    @overload
-    def diff(self, periods: int) -> "Series": ...
+    def diff(  # type: ignore[override]
+        self,
+        other: PyLegendUnion["date", "datetime", "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
+        duration_unit: str
+    ) -> "IntegerGroupbySeries":
+        result_primitive = PyLegendDate.diff(self, other, duration_unit)
+        return self._convert_primitive_to_series(result_primitive)
 
-    @overload
-    def diff(
-            self,
-            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
-            duration_unit: str
-    ) -> "PyLegendInteger": ...
-
-    def diff(
-            self, *args: PyLegendPrimitiveOrPythonPrimitive, **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> PyLegendUnion["Series", "PyLegendInteger"]:
-        if "periods" in kwargs or len(args) == 1:
-            return GroupbySeries.diff(self, *args, **kwargs)  # type: ignore[arg-type]
-
-        return PyLegendDate.diff(self, *args, **kwargs)  # type: ignore[arg-type]
+    def _convert_primitive_to_series(self, result_primitive: "PyLegendInteger") -> "IntegerGroupbySeries":
+        return IntegerGroupbySeries(self.get_base_frame(), None, result_primitive.value())
 
 
 @add_primitive_methods
@@ -577,6 +551,14 @@ class DateTimeGroupbySeries(DateGroupbySeries, PyLegendDateTime, PyLegendExpress
         super().__init__(base_groupby_frame, applied_function_frame, expr)
         PyLegendDateTime.__init__(self, self)
 
+    def diff(  # type: ignore[override]
+        self,
+        other: PyLegendUnion["date", "datetime", "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
+        duration_unit: str
+    ) -> "IntegerGroupbySeries":
+        result_primitive = PyLegendDateTime.diff(self, other, duration_unit)
+        return self._convert_primitive_to_series(result_primitive)
+
 
 @add_primitive_methods
 class StrictDateGroupbySeries(DateGroupbySeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):
@@ -588,3 +570,11 @@ class StrictDateGroupbySeries(DateGroupbySeries, PyLegendStrictDate, PyLegendExp
     ) -> None:
         super().__init__(base_groupby_frame, applied_function_frame, expr)
         PyLegendStrictDate.__init__(self, self)
+
+    def diff(  # type: ignore[override]
+        self,
+        other: PyLegendUnion["date", "datetime", "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
+        duration_unit: str
+    ) -> "IntegerGroupbySeries":
+        result_primitive = PyLegendDateTime.diff(self, other, duration_unit)
+        return self._convert_primitive_to_series(result_primitive)

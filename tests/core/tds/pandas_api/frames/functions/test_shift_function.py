@@ -112,10 +112,30 @@ class TestErrorsOnBaseFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         with pytest.raises(NotImplementedError) as v:
-            frame["new_col"] = frame["col1"].shift().to_sql_query()
+            frame["new_col"] = frame["col1"].shift() + 1  # type: ignore[operator]
+            frame.to_sql_query()
 
         expected_msg = "SQL query execution is not supported for the shift function"
         assert v.value.args[0] == expected_msg
+
+    def test_diff_overload(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"),
+                   PrimitiveTdsColumn.date_column("col2"),
+                   PrimitiveTdsColumn.strictdate_column("col3"),
+                   PrimitiveTdsColumn.datetime_column("col4")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(TypeError) as v:
+            frame["col2"].diff(5)
+        assert v.value.args[0] == "DateSeries.diff() missing 1 required positional argument: 'duration_unit'"
+
+        with pytest.raises(TypeError) as v:
+            frame["col3"].diff(5)
+        assert v.value.args[0] == "StrictDateSeries.diff() missing 1 required positional argument: 'duration_unit'"
+
+        with pytest.raises(TypeError) as v:
+            frame["col4"].diff(5)
+        assert v.value.args[0] == "DateTimeSeries.diff() missing 1 required positional argument: 'duration_unit'"
 
 
 class TestErrorsOnGroupbyFrame:
@@ -155,6 +175,25 @@ class TestErrorsOnGroupbyFrame:
         expected_msg = (
             "The 'fill_value' argument of the shift function is not supported, but got: fill_value='default_fill'")
         assert v.value.args[0] == expected_msg
+
+    def test_groupby_diff_overload(self) -> None:
+        columns = [PrimitiveTdsColumn.string_column("col1"),
+                   PrimitiveTdsColumn.date_column("col2"),
+                   PrimitiveTdsColumn.strictdate_column("col3"),
+                   PrimitiveTdsColumn.datetime_column("col4")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        with pytest.raises(TypeError) as v:
+            frame.groupby("col1")["col2"].diff(5)
+        assert v.value.args[0] == "DateGroupbySeries.diff() missing 1 required positional argument: 'duration_unit'"
+
+        with pytest.raises(TypeError) as v:
+            frame.groupby("col1")["col3"].diff(5)
+        assert v.value.args[0] == "StrictDateGroupbySeries.diff() missing 1 required positional argument: 'duration_unit'"
+
+        with pytest.raises(TypeError) as v:
+            frame.groupby("col1")["col4"].diff(5)
+        assert v.value.args[0] == "DateTimeGroupbySeries.diff() missing 1 required positional argument: 'duration_unit'"
 
 
 class TestUsageOnBaseFrame:
