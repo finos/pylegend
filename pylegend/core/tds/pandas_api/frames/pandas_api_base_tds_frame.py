@@ -929,9 +929,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         result = copy.copy(self)
         for col in self.columns():
             col_name = col.get_name()
-            shifted = result[col_name].shift(periods, freq=freq)
-            result[col_name] = (result[col_name] - shifted)  # type: ignore[operator]
-            result[col_name] /= shifted  # type: ignore[operator]
+            result[col_name] = (result[col_name] / result[col_name].shift(periods, freq=freq)) - 1  # type: ignore[operator]
         return result
 
     @abstractmethod

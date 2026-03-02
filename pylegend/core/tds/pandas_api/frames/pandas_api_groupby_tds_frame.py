@@ -466,7 +466,6 @@ class PandasApiGroupbyTdsFrame:
         base_frame = copy.copy(self.base_frame())
         for col in selected_columns:
             col_name = col.get_name()
-            shifted = self[col_name].shift(periods, freq=freq)
-            base_frame[col_name] = (base_frame[col_name] - shifted)  # type: ignore[operator]
-            base_frame[col_name] /= shifted  # type: ignore[operator]
+            base_frame[col_name] = \
+                (base_frame[col_name] / self[col_name].shift(periods, freq=freq)) - 1  # type: ignore[operator]
         return base_frame

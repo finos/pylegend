@@ -383,6 +383,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     def pct_change(
             self,
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
-            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

@@ -15,7 +15,6 @@
 import copy
 from datetime import date, datetime
 from textwrap import dedent
-
 import pandas as pd
 from pylegend._typing import (
     TYPE_CHECKING,
