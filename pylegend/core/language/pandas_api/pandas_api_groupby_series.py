@@ -459,8 +459,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def pct_change(
             self,
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
-            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
     ) -> "GroupbySeries":
         true_base_frame = copy.copy(self.get_base_frame().base_frame())
         current_col_name = self.columns()[0].get_name()
@@ -469,10 +468,12 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         selected_col = self.get_base_frame().get_selected_columns()[0].get_name()  # type: ignore[index]
         groupby_frame_copy = true_base_frame.groupby(grouping_cols)[selected_col]
 
-        new_series = (true_base_frame[current_col_name] / groupby_frame_copy.shift(periods, freq, **kwargs)) - 1  # type: ignore[operator]
+        new_series = \
+            (true_base_frame[current_col_name] / groupby_frame_copy.shift(periods, freq)) - 1  # type: ignore[operator]
         expr = new_series.expr
 
         return self.__class__(self.get_base_frame(), None, expr)
+
 
 @add_primitive_methods
 class BooleanGroupbySeries(GroupbySeries, PyLegendBoolean, PyLegendExpressionBooleanReturn):

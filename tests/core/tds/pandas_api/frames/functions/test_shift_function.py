@@ -806,7 +806,7 @@ class TestUsageOnGroupbyFrame:
         assert series_pct_change.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(series_pct_change, FrameToPureConfig(), self.legend_client) == expected_pure
 
-        frame["col1_pct_change"] = frame.groupby("col1")["col3"].pct_change(3)  # type: ignore[assignment]
+        frame["col1_pct_change"] = frame.groupby("col1")["col3"].pct_change(3)
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[col1], []), ~col3__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 3).col3})

@@ -489,8 +489,13 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "Series":
+        if kwargs:
+            raise NotImplementedError(
+                f"Extra keyword arguments are not supported in pct_change. " f"Received: {list(kwargs.keys())}"
+            )
+
         new_series = copy.copy(self)
-        return (new_series / new_series.shift(periods, freq, **kwargs)) - 1
+        return (new_series / new_series.shift(periods, freq)) - 1  # type: ignore[operator, no-any-return]
 
 
 @add_primitive_methods

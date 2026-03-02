@@ -921,10 +921,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        if kwargs:
+            raise NotImplementedError(
+                f"Extra keyword arguments are not supported in pct_change. " f"Received: {list(kwargs.keys())}"
+            )
+
         result = copy.copy(self)
         for col in self.columns():
             col_name = col.get_name()
-            shifted = result[col_name].shift(periods, freq=freq, **kwargs)
+            shifted = result[col_name].shift(periods, freq=freq)
             result[col_name] = (result[col_name] - shifted)  # type: ignore[operator]
             result[col_name] /= shifted  # type: ignore[operator]
         return result
