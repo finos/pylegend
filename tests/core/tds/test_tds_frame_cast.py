@@ -565,13 +565,14 @@ class TestTdsFrameCastE2E:
         frame = frame.cast({"Age": PrimitiveType.Decimal})
         frame['Age'] = frame['Age'] + 1
         frame = frame.groupby("Firm/Legal Name")["Age"].aggregate("sum")
+        frame['Age'] = frame['Age'] + 1
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
             "rows": [
-                {"values": ["Firm A", 35]},
-                {"values": ["Firm B", 33]},
-                {"values": ["Firm C", 36]},
-                {"values": ["Firm X", 83]},
+                {"values": ["Firm A", 37]},
+                {"values": ["Firm B", 35]},
+                {"values": ["Firm C", 38]},
+                {"values": ["Firm X", 85]},
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
