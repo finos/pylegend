@@ -33,6 +33,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendExpressionNumberReturn",
     "PyLegendExpressionIntegerReturn",
     "PyLegendExpressionFloatReturn",
+    "PyLegendExpressionDecimalReturn",
     "PyLegendExpressionDateReturn",
     "PyLegendExpressionDateTimeReturn",
     "PyLegendExpressionStrictDateReturn",
@@ -84,6 +85,10 @@ class PyLegendExpressionIntegerReturn(PyLegendExpressionNumberReturn, metaclass=
 class PyLegendExpressionFloatReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
     def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]
+
+
+class PyLegendExpressionDecimalReturn(PyLegendExpressionNumberReturn, metaclass=ABCMeta):
+    pass
 
 
 class PyLegendExpressionDateReturn(PyLegendExpression, metaclass=ABCMeta):

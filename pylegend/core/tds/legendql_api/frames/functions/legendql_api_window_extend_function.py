@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import date, datetime
+from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
@@ -196,7 +197,7 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
 
         for c in self.__new_column_expressions:
             if len(c) == 2:
-                if isinstance(c[1], (bool, int, float, str, date, datetime)):
+                if isinstance(c[1], (bool, int, float, str, date, datetime, PythonDecimal)):
                     col_sql_expr = convert_literal_to_literal_expression(c[1]).to_sql_expression(
                         {"r": new_query},
                         config
