@@ -31,7 +31,6 @@ from pylegend._typing import (
 from pylegend.core.language.shared.expression import PyLegendExpression
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
     from pylegend.core.language.pandas_api.pandas_api_series import Series

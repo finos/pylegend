@@ -29,7 +29,7 @@ from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringF
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.pandas_api.pandas_api_series import (
     SupportsToPureExpression,
-    SupportsToSqlExpression,
+    SupportsToSqlExpression
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
@@ -60,7 +60,8 @@ from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleCo
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
-    add_primitive_methods, has_window_function, get_pure_query_from_expr,
+    add_primitive_methods, has_window_function,
+    get_pure_query_from_expr,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
