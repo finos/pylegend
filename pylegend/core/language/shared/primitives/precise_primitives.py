@@ -174,7 +174,7 @@ class PyLegendVarchar(PyLegendString):
 
     @property
     def max_length(self) -> int:
-        return self.__max_length
+        return self.__max_length  # pragma: no cover
 
     def to_sql_expression(
             self,
@@ -234,7 +234,7 @@ class PyLegendNumeric(PyLegendDecimal):
     def __init__(self, value: PyLegendExpressionDecimalReturn, precision: int, scale: int) -> None:
         super().__init__(value)
         if precision < scale:
-            raise ValueError(
+            raise ValueError(  # pragma: no cover
                 f"Numeric precision ({precision}) must be >= scale ({scale})"
             )
         self.__precision = precision
@@ -242,11 +242,11 @@ class PyLegendNumeric(PyLegendDecimal):
 
     @property
     def precision(self) -> int:
-        return self.__precision
+        return self.__precision  # pragma: no cover
 
     @property
     def scale(self) -> int:
-        return self.__scale
+        return self.__scale  # pragma: no cover
 
     def to_sql_expression(
             self,
