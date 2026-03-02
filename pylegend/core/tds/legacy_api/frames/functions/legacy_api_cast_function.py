@@ -39,7 +39,7 @@ class LegacyApiCastFunction(LegacyApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "cast"
+        return "cast"  # pragma: no cover
 
     def __init__(
             self,
