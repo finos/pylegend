@@ -447,5 +447,5 @@ class PandasApiGroupbyTdsFrame:
         base_frame = copy.copy(self.base_frame())
         for col in selected_columns:
             col_name = col.get_name()
-            base_frame[col_name] = base_frame[col_name] - self[col_name].shift(periods, axis=axis)
+            base_frame[col_name] = base_frame[col_name] - self[col_name].shift(periods, axis=axis)  # type: ignore[operator]
         return base_frame

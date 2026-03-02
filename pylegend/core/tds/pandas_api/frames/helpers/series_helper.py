@@ -42,6 +42,8 @@ __all__: PyLegendSequence[str] = [
     "add_primitive_methods",
     "assert_and_find_core_series",
     "has_window_function",
+    "get_pure_query_from_expr",
+    "get_applied_func",
 ]
 
 T = TypeVar("T")

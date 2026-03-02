@@ -14,7 +14,10 @@
 
 import copy
 import importlib
+from datetime import date, datetime
 from textwrap import dedent
+from typing import overload
+
 import pandas as pd
 from pylegend._typing import (
     TYPE_CHECKING,
@@ -44,7 +47,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpression,
 )
-from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -59,8 +61,6 @@ from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDa
 from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleColumn, QualifiedNameReference, QualifiedName
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function, get_pure_query_from_expr,
@@ -451,10 +451,10 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         current_col_name = self.columns()[0].get_name()
 
         grouping_cols = [col.get_name() for col in self.get_base_frame().get_grouping_columns()]
-        selected_col = self.get_base_frame().get_selected_columns()[0].get_name()
+        selected_col = self.get_base_frame().get_selected_columns()[0].get_name()  # type: ignore[index]
         groupby_frame_copy = true_base_frame.groupby(grouping_cols)[selected_col]
 
-        new_series = true_base_frame[current_col_name] - groupby_frame_copy.shift(periods)
+        new_series = true_base_frame[current_col_name] - groupby_frame_copy.shift(periods)  # type: ignore[operator]
 
         groupby_series_to_series_map = {
             "BooleanGroupbySeries": "BooleanSeries",
@@ -473,8 +473,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         expr = new_series.expr
 
-        return TargetSeriesClass(self.get_base_frame().base_frame(), current_col_name, expr)
-
+        return TargetSeriesClass(self.get_base_frame().base_frame(), current_col_name, expr)  # type: ignore[no-any-return]
 
 
 @add_primitive_methods
@@ -547,6 +546,24 @@ class DateGroupbySeries(GroupbySeries, PyLegendDate, PyLegendExpressionDateRetur
     ) -> None:
         super().__init__(base_groupby_frame, applied_function_frame, expr)
         PyLegendDate.__init__(self, self)
+
+    @overload
+    def diff(self, periods: int) -> "Series": ...
+
+    @overload
+    def diff(
+            self,
+            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
+            duration_unit: str
+    ) -> "PyLegendInteger": ...
+
+    def diff(
+            self, *args: PyLegendPrimitiveOrPythonPrimitive, **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> PyLegendUnion["Series", "PyLegendInteger"]:
+        if "periods" in kwargs or len(args) == 1:
+            return GroupbySeries.diff(self, *args, **kwargs)  # type: ignore[arg-type]
+
+        return PyLegendDate.diff(self, *args, **kwargs)  # type: ignore[arg-type]
 
 
 @add_primitive_methods

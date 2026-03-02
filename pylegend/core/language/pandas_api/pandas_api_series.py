@@ -42,7 +42,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStrictDateReturn,
     PyLegendExpression,
 )
-from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -58,8 +57,6 @@ from pylegend.core.sql.metamodel import (
 from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
-from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
-from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_core_series, \
     has_window_function, get_pure_query_from_expr
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
@@ -483,7 +480,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def diff(self, periods: int) -> "Series":
         new_series = copy.copy(self)
-        return new_series - new_series.shift(periods)
+        return new_series - new_series.shift(periods)  # type: ignore[operator, no-any-return]
 
 
 @add_primitive_methods
