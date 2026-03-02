@@ -378,6 +378,10 @@ class TestUsageOnBaseFrame:
 
         series_diff = frame["col1"].diff(1)
         expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col1})
+              ->project(~[col1:c|(toOne($c.col1) - toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__))])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert series_diff.to_pure_query() == expected_pure
@@ -385,6 +389,10 @@ class TestUsageOnBaseFrame:
 
         frame["col1_diff"] = frame["col1"].diff(1)
         expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col1})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_diff:c|(toOne($c.col1) - toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__))])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure

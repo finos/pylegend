@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import copy
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
@@ -515,6 +515,10 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             return new_series
         else:
             return self._filtered_frame.shift(periods, freq, axis, fill_value, suffix)
+
+    def diff(self, periods: int) -> "Series":
+        new_series = copy.copy(self)
+        return new_series - new_series.shift(periods)
 
 
 @add_primitive_methods
