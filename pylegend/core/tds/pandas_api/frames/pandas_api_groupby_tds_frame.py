@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import copy
 from typing import overload
 
 from pylegend._typing import (
@@ -428,3 +429,23 @@ class PandasApiGroupbyTdsFrame:
             fill_value=fill_value,
             suffix=suffix
         ))
+
+    def diff(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        real_selected_columns = self.get_selected_columns()
+        if real_selected_columns is not None:
+            selected_columns = real_selected_columns
+        else:
+            grouping_columns = {col.get_name() for col in self.get_grouping_columns()}
+            selected_columns = [
+                col for col in self.base_frame().columns() if col.get_name() not in grouping_columns
+            ]
+
+        base_frame = copy.copy(self.base_frame())
+        for col in selected_columns:
+            col_name = col.get_name()
+            base_frame[col_name] = base_frame[col_name] - self[col_name].shift(periods, axis=axis)
+        return base_frame

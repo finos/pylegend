@@ -901,6 +901,18 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             suffix=suffix
         ))
 
+    def diff(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        result = copy.copy(self)
+        for col in self.columns():
+            col_name = col.get_name()
+            result[col_name] = result[col_name] - result[col_name].shift(periods, axis=axis)
+        return result
+
+
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
         pass  # pragma: no cover
