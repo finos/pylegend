@@ -367,6 +367,22 @@ class TestTdsFrameCastQueryGeneration:
 
         assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
 
+    def test_cast_then_assign_pure_generation(self) -> None:
+        varchar_cols = [
+            PrimitiveTdsColumn.integer_column("Age"),
+            PrimitiveTdsColumn.string_column("Name")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], varchar_cols)
+        frame = frame.cast({"Name": (PrimitiveType.Varchar, 200)})
+        frame["Name"] = frame["Name"].len()
+
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->cast(@meta::pure::metamodel::relation::Relation<(Age:Integer, Name:Varchar(200))>)\n"
+            "  ->project(~[Age:c|$c.Age, Name:c|toOne($c.Name)->length()])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
     @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation_precise_integer_types(
             self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
@@ -527,6 +543,7 @@ class TestTdsFrameCastE2E:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.cast({"First Name": (PrimitiveType.Varchar, 200)})
         frame["First Name"] = frame["First Name"].len()
+
         expected = {
             "columns": self._COLUMNS,
             "rows": [
@@ -546,14 +563,15 @@ class TestTdsFrameCastE2E:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.cast({"Age": PrimitiveType.Number})
         frame = frame.cast({"Age": PrimitiveType.Decimal})
+        frame['Age'] = frame['Age'] + 1
         frame = frame.groupby("Firm/Legal Name")["Age"].aggregate("sum")
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
             "rows": [
-                {"values": ["Firm A", 34]},
-                {"values": ["Firm B", 32]},
-                {"values": ["Firm C", 35]},
-                {"values": ["Firm X", 79]},
+                {"values": ["Firm A", 35]},
+                {"values": ["Firm B", 33]},
+                {"values": ["Firm C", 36]},
+                {"values": ["Firm X", 83]},
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
