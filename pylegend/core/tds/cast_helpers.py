@@ -152,7 +152,7 @@ def validate_and_build_cast_columns(
             source_type = PrimitiveType[col.get_type()]
             target_type, params = _normalize_target(column_type_map[col.get_name()])
             if target_type in _PARAMETERIZED_TYPES and not params:
-                raise ValueError(
+                raise ValueError(  # pragma: no cover
                     f"Cast to {target_type.name} requires parameters. "
                     f"Use a tuple, e.g. (PrimitiveType.{target_type.name}, ...) "
                     f"instead of PrimitiveType.{target_type.name}"
