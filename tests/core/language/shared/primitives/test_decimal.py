@@ -209,10 +209,10 @@ class TestPyLegendDecimal:
 
     @typing.no_type_check
     def test_decimal_python_decimal_equals_expr(self) -> None:
-        assert self.__generate_sql_string_no_decimal_assert(lambda x: x["col2"] == PythonDecimal("1.5")) == \
-               '("root".col2 = CAST(\'1.5\' AS DECIMAL))'
-        assert self.__generate_pure_string(lambda x: x["col2"] == PythonDecimal("1.5")) == \
-               '($t.col2 == 1.5D)'
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: x["col2"] == PythonDecimal("-1.5")) == \
+               '("root".col2 = CAST(\'-1.5\' AS DECIMAL))'
+        assert self.__generate_pure_string(lambda x: x["col2"] == PythonDecimal("-1.5")) == \
+               '($t.col2 == minus(1.5D))'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)
@@ -242,3 +242,44 @@ class TestPyLegendDecimal:
         """
         self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", expr))
         return expr
+
+
+class TestPyLegendDecimalUnit:
+    frame_to_sql_config = FrameToSqlConfig()
+    db_extension = SqlToStringDbExtension()
+    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
+    test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+        PrimitiveTdsColumn.decimal_column("col1"),
+        PrimitiveTdsColumn.decimal_column("col2")
+    ])
+    tds_row = TestTdsRow.from_tds_frame("t", test_frame)
+    base_query = test_frame.to_sql_query_object(frame_to_sql_config)
+
+    def test_decimal_validate_param_to_be_decimal(self) -> None:
+        """Covers PyLegendDecimal.__validate__param_to_be_decimal (decimal.py line 172)"""
+        PyLegendDecimal._PyLegendDecimal__validate__param_to_be_decimal(10, "test param")  # type: ignore
+        PyLegendDecimal._PyLegendDecimal__validate__param_to_be_decimal(1.5, "test param")  # type: ignore
+        PyLegendDecimal._PyLegendDecimal__validate__param_to_be_decimal(PythonDecimal("3.14"), "test param")  # type: ignore
+
+    def test_number_convert_python_decimal_branch(self) -> None:
+        num_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+            PrimitiveTdsColumn.number_column("n"),
+        ])
+        num_row = TestTdsRow.from_tds_frame("t", num_frame)
+        base_query = num_frame.to_sql_query_object(self.frame_to_sql_config)
+        result = self.db_extension.process_expression(
+            (num_row.get_number("n") + PythonDecimal("1.5")).to_sql_expression(  # type: ignore
+                {"t": base_query}, self.frame_to_sql_config
+            ),
+            config=self.sql_to_string_config
+        )
+        assert result == '("root".n + CAST(\'1.5\' AS DECIMAL))'
+
+    def test_decimal_collection_count(self) -> None:
+        """Verifies PyLegendDecimalCollection supports count (inherited)"""
+        from pylegend.core.language.shared.primitive_collection import create_primitive_collection
+        from pylegend.core.language import PyLegendInteger
+        dec = self.tds_row.get_decimal("col1")
+        collection = create_primitive_collection(dec)
+        result = collection.count()
+        assert isinstance(result, PyLegendInteger)
