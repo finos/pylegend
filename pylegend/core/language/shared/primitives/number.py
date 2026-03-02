@@ -19,6 +19,7 @@ from pylegend._typing import (
     PyLegendOptional,
     TYPE_CHECKING,
 )
+from decimal import Decimal as PythonDecimal
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.expression import (
@@ -367,22 +368,27 @@ class PyLegendNumber(PyLegendPrimitive):
 
     @staticmethod
     def __convert_to_number_expr(
-            val: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
+            val: PyLegendUnion[int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"]
     ) -> PyLegendExpressionNumberReturn:
         if isinstance(val, int):
             return PyLegendIntegerLiteralExpression(val)
+        if isinstance(val, PythonDecimal):
+            from pylegend.core.language.shared.literal_expressions import PyLegendDecimalLiteralExpression
+            return PyLegendDecimalLiteralExpression(val)
         if isinstance(val, float):
             return PyLegendFloatLiteralExpression(val)
         return val.__value
 
     @staticmethod
     def validate_param_to_be_number(
-            param: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"],
+            param: PyLegendUnion[int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"],
             desc: str
     ) -> None:
         from pylegend.core.language.shared.primitives.integer import PyLegendInteger
         from pylegend.core.language.shared.primitives.float import PyLegendFloat
-        if not isinstance(param, (int, float, PyLegendInteger, PyLegendFloat, PyLegendNumber)):
-            raise TypeError(desc + " should be a int/float or a int/float/number expression"
-                                   " (PyLegendInteger/PyLegendFloat/PyLegendNumber)."
+        from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
+        if not isinstance(param, (int, float, PythonDecimal, PyLegendInteger, PyLegendFloat, PyLegendDecimal,
+                                  PyLegendNumber)):
+            raise TypeError(desc + " should be a int/float/decimal.Decimal or a int/float/decimal/number expression"
+                                   " (PyLegendInteger/PyLegendFloat/PyLegendDecimal/PyLegendNumber)."
                                    " Got value " + str(param) + " of type: " + str(type(param)))

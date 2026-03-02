@@ -202,22 +202,26 @@ class PandasApiGroupbyTdsFrame:
             if col_type == "Boolean":  # pragma: no cover (Boolean column not supported in PURE)
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import BooleanGroupbySeries
                 return BooleanGroupbySeries(new_frame)
-            elif col_type == "String":
+            elif col_type in ("String", "Varchar"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import StringGroupbySeries
                 return StringGroupbySeries(new_frame)
             elif col_type == "Number":
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import NumberGroupbySeries
                 return NumberGroupbySeries(new_frame)
-            elif col_type == "Integer":
+            elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+                              "Int", "UInt", "BigInt", "UBigInt"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import IntegerGroupbySeries
                 return IntegerGroupbySeries(new_frame)
-            elif col_type == "Float":
+            elif col_type in ("Float", "Float4", "Double"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries
                 return FloatGroupbySeries(new_frame)
+            elif col_type in ("Decimal", "Numeric"):
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DecimalGroupbySeries
+                return DecimalGroupbySeries(new_frame)
             elif col_type == "Date":
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateGroupbySeries
                 return DateGroupbySeries(new_frame)
-            elif col_type == "DateTime":
+            elif col_type in ("DateTime", "Timestamp"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateTimeGroupbySeries
                 return DateTimeGroupbySeries(new_frame)
             elif col_type == "StrictDate":

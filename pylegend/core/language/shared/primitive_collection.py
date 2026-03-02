@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+from decimal import Decimal as PythonDecimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
@@ -28,6 +29,7 @@ from pylegend.core.language import (
     PyLegendDate,
     PyLegendDateTime,
     PyLegendStrictDate,
+    PyLegendDecimal,
     convert_literal_to_literal_expression,
 )
 from pylegend.core.language.shared.operations.collection_operation_expressions import (
@@ -62,6 +64,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendIntegerCollection",
     "PyLegendFloatCollection",
     "PyLegendNumberCollection",
+    "PyLegendDecimalCollection",
     "PyLegendStringCollection",
     "PyLegendBooleanCollection",
     "PyLegendDateCollection",
@@ -78,14 +81,14 @@ class PyLegendPrimitiveCollection(metaclass=ABCMeta):
         self.__nested = nested
 
     def count(self) -> "PyLegendInteger":
-        if isinstance(self.__nested, (bool, int, float, str, date, datetime)):
+        if isinstance(self.__nested, (bool, int, float, str, date, datetime, PythonDecimal)):
             nested_expr = convert_literal_to_literal_expression(self.__nested)
         else:
             nested_expr = self.__nested.value()
         return PyLegendInteger(PyLegendCountExpression(nested_expr))
 
     def distinct_count(self) -> "PyLegendInteger":
-        if isinstance(self.__nested, (bool, int, float, str, date, datetime)):
+        if isinstance(self.__nested, (bool, int, float, str, date, datetime, PythonDecimal)):
             nested_expr = convert_literal_to_literal_expression(self.__nested)
         else:
             nested_expr = self.__nested.value()
@@ -220,6 +223,14 @@ class PyLegendFloatCollection(PyLegendNumberCollection):
         return PyLegendFloat(PyLegendFloatSumExpression(nested_expr))  # type: ignore
 
 
+class PyLegendDecimalCollection(PyLegendNumberCollection):
+    __nested: PyLegendDecimal
+
+    def __init__(self, nested: PyLegendDecimal) -> None:
+        super().__init__(nested)
+        self.__nested = nested
+
+
 class PyLegendStringCollection(PyLegendPrimitiveCollection):
     __nested: PyLegendUnion[str, PyLegendString]
 
@@ -316,6 +327,9 @@ def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> P
 
     if isinstance(nested, (float, PyLegendFloat)):
         return PyLegendFloatCollection(nested)
+
+    if isinstance(nested, PyLegendDecimal):
+        return PyLegendDecimalCollection(nested)
 
     if isinstance(nested, PyLegendNumber):
         return PyLegendNumberCollection(nested)
