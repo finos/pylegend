@@ -158,9 +158,9 @@ class TestErrorsOnGroupbyFrame:
 
 
 class TestUsageOnBaseFrame:
-    # @pytest.fixture(autouse=True)
-    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_no_arguments(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -374,7 +374,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert base_frame_diff.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(base_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert generate_pure_query_and_compile(base_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
 
         series_diff = frame["col1"].diff(1)
         expected_pure = '''
@@ -385,7 +385,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert series_diff.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(series_diff, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert generate_pure_query_and_compile(series_diff, FrameToPureConfig(), self.legend_client) == expected_pure
 
         frame["col1_diff"] = frame["col1"].diff(1)
         expected_pure = '''
@@ -396,6 +396,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
 
 
@@ -581,6 +582,7 @@ class TestUsageOnGroupbyFrame:
         assert isinstance(frame1, GroupbySeries)
         expected_pure = '''
             #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
               ->extend(over(~[group_col], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).val_col})
               ->project(~[val_col:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
         '''  # noqa: E501
@@ -663,5 +665,26 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert groupby_frame_diff.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
+
+        groupby_series = frame.groupby("col1")["col2"].diff(5)  # type: ignore[assignment]
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
+              ->project(~[col2:c|(toOne($c.col2) - toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__))])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert groupby_series.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(groupby_series, FrameToPureConfig(), self.legend_client) == expected_pure
+
+        frame["col2"] = frame.groupby("col1")["col2"].diff(5)  # type: ignore[assignment]
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
+              ->project(~[col1:c|$c.col1, col2:c|(toOne($c.col2) - toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)), col3:c|$c.col3])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 

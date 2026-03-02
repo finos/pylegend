@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -69,6 +70,7 @@ from pylegend.extensions.tds.result_handler import (
 
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
     from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
@@ -173,6 +175,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         from pylegend.core.language.pandas_api.pandas_api_series import Series
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
         # Type Check
         if not isinstance(key, str):
@@ -181,6 +184,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         # Reject cross-frame assignment
         if isinstance(value, Series):
             origin = value.get_base_frame()
+        # if isinstance(value, (Series, GroupbySeries)):
+        #     origin = value.get_base_frame() if isinstance(value, Series) else value.get_base_frame().base_frame()
             if origin is not None and origin is not self:
                 raise ValueError("Assignment from a different frame is not allowed")
 
