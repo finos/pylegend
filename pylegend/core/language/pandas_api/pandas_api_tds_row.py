@@ -14,6 +14,7 @@
 
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendDict,
 )
 from pylegend.core.language import (
     PyLegendBoolean,
@@ -27,6 +28,7 @@ from pylegend.core.language import (
 )
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiBoolean,
+    PandasApiPartialFrame,
     PandasApiString,
     PandasApiInteger,
     PandasApiFloat,
@@ -37,10 +39,13 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiPrimitive,
 )
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame
+from pylegend.core.sql.metamodel import Expression, FunctionCall, IntegerLiteral, QualifiedName, QuerySpecification
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyLegendTdsFrame
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsRow",
+    "PandasApiLagRow",
+    "PandasApiLeadRow",
 ]
 
 
@@ -72,3 +77,87 @@ class PandasApiTdsRow(AbstractTdsRow):
             return PandasApiDate(res)
 
         raise RuntimeError(f"Unhandled primitive type {type(res)} in Pandas Api")  # pragma: no cover
+
+
+class PandasApiLeadRow(PandasApiTdsRow):
+    __partial_frame: PandasApiPartialFrame
+    __row: "PandasApiTdsRow"
+    __num_rows_to_lead_by: int
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            row: "PandasApiTdsRow",
+            num_rows_to_lead_by: int = 1
+    ) -> None:
+        super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
+        self.__partial_frame = partial_frame
+        self.__row = row
+        self.__num_rows_to_lead_by = num_rows_to_lead_by
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (
+            f"{self.__partial_frame.to_pure_expression(config)}"
+            f"->lead({self.__row.to_pure_expression(config)}, {self.__num_rows_to_lead_by})"
+        )
+
+    def column_sql_expression(
+            self,
+            column: str,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:  # pragma: no cover (SQL query execution is not supported for the shift function)
+        arguments: list[Expression] = [
+            super().column_sql_expression(column, frame_name_to_base_query_map, config),
+            IntegerLiteral(self.__num_rows_to_lead_by)
+        ]
+
+        return FunctionCall(
+            name=QualifiedName(parts=["lead"]),
+            distinct=False,
+            arguments=arguments,
+            filter_=None,
+            window=None
+        )
+
+
+class PandasApiLagRow(PandasApiTdsRow):
+    __partial_frame: PandasApiPartialFrame
+    __row: "PandasApiTdsRow"
+    __num_rows_to_lag_by: int
+
+    def __init__(
+            self,
+            partial_frame: PandasApiPartialFrame,
+            row: "PandasApiTdsRow",
+            num_rows_to_lag_by: int = 1
+    ) -> None:
+        super().__init__(frame_name=row.get_frame_name(), frame=partial_frame.get_base_frame())
+        self.__partial_frame = partial_frame
+        self.__row = row
+        self.__num_rows_to_lag_by = num_rows_to_lag_by
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return (
+            f"{self.__partial_frame.to_pure_expression(config)}"
+            f"->lag({self.__row.to_pure_expression(config)}, {self.__num_rows_to_lag_by})"
+        )
+
+    def column_sql_expression(
+            self,
+            column: str,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:  # pragma: no cover (SQL query execution is not supported for the shift function)
+        arguments: list[Expression] = [
+            super().column_sql_expression(column, frame_name_to_base_query_map, config),
+            IntegerLiteral(self.__num_rows_to_lag_by)
+        ]
+
+        return FunctionCall(
+            name=QualifiedName(parts=["lag"]),
+            distinct=False,
+            arguments=arguments,
+            filter_=None,
+            window=None
+        )

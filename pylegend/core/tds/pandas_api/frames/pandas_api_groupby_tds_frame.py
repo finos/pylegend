@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import copy
 from typing import overload
 
 from pylegend._typing import (
@@ -19,6 +20,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendDict,
     PyLegendSet,
+    PyLegendHashable,
+    PyLegendSequence,
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -405,3 +408,66 @@ class PandasApiGroupbyTdsFrame:
             ascending=ascending,
             pct=pct
         ))
+
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(
+            base_frame=self,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
+        ))
+
+    def diff(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        real_selected_columns = self.get_selected_columns()
+        if real_selected_columns is not None:
+            selected_columns = real_selected_columns
+        else:
+            grouping_columns = {col.get_name() for col in self.get_grouping_columns()}
+            selected_columns = [
+                col for col in self.base_frame().columns() if col.get_name() not in grouping_columns
+            ]
+
+        base_frame = copy.copy(self.base_frame())
+        for col in selected_columns:
+            col_name = col.get_name()
+            base_frame[col_name] = base_frame[col_name] - self[col_name].shift(periods, axis=axis)  # type: ignore[operator]
+        return base_frame
+
+    def pct_change(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+    ) -> "PandasApiTdsFrame":
+        real_selected_columns = self.get_selected_columns()
+        if real_selected_columns is not None:
+            selected_columns = real_selected_columns
+        else:
+            grouping_columns = {col.get_name() for col in self.get_grouping_columns()}
+            selected_columns = [
+                col for col in self.base_frame().columns() if col.get_name() not in grouping_columns
+            ]
+
+        base_frame = copy.copy(self.base_frame())
+        for col in selected_columns:
+            col_name = col.get_name()
+            shifted = self[col_name].shift(periods, freq=freq)
+            base_frame[col_name] = (base_frame[col_name] - shifted)  # type: ignore[operator]
+            base_frame[col_name] /= shifted  # type: ignore[operator]
+        return base_frame

@@ -31,7 +31,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSet,
     PyLegendTuple,
-    PyLegendDict
+    PyLegendDict,
+    PyLegendHashable,
 )
 from pylegend.core.language import (
     PyLegendPrimitive,
@@ -356,5 +357,32 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             na_option: str = 'bottom',
             ascending: bool = True,
             pct: bool = False
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def diff(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def pct_change(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

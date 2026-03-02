@@ -264,11 +264,11 @@ class RankFunction(PandasApiAppliedFunction):
                 f" but got: na_option={self.__na_option!r}"
             )
 
-        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples()
+        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples("r")
 
         return True
 
-    def construct_column_expression_and_window_tuples(self) -> PyLegendList[
+    def construct_column_expression_and_window_tuples(self, frame_name: str) -> PyLegendList[
         PyLegendTuple[
             PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
@@ -336,7 +336,7 @@ class RankFunction(PandasApiAppliedFunction):
             if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
                 partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
 
-            tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+            tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.base_frame())
             sort_direction: PandasApiSortDirection
             if self.__ascending:
                 sort_direction = PandasApiSortDirection.ASC

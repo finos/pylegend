@@ -241,6 +241,9 @@ class PandasApiPartialFrame:
         self.__base_frame = base_frame
         self.__var_name = var_name
 
+    def get_base_frame(self) -> "PandasApiBaseTdsFrame":
+        return self.__base_frame
+
     def row_number(
             self,
             row: "PandasApiTdsRow"
@@ -267,6 +270,22 @@ class PandasApiPartialFrame:
             row: "PandasApiTdsRow"
     ) -> PyLegendFloat:
         return PyLegendFloat(PandasApiPercentRankExpression(self, window, row))
+
+    def lead(
+            self,
+            row: "PandasApiTdsRow",
+            num_rows_to_lead_by: int = 1
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLeadRow
+        return PandasApiLeadRow(self, row, num_rows_to_lead_by)
+
+    def lag(
+            self,
+            row: "PandasApiTdsRow",
+            num_rows_to_lag_by: int = 1
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLagRow
+        return PandasApiLagRow(self, row, num_rows_to_lag_by)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__var_name}"

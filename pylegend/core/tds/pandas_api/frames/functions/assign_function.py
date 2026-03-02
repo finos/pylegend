@@ -41,6 +41,7 @@ from pylegend.core.sql.metamodel import (
     SingleColumn,
 )
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import has_window_function
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -130,6 +131,7 @@ class AssignFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
+        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
         temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
@@ -148,12 +150,14 @@ class AssignFunction(PandasApiAppliedFunction):
                     else:
                         continue
 
-                    if isinstance(applied_func, RankFunction):
-                        c, window = applied_func.construct_column_expression_and_window_tuples()[0]
+                    if isinstance(applied_func, (RankFunction, ShiftFunction)):
+                        c, window = applied_func.construct_column_expression_and_window_tuples("r")[0]
                         window_expr = window.to_pure_expression(config)
                         function_expr = c[1].to_pure_expression(config)
                         target_col_name = c[0] + temp_column_name_suffix
                         extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
+                        if isinstance(applied_func, ShiftFunction) and not isinstance(expr, GroupbySeries):
+                            extend = f"->extend(~{zero_column_name}:{{r | 0}})" + config.separator(1) + extend
                         extend_exprs.append(extend)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
             assigned_exprs[col] = res_expr.to_pure_expression(config)

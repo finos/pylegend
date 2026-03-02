@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -36,7 +37,8 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
-    PyLegendDict
+    PyLegendDict,
+    PyLegendHashable
 )
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
@@ -180,6 +182,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         # Reject cross-frame assignment
         if isinstance(value, Series):
             origin = value.get_base_frame()
+        # if isinstance(value, (Series, GroupbySeries)):
+        #     origin = value.get_base_frame() if isinstance(value, Series) else value.get_base_frame().base_frame()
             if origin is not None and origin is not self:
                 raise ValueError("Assignment from a different frame is not allowed")
 
@@ -878,6 +882,51 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending=ascending,
             pct=pct
         ))
+
+    def shift(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(
+            base_frame=self,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
+        ))
+
+    def diff(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        result = copy.copy(self)
+        for col in self.columns():
+            col_name = col.get_name()
+            result[col_name] = result[col_name] - result[col_name].shift(periods, axis=axis)  # type: ignore[operator]
+        return result
+
+    def pct_change(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+    ) -> "PandasApiTdsFrame":
+        result = copy.copy(self)
+        for col in self.columns():
+            col_name = col.get_name()
+            shifted = result[col_name].shift(periods, freq=freq)
+            result[col_name] = (result[col_name] - shifted)  # type: ignore[operator]
+            result[col_name] /= shifted  # type: ignore[operator]
+        return result
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
