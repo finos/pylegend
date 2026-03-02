@@ -557,4 +557,3 @@ class TestTdsFrameCastE2E:
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
-
