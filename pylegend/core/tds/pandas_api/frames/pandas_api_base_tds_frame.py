@@ -918,12 +918,13 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def pct_change(
             self,
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
-            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         result = copy.copy(self)
         for col in self.columns():
             col_name = col.get_name()
-            shifted = result[col_name].shift(periods, freq=freq)
+            shifted = result[col_name].shift(periods, freq=freq, **kwargs)
             result[col_name] = (result[col_name] - shifted)  # type: ignore[operator]
             result[col_name] /= shifted  # type: ignore[operator]
         return result

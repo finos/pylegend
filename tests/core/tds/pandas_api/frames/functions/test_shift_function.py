@@ -442,7 +442,7 @@ class TestUsageOnBaseFrame:
                    PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        base_frame_pct = frame.pct_change(5)
+        base_frame_pct_change = frame.pct_change(5)
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
@@ -459,8 +459,30 @@ class TestUsageOnBaseFrame:
               ->project(~[col1:c|$c.col1, col2:c|(toOne($c.col2) / toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__))])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
-        assert base_frame_pct.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(base_frame_pct, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert base_frame_pct_change.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(base_frame_pct_change, FrameToPureConfig(), self.legend_client) == expected_pure
+
+        series_pct_change = frame["col1"].pct_change(1)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col1})
+              ->project(~[col1:c|((toOne($c.col1) / toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert series_pct_change.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(series_pct_change, FrameToPureConfig(), self.legend_client) == expected_pure
+
+        frame["col1_pct_change"] = frame["col1"].pct_change(3)  # type: ignore[assignment]
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 3).col1})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_pct_change:c|((toOne($c.col1) / toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
 
 class TestUsageOnGroupbyFrame:
@@ -772,3 +794,24 @@ class TestUsageOnGroupbyFrame:
         expected_pure = dedent(expected_pure).strip()
         assert base_frame_pct.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(base_frame_pct, FrameToPureConfig(), self.legend_client) == expected_pure
+
+        series_pct_change = frame.groupby("col1")["col2"].pct_change(1)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col2})
+              ->project(~[col2:c|((toOne($c.col2) / toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert series_pct_change.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(series_pct_change, FrameToPureConfig(), self.legend_client) == expected_pure
+
+        frame["col1_pct_change"] = frame.groupby("col1")["col3"].pct_change(3)  # type: ignore[assignment]
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[col1], []), ~col3__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 3).col3})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_pct_change:c|((toOne($c.col3) / toOne($c.col3__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure

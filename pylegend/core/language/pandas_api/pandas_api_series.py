@@ -483,6 +483,15 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         new_series = copy.copy(self)
         return new_series - new_series.shift(periods)  # type: ignore[operator, no-any-return]
 
+    def pct_change(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "Series":
+        new_series = copy.copy(self)
+        return (new_series / new_series.shift(periods, freq, **kwargs)) - 1
+
 
 @add_primitive_methods
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore

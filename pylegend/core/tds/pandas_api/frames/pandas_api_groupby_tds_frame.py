@@ -432,8 +432,7 @@ class PandasApiGroupbyTdsFrame:
 
     def diff(
             self,
-            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
-            axis: PyLegendUnion[int, str] = 0
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1
     ) -> "PandasApiTdsFrame":
         real_selected_columns = self.get_selected_columns()
         if real_selected_columns is not None:
@@ -447,7 +446,7 @@ class PandasApiGroupbyTdsFrame:
         base_frame = copy.copy(self.base_frame())
         for col in selected_columns:
             col_name = col.get_name()
-            base_frame[col_name] = base_frame[col_name] - self[col_name].shift(periods, axis=axis)  # type: ignore[operator]
+            base_frame[col_name] = base_frame[col_name] - self[col_name].shift(periods)  # type: ignore[operator]
         return base_frame
 
     def pct_change(
