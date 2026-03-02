@@ -398,6 +398,31 @@ class TestUsageOnBaseFrame:
         assert frame.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
+    def test_pct_change(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"),
+                   PrimitiveTdsColumn.integer_column("col2")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        base_frame_pct = frame.pct_change(5)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col1})
+              ->project(~[col1:c|(toOne($c.col1) - toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__)), col2:c|$c.col2])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col1})
+              ->project(~[col2:c|$c.col2, col1:c|(toOne($c.col1) / toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__))])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
+              ->project(~[col2:c|(toOne($c.col2) - toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)), col1:c|$c.col1])
+              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
+              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
+              ->project(~[col1:c|$c.col1, col2:c|(toOne($c.col2) / toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__))])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert base_frame_pct.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(base_frame_pct, FrameToPureConfig(), self.legend_client) == expected_pure
+
 
 class TestUsageOnGroupbyFrame:
     @pytest.fixture(autouse=True)
@@ -686,3 +711,25 @@ class TestUsageOnGroupbyFrame:
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_pct_change(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"),
+                   PrimitiveTdsColumn.integer_column("col2"),
+                   PrimitiveTdsColumn.integer_column("col3")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        base_frame_pct = frame.groupby("col1").pct_change(5)
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
+              ->project(~[col1:c|$c.col1, col2:c|(toOne($c.col2) - toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)), col3:c|$c.col3])
+              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
+              ->project(~[col1:c|$c.col1, col3:c|$c.col3, col2:c|(toOne($c.col2) / toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__))])
+              ->extend(over(~[col1], []), ~col3__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col3})
+              ->project(~[col1:c|$c.col1, col3:c|(toOne($c.col3) - toOne($c.col3__INTERNAL_PYLEGEND_COLUMN__)), col2:c|$c.col2])
+              ->extend(over(~[col1], []), ~col3__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col3})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|(toOne($c.col3) / toOne($c.col3__INTERNAL_PYLEGEND_COLUMN__))])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert base_frame_pct.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(base_frame_pct, FrameToPureConfig(), self.legend_client) == expected_pure

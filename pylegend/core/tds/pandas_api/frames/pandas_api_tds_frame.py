@@ -378,3 +378,11 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             axis: PyLegendUnion[int, str] = 0
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover
+
+    @abstractmethod
+    def pct_change(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover

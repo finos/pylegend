@@ -915,6 +915,19 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             result[col_name] = result[col_name] - result[col_name].shift(periods, axis=axis)  # type: ignore[operator]
         return result
 
+    def pct_change(
+            self,
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+    ) -> "PandasApiTdsFrame":
+        result = copy.copy(self)
+        for col in self.columns():
+            col_name = col.get_name()
+            shifted = result[col_name].shift(periods, freq=freq)
+            result[col_name] = (result[col_name] - shifted)  # type: ignore[operator]
+            result[col_name] /= shifted  # type: ignore[operator]
+        return result
+
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
         pass  # pragma: no cover
