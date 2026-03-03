@@ -19,6 +19,7 @@ from textwrap import dedent
 
 import pytest
 
+from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
@@ -563,11 +564,11 @@ class TestTdsFrameCastE2E:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.cast({"Age": PrimitiveType.Number})
         frame = frame.cast({"Age": PrimitiveType.Decimal})
-        frame['Age'] = frame['Age'] + 1
+        frame['Age'] = frame['Age'] + PythonDecimal("1")
         grouped = frame.groupby("Firm/Legal Name")
         decimal_series = grouped["Age"]
         result = decimal_series.aggregate("sum")
-        result['Age'] = result['Age'] + 1
+        result['Age'] = result['Age'] + PythonDecimal("1")
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
             "rows": [
