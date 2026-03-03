@@ -167,7 +167,7 @@ def varchar(max_length: builtins.int) -> CastTarget:  # noqa: F821
 
         frame.cast({"name": pylegend.type_factory.varchar(200)})
     """
-    return (PrimitiveType.Varchar, max_length)
+    return (PrimitiveType.Varchar, max_length)  # type: ignore
 
 
 def numeric(precision: builtins.int, scale: builtins.int) -> CastTarget:  # noqa: F821
@@ -181,4 +181,4 @@ def numeric(precision: builtins.int, scale: builtins.int) -> CastTarget:  # noqa
 
         frame.cast({"amount": pylegend.type_factory.numeric(10, 2)})
     """
-    return (PrimitiveType.Numeric, precision, scale)
+    return (PrimitiveType.Numeric, precision, scale)  # type: ignore
