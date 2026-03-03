@@ -89,7 +89,7 @@ def decimal() -> CastTarget:
 
 def date() -> CastTarget:
     """Cast to Date."""
-    return PrimitiveType.Date
+    return PrimitiveType.Date  # pragma: no cover
 
 
 def datetime() -> CastTarget:
