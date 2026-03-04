@@ -36,6 +36,67 @@ body {
 
 
 
+/* ── Notebook cell output ── */
+
+pre.nb-output {
+  font-family: var(--font-mono) !important;
+  font-size: 0.95rem !important;
+  line-height: 1.45 !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(180deg, #eef6ff 0%, #e6eef8 100%) !important;
+  border: 1px solid rgba(16, 24, 40, 0.12) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 18px 54px rgba(20, 30, 40, 0.10) !important;
+  padding: 1.25rem !important;
+  margin: 1.25rem 0 !important;
+  max-height: 650px !important;
+  overflow: auto !important;
+  white-space: pre !important;
+  word-wrap: normal !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 24, 40, 0.12) transparent;
+  -webkit-overflow-scrolling: touch;
+  color: #333 !important;
+}
+
+pre.nb-output::-webkit-scrollbar {
+  height: 10px;
+  background: transparent;
+}
+
+pre.nb-output::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+pre.nb-output::-webkit-scrollbar-thumb {
+  background-color: rgba(16, 24, 40, 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+pre.nb-output::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(16, 24, 40, 0.18);
+}
+
+body.dark-mode pre.nb-output {
+  background: linear-gradient(180deg, #0e1114 0%, #0b0d0f 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.03) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
+  color: #f8f8f2 !important;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+body.dark-mode pre.nb-output::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode pre.nb-output::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+
 /* ── Page scrollbar ── */
 
 html,

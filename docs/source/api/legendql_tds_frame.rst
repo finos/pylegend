@@ -85,6 +85,11 @@ project
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.project
 
+cast
+~~~~
+
+.. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.cast
+
 Combining Frames
 ----------------
 

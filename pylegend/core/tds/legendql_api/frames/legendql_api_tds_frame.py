@@ -35,7 +35,9 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendOptional,
     PyLegendTuple,
+    PyLegendDict,
 )
+from pylegend.core.tds.cast_helpers import CastTarget
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiTdsFrame"
@@ -1298,6 +1300,71 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         rows : Create a row-based window frame.
         window : Create a window specification.
         window_extend : Apply window functions.
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def cast(
+            self,
+            column_type_map: PyLegendDict[str, CastTarget]
+    ) -> "LegendQLApiTdsFrame":
+        """
+        Cast specific columns to new types.
+
+        Return a new TDS frame where the types of the specified columns
+        are updated according to the provided type map. All other columns
+        retain their original types.
+
+        Parameters
+        ----------
+        column_type_map : dict
+            A mapping from column names to target types. Use functions from
+            the `pylegend.type_factory` module to create target types.
+
+        Returns
+        -------
+        LegendQLApiTdsFrame
+            A new TDS frame with the specified columns cast to the new types.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            from pylegend import type_factory as tf
+            from pylegend.core.tds.tds_column import PrimitiveTdsColumn
+            from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import (
+                LegendQLApiTableSpecInputFrame
+            )
+
+            frame = LegendQLApiTableSpecInputFrame(
+                ['db', 'schema', 'order'],
+                [
+                    PrimitiveTdsColumn.integer_column("Order Id"),
+                    PrimitiveTdsColumn.date_column("Order Date"),
+                    PrimitiveTdsColumn.string_column("Ship Name"),
+                    PrimitiveTdsColumn.float_column("Amount"),
+                    PrimitiveTdsColumn.decimal_column("Discount"),
+                ]
+            )
+
+            # Cast using simple types
+            cast_frame_1 = frame.cast({
+                "Order Date": tf.datetime(),
+                "Order Id": tf.number(),
+                "Amount": tf.number(),
+            })
+            print(cast_frame_1.to_pure_query())
+
+            # Cast using precise primitive types (including parameterized)
+            cast_frame_2 = frame.cast({
+                "Order Date": tf.timestamp(),
+                "Order Id": tf.bigint(),
+                "Ship Name": tf.varchar(200),
+                "Amount": tf.float4(),
+                "Discount": tf.numeric(10, 2),
+            })
+            print(cast_frame_2.to_pure_query())
 
         """
         pass  # pragma: no cover

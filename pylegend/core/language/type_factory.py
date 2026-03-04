@@ -14,13 +14,10 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendUnion,
-    PyLegendTuple,
 )
 import builtins
 from pylegend.core.tds.tds_column import PrimitiveType
-
-CastTarget = PyLegendUnion[PrimitiveType, PyLegendTuple[PrimitiveType, ...]]
+from pylegend.core.tds.cast_helpers import CastTarget
 
 __all__: PyLegendSequence[str] = [
     # Simple types
