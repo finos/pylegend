@@ -36,6 +36,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionNumberReturn,
     PyLegendExpressionStrictDateReturn,
@@ -47,6 +48,7 @@ from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.primitives.primitive import (
@@ -505,6 +507,18 @@ class FloatGroupbySeries(NumberGroupbySeries, PyLegendFloat, PyLegendExpressionF
     ) -> None:
         super().__init__(base_groupby_frame, applied_function_frame, expr)
         PyLegendFloat.__init__(self, self)
+
+
+@add_primitive_methods
+class DecimalGroupbySeries(NumberGroupbySeries, PyLegendDecimal, PyLegendExpressionDecimalReturn):
+    def __init__(
+            self,
+            base_groupby_frame: PandasApiGroupbyTdsFrame,
+            applied_function_frame: PyLegendOptional[PandasApiAppliedFunctionTdsFrame] = None,
+            expr: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_groupby_frame, applied_function_frame, expr)
+        PyLegendDecimal.__init__(self, self)
 
 
 @add_primitive_methods

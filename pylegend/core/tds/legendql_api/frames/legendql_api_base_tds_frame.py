@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -21,6 +22,7 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendTuple,
     PyLegendOptional,
+    PyLegendDict,
 )
 from pylegend.core.language import PyLegendBoolean, PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitiveCollection, \
     PyLegendPrimitive
@@ -38,6 +40,7 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.tds.cast_helpers import CastTarget
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 
@@ -51,6 +54,18 @@ R = PyLegendTypeVar('R')
 class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         BaseTdsFrame.__init__(self, columns=columns)
+
+    def cast(
+            self,
+            column_type_map: PyLegendDict[str, CastTarget]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_cast_function import (
+            LegendQLApiCastFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiCastFunction(self, column_type_map))
 
     def head(self, row_count: int = 5) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
@@ -279,7 +294,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         from pylegend.core.tds.legendql_api.frames.functions.legendql_api_asofjoin_function import (
             LegendQLApiAsOfJoinFunction
         )
-        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiAsOfJoinFunction(self, other, match_function, join_condition))
+        return LegendQLApiAppliedFunctionTdsFrame(
+            LegendQLApiAsOfJoinFunction(self, other, match_function, join_condition))
 
     def group_by(
             self,

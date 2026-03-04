@@ -25,6 +25,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
@@ -48,6 +49,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberColumnExpression",
     "PyLegendIntegerColumnExpression",
     "PyLegendFloatColumnExpression",
+    "PyLegendDecimalColumnExpression",
     "PyLegendDateColumnExpression",
     "PyLegendDateTimeColumnExpression",
     "PyLegendStrictDateColumnExpression",
@@ -101,6 +103,12 @@ class PyLegendIntegerColumnExpression(PyLegendNumberColumnExpression, PyLegendEx
 
 
 class PyLegendFloatColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionFloatReturn):
+
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
+
+
+class PyLegendDecimalColumnExpression(PyLegendNumberColumnExpression, PyLegendExpressionDecimalReturn):
 
     def __init__(self, row: "AbstractTdsRow", column: str) -> None:
         super().__init__(row=row, column=column)

@@ -36,6 +36,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
@@ -46,6 +47,7 @@ from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
@@ -526,6 +528,15 @@ class FloatSeries(NumberSeries, PyLegendFloat, PyLegendExpressionFloatReturn):  
     ) -> None:
         super().__init__(base_frame, column, value)
         PyLegendFloat.__init__(self, self)
+
+
+@add_primitive_methods
+class DecimalSeries(NumberSeries, PyLegendDecimal, PyLegendExpressionDecimalReturn):  # type: ignore
+    def __init__(
+            self, base_frame: "PandasApiBaseTdsFrame", column: str, value: PyLegendOptional[PyLegendExpression] = None
+    ) -> None:
+        super().__init__(base_frame, column, value)
+        PyLegendDecimal.__init__(self, self)
 
 
 @add_primitive_methods

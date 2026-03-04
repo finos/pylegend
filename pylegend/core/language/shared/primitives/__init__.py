@@ -22,9 +22,25 @@ from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+from pylegend.core.language.shared.primitives.precise_primitives import (
+    PyLegendTinyInt,
+    PyLegendUTinyInt,
+    PyLegendSmallInt,
+    PyLegendUSmallInt,
+    PyLegendInt,
+    PyLegendUInt,
+    PyLegendBigInt,
+    PyLegendUBigInt,
+    PyLegendVarchar,
+    PyLegendTimestamp,
+    PyLegendFloat4,
+    PyLegendDouble,
+    PyLegendNumeric,
+)
 
 
 __all__: PyLegendSequence[str] = [
@@ -35,7 +51,21 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumber",
     "PyLegendInteger",
     "PyLegendFloat",
+    "PyLegendDecimal",
     "PyLegendDate",
     "PyLegendDateTime",
     "PyLegendStrictDate",
+    "PyLegendTinyInt",
+    "PyLegendUTinyInt",
+    "PyLegendSmallInt",
+    "PyLegendUSmallInt",
+    "PyLegendInt",
+    "PyLegendUInt",
+    "PyLegendBigInt",
+    "PyLegendUBigInt",
+    "PyLegendVarchar",
+    "PyLegendTimestamp",
+    "PyLegendFloat4",
+    "PyLegendDouble",
+    "PyLegendNumeric",
 ]
