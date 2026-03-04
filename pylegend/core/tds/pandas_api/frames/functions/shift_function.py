@@ -35,11 +35,13 @@ from pylegend.core.language.shared.helpers import (
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
-    QuerySpecification,
+    QuerySpecification, IntegerLiteral, SingleColumn, SelectItem, QualifiedNameReference, QualifiedName,
 )
+from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
@@ -92,7 +94,47 @@ class ShiftFunction(PandasApiAppliedFunction):
         self.__suffix = suffix
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        raise NotImplementedError("SQL query execution is not supported for the shift function")
+        temp_column_name_suffix = "__pylegend_olap_column__"
+        zero_column_name = "__pylegend_zero_column__"
+
+        base_query = self.base_frame().to_sql_query_object(config)
+        db_extension = config.sql_to_string_generator().get_db_extension()
+        base_query.select.selectItems.append(
+            SingleColumn(alias=db_extension.quote_identifier(zero_column_name), expression=IntegerLiteral(0))
+        )
+
+        new_query = create_sub_query(base_query, config, "root")
+        new_select_items: list[SelectItem] = []
+        for c, window in self.__column_expression_and_window_tuples:
+            col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
+            window_expr = WindowExpression(
+                nested=col_sql_expr,
+                window=window.to_sql_node(new_query, config)
+            )
+            new_select_items.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(c[0] + temp_column_name_suffix),
+                    expression=window_expr
+                )
+            )
+        new_query.select.selectItems = new_select_items
+
+        final_query = create_sub_query(new_query, config, "root")
+        final_select_items: list[SelectItem] = []
+        for col in self.calculate_columns():
+            col_name = col.get_name()
+            col_expr = QualifiedNameReference(QualifiedName([
+                db_extension.quote_identifier("root"),
+                db_extension.quote_identifier(col_name + temp_column_name_suffix)
+            ]))
+            final_select_items.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(col_name),
+                    expression=col_expr
+                )
+            )
+        final_query.select.selectItems = final_select_items
+        return final_query
 
     @staticmethod
     def _render_single_column_expression(
@@ -175,6 +217,19 @@ class ShiftFunction(PandasApiAppliedFunction):
         return new_columns
 
     def validate(self) -> bool:
+        base_frame = \
+            self.__base_frame.base_frame() if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame) else self.base_frame()
+        base_frame_columns = set(column.get_name() for column in base_frame.columns())
+        order_by_list = set(
+            self.__order_by if isinstance(self.__order_by, PyLegendSequence) and not isinstance(self.__order_by, str)
+            else [self.__order_by]
+        )
+        invalid_columns = order_by_list - base_frame_columns
+        if invalid_columns:
+            raise ValueError(
+                f"The following columns in the 'order_by' argument are not present in the base_frame: {invalid_columns}"
+            )
+
         valid_periods = {1, -1}
         periods_list = (
             self.__periods if isinstance(self.__periods, PyLegendSequence) and not isinstance(self.__periods, str)
