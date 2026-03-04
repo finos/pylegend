@@ -74,7 +74,7 @@ class AssignFunction(PandasApiAppliedFunction):
         self.__col_definitions = col_definitions
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.__base_frame.to_sql_query_object(config)
         should_create_sub_query = (len(base_query.groupBy) > 0) or base_query.select.distinct
@@ -131,8 +131,8 @@ class AssignFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        zero_column_name = "__pylegend_zero_column__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
 

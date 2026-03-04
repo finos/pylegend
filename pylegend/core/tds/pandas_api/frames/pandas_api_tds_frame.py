@@ -363,6 +363,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def shift(
             self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
             freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
             axis: PyLegendUnion[int, str] = 0,

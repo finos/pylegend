@@ -25,7 +25,7 @@ from pylegend._typing import (
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiPartialFrame,
     PandasApiWindow,
-    PandasApiWindowReference,
+    PandasApiWindowReference, PandasApiSortInfo, PandasApiSortDirection,
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import (
@@ -46,6 +46,11 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 class ShiftFunction(PandasApiAppliedFunction):
     __base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
+    __lambda_func: PyLegendCallable[
+        [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow, str, int],
+        PyLegendPrimitive
+    ]
+    __order_by: PyLegendUnion[str, PyLegendSequence[str]]
     __periods: PyLegendUnion[int, PyLegendSequence[int]]
     __freq: PyLegendOptional[PyLegendUnion[str, int]]
     __axis: PyLegendUnion[int, str]
@@ -66,13 +71,20 @@ class ShiftFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
+            lambda_func: PyLegendCallable[
+                [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow, str, int],
+                PyLegendPrimitive
+            ],
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
             freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
             axis: PyLegendUnion[int, str] = 0,
             fill_value: PyLegendOptional[PyLegendHashable] = None,
-            suffix: PyLegendOptional[str] = None,
+            suffix: PyLegendOptional[str] = None
     ) -> None:
         self.__base_frame = base_frame
+        self.__lambda_func = lambda_func
+        self.__order_by = order_by
         self.__periods = periods
         self.__freq = freq
         self.__axis = axis
@@ -80,13 +92,6 @@ class ShiftFunction(PandasApiAppliedFunction):
         self.__suffix = suffix
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        raise NotImplementedError("SQL query execution is not supported for the shift function")
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
         raise NotImplementedError("SQL query execution is not supported for the shift function")
 
     @staticmethod
@@ -98,8 +103,8 @@ class ShiftFunction(PandasApiAppliedFunction):
         return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
-        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
+        zero_column_name = "__pylegend_zero_column__"
 
         extend_0_column = f"->extend(~{zero_column_name}:{{r | 0}})"
 
@@ -129,12 +134,6 @@ class ShiftFunction(PandasApiAppliedFunction):
             config.separator(1) + extend_str +
             config.separator(1) + project_str
         )
-
-    def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
-        self._assert_single_column_in_base_frame()
-        c, window = self.__column_expression_and_window_tuples[0]
-        return f"$c.{escape_column_name(c[0] + temp_column_name_suffix)}"
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
@@ -176,12 +175,22 @@ class ShiftFunction(PandasApiAppliedFunction):
         return new_columns
 
     def validate(self) -> bool:
-        if isinstance(self.__periods, PyLegendSequence):
-            if len(self.__periods) != len(set(self.__periods)):
-                raise ValueError(
-                    f"The 'periods' argument of the shift function cannot contain duplicate values, but got: "
-                    f"periods={self.__periods!r}"
-                )
+        valid_periods = {1, -1}
+        periods_list = (
+            self.__periods if isinstance(self.__periods, PyLegendSequence) and not isinstance(self.__periods, str)
+            else [self.__periods]
+        )
+        invalid_periods = set(periods_list) - valid_periods
+        if invalid_periods:
+            raise NotImplementedError(
+                f"The 'periods' argument of the shift function only supports these values (or a list of them): {valid_periods}"
+                f"\nBut got these unsupported values: {invalid_periods}."
+            )
+        if len(periods_list) != len(set(periods_list)):
+            raise ValueError(
+                f"The 'periods' argument of the shift function cannot contain duplicate values, but got: "
+                f"periods={self.__periods!r}"
+            )
 
         if self.__freq is not None:
             raise NotImplementedError(
@@ -213,7 +222,7 @@ class ShiftFunction(PandasApiAppliedFunction):
             PandasApiWindow
         ]
     ]:
-        zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
+        zero_column_name = "__pylegend_zero_column__"
         column_names: list[str] = []
         if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
             grouping_column_names = set([col.get_name() for col in self.__base_frame.get_grouping_columns()])
@@ -249,26 +258,16 @@ class ShiftFunction(PandasApiAppliedFunction):
                     suffix = self.__suffix if self.__suffix is not None else ""
                     current_col_name = f"{column_name}{suffix}_{period}"
 
-                if period > 0:
-                    def lambda_func(
-                            p: PandasApiPartialFrame,
-                            w: PandasApiWindowReference,
-                            r: PandasApiTdsRow,
-                            column_name: str = column_name,
-                            period: int = period
-                    ) -> PyLegendPrimitive:
-                        return p.lag(r, period)[column_name]
-                else:
-                    def lambda_func(
-                            p: PandasApiPartialFrame,
-                            w: PandasApiWindowReference,
-                            r: PandasApiTdsRow,
-                            column_name: str = column_name,
-                            period: int = period
-                    ) -> PyLegendPrimitive:
-                        return p.lead(r, -period)[column_name]
+                def lambda_wrapper(
+                        p: PandasApiPartialFrame,
+                        w: PandasApiWindowReference,
+                        r: PandasApiTdsRow,
+                        column_name: str = column_name,
+                        period: int = period
+                ):
+                    return self.__lambda_func(p,w,r,column_name,period)
 
-                extend_columns.append((current_col_name, lambda_func))
+                extend_columns.append((current_col_name, lambda_wrapper))
 
         tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.base_frame())
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
@@ -288,7 +287,16 @@ class ShiftFunction(PandasApiAppliedFunction):
             else:
                 partition_by = [zero_column_name]
 
-            window = PandasApiWindow(partition_by, [], frame=None)
+            order_by_list = (
+                self.__order_by if isinstance(self.__order_by, PyLegendSequence) and not isinstance(self.__order_by, str)
+                else [self.__order_by]
+            )
+            order_by = [
+                PandasApiSortInfo(ordering_column, PandasApiSortDirection.ASC)
+                for ordering_column in order_by_list
+            ]
+
+            window = PandasApiWindow(partition_by, order_by, frame=None)
 
             window_ref = PandasApiWindowReference(window=window, var_name="w")
             result: PyLegendPrimitive = extend_column[1](partial_frame, window_ref, tds_row)

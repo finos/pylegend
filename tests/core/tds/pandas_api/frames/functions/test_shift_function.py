@@ -154,7 +154,7 @@ class TestUsageOnBaseFrame:
     def test_no_arguments(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.shift()
+        frame = frame.shift(order_by="col1")
 
         expected = '''
         '''  # noqa: E501

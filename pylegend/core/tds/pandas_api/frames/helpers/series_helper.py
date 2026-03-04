@@ -201,8 +201,8 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
 
 
 def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], config: FrameToPureConfig) -> str:
-    zero_column_name = "__INTERNAL_PYLEGEND_COLUMN__"
-    temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+    zero_column_name = "__pylegend_zero_column__"
+    temp_column_name_suffix = "__pylegend_olap_column__"
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction

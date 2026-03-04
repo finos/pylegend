@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
+from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiPartialFrame, PandasApiWindowReference
 
 try:
     from typing import ParamSpec
@@ -883,18 +884,35 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def shift(
             self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
             freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
             axis: PyLegendUnion[int, str] = 0,
             fill_value: PyLegendOptional[PyLegendHashable] = None,
             suffix: PyLegendOptional[str] = None
     ) -> "PandasApiTdsFrame":
+        def lambda_func_shift(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+                column_name: str,
+                period: int
+        ) -> PyLegendPrimitive:
+            if period > 0:
+                return p.lag(r, period)[column_name]
+            elif period < 0:
+                return p.lead(r, -period)[column_name]
+            else:
+                return r[column_name]
+
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
         return PandasApiAppliedFunctionTdsFrame(ShiftFunction(
             base_frame=self,
+            lambda_func=lambda_func_shift,
+            order_by=order_by,
             periods=periods,
             freq=freq,
             axis=axis,
@@ -907,11 +925,12 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
             axis: PyLegendUnion[int, str] = 0
     ) -> "PandasApiTdsFrame":
-        result = copy.copy(self)
-        for col in self.columns():
-            col_name = col.get_name()
-            result[col_name] = result[col_name] - result[col_name].shift(periods, axis=axis)  # type: ignore[operator]
-        return result
+        pass
+        # result = copy.copy(self)
+        # for col in self.columns():
+        #     col_name = col.get_name()
+        #     result[col_name] = result[col_name] - result[col_name].shift(periods, axis=axis)  # type: ignore[operator]
+        # return result
 
     def pct_change(
             self,
@@ -923,12 +942,13 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             raise NotImplementedError(
                 f"Extra keyword arguments are not supported in pct_change. " f"Received: {list(kwargs.keys())}"
             )
+        pass
 
-        result = copy.copy(self)
-        for col in self.columns():
-            col_name = col.get_name()
-            result[col_name] = (result[col_name] / result[col_name].shift(periods, freq=freq)) - 1  # type: ignore[operator]
-        return result
+        # result = copy.copy(self)
+        # for col in self.columns():
+        #     col_name = col.get_name()
+        #     result[col_name] = (result[col_name] / result[col_name].shift(periods, freq=freq)) - 1  # type: ignore[operator]
+        # return result
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:

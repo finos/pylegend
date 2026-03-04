@@ -94,7 +94,7 @@ class RankFunction(PandasApiAppliedFunction):
         self.__pct = pct
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
 
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
@@ -159,7 +159,7 @@ class RankFunction(PandasApiAppliedFunction):
         return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix: str = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix: str = "__pylegend_olap_column__"
 
         extend_strs: PyLegendList[str] = []
         for c, window in self.__column_expression_and_window_tuples:
@@ -188,7 +188,7 @@ class RankFunction(PandasApiAppliedFunction):
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         self._assert_single_column_in_base_frame()
         c, window = self.__column_expression_and_window_tuples[0]
         return f"$c.{c[0] + temp_column_name_suffix}"

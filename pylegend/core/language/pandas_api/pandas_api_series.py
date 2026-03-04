@@ -212,7 +212,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.execute_frame(ToPandasDfResultHandler(pandas_df_read_config), chunk_size)  # pragma: no cover
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         if self.expr is None:
             return self.get_filtered_frame().to_sql_query_object(config)
 
