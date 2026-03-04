@@ -182,8 +182,6 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         # Reject cross-frame assignment
         if isinstance(value, Series):
             origin = value.get_base_frame()
-        # if isinstance(value, (Series, GroupbySeries)):
-        #     origin = value.get_base_frame() if isinstance(value, Series) else value.get_base_frame().base_frame()
             if origin is not None and origin is not self:
                 raise ValueError("Assignment from a different frame is not allowed")
 

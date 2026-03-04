@@ -453,51 +453,6 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         new_series._filtered_frame = applied_function_frame
         return new_series
 
-    def shift(
-            self,
-            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
-            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
-            axis: PyLegendUnion[int, str] = 0,
-            fill_value: PyLegendOptional[PyLegendHashable] = None,
-            suffix: PyLegendOptional[str] = None
-    ) -> PyLegendUnion["Series", "PandasApiTdsFrame"]:
-        if self._expr is not None:  # pragma: no cover
-            error_msg = '''
-                Applying shift function to a computed series expression is not supported yet.
-                For example,
-                    not supported: (frame['col'] + 5).shift()
-                    supported: frame['col'].shift() + 5
-            '''
-            error_msg = dedent(error_msg).strip()
-            raise NotImplementedError(error_msg)
-
-        if isinstance(periods, int):
-            new_series = self.__class__(self.get_base_frame(), self.columns()[0].get_name())
-            applied_function_frame = self._filtered_frame.shift(periods, freq, axis, fill_value, suffix)
-            assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
-            new_series._filtered_frame = applied_function_frame
-            return new_series
-        else:
-            return self._filtered_frame.shift(periods, freq, axis, fill_value, suffix)
-
-    def diff(self, periods: int) -> "Series":
-        new_series = copy.copy(self)
-        return new_series - new_series.shift(periods)  # type: ignore[operator, no-any-return]
-
-    def pct_change(
-            self,
-            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
-            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
-            **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "Series":
-        if kwargs:
-            raise NotImplementedError(
-                f"Extra keyword arguments are not supported in pct_change. " f"Received: {list(kwargs.keys())}"
-            )
-
-        new_series = copy.copy(self)
-        return (new_series / new_series.shift(periods, freq)) - 1  # type: ignore[operator, no-any-return]
-
 
 @add_primitive_methods
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore

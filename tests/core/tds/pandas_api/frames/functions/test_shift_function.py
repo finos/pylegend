@@ -20,7 +20,7 @@ from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
 
@@ -97,45 +97,14 @@ class TestErrorsOnBaseFrame:
             "periods=[1, -1, 1]")
         assert v.value.args[0] == expected_msg
 
-    def test_to_sql(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(NotImplementedError) as v:
-            frame.shift().to_sql_query()
-
-        expected_msg = "SQL query execution is not supported for the shift function"
-        assert v.value.args[0] == expected_msg
-
-    def test_sql_assign(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        with pytest.raises(NotImplementedError) as v:
-            frame["new_col"] = frame["col1"].shift() + 1  # type: ignore[operator]
-            frame.to_sql_query()
-
-        expected_msg = "SQL query execution is not supported for the shift function"
-        assert v.value.args[0] == expected_msg
-
-    def test_diff_overload(self) -> None:
+    def test_kwargs_on_pct_change(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1"),
-                   PrimitiveTdsColumn.date_column("col2"),
-                   PrimitiveTdsColumn.strictdate_column("col3"),
-                   PrimitiveTdsColumn.datetime_column("col4")]
+                   PrimitiveTdsColumn.date_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        with pytest.raises(TypeError) as v:
-            frame["col2"].diff(5)
-        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
-
-        with pytest.raises(TypeError) as v:
-            frame["col3"].diff(5)
-        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
-
-        with pytest.raises(TypeError) as v:
-            frame["col4"].diff(5)
-        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
+        with pytest.raises(NotImplementedError) as v:
+            frame.pct_change(5, axis=0)
+        assert v.value.args[0] == "Extra keyword arguments are not supported in pct_change. Received: ['axis']"
 
 
 class TestErrorsOnGroupbyFrame:
@@ -170,43 +139,11 @@ class TestErrorsOnGroupbyFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         with pytest.raises(NotImplementedError) as v:
-            frame.groupby("group_col")["val_col"].shift(fill_value="default_fill")
+            frame.groupby("group_col")[["val_col"]].shift(fill_value="default_fill")
 
         expected_msg = (
             "The 'fill_value' argument of the shift function is not supported, but got: fill_value='default_fill'")
         assert v.value.args[0] == expected_msg
-
-    def test_groupby_diff_overload(self) -> None:
-        columns = [PrimitiveTdsColumn.string_column("col1"),
-                   PrimitiveTdsColumn.date_column("col2"),
-                   PrimitiveTdsColumn.strictdate_column("col3"),
-                   PrimitiveTdsColumn.datetime_column("col4")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        with pytest.raises(TypeError) as v:
-            frame.groupby("col1")["col2"].diff(5)
-        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
-
-        with pytest.raises(TypeError) as v:
-            frame.groupby("col1")["col3"].diff(5)
-        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
-
-        with pytest.raises(TypeError) as v:
-            frame.groupby("col1")["col4"].diff(5)
-        assert "diff() missing 1 required positional argument: 'duration_unit'" in v.value.args[0]
-
-    def test_kwargs_on_pct_change(self) -> None:
-        columns = [PrimitiveTdsColumn.string_column("col1"),
-                   PrimitiveTdsColumn.date_column("col2")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        with pytest.raises(NotImplementedError) as v:
-            frame["col2"].pct_change(5, axis=0)
-        assert v.value.args[0] == "Extra keyword arguments are not supported in pct_change. Received: ['axis']"
-
-        with pytest.raises(NotImplementedError) as v:
-            frame.pct_change(5, axis=0)
-        assert v.value.args[0] == "Extra keyword arguments are not supported in pct_change. Received: ['axis']"
 
 
 class TestUsageOnBaseFrame:
@@ -218,6 +155,11 @@ class TestUsageOnBaseFrame:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.shift()
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -234,7 +176,12 @@ class TestUsageOnBaseFrame:
     def test_periods_argument_multiple_columns(self) -> None:
         columns = [PrimitiveTdsColumn.number_column("col1"), PrimitiveTdsColumn.float_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        frame = frame.shift(periods=1)
+        frame = frame.shift(periods=2)
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -256,6 +203,11 @@ class TestUsageOnBaseFrame:
         frame = frame.shift(periods=-3)
 
         expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
+
+        expected = '''
             #Table(test_schema.test_table)#
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
               ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r, 3).col1})
@@ -271,6 +223,11 @@ class TestUsageOnBaseFrame:
         columns = [PrimitiveTdsColumn.strictdate_column("col1"), PrimitiveTdsColumn.datetime_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.shift(periods=[3, -2])
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -296,6 +253,11 @@ class TestUsageOnBaseFrame:
         frame = frame.shift(periods=[-5, 10], suffix="_suffix")
 
         expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
+
+        expected = '''
             #Table(test_schema.test_table)#
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
               ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~'col1_suffix_-5__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r, 5).col1})
@@ -313,105 +275,19 @@ class TestUsageOnBaseFrame:
         assert frame.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
-    def test_series_datatype_conversion_and_full_query_generation(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        frame1 = frame["col1"].shift(2)
-        assert isinstance(frame1, Series)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->select(~[col1])
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 2).col1})
-              ->project(~[
-                col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__
-              ])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame1.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame1 += 5  # type: ignore[operator, assignment]
-        assert isinstance(frame1, Series)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 2).col1})
-              ->project(~[col1:c|(toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__) + 5)])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame1.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame2 = frame["col1"].shift([1])
-        assert isinstance(frame2, PandasApiTdsFrame)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->select(~[col1])
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col1})
-              ->project(~[
-                col1_1:p|$p.col1_1__INTERNAL_PYLEGEND_COLUMN__
-              ])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame2.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame3 = frame["col1"].shift([5, -3])
-        assert isinstance(frame3, PandasApiTdsFrame)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->select(~[col1])
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1_5__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col1})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~'col1_-3__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r, 3).col1})
-              ->project(~[
-                col1_5:p|$p.col1_5__INTERNAL_PYLEGEND_COLUMN__,
-                'col1_-3':p|$p.'col1_-3__INTERNAL_PYLEGEND_COLUMN__'
-              ])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame3.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected_pure
-
-    def test_series_assign(self) -> None:
-        columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        frame["shifted_col1"] = frame["col1"].shift(10)  # type: ignore[assignment]
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).col1})
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, shifted_col1:c|$c.col1__INTERNAL_PYLEGEND_COLUMN__])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame["col2"] = frame["col2"].shift(-3) + 5  # type: ignore[operator]
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).col1})
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, shifted_col1:c|$c.col1__INTERNAL_PYLEGEND_COLUMN__])
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r, 3).col2})
-              ->project(~[col1:c|$c.col1, col2:c|(toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__) + 5), shifted_col1:c|$c.shifted_col1])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
     def test_diff(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
                    PrimitiveTdsColumn.integer_column("col2"),
                    PrimitiveTdsColumn.integer_column("col3")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        base_frame_diff = frame.diff(5)
+        frame = frame.diff(5)
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
+
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
@@ -425,28 +301,6 @@ class TestUsageOnBaseFrame:
               ->project(~[col3:c|(toOne($c.col3) - toOne($c.col3__INTERNAL_PYLEGEND_COLUMN__)), col1:c|$c.col1, col2:c|$c.col2])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
-        assert base_frame_diff.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(base_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        series_diff = frame["col1"].diff(1)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col1})
-              ->project(~[col1:c|(toOne($c.col1) - toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__))])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert series_diff.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(series_diff, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame["col1_diff"] = frame["col1"].diff(1)  # type: ignore[assignment]
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col1})
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_diff:c|(toOne($c.col1) - toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__))])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
@@ -455,7 +309,13 @@ class TestUsageOnBaseFrame:
                    PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        base_frame_pct_change = frame.pct_change(5)
+        frame = frame.pct_change(5)
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
+
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
@@ -464,47 +324,6 @@ class TestUsageOnBaseFrame:
               ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
               ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
               ->project(~[col2:c|((toOne($c.col2) / toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)) - 1), col1:c|$c.col1])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert base_frame_pct_change.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(base_frame_pct_change, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        series_pct_change = frame["col1"].pct_change(1)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col1})
-              ->project(~[col1:c|((toOne($c.col1) / toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert series_pct_change.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(series_pct_change, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame["col1_pct_change"] = frame["col1"].pct_change(3)  # type: ignore[assignment]
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[__INTERNAL_PYLEGEND_COLUMN__], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 3).col1})
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_pct_change:c|((toOne($c.col1) / toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
-    def test_date_diff(self) -> None:
-        columns = [PrimitiveTdsColumn.strictdate_column("col1"),
-                   PrimitiveTdsColumn.datetime_column("col2"),
-                   PrimitiveTdsColumn.date_column("col3")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        frame["col_diff_1_2"] = frame["col1"].diff(frame["col2"], "YEARS")  # type: ignore[arg-type, assignment, call-arg]
-        frame["col_diff_2_3"] = frame["col2"].diff(frame["col3"], "YEARS")  # type: ignore[arg-type, assignment, call-arg]
-        frame["col_diff_3_1"] = frame["col3"].diff(frame["col1"], "YEARS")  # type: ignore[arg-type, assignment, call-arg]
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col_diff_1_2:c|toOne($c.col1)->dateDiff(toOne($c.col2), DurationUnit.'YEARS')])
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col_diff_1_2:c|$c.col_diff_1_2, col_diff_2_3:c|toOne($c.col2)->dateDiff(toOne($c.col3), DurationUnit.'YEARS')])
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col_diff_1_2:c|$c.col_diff_1_2, col_diff_2_3:c|$c.col_diff_2_3, col_diff_3_1:c|toOne($c.col3)->dateDiff(toOne($c.col1), DurationUnit.'YEARS')])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
@@ -524,6 +343,11 @@ class TestUsageOnGroupbyFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col").shift(1)
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -548,6 +372,11 @@ class TestUsageOnGroupbyFrame:
         frame = frame.groupby("group_col")[["val_col"]].shift(3)
 
         expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
+
+        expected = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[group_col], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 3).val_col})
               ->project(~[
@@ -566,6 +395,11 @@ class TestUsageOnGroupbyFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col")[["group_col"]].shift(1)
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -587,6 +421,11 @@ class TestUsageOnGroupbyFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col")[["val_col", "random_col"]].shift([1, -1])
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -614,6 +453,11 @@ class TestUsageOnGroupbyFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.groupby("group_col")[["val_col", "random_col"]].shift([1, -1], suffix="_sfx")
+
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
 
         expected = '''
             #Table(test_schema.test_table)#
@@ -647,6 +491,11 @@ class TestUsageOnGroupbyFrame:
         )
 
         expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
+
+        expected = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[group_col, group_col_2], []), ~group_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).group_col})
               ->extend(over(~[group_col, group_col_2], []), ~val_col_sfx_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).val_col})
@@ -667,99 +516,6 @@ class TestUsageOnGroupbyFrame:
         assert frame.to_pure_query(FrameToPureConfig()) == expected
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
-    def test_series_datatype_conversion_and_full_query_generation(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.string_column("group_col"),
-            PrimitiveTdsColumn.string_column("group_col_2"),
-            PrimitiveTdsColumn.integer_column("val_col"),
-            PrimitiveTdsColumn.integer_column("random_col"),
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        frame1 = frame.groupby("group_col")["val_col"].shift(5)
-        assert isinstance(frame1, GroupbySeries)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).val_col})
-              ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__
-              ])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame1.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame1 += 5  # type: ignore[operator, assignment]
-        assert isinstance(frame1, GroupbySeries)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[group_col], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).val_col})
-              ->project(~[val_col:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame1.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame2 = frame.groupby("group_col")["val_col"].shift([1])
-        assert isinstance(frame2, PandasApiTdsFrame)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], []), ~val_col_1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).val_col})
-              ->project(~[
-                val_col_1:p|$p.val_col_1__INTERNAL_PYLEGEND_COLUMN__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert frame2.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame2, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame3 = frame.groupby(["group_col", "group_col_2"])["val_col"].shift([5, -3])
-        assert isinstance(frame3, PandasApiTdsFrame)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[group_col, group_col_2], []), ~val_col_5__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).val_col})
-              ->extend(over(~[group_col, group_col_2], []), ~'val_col_-3__INTERNAL_PYLEGEND_COLUMN__':{p,w,r | $p->lead($r, 3).val_col})
-              ->project(~[
-                val_col_5:p|$p.val_col_5__INTERNAL_PYLEGEND_COLUMN__,
-                'val_col_-3':p|$p.'val_col_-3__INTERNAL_PYLEGEND_COLUMN__'
-              ])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame3.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame3, FrameToPureConfig(), self.legend_client) == expected_pure
-
-    def test_series_assign(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.string_column("group_col"),
-            PrimitiveTdsColumn.string_column("group_col_2"),
-            PrimitiveTdsColumn.integer_column("val_col"),
-            PrimitiveTdsColumn.integer_column("random_col"),
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        frame["shifted_col1"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(10)  # type: ignore[assignment]
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).val_col})
-              ->project(~[group_col:c|$c.group_col, group_col_2:c|$c.group_col_2, val_col:c|$c.val_col, random_col:c|$c.random_col, shifted_col1:c|$c.val_col__INTERNAL_PYLEGEND_COLUMN__])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame["col2"] = frame.groupby(["group_col", "group_col_2"])["val_col"].shift(-3) + 5  # type: ignore[operator]
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 10).val_col})
-              ->project(~[group_col:c|$c.group_col, group_col_2:c|$c.group_col_2, val_col:c|$c.val_col, random_col:c|$c.random_col, shifted_col1:c|$c.val_col__INTERNAL_PYLEGEND_COLUMN__])
-              ->extend(over(~[group_col, group_col_2], []), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r, 3).val_col})
-              ->project(~[group_col:c|$c.group_col, group_col_2:c|$c.group_col_2, val_col:c|$c.val_col, random_col:c|$c.random_col, shifted_col1:c|$c.shifted_col1, col2:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
     def test_groupby_diff(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
                    PrimitiveTdsColumn.integer_column("col2"),
@@ -767,6 +523,10 @@ class TestUsageOnGroupbyFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         groupby_frame_diff = frame.groupby("col1").diff(5)
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
@@ -779,6 +539,10 @@ class TestUsageOnGroupbyFrame:
         assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
 
         groupby_frame_diff = frame.groupby("col1")[["col1", "col2"]].diff(5)
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[col1], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col1})
@@ -790,27 +554,6 @@ class TestUsageOnGroupbyFrame:
         assert groupby_frame_diff.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
 
-        groupby_series = frame.groupby("col1")["col2"].diff(5)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
-              ->project(~[col2:c|(toOne($c.col2) - toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__))])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert groupby_series.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(groupby_series, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame["col2"] = frame.groupby("col1")["col2"].diff(5)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
-              ->project(~[col1:c|$c.col1, col2:c|(toOne($c.col2) - toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)), col3:c|$c.col3])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
     def test_pct_change(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
                    PrimitiveTdsColumn.integer_column("col2"),
@@ -818,6 +561,10 @@ class TestUsageOnGroupbyFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         groupby_frame_pct_change = frame.groupby("col1").pct_change(5)
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col2})
@@ -831,6 +578,10 @@ class TestUsageOnGroupbyFrame:
                expected_pure
 
         groupby_frame_pct_change = frame.groupby("col1")[["col1", "col2"]].pct_change(5)
+        expected = '''
+        '''  # noqa: E501
+        expected = dedent(expected).strip()
+        # assert frame.to_sql_query() == expected
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[col1], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 5).col1})
@@ -842,47 +593,3 @@ class TestUsageOnGroupbyFrame:
         assert groupby_frame_pct_change.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(groupby_frame_pct_change, FrameToPureConfig(), self.legend_client) == \
                expected_pure
-
-        series_pct_change = frame.groupby("col1")["col2"].pct_change(1)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__INTERNAL_PYLEGEND_COLUMN__:{r | 0})
-              ->extend(over(~[col1], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 1).col2})
-              ->project(~[col2:c|((toOne($c.col2) / toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert series_pct_change.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(series_pct_change, FrameToPureConfig(), self.legend_client) == expected_pure
-
-        frame["col1_pct_change"] = frame.groupby("col1")["col3"].pct_change(3)
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[col1], []), ~col3__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lag($r, 3).col3})
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_pct_change:c|((toOne($c.col3) / toOne($c.col3__INTERNAL_PYLEGEND_COLUMN__)) - 1)])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
-    def test_date_diff(self) -> None:
-        columns = [PrimitiveTdsColumn.string_column("group_col"),
-                   PrimitiveTdsColumn.strictdate_column("col1"),
-                   PrimitiveTdsColumn.datetime_column("col2"),
-                   PrimitiveTdsColumn.date_column("col3")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        frame["col_diff_1_2"] = frame.groupby("group_col")["col1"].shift(0).diff(frame["col2"], "YEARS")  # type: ignore
-        frame["col_diff_2_3"] = frame.groupby("group_col")["col2"].shift(0).diff(frame["col3"], "YEARS")  # type: ignore
-        frame["col_diff_3_1"] = frame.groupby("group_col")["col3"].shift(0).diff(frame["col1"], "YEARS")  # type: ignore
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], []), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r, 0).col1})
-              ->project(~[group_col:c|$c.group_col, col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col_diff_1_2:c|toOne($c.col1__INTERNAL_PYLEGEND_COLUMN__)->dateDiff(toOne($c.col2), DurationUnit.'YEARS')])
-              ->extend(over(~[group_col], []), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r, 0).col2})
-              ->project(~[group_col:c|$c.group_col, col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col_diff_1_2:c|$c.col_diff_1_2, col_diff_2_3:c|toOne($c.col2__INTERNAL_PYLEGEND_COLUMN__)->dateDiff(toOne($c.col3), DurationUnit.'YEARS')])
-              ->extend(over(~[group_col], []), ~col3__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->lead($r, 0).col3})
-              ->project(~[group_col:c|$c.group_col, col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col_diff_1_2:c|$c.col_diff_1_2, col_diff_2_3:c|$c.col_diff_2_3, col_diff_3_1:c|toOne($c.col3__INTERNAL_PYLEGEND_COLUMN__)->dateDiff(toOne($c.col1), DurationUnit.'YEARS')])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
