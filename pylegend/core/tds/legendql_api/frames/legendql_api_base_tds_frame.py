@@ -55,18 +55,6 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         BaseTdsFrame.__init__(self, columns=columns)
 
-    def cast(
-            self,
-            column_type_map: PyLegendDict[str, CastTarget]
-    ) -> "LegendQLApiTdsFrame":
-        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
-            LegendQLApiAppliedFunctionTdsFrame
-        )
-        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_cast_function import (
-            LegendQLApiCastFunction
-        )
-        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiCastFunction(self, column_type_map))
-
     def head(self, row_count: int = 5) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
             LegendQLApiAppliedFunctionTdsFrame
@@ -519,6 +507,18 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiProjectFunction
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiProjectFunction(self, project_columns))
+
+    def cast(
+            self,
+            column_type_map: PyLegendDict[str, CastTarget]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_cast_function import (
+            LegendQLApiCastFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiCastFunction(self, column_type_map))
 
 
 def _infer_window_frame_bound(
