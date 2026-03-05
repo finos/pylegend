@@ -500,8 +500,8 @@ class TestUsageOnGroupbyFrame:
               ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->lag($r, 1).val_col})
               ->extend(over(~[group_col], [ascending(~val_col)]), ~random_col__pylegend_olap_column__:{p,w,r | $p->lag($r, 1).random_col})
               ->project(~[
-                val_col:p|$p.val_col__pylegend_olap_column__,
-                random_col:p|$p.random_col__pylegend_olap_column__
+                val_col:c|$c.val_col__pylegend_olap_column__,
+                random_col:c|$c.random_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -545,7 +545,7 @@ class TestUsageOnGroupbyFrame:
             #Table(test_schema.test_table)#
               ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->lag($r, 1).val_col})
               ->project(~[
-                val_col:p|$p.val_col__pylegend_olap_column__
+                val_col:c|$c.val_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -589,7 +589,7 @@ class TestUsageOnGroupbyFrame:
             #Table(test_schema.test_table)#
               ->extend(over(~[group_col], [ascending(~val_col)]), ~group_col__pylegend_olap_column__:{p,w,r | $p->lead($r, 1).group_col})
               ->project(~[
-                group_col:p|$p.group_col__pylegend_olap_column__
+                group_col:c|$c.group_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -645,10 +645,10 @@ class TestUsageOnGroupbyFrame:
               ->extend(over(~[group_col], [ascending(~random_col)]), ~'val_col_-1__pylegend_olap_column__':{p,w,r | $p->lead($r, 1).val_col})
               ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col_-1__pylegend_olap_column__':{p,w,r | $p->lead($r, 1).random_col})
               ->project(~[
-                val_col_1:p|$p.val_col_1__pylegend_olap_column__,
-                random_col_1:p|$p.random_col_1__pylegend_olap_column__,
-                'val_col_-1':p|$p.'val_col_-1__pylegend_olap_column__',
-                'random_col_-1':p|$p.'random_col_-1__pylegend_olap_column__'
+                val_col_1:c|$c.val_col_1__pylegend_olap_column__,
+                random_col_1:c|$c.random_col_1__pylegend_olap_column__,
+                'val_col_-1':c|$c.'val_col_-1__pylegend_olap_column__',
+                'random_col_-1':c|$c.'random_col_-1__pylegend_olap_column__'
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -705,10 +705,10 @@ class TestUsageOnGroupbyFrame:
               ->extend(over(~[group_col], [ascending(~random_col)]), ~'val_col_sfx_-1__pylegend_olap_column__':{p,w,r | $p->lead($r, 1).val_col})
               ->extend(over(~[group_col], [ascending(~random_col)]), ~'random_col_sfx_-1__pylegend_olap_column__':{p,w,r | $p->lead($r, 1).random_col})
               ->project(~[
-                val_col_sfx_1:p|$p.val_col_sfx_1__pylegend_olap_column__,
-                random_col_sfx_1:p|$p.random_col_sfx_1__pylegend_olap_column__,
-                'val_col_sfx_-1':p|$p.'val_col_sfx_-1__pylegend_olap_column__',
-                'random_col_sfx_-1':p|$p.'random_col_sfx_-1__pylegend_olap_column__'
+                val_col_sfx_1:c|$c.val_col_sfx_1__pylegend_olap_column__,
+                random_col_sfx_1:c|$c.random_col_sfx_1__pylegend_olap_column__,
+                'val_col_sfx_-1':c|$c.'val_col_sfx_-1__pylegend_olap_column__',
+                'random_col_sfx_-1':c|$c.'random_col_sfx_-1__pylegend_olap_column__'
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -776,12 +776,12 @@ class TestUsageOnGroupbyFrame:
               ->extend(over(~[group_col, group_col_2], [ascending(~val_col)]), ~'val_col_sfx_-1__pylegend_olap_column__':{p,w,r | $p->lead($r, 1).val_col})
               ->extend(over(~[group_col, group_col_2], [ascending(~val_col)]), ~'random_col_sfx_-1__pylegend_olap_column__':{p,w,r | $p->lead($r, 1).random_col})
               ->project(~[
-                group_col_sfx_1:p|$p.group_col_sfx_1__pylegend_olap_column__,
-                val_col_sfx_1:p|$p.val_col_sfx_1__pylegend_olap_column__,
-                random_col_sfx_1:p|$p.random_col_sfx_1__pylegend_olap_column__,
-                'group_col_sfx_-1':p|$p.'group_col_sfx_-1__pylegend_olap_column__',
-                'val_col_sfx_-1':p|$p.'val_col_sfx_-1__pylegend_olap_column__',
-                'random_col_sfx_-1':p|$p.'random_col_sfx_-1__pylegend_olap_column__'
+                group_col_sfx_1:c|$c.group_col_sfx_1__pylegend_olap_column__,
+                val_col_sfx_1:c|$c.val_col_sfx_1__pylegend_olap_column__,
+                random_col_sfx_1:c|$c.random_col_sfx_1__pylegend_olap_column__,
+                'group_col_sfx_-1':c|$c.'group_col_sfx_-1__pylegend_olap_column__',
+                'val_col_sfx_-1':c|$c.'val_col_sfx_-1__pylegend_olap_column__',
+                'random_col_sfx_-1':c|$c.'random_col_sfx_-1__pylegend_olap_column__'
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -1051,9 +1051,9 @@ class TestEndToEndUsageOnGroupbyFrame:
             'columns': ['First Name', 'Last Name', 'Age'],
             'rows': [
                 {'values': [None, None, None]},
-                {'values': ['Peter', 'Smith', 23]},
-                {'values': ['John', 'Johnson', 22]},
                 {'values': ['John', 'Hill', 12]},
+                {'values': ['John', 'Johnson', 22]},
+                {'values': ['Anthony', 'Allen', 22]},
                 {'values': [None, None, None]},
                 {'values': [None, None, None]},
                 {'values': [None, None, None]},
@@ -1075,8 +1075,8 @@ class TestEndToEndUsageOnGroupbyFrame:
             'columns': ['First Name', 'Last Name'],
             'rows': [
                 {'values': ['John', 'Johnson']},
-                {'values': ['John', 'Hill']},
                 {'values': ['Anthony', 'Allen']},
+                {'values': ['Peter', 'Smith']},
                 {'values': [None, None]},
                 {'values': [None, None]},
                 {'values': [None, None]},
@@ -1128,9 +1128,9 @@ class TestEndToEndUsageOnGroupbyFrame:
                         'First Name_shifted_-1', 'Firm/Legal Name_shifted_-1'],
             'rows': [
                 {'values': [None, None, 'John', 'Firm X']},
-                {'values': ['Peter', 'Firm X', 'John', 'Firm X']},
                 {'values': ['John', 'Firm X', 'Anthony', 'Firm X']},
-                {'values': ['John', 'Firm X', None, None]},
+                {'values': ['John', 'Firm X', 'Peter', 'Firm X']},
+                {'values': ['Anthony', 'Firm X', None, None]},
                 {'values': [None, None, None, None]},
                 {'values': [None, None, None, None]},
                 {'values': [None, None, None, None]},

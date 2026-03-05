@@ -39,8 +39,18 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiPrimitive,
 )
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.sql.metamodel import Expression, FunctionCall, IntegerLiteral, QualifiedName, QuerySpecification
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyLegendTdsFrame
+from pylegend.core.sql.metamodel import (
+    Expression,
+    FunctionCall,
+    IntegerLiteral,
+    QualifiedName,
+    QuerySpecification,
+)
+from pylegend.core.tds.tds_frame import (
+    FrameToPureConfig,
+    FrameToSqlConfig,
+    PyLegendTdsFrame,
+)
 
 __all__: PyLegendSequence[str] = [
     "PandasApiTdsRow",
@@ -106,7 +116,7 @@ class PandasApiLeadRow(PandasApiTdsRow):
             column: str,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
-    ) -> Expression:  # pragma: no cover (SQL query execution is not supported for the shift function)
+    ) -> Expression:
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
             IntegerLiteral(self.__num_rows_to_lead_by)
@@ -148,7 +158,7 @@ class PandasApiLagRow(PandasApiTdsRow):
             column: str,
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
-    ) -> Expression:  # pragma: no cover (SQL query execution is not supported for the shift function)
+    ) -> Expression:
         arguments: list[Expression] = [
             super().column_sql_expression(column, frame_name_to_base_query_map, config),
             IntegerLiteral(self.__num_rows_to_lag_by)

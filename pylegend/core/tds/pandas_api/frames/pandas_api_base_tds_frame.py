@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
-
 try:
     from typing import ParamSpec
 except Exception:
@@ -38,7 +37,7 @@ from pylegend._typing import (
     PyLegendCallable,
     PyLegendUnion,
     PyLegendDict,
-    PyLegendHashable
+    PyLegendHashable,
 )
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,

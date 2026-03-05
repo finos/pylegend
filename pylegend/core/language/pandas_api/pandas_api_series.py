@@ -24,7 +24,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
     PyLegendTypeVar,
-    PyLegendUnion,
+    PyLegendUnion
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput

@@ -25,8 +25,10 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiPartialFrame,
+    PandasApiSortInfo,
+    PandasApiSortDirection,
     PandasApiWindow,
-    PandasApiWindowReference, PandasApiSortInfo, PandasApiSortDirection,
+    PandasApiWindowReference,
 )
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.helpers import (
@@ -36,16 +38,24 @@ from pylegend.core.language.shared.helpers import (
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
-    QuerySpecification, IntegerLiteral, SingleColumn, SelectItem
+    QuerySpecification,
+    IntegerLiteral,
+    SingleColumn,
+    SelectItem,
 )
 from pylegend.core.sql.metamodel_extension import WindowExpression
-from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction, \
-    PandasApiAppliedFunctionTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+    PandasApiAppliedFunction,
+    PandasApiAppliedFunctionTdsFrame,
+)
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import (
+    FrameToPureConfig,
+    FrameToSqlConfig,
+)
 
 
 class ShiftExtendFunction(PandasApiAppliedFunction):
@@ -186,9 +196,7 @@ class ShiftExtendFunction(PandasApiAppliedFunction):
         return list(self.base_frame().columns()) + new_columns
 
     def validate(self) -> bool:
-        base_frame = \
-            self.__base_frame.base_frame() if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame) else self.base_frame()
-        base_frame_columns = set(column.get_name() for column in base_frame.columns())
+        base_frame_columns = set(column.get_name() for column in self.base_frame().columns())
         order_by_list = set(
             self.__order_by if isinstance(self.__order_by, PyLegendSequence) and not isinstance(self.__order_by, str)
             else [self.__order_by]
