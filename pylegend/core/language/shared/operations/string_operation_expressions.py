@@ -20,6 +20,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionBooleanReturn,
     PyLegendExpressionDateTimeReturn,
 )
@@ -93,7 +94,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringRepeatStringExpression",
     "PyLegendStringFullMatchExpression",
     "PyLegendStringMatchExpression",
-    "PyLegendStringCoalesceExpression"
+    "PyLegendStringCoalesceExpression",
+    "PyLegendStringParseDecimalExpression",
+    "PyLegendStringParseNumericExpression",
 ]
 
 
@@ -413,6 +416,65 @@ class PyLegendStringParseFloatExpression(PyLegendUnaryExpression, PyLegendExpres
             operand,
             PyLegendStringParseFloatExpression.__to_sql_func,
             PyLegendStringParseFloatExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendStringParseDecimalExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return Cast(expression, ColumnType(name="DECIMAL", parameters=[]))
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("parseDecimal", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionDecimalReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendStringParseDecimalExpression.__to_sql_func,
+            PyLegendStringParseDecimalExpression.__to_pure_func,
+            non_nullable=True,
+            operand_needs_to_be_non_nullable=True,
+        )
+
+
+class PyLegendStringParseNumericExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
+
+    def __init__(self, operand: PyLegendExpressionStringReturn, precision: int, scale: int) -> None:
+        self.__precision = precision
+        self.__scale = scale
+
+        def to_sql_func(
+                expression: Expression,
+                frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+                config: FrameToSqlConfig
+        ) -> Expression:
+            return Cast(
+                expression,
+                ColumnType(
+                    name="NUMERIC",
+                    parameters=[precision, scale]
+                )
+            )
+
+        def to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+            return generate_pure_functional_call("parseDecimal", [op_expr])
+
+        PyLegendExpressionDecimalReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            to_sql_func,
+            to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )
