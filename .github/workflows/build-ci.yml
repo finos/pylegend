@@ -125,7 +125,7 @@ jobs:
 
       - name: Log in to Docker Hub
         if: github.ref == 'refs/heads/main' && github.repository == 'finos/pylegend'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: finos
           password: ${{ secrets.DOCKER_PASSWORD }}
