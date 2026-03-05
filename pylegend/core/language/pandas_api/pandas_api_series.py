@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-from datetime import datetime, date
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
@@ -27,7 +25,6 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendTypeVar,
     PyLegendUnion,
-    PyLegendHashable,
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -507,17 +504,6 @@ class DateSeries(Series, PyLegendDate, PyLegendExpressionDateReturn):  # type: i
         super().__init__(base_frame, column, value)
         PyLegendDate.__init__(self, self)
 
-    def diff(  # type: ignore[override]
-        self,
-        other: PyLegendUnion["date", "datetime", "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
-        duration_unit: str
-    ) -> "IntegerSeries":
-        result_primitive = PyLegendDate.diff(self, other, duration_unit)
-        return self._convert_primitive_to_series(result_primitive)
-
-    def _convert_primitive_to_series(self, result_primitive: "PyLegendInteger") -> "IntegerSeries":
-        return IntegerSeries(self.get_base_frame(), self.columns()[0].get_name(), result_primitive.value())
-
 
 @add_primitive_methods
 class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeReturn):  # type: ignore
@@ -527,14 +513,6 @@ class DateTimeSeries(DateSeries, PyLegendDateTime, PyLegendExpressionDateTimeRet
         super().__init__(base_frame, column, value)
         PyLegendDateTime.__init__(self, self)
 
-    def diff(  # type: ignore[override]
-        self,
-        other: PyLegendUnion["date", "datetime", "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
-        duration_unit: str
-    ) -> "IntegerSeries":
-        result_primitive = PyLegendDateTime.diff(self, other, duration_unit)
-        return self._convert_primitive_to_series(result_primitive)
-
 
 @add_primitive_methods
 class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictDateReturn):  # type: ignore
@@ -543,11 +521,3 @@ class StrictDateSeries(DateSeries, PyLegendStrictDate, PyLegendExpressionStrictD
     ) -> None:
         super().__init__(base_frame, column, value)
         PyLegendStrictDate.__init__(self, self)
-
-    def diff(  # type: ignore[override]
-        self,
-        other: PyLegendUnion["date", "datetime", "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
-        duration_unit: str
-    ) -> "IntegerSeries":
-        result_primitive = PyLegendDateTime.diff(self, other, duration_unit)
-        return self._convert_primitive_to_series(result_primitive)

@@ -179,14 +179,13 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-    from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
 
     if series.expr is not None:
         core_series = assert_and_find_core_series(series.expr)
         assert core_series is not None
         return has_window_function(core_series)
 
-    considered_window_functions = [RankFunction, ShiftFunction]
+    considered_window_functions = [RankFunction]
 
     if isinstance(series, Series):
         applied_func = series.get_filtered_frame().get_applied_function()
@@ -201,12 +200,10 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
 
 
 def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], config: FrameToPureConfig) -> str:
-    zero_column_name = "__pylegend_zero_column__"
     temp_column_name_suffix = "__pylegend_olap_column__"
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-    from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftFunction
 
     col_name = series.columns()[0].get_name()
     full_expr = series.expr
@@ -219,7 +216,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
     for expr in sub_expressions:
         if isinstance(expr, (Series, GroupbySeries)):
             applied_func = get_applied_func(expr)
-            if isinstance(applied_func, (RankFunction, ShiftFunction)):
+            if isinstance(applied_func, RankFunction):
                 assert has_window_func is False
                 has_window_func = True
                 c, window = applied_func.construct_column_expression_and_window_tuples("r")[0]
@@ -231,8 +228,6 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
         core_series = assert_and_find_core_series(series)
         assert isinstance(core_series, (Series, GroupbySeries))
         applied_func = get_applied_func(core_series)
-        if isinstance(applied_func, ShiftFunction):
-            extend += f"->extend(~{zero_column_name}:{{r | 0}})" + config.separator(1)
         pure_expr = full_expr.to_pure_expression(config)
         temp_name = escape_column_name(col_name + temp_column_name_suffix)
         extend += f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"

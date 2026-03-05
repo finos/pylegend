@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import copy
-from datetime import date, datetime
 from textwrap import dedent
 import pandas as pd
 from pylegend._typing import (
@@ -23,7 +22,6 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
     PyLegendUnion,
-    PyLegendHashable,
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
