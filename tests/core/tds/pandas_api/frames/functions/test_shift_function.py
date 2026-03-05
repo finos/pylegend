@@ -15,6 +15,8 @@
 import json
 from textwrap import dedent
 import pytest
+
+from pylegend import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
