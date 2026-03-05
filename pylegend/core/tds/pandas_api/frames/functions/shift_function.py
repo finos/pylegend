@@ -160,7 +160,7 @@ class ShiftExtendFunction(PandasApiAppliedFunction):
         return self.__base_frame
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
-        return []
+        return []  # pragma: no cover (This frame is never returned directly - it's always followed by shift, diff or pct)
 
     def calculate_columns(self) -> PyLegendSequence["TdsColumn"]:
         temp_column_name_suffix = "__pylegend_olap_column__"
