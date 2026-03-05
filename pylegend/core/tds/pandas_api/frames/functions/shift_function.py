@@ -348,21 +348,6 @@ class ShiftExtendFunction(PandasApiAppliedFunction):
 
         return column_expression_and_window_tuples
 
-    def _assert_single_column_in_base_frame(self) -> None:
-        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
-
-        if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
-            selected_columns = self.__base_frame.get_selected_columns()
-            assert selected_columns is not None, "To get an SQL or a pure expression, exactly one column must be selected."
-            base_frame_columns = selected_columns
-        else:
-            base_frame_columns = list(self.__base_frame.columns())
-
-        assert len(base_frame_columns) == 1, (
-            "To get an SQL or a pure expression, the base frame must have exactly one column, but got "
-            f"{len(base_frame_columns)} columns: {[str(col) for col in base_frame_columns]}"
-        )
-
 
 class ShiftFunction(PandasApiAppliedFunction):
     _shift_extended_frame: PandasApiAppliedFunctionTdsFrame
@@ -390,7 +375,7 @@ class ShiftFunction(PandasApiAppliedFunction):
         return suffix_removed_cols
 
     def validate(self) -> bool:
-        if not isinstance(self._shift_extended_frame.get_applied_function(), ShiftExtendFunction):
+        if not isinstance(self._shift_extended_frame.get_applied_function(), ShiftExtendFunction):  # pragma: no cover
             raise TypeError(
                 "ShiftFunction can only be applied after a ShiftExtendFunction."
             )

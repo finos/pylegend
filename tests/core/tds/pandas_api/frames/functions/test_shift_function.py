@@ -20,6 +20,7 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTd
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
+from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
 
@@ -47,6 +48,15 @@ class TestErrorsOnBaseFrame:
         assert v3.value.args[0] == (
             "The 'periods' argument of the shift function cannot contain duplicate values, but got: periods=[-1, 1, -1]"
         )
+
+    def test_invalid_order_by(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as v:
+            frame.shift(order_by="col2")
+        assert v.value.args[0] == \
+               "The following columns in the 'order_by' argument are not present in the base_frame: {'col2'}"
 
     def test_invalid_axis(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -165,9 +175,9 @@ class TestErrorsOnGroupbyFrame:
 
 
 class TestUsageOnBaseFrame:
-    # @pytest.fixture(autouse=True)
-    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_no_arguments(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -205,7 +215,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_negative_periods_argument(self) -> None:
         columns = [PrimitiveTdsColumn.date_column("col1"), PrimitiveTdsColumn.float_column("col2")]
@@ -249,7 +259,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_list_periods_no_suffix(self) -> None:
         columns = [PrimitiveTdsColumn.strictdate_column("col1"), PrimitiveTdsColumn.datetime_column("col2")]
@@ -301,7 +311,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_list_periods_with_suffix(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
@@ -353,7 +363,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_diff(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
@@ -406,7 +416,7 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_pct_change(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
@@ -452,13 +462,13 @@ class TestUsageOnBaseFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
 
 class TestUsageOnGroupbyFrame:
-    # @pytest.fixture(autouse=True)
-    # def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-    #     self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_no_selection(self) -> None:
         columns = [
@@ -506,7 +516,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_single_selection(self) -> None:
         columns = [
@@ -550,7 +560,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_selection_same_as_groupby(self) -> None:
         columns = [
@@ -594,7 +604,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_multiple_periods(self) -> None:
         columns = [
@@ -653,7 +663,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_suffix(self) -> None:
         columns = [
@@ -713,7 +723,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_multiple_grouping(self) -> None:
         columns = [
@@ -786,7 +796,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
-        # assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected
 
     def test_groupby_diff(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
@@ -831,7 +841,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert groupby_frame_diff.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
 
         groupby_frame_diff = frame.groupby("col1")[["col1"]].diff(order_by="col2", periods=-1)
         expected = '''
@@ -866,7 +876,7 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert groupby_frame_diff.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
+        assert generate_pure_query_and_compile(groupby_frame_diff, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_pct_change(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"),
@@ -911,8 +921,8 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert groupby_frame_pct_change.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(groupby_frame_pct_change, FrameToPureConfig(), self.legend_client) == \
-        #        expected_pure
+        assert generate_pure_query_and_compile(groupby_frame_pct_change, FrameToPureConfig(), self.legend_client) == \
+               expected_pure
 
         groupby_frame_pct_change = frame.groupby("col1")[["col1", "col2"]].pct_change(order_by="col2", periods=-1)
         expected = '''
@@ -951,8 +961,8 @@ class TestUsageOnGroupbyFrame:
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
         assert groupby_frame_pct_change.to_pure_query() == expected_pure
-        # assert generate_pure_query_and_compile(groupby_frame_pct_change, FrameToPureConfig(), self.legend_client) == \
-        #        expected_pure
+        assert generate_pure_query_and_compile(groupby_frame_pct_change, FrameToPureConfig(), self.legend_client) == \
+               expected_pure
 
 
 class TestEndToEndUsageOnBaseFrame:
@@ -960,7 +970,7 @@ class TestEndToEndUsageOnBaseFrame:
     def test_no_arguments(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = frame.shift(order_by="Age")
+        frame = frame.shift(order_by="Age")
 
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
@@ -974,13 +984,13 @@ class TestEndToEndUsageOnBaseFrame:
                 {'values': ['Fabrice', 'Roberts', 34, 'Firm A']}
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
     def test_negative_periods(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = frame.sort_values("Age").shift(order_by="Age", periods=-1)
+        frame = frame.sort_values("Age").shift(order_by="Age", periods=-1)
 
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
@@ -994,13 +1004,13 @@ class TestEndToEndUsageOnBaseFrame:
                 {'values': [None, None, None, None]}
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
     def test_list_periods(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = frame.sort_values("Age").shift(order_by="Age", periods=[1, -1])
+        frame = frame.sort_values("Age").shift(order_by="Age", periods=[1, -1])
 
         expected = {
             'columns': ['First Name_1', 'Last Name_1', 'Age_1', 'Firm/Legal Name_1',
@@ -1015,13 +1025,13 @@ class TestEndToEndUsageOnBaseFrame:
                 {'values': ['Fabrice', 'Roberts', 34, 'Firm A', None, None, None, None]}
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
     def test_list_periods_with_suffix(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = frame.sort_values("Age").shift(order_by="Age", periods=[1, -1], suffix="_shifted")
+        frame = frame.sort_values("Age").shift(order_by="Age", periods=[1, -1], suffix="_shifted")
 
         expected = {
             'columns': ['First Name_shifted_1', 'Last Name_shifted_1', 'Age_shifted_1', 'Firm/Legal Name_shifted_1',
@@ -1036,7 +1046,7 @@ class TestEndToEndUsageOnBaseFrame:
                 {'values': ['Fabrice', 'Roberts', 34, 'Firm A', None, None, None, None]}
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
 
@@ -1045,7 +1055,7 @@ class TestEndToEndUsageOnGroupbyFrame:
     def test_no_arguments(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = frame.sort_values("Age").groupby("Firm/Legal Name").shift("Age")
+        frame = frame.sort_values("Age").groupby("Firm/Legal Name").shift("Age")
 
         expected = {
             'columns': ['First Name', 'Last Name', 'Age'],
@@ -1059,13 +1069,13 @@ class TestEndToEndUsageOnGroupbyFrame:
                 {'values': [None, None, None]},
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
     def test_negative_periods_with_selection(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = (
+        frame = (
             frame.sort_values("Age")
             .groupby("Firm/Legal Name")[["First Name", "Last Name"]]
             .shift("Age", -1)
@@ -1083,15 +1093,15 @@ class TestEndToEndUsageOnGroupbyFrame:
                 {'values': [None, None]},
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
     def test_list_periods_with_groupby_column_selected(
-        self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
+            self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = (
+        frame = (
             frame.sort_values("Age")
             .groupby("Firm/Legal Name")[["Firm/Legal Name"]]
             .shift("Age", [1, -1])
@@ -1109,15 +1119,15 @@ class TestEndToEndUsageOnGroupbyFrame:
                 {'values': [None, None]},
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
 
     def test_list_periods_with_multiple_groupby_and_suffix(
-        self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
+            self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
-        pylegend_frame = (
+        frame = (
             frame.sort_values("Age")
             .groupby("Firm/Legal Name")[["Firm/Legal Name", "First Name"]]
             .shift("Age", [1, -1], suffix="_shifted")
@@ -1136,5 +1146,45 @@ class TestEndToEndUsageOnGroupbyFrame:
                 {'values': [None, None, None, None]},
             ]
         }
-        res = pylegend_frame.execute_frame_to_string()
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    @pytest.mark.skip(reason="Legend server doesn't execute this SQL because of arithmetic operation on OLAP column.")
+    def test_e2e_diff(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        frame = frame.sort_values("Age")[["Age"]].diff("Age", 1)  # type: ignore[union-attr]
+        expected = {
+            'columns': ['Age'],
+            'rows': [
+                {'values': [None]},
+                {'values': [10]},
+                {'values': [0]},
+                {'values': [1]},
+                {'values': [9]},
+                {'values': [2]},
+                {'values': [1]}
+            ]
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    @pytest.mark.skip(reason="Legend server doesn't execute this SQL because of arithmetic operation on OLAP column.")
+    def test_e2e_pct_change(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+
+        frame = frame.sort_values("Age")[["Age"]].pct_change("Age", 1)  # type: ignore[union-attr]
+        expected = {
+            'columns': ['Age'],
+            'rows': [
+                {'values': [None]},
+                {'values': [0.8333333333333334]},
+                {'values': [0.0]},
+                {'values': [0.045454545454545456]},
+                {'values': [0.391304347826087]},
+                {'values': [0.0625]},
+                {'values': [0.029411764705882353]}
+            ]
+        }
+        res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
