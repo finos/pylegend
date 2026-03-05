@@ -25,6 +25,7 @@ from pylegend.core.language.shared.literal_expressions import (
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.expression import PyLegendExpressionStringReturn
@@ -49,6 +50,8 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringPosExpression,
     PyLegendStringParseIntExpression,
     PyLegendStringParseFloatExpression,
+    PyLegendStringParseDecimalExpression,
+    PyLegendStringParseNumericExpression,
     PyLegendStringConcatExpression,
     PyLegendStringLessThanExpression,
     PyLegendStringLessThanEqualExpression,
@@ -159,6 +162,26 @@ class PyLegendString(PyLegendPrimitive):
     @grammar_method
     def parse_float(self) -> "PyLegendFloat":
         return PyLegendFloat(PyLegendStringParseFloatExpression(self.__value))
+
+    @grammar_method
+    def parse_decimal(
+            self,
+            precision: PyLegendOptional[int] = None,
+            scale: PyLegendOptional[int] = None
+    ) -> "PyLegendDecimal":
+        from pylegend.core.language.shared.primitives.precise_primitives import PyLegendNumeric
+        if precision is not None and scale is not None:
+            return PyLegendNumeric(
+                PyLegendStringParseNumericExpression(self.__value, precision, scale),
+                precision,
+                scale
+            )
+        if precision is not None or scale is not None:
+            raise TypeError(
+                "parse_decimal requires both precision and scale, or neither. "
+                f"Got precision={precision}, scale={scale}"
+            )
+        return PyLegendDecimal(PyLegendStringParseDecimalExpression(self.__value))
 
     @grammar_method
     def parse_boolean(self) -> "PyLegendBoolean":
