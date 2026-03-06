@@ -179,14 +179,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         from pylegend.core.language.pandas_api.pandas_api_series import Series
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
         # Type Check
         if not isinstance(key, str):
             raise TypeError(f"Column name must be a string, got: {type(key)}")
 
         # Reject cross-frame assignment
-        if isinstance(value, Series):
-            origin = value.get_base_frame()
+        if isinstance(value, (Series, GroupbySeries)):
+            origin = value.get_base_frame().base_frame() if isinstance(value, GroupbySeries) else value.get_base_frame()
             if origin is not None and origin is not self:
                 raise ValueError("Assignment from a different frame is not allowed")
 
