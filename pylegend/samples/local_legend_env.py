@@ -18,6 +18,9 @@ import os
 import tempfile
 import time
 import logging
+import subprocess
+import sys
+import docker  # type: ignore
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
@@ -28,6 +31,10 @@ from testcontainers.core.container import DockerContainer  # type: ignore
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
+    PyLegendDict,
+    PyLegendUnion,
+    PyLegendAny,
+    PyLegendTuple,
 )
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.utils.dynamic_port_generator import generate_dynamic_port
@@ -51,7 +58,7 @@ _METADATA_DIR = _SAMPLES_DIR / "resources" / "metadata"
 
 _DEFAULT_IMAGE = "eclipse-temurin:11-jdk"
 
-_LEGEND_ENGINE_VERSION = "4.121.0"
+_LEGEND_ENGINE_VERSION = "4.112.0"
 _LEGEND_JAR_URL = (
     f"https://repo1.maven.org/maven2/org/finos/legend/engine/legend-engine-server-http-server/"
     f"{_LEGEND_ENGINE_VERSION}/legend-engine-server-http-server-{_LEGEND_ENGINE_VERSION}-shaded.jar"
@@ -59,17 +66,22 @@ _LEGEND_JAR_URL = (
 
 
 class LocalLegendEnv:
-    def __init__(
+    def __init__(  # type: ignore
         self,
         image: str = _DEFAULT_IMAGE,
         metadata_port: PyLegendOptional[int] = None,
+        metadata_resources: PyLegendOptional[
+            PyLegendDict[VersionedProjectCoordinates, PyLegendUnion[str, PyLegendDict[PyLegendAny, PyLegendAny]]]
+        ] = None,
         max_wait_seconds: int = 120,
     ) -> None:
         self._image = image
         self._metadata_port = metadata_port or generate_dynamic_port()
+        self._metadata_resources = metadata_resources
         self._max_wait_seconds = max_wait_seconds
 
         self._engine_container: PyLegendOptional[DockerContainer] = None
+        self._engine_process: PyLegendOptional[subprocess.Popen[bytes]] = None
         self._metadata_server: PyLegendOptional[HTTPServer] = None
         self._config_path: PyLegendOptional[str] = None
         self._engine_port: PyLegendOptional[int] = None
@@ -90,10 +102,24 @@ class LocalLegendEnv:
         return self._legend_client
 
     def start(self) -> "LocalLegendEnv":
-        self._validate_resources()
+        if self._engine_container is not None or self._engine_process is not None:
+            return self
+        atexit.register(self.stop)
+        res = dict(self._metadata_resources) if self._metadata_resources is not None else {}
+        nw = NORTHWIND_PROJECT_COORDINATES
+        if not any(c.get_group_id() == nw.get_group_id() and
+                   c.get_artifact_id() == nw.get_artifact_id() and
+                   c.get_version() == nw.get_version() for c in res.keys()):
+            northwind_file = (
+                _METADATA_DIR / "org.finos.legend.pylegend_pylegend-northwind-models_0.0.1-SNAPSHOT.json"
+            ).resolve()
+            with open(northwind_file, "r", encoding="utf-8") as f:
+                res[NORTHWIND_PROJECT_COORDINATES] = f.read()
+        self._metadata_resources = res
+
         self._server_jar_path = _get_server_jar_path()
         self._start_metadata_server()
-        self._start_engine_container()
+        self._start_engine()
         self._wait_for_engine()
         self._legend_client = LegendClient(
             "127.0.0.1", self._engine_port, secure_http=False  # type: ignore[arg-type]
@@ -103,6 +129,9 @@ class LocalLegendEnv:
     def stop(self) -> None:
         if self._engine_container:
             self._engine_container.stop()
+        if self._engine_process:
+            self._engine_process.terminate()
+            self._engine_process.wait()
         if self._metadata_server:
             self._metadata_server.shutdown()
         if self._config_path:
@@ -111,22 +140,21 @@ class LocalLegendEnv:
                 os.rmdir(os.path.dirname(self._config_path))
             except OSError:
                 pass
-        self._engine_container = self._metadata_server = self._config_path = None
+        self._engine_container = self._engine_process = self._metadata_server = self._config_path = None
         self._engine_port = self._testdb_port = self._legend_client = None
 
-    def _validate_resources(self) -> None:
-        meta = _METADATA_DIR
-        if not meta.exists():
-            raise FileNotFoundError(
-                f"Metadata directory not found at {meta}. "
-                "Make sure you are running from a pylegend repository checkout."
-            )
-
     def _start_metadata_server(self) -> None:
+        metadata_map: PyLegendDict[str, str] = {}
+        if self._metadata_resources:
+            for coords, content in self._metadata_resources.items():
+                if isinstance(content, dict):
+                    content = json.dumps(content)
+                metadata_map[_get_metadata_path(coords)] = content
+
         handler_class = type(
             "_Handler",
             (_MetadataServerHandler,),
-            {"metadata_dir": str(_METADATA_DIR.resolve())},
+            {"metadata_map": metadata_map},
         )
         self._metadata_server = HTTPServer(
             ("127.0.0.1", self._metadata_port), handler_class
@@ -135,7 +163,7 @@ class LocalLegendEnv:
         t.start()
         LOGGER.info("Metadata server listening on port %d", self._metadata_port)
 
-    def _start_engine_container(self) -> None:
+    def _start_engine(self) -> None:
         if self._server_jar_path is None:
             raise RuntimeError("Server JAR path is not set")
 
@@ -143,20 +171,47 @@ class LocalLegendEnv:
         self._testdb_port = generate_dynamic_port()
         self._config_path = _write_server_config(self._engine_port, "127.0.0.1", self._metadata_port, self._testdb_port)
 
-        self._engine_container = (
-            DockerContainer(self._image)
-            .with_volume_mapping(str(self._server_jar_path.resolve()), "/legend/server.jar", "ro")
-            .with_volume_mapping(self._config_path, "/legend/config.json", "ro")
-            .with_env("JAVA_TOOL_OPTIONS", "-Duser.timezone=UTC -Dfile.encoding=UTF-8")
-            .with_command("sh -c 'java -jar /legend/server.jar server /legend/config.json'")
-        )
+        has_docker = _is_docker_available()
+        if has_docker:
+            self._engine_container = (
+                DockerContainer(self._image)
+                .with_volume_mapping(str(self._server_jar_path.resolve()), "/legend/server.jar", "ro")
+                .with_volume_mapping(self._config_path, "/legend/config.json", "ro")
+                .with_env("JAVA_TOOL_OPTIONS", "-Duser.timezone=UTC -Dfile.encoding=UTF-8")
+                .with_command("sh -c 'java -jar /legend/server.jar server /legend/config.json'")
+            )
 
-        self._engine_container.with_kwargs(network_mode="host")
+            self._engine_container.with_kwargs(network_mode="host")
 
-        LOGGER.info("Starting Legend engine container (%s) …", self._image)
-        self._engine_container.start()
+            LOGGER.info("Starting Legend engine container (%s) …", self._image)
+            self._engine_container.start()
+            LOGGER.info("Engine container started; responding on host network port = %d", self._engine_port)
+        else:
+            LOGGER.info("Docker is unavailable. Falling back to direct Java subprocess.")
+            java_home = os.environ.get("JAVA_HOME")
+            if not java_home:
+                raise RuntimeError("JAVA_HOME environment variable is not set. "
+                                   "It is required to run the local Legend engine without Docker.")
+            java_cmd = os.path.join(java_home, "bin", "java")
 
-        LOGGER.info("Engine container started; responding on host network port = %d", self._engine_port)
+            cmd = [
+                java_cmd,
+                "-jar",
+                "-Duser.timezone=UTC",
+                "-Dfile.encoding=UTF-8",
+                str(self._server_jar_path.resolve()),
+                "server",
+                self._config_path
+            ]
+
+            self._engine_process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                start_new_session=True,
+                shell=False
+            )
+            LOGGER.info("Engine Java subprocess started; responding on port = %d", self._engine_port)
 
     def _wait_for_engine(self) -> None:
         url = f"http://127.0.0.1:{self._engine_port}/api/server/v1/info"
@@ -171,26 +226,23 @@ class LocalLegendEnv:
 
 
 class _MetadataServerHandler(BaseHTTPRequestHandler):
-    metadata_dir: str = ""
+    metadata_map: PyLegendDict[str, str] = {}
 
     def do_GET(self) -> None:
-        if (
-            "/depot/api/projects/org.finos.legend.pylegend/pylegend-northwind-models/versions/"
-            "0.0.1-SNAPSHOT/pureModelContextData?convertToNewProtocol=false&clientVersion=v1_33_0"
-        ) != self.path:
+        content = self.metadata_map.get(self.path)
+
+        if not content:
             return self.send_error(404, f"Unhandled metadata path: {self.path}")
 
-        file_path = os.path.join(self.metadata_dir, "org.finos.legend.pylegend_pylegend-northwind-models_0.0.1-SNAPSHOT.json")
         try:
-            with open(file_path, "rb") as f:
-                content = f.read()
+            payload = content.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(content)))
+            self.send_header("Content-Length", str(len(payload)))
             self.end_headers()
-            self.wfile.write(content)
-        except OSError:
-            self.send_error(404, f"Metadata file not found: {file_path}")
+            self.wfile.write(payload)
+        except Exception as e:
+            self.send_error(500, f"Error processing metadata: {e}")
 
     def log_message(self, format: str, *args: object) -> None: pass
 
@@ -229,15 +281,53 @@ def _get_server_jar_path() -> Path:
     return jar
 
 
-_singleton: PyLegendOptional[LocalLegendEnv] = None
+def _get_metadata_path(coords: VersionedProjectCoordinates) -> str:
+    return (
+        f"/depot/api/projects/{coords.get_group_id()}/{coords.get_artifact_id()}/versions/"
+        f"{coords.get_version()}/pureModelContextData?convertToNewProtocol=false&clientVersion=v1_33_0"
+    )
 
 
-def get_local_legend_env(**kwargs: object) -> LocalLegendEnv:
-    global _singleton
-    if _singleton is None:
-        _singleton = LocalLegendEnv(**kwargs).start()  # type: ignore[arg-type]
-        atexit.register(_singleton.stop)
-    return _singleton
+def _is_docker_available() -> bool:
+    if sys.platform != "linux":
+        return False
+    try:
+        client = docker.from_env()
+        client.ping()
+        return True
+    except Exception:
+        return False
+
+
+_envs: PyLegendDict[PyLegendTuple[PyLegendAny, ...], LocalLegendEnv] = {}  # type: ignore
+
+
+def get_local_legend_env(  # type: ignore
+    metadata_resources: PyLegendOptional[
+        PyLegendDict[VersionedProjectCoordinates, PyLegendUnion[str, PyLegendDict[PyLegendAny, PyLegendAny]]]
+    ] = None
+) -> LocalLegendEnv:
+    res_keys = list(metadata_resources.keys()) if metadata_resources else []
+    nw = NORTHWIND_PROJECT_COORDINATES
+    if not any(c.get_group_id() == nw.get_group_id() and
+               c.get_artifact_id() == nw.get_artifact_id() and
+               c.get_version() == nw.get_version() for c in res_keys):
+        res_keys.append(nw)
+
+    key = tuple(sorted(
+        json.dumps({
+            "groupId": c.get_group_id(),
+            "artifactId": c.get_artifact_id(),
+            "version": c.get_version()
+        }, sort_keys=True)
+        for c in res_keys
+    ))
+
+    if key not in _envs:
+        _envs[key] = LocalLegendEnv(
+            metadata_resources=metadata_resources
+        ).start()
+    return _envs[key]
 
 
 NORTHWIND_PROJECT_COORDINATES = VersionedProjectCoordinates(
