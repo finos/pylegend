@@ -25,7 +25,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import PyLegendBoolean, PyLegendString, PyLegendNumber, \
-    PyLegendInteger, PyLegendFloat, PyLegendDate, PyLegendDateTime, PyLegendStrictDate, PyLegendPrimitive
+    PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendDate, PyLegendDateTime, PyLegendStrictDate, PyLegendPrimitive
 from pylegend._typing import PyLegendList, PyLegendDict
 
 
@@ -72,6 +72,14 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
                "Column expression for 'col1' is of type " \
                "'<class 'pylegend.core.language.shared.column_expressions.PyLegendIntegerColumnExpression'>'. " \
                "get_boolean method is not valid on this column."
+
+        with pytest.raises(RuntimeError) as v4:
+            tds_row.get_decimal("col1")
+
+        assert v4.value.args[0] == \
+               "Column expression for 'col1' is of type " \
+               "'<class 'pylegend.core.language.shared.column_expressions.PyLegendIntegerColumnExpression'>'. " \
+               "get_decimal method is not valid on this column."
 
     def test_get_boolean_col(self) -> None:
         columns = [
@@ -213,6 +221,30 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendFloat)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+    def test_get_decimal_col(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.decimal_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        tds_row = self.get_tds_row(columns)
+        col_expr: PyLegendPrimitive = tds_row.get_decimal("col1")
+
+        assert isinstance(col_expr, PyLegendDecimal)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == '"root".col1'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+        col_expr = tds_row["col1"]
+
+        assert isinstance(col_expr, PyLegendDecimal)
         assert self.db_extension.process_expression(
             col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
             config=self.sql_to_string_config

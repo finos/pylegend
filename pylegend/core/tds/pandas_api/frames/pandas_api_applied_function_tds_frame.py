@@ -79,6 +79,8 @@ class PandasApiAppliedFunctionTdsFrame(PandasApiBaseTdsFrame):
         return self.__applied_function.to_sql(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
+        if self._transformed_frame is not None:
+            return self._transformed_frame.to_pure(config)
         return self.__applied_function.to_pure(config)
 
     def get_all_tds_frames(self) -> PyLegendList["PandasApiBaseTdsFrame"]:

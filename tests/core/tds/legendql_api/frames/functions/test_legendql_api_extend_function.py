@@ -27,6 +27,7 @@ from pylegend._typing import (
 )
 from pylegend.core.request.legend_client import LegendClient
 from tests.test_helpers import generate_pure_query_and_compile
+from decimal import Decimal as PythonDecimal
 
 
 class TestExtendAppliedFunction:
@@ -161,6 +162,29 @@ class TestExtendAppliedFunction:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->extend(~col3:{r | toOne($r.col1) + 1})')
+
+    def test_query_gen_extend_function_decimal(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.decimal_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.extend(("col3", lambda r: r.get_decimal('col1') + PythonDecimal("1.5")))
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                ("root".col1 + CAST('1.5' AS DECIMAL)) AS "col3"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(~col3:{r | toOne($r.col1) + 1.5D})'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table)#->extend(~col3:{r | toOne($r.col1) + 1.5D})')
 
     def test_query_gen_extend_function_col_name_with_spaces(self) -> None:
         columns = [
