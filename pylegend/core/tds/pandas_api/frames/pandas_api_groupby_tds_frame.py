@@ -19,6 +19,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendDict,
     PyLegendSet,
+    PyLegendHashable,
+    PyLegendSequence,
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -409,3 +411,61 @@ class PandasApiGroupbyTdsFrame:
             ascending=ascending,
             pct=pct
         ))
+
+    def shift(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, ShiftFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            order_by=order_by,
+            base_frame=self,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
+        ))
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(shift_extended_frame))
+
+    def diff(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, DiffFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            order_by=order_by,
+            base_frame=self,
+            periods=periods,
+        ))
+        return PandasApiAppliedFunctionTdsFrame(DiffFunction(shift_extended_frame))
+
+    def pct_change(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, PctChangeFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            order_by=order_by,
+            base_frame=self,
+            periods=periods,
+            freq=freq
+        ))
+        return PandasApiAppliedFunctionTdsFrame(PctChangeFunction(shift_extended_frame))
