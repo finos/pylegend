@@ -809,6 +809,102 @@ class PandasApiGroupbyTdsFrame:
             pct: bool = False,
             axis: PyLegendUnion[int, str] = 0
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the rank of values within each group.
+
+        Rank each value within its group defined by the preceding
+        ``groupby`` call. The grouping columns act as the
+        ``PARTITION BY`` clause in the underlying SQL window function.
+        Only the ranked (non-grouping) columns appear in the result.
+
+        Parameters
+        ----------
+        method : {{'min', 'first', 'dense'}}, default 'min'
+            How to rank equal values:
+
+            - ``'min'`` : Lowest rank in the group of ties (SQL
+              ``RANK()``).
+            - ``'first'`` : Ranks assigned in order of appearance
+              within the group (SQL ``ROW_NUMBER()``).
+            - ``'dense'`` : Like ``'min'`` but ranks always increase
+              by 1, no gaps (SQL ``DENSE_RANK()``).
+        ascending : bool, default True
+            Whether to rank in ascending order. ``False`` ranks in
+            descending order.
+        na_option : {{'bottom'}}, default 'bottom'
+            How to rank null values. Only ``'bottom'`` is supported.
+            ``'keep'`` and ``'top'`` raise ``NotImplementedError``.
+        pct : bool, default False
+            If ``True``, compute percentage ranks (SQL
+            ``PERCENT_RANK()``). Result columns are of float type.
+            Can only be used with ``method='min'``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame containing only the ranked columns (the
+            grouping columns are **not** included in the output). Each
+            column contains integer ranks (or float when
+            ``pct=True``).
+
+        Raises
+        ------
+        NotImplementedError
+            If ``method`` is not one of ``'min'``, ``'first'``,
+            ``'dense'``.
+            If ``na_option`` is not ``'bottom'``.
+            If ``pct=True`` with a method other than ``'min'``.
+            If ``axis`` is not ``0`` or ``'index'``.
+
+        See Also
+        --------
+        PandasApiTdsFrame.rank : Frame-level rank (no partitioning).
+        aggregate : Grouped aggregation.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The ``'average'`` and ``'max'`` ranking methods are **not
+          supported**.
+        - ``na_option`` only supports ``'bottom'``.
+        - ``pct=True`` is only supported with ``method='min'``.
+        - The result contains **only the ranked columns**, not the
+          grouping columns. In pandas, ``DataFrameGroupBy.rank``
+          returns a frame with the same shape as the input, preserving
+          all columns. Here, grouping columns are excluded from the
+          output. To preserve all columns, use bracket assignment
+          with a single-column selection:
+          ``frame["rank"] = frame.groupby("grp")["col"].rank()``.
+        - ``numeric_only`` is not exposed in the groupby ``rank``
+          signature (it is always ``False``).
+        - Combining multiple rank calls in a single expression is
+          **not supported**. Compute them in separate steps.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Rank within groups (only ranked columns in output)
+            frame.groupby("Ship Name")["Order Id"].rank().head(5).to_pandas()
+
+            # Append a grouped rank column to the frame
+            frame["Order Rank"] = frame.groupby(
+                "Ship Name"
+            )["Order Id"].rank()
+            frame.head(5).to_pandas()
+
+            # Dense rank descending within groups
+            frame.groupby("Ship Name")["Order Id"].rank(
+                method="dense", ascending=False
+            ).head(5).to_pandas()
+
+        """
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame
         )

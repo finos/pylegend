@@ -71,3 +71,10 @@ count
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.count
 
+Window Functions
+----------------
+
+rank
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.rank

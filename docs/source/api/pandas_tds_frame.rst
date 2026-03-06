@@ -60,6 +60,45 @@ assign
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.assign
 
+apply
+~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.apply
+
+Indexing
+--------
+
+iloc
+~~~~
+
+.. autoproperty:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.iloc
+
+loc
+~~~
+
+.. autoproperty:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.loc
+
+Joining
+-------
+
+merge
+~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.merge
+
+join
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.join
+
+Column Renaming
+---------------
+
+rename
+~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rename
+
 Aggregation Methods
 -------------------
 
@@ -123,3 +162,31 @@ groupby
    may differ from the frame-level equivalents. See :doc:`pandas_groupby_tds_frame`
    for the full API reference.
 
+Missing Data
+------------
+
+dropna
+~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.dropna
+
+fillna
+~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.fillna
+
+Window Functions
+----------------
+
+rank
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rank
+
+Frame Properties
+----------------
+
+shape
+~~~~~
+
+.. autoproperty:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.shape

@@ -728,6 +728,134 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             indicator: PyLegendOptional[PyLegendUnion[bool, str]] = False,
             validate: PyLegendOptional[str] = None
     ) -> "PandasApiTdsFrame":
+        """
+        Merge this TDS frame with another using a database-style join.
+
+        Combine two frames column-wise based on common columns or
+        explicit key specifications. Supports inner, left, right,
+        outer (full), and cross joins.
+
+        Parameters
+        ----------
+        other : PandasApiTdsFrame
+            The right TDS frame to merge with. Must be a different
+            frame instance; merging a frame with itself raises
+            ``NotImplementedError``.
+        how : {{'inner', 'left', 'right', 'outer', 'cross'}}, default 'inner'
+            Type of merge:
+
+            - ``'inner'`` : Only rows with matching keys in both frames.
+            - ``'left'`` : All rows from the left frame, NaN-filled for
+              non-matching right rows.
+            - ``'right'`` : All rows from the right frame, NaN-filled
+              for non-matching left rows.
+            - ``'outer'`` : All rows from both frames (``FULL OUTER
+              JOIN``).
+            - ``'cross'`` : Cartesian product of both frames. No join
+              keys may be specified.
+        on : str or list of str, optional
+            Column name(s) to join on. Must exist in **both** frames.
+            Mutually exclusive with ``left_on`` / ``right_on``.
+        left_on : str or list of str, optional
+            Column name(s) from the left frame to join on.
+        right_on : str or list of str, optional
+            Column name(s) from the right frame to join on. Must have
+            the same length as ``left_on``.
+        left_index : bool, default False
+            **Not supported.** Setting to ``True`` raises
+            ``NotImplementedError``.
+        right_index : bool, default False
+            **Not supported.** Setting to ``True`` raises
+            ``NotImplementedError``.
+        sort : bool, default False
+            If ``True``, sort the result by the join keys in ascending
+            order.
+        suffixes : tuple of (str, str), default ('_x', '_y')
+            Suffixes to apply to overlapping non-key column names from
+            the left and right frames respectively. Use ``None`` to
+            indicate that the column name from the respective frame
+            should be left as-is (will raise if this causes duplicates).
+        indicator : bool or str, default False
+            **Not supported.** Setting to a truthy value raises
+            ``NotImplementedError``.
+        validate : str, optional
+            **Not supported.** Passing any value raises
+            ``NotImplementedError``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame containing the merged result.
+
+        Raises
+        ------
+        TypeError
+            If ``other`` is not a ``PandasApiTdsFrame``.
+            If ``how``, ``on``, ``left_on``, ``right_on``, ``suffixes``,
+            or ``sort`` have invalid types.
+        ValueError
+            If both ``on`` and ``left_on``/``right_on`` are specified.
+            If ``left_on`` and ``right_on`` have different lengths.
+            If no merge keys can be resolved and ``how`` is not
+            ``'cross'``.
+            If ``how='cross'`` is used with ``on``/``left_on``/
+            ``right_on``.
+            If ``how`` is not a recognised join method.
+            If the resulting columns contain duplicates after suffix
+            application.
+        KeyError
+            If a key specified in ``on``, ``left_on``, or ``right_on``
+            does not exist in the corresponding frame.
+        NotImplementedError
+            If ``left_index=True``, ``right_index=True``,
+            ``indicator`` is truthy, ``validate`` is set, or the frame
+            is merged with itself.
+
+        See Also
+        --------
+        join : Convenience wrapper around merge with simpler syntax.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - **Self-merge is not supported.** Merging a frame with itself
+          raises ``NotImplementedError``.
+        - **Index-based merging is not supported.** ``left_index`` and
+          ``right_index`` must be ``False``.
+        - **``indicator``** and **``validate``** parameters are **not
+          supported**.
+        - When no join keys are provided (and ``how`` is not
+          ``'cross'``), the merge infers keys from the **intersection
+          of column names** between the two frames. If no common
+          columns exist, a ``ValueError`` is raised (unlike pandas,
+          which would raise a ``MergeError``).
+        - ``how='outer'`` maps to a ``FULL OUTER JOIN`` at the SQL
+          level.
+        - ``how='cross'`` is implemented as a ``CROSS JOIN`` in SQL,
+          but mapped to ``JoinKind.INNER`` with a ``1==1`` condition
+          in the PURE query representation.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Create a second frame for joining
+            frame2 = pylegend.samples.pandas_api.northwind_orders_frame()
+            frame2 = frame2.rename({"Order Id": "Right Order Id"})
+
+            # Inner merge on a common column
+            frame.head(5).merge(
+                frame2.head(5),
+                how="inner",
+                left_on="Order Id",
+                right_on="Right Order Id"
+            ).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -741,6 +869,92 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             sort: PyLegendOptional[bool] = False,
             validate: PyLegendOptional[str] = None
     ) -> "PandasApiTdsFrame":
+        """
+        Join this TDS frame with another on shared column(s).
+
+        Convenience method that delegates to :meth:`merge`. The
+        ``lsuffix`` and ``rsuffix`` parameters are mapped to the
+        ``suffixes`` parameter of ``merge``, and ``on`` is passed
+        directly.
+
+        Parameters
+        ----------
+        other : PandasApiTdsFrame
+            The right TDS frame to join with.
+        on : str or list of str, optional
+            Column name(s) to join on. Must exist in **both** frames.
+            Unlike pandas ``join``, this parameter specifies **column
+            names**, not index labels.
+        how : {{'left', 'inner', 'right', 'outer', 'cross'}}, default 'left'
+            Type of join. See :meth:`merge` for details.
+        lsuffix : str, default ''
+            Suffix to apply to overlapping column names from the left
+            frame.
+        rsuffix : str, default ''
+            Suffix to apply to overlapping column names from the right
+            frame.
+        sort : bool, default False
+            If ``True``, sort the result by the join keys.
+        validate : str, optional
+            **Not supported.** Passing any value raises
+            ``NotImplementedError``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame containing the joined result.
+
+        Raises
+        ------
+        ValueError
+            If overlapping column names exist and ``lsuffix`` /
+            ``rsuffix`` do not resolve the conflict.
+        NotImplementedError
+            If ``validate`` is set.
+
+        See Also
+        --------
+        merge : The underlying merge method with full parameter control.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``DataFrame.join`` joins on the **index** by
+          default, optionally using ``on`` to specify a column in the
+          *left* frame to match against the *right* frame's index.
+          Here, ``join`` is purely **column-on-column** and delegates
+          directly to ``merge(on=on)``. There is **no index-based
+          joining**.
+        - The ``lsuffix`` and ``rsuffix`` parameters correspond to
+          ``suffixes=(lsuffix, rsuffix)`` in ``merge``. In pandas,
+          default suffixes are empty strings (raising on conflict);
+          here they also default to empty strings.
+        - Because this delegates to ``merge``, all limitations of
+          ``merge`` apply: no self-join, no ``left_index`` /
+          ``right_index``, no ``indicator``, and no ``validate``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Create a second frame with renamed columns
+            frame2 = pylegend.samples.pandas_api.northwind_orders_frame()
+            frame2 = frame2.rename({"Order Id": "Right Order Id"})
+
+            # Left join on a common key
+            frame.head(5).join(
+                frame2.head(5),
+                on="Ship Name",
+                how="left",
+                lsuffix="_left",
+                rsuffix="_right"
+            ).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -755,6 +969,104 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             level: PyLegendOptional[PyLegendUnion[int, str]] = None,
             errors: str = "ignore",
     ) -> "PandasApiTdsFrame":
+        """
+        Rename columns of the TDS frame.
+
+        Alter column labels using a mapping (dict) or a callable
+        function applied to each column name.
+
+        Parameters
+        ----------
+        mapper : dict or callable, optional
+            Mapping of old column names to new column names, or a
+            callable that transforms each column name (e.g.
+            ``str.upper``). Used when ``axis=1`` (columns). Cannot be
+            specified together with ``columns``.
+        index : dict or callable, optional
+            **Not supported.** Passing any value raises
+            ``NotImplementedError``.
+        columns : dict or callable, optional
+            Alternative to ``mapper`` for renaming columns. Mutually
+            exclusive with ``mapper`` when both are provided alongside
+            ``axis``.
+        axis : {{0, 1, 'index', 'columns'}}, default 1
+            Axis to target. Only ``1`` / ``'columns'`` is supported.
+            ``0`` / ``'index'`` raises ``NotImplementedError``.
+        inplace : bool, default False
+            Must be ``False``. ``True`` raises ``NotImplementedError``.
+        copy : bool, default True
+            Must be ``True``. ``False`` raises ``NotImplementedError``.
+        level : int or str, optional
+            **Not supported.** Passing any value raises
+            ``NotImplementedError``.
+        errors : {{'ignore', 'raise'}}, default 'ignore'
+            If ``'raise'``, raise a ``KeyError`` when a key in the
+            mapping does not exist as a column name. If ``'ignore'``,
+            silently skip non-existent keys.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with renamed columns.
+
+        Raises
+        ------
+        TypeError
+            If ``mapper`` or ``columns`` is not a dict or callable.
+            If ``copy`` or ``inplace`` is not a bool.
+        ValueError
+            If both ``mapper`` (with ``axis``) and ``columns``/
+            ``index`` are specified simultaneously.
+            If ``axis`` is not a supported value.
+            If ``errors`` is not ``'ignore'`` or ``'raise'``.
+            If the rename produces duplicate column names.
+        KeyError
+            If ``errors='raise'`` and a key in the mapping does not
+            exist in the frame's columns.
+        NotImplementedError
+            If ``axis=0``/``'index'``, ``index`` is set, ``level`` is
+            set, ``copy=False``, or ``inplace=True``.
+
+        See Also
+        --------
+        filter : Select columns by name.
+        drop : Remove columns.
+        assign : Add or overwrite columns.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only **column renaming** is supported (``axis=1``). Index
+          renaming (``axis=0``) raises ``NotImplementedError``.
+        - ``inplace=True`` is **not supported**; a new frame is always
+          returned.
+        - ``copy=False`` is **not supported**.
+        - ``level`` (multi-level index) is **not supported**.
+        - The ``index`` parameter is **not supported**.
+        - When using a callable, it is applied to **every** column name
+          (e.g. ``str.upper`` will uppercase all column names).
+        - If ``errors='ignore'`` (the default), keys in the mapping
+          that do not match any column are silently ignored, matching
+          pandas behaviour.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Rename with a dict
+            frame.rename({"Order Id": "OrderId", "Ship Name": "ShipName"}).head(3).to_pandas()
+
+            # Rename with a callable
+            frame.rename(str.upper).head(3).to_pandas()
+
+            # Rename via the columns parameter
+            frame.rename(columns={"Order Id": "order_id"}).head(3).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -1330,16 +1642,277 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             engine_kwargs: PyLegendOptional[PyLegendDict[str, PyLegendPrimitiveOrPythonPrimitive]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        """
+        Apply a function to each column of the TDS frame.
+
+        The callable receives a ``Series`` proxy for each column and
+        must return a transformed value. The function is applied
+        independently to **every** column, producing a new frame with
+        the same column names but transformed values. Additional
+        positional and keyword arguments can be forwarded to the
+        callable via ``args`` and ``**kwargs``.
+
+        Parameters
+        ----------
+        func : callable
+            A function that takes a ``Series`` (column proxy) as its
+            first argument and returns a primitive value or expression.
+            String-based function names (e.g. ``'sum'``) are **not
+            supported**; use :meth:`aggregate` for named aggregations.
+        axis : {{0, 'index'}}, default 0
+            Only column-wise application is supported (``axis=0`` or
+            ``'index'``). Row-wise application (``axis=1``) raises
+            ``ValueError``.
+        raw : bool, default False
+            Must be ``False``. ``True`` is not supported.
+        result_type : None
+            Must be ``None``. Any value raises
+            ``NotImplementedError``.
+        args : tuple, default ()
+            Positional arguments to pass to ``func`` after the
+            ``Series`` argument.
+        by_row : {{False, 'compat'}}, default 'compat'
+            Must be ``False`` or ``'compat'``. ``True`` raises
+            ``NotImplementedError``.
+        engine : str, default 'python'
+            Must be ``'python'``. ``'numba'`` is not supported.
+        engine_kwargs : None
+            Must be ``None``. Not supported.
+        **kwargs
+            Additional keyword arguments forwarded to ``func``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with the function applied to every column.
+
+        Raises
+        ------
+        ValueError
+            If ``axis`` is not ``0`` or ``'index'``.
+        NotImplementedError
+            If ``raw=True``, ``result_type`` is set, ``by_row=True``,
+            ``engine='numba'``, ``engine_kwargs`` is set, or ``func``
+            is a string.
+        TypeError
+            If ``func`` is not callable.
+
+        See Also
+        --------
+        assign : Add or overwrite specific columns with callables.
+        aggregate : Aggregate (reduce) columns to a single row.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``apply`` with ``axis=0`` passes each column as
+          a ``pandas.Series`` to the function, which can return a
+          scalar (reducing the frame) or a Series (transforming it).
+          Here, ``func`` receives a **column Series proxy** and must
+          return a **scalar expression** that defines a row-level
+          transformation. This means ``apply`` always produces a frame
+          with the **same number of rows** — it cannot reduce the
+          frame the way pandas ``apply`` can.
+        - Row-wise application (``axis=1``) is **not supported**.
+        - String function names (e.g. ``'sum'``) are **not supported**.
+          Use :meth:`aggregate` instead.
+        - ``raw=True``, ``result_type``, ``engine='numba'``, and
+          ``engine_kwargs`` are **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Apply a lambda to every column
+            frame.filter(items=["Order Id"]).apply(
+                lambda x: x * 2
+            ).head(5).to_pandas()
+
+            # Apply a function with extra arguments
+            def add_offset(series, offset, *, scale=1):
+                return series * scale + offset
+
+            frame.filter(items=["Order Id"]).apply(
+                add_offset, args=(100,), scale=2
+            ).head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @property
     @abstractmethod
     def iloc(self) -> "PandasApiIlocIndexer":
+        """
+        Purely integer-location based indexing for selection by position.
+
+        Access rows and columns by integer position (0-based). Returns
+        a ``PandasApiIlocIndexer`` that supports ``[]`` notation.
+
+        Allowed inputs:
+
+        - **An integer** — selects a single row (e.g. ``frame.iloc[5]``).
+        - **A slice with ints** — selects a range of rows
+          (e.g. ``frame.iloc[1:7]``). Only step=1 (or ``None``) is
+          supported.
+        - **A tuple of (rows, cols)** — selects rows and columns
+          simultaneously (e.g. ``frame.iloc[1:5, 0:2]``). Each
+          element can be an int or a slice.
+
+        Returns
+        -------
+        PandasApiIlocIndexer
+            An indexer object supporting ``[]`` notation that returns
+            a new ``PandasApiTdsFrame``.
+
+        Raises
+        ------
+        IndexError
+            If more than two indexers are provided.
+            If a column integer index is out of bounds.
+        NotImplementedError
+            If a slice step other than 1 is used for rows or columns.
+            If a list, boolean array, or callable is used as an
+            indexer.
+
+        See Also
+        --------
+        loc : Label-based indexing (row filtering + column selection).
+        head : Return the first n rows.
+        truncate : Select rows by index range.
+        filter : Select columns by name.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only **int** and **slice** indexers are supported. Lists of
+          integers, boolean arrays, and callable indexers raise
+          ``NotImplementedError``.
+        - Slice steps other than 1 are **not supported**.
+        - Negative integer indexing for rows is handled via
+          ``truncate``, so it follows truncate's limitations.
+        - When a single integer row index exceeds the number of rows,
+          an **empty frame** is returned (no ``IndexError`` is raised,
+          unlike pandas).
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Select a single row
+            frame.iloc[0].to_pandas()
+
+            # Select a range of rows and columns
+            frame.iloc[1:4, 0:2].to_pandas()
+
+            # Select a single row, all columns
+            frame.iloc[2, :].to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @property
     @abstractmethod
     def loc(self) -> "PandasApiLocIndexer":
+        """
+        Access rows and columns by label-based indexing or boolean conditions.
+
+        Returns a ``PandasApiLocIndexer`` that supports ``[]``
+        notation for combined row filtering and column selection.
+
+        **Row selection** (first indexer):
+
+        - **Complete slice** ``:``: Select all rows.
+        - **Boolean expression**: A ``PyLegendBoolean`` expression
+          built from column comparisons
+          (e.g. ``frame['col'] > 5``), used as a WHERE filter.
+        - **Callable**: A function that receives the frame and returns
+          a ``PyLegendBoolean`` expression
+          (e.g. ``lambda x: x['col'] > 5``).
+
+        **Column selection** (second indexer):
+
+        - **``str``**: A single column name (e.g. ``'col1'``).
+        - **``list of str``**: Multiple column names.
+        - **``list of bool``**: Boolean mask over columns (must match
+          the number of columns exactly).
+        - **``slice of str``**: Label-based column slice
+          (e.g. ``'col1':'col3'``), inclusive on both ends.
+        - **Complete slice** ``:``: Select all columns.
+
+        Returns
+        -------
+        PandasApiLocIndexer
+            An indexer object supporting ``[]`` notation that returns
+            a new ``PandasApiTdsFrame``.
+
+        Raises
+        ------
+        IndexError
+            If more than two indexers are provided.
+            If a boolean column mask has the wrong length.
+        TypeError
+            If a label-based slice is used for rows (only ``:`` is
+            allowed).
+            If a list of integers, a set, or another unsupported type
+            is used for row or column selection.
+        KeyError
+            If a column name in a list does not exist in the frame.
+
+        See Also
+        --------
+        iloc : Integer-position based indexing.
+        filter : Select columns by name.
+        head : Return the first n rows.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - For **row selection**, only ``:``, boolean expressions, and
+          callables are supported. Integer label selection, integer
+          slicing, and list-of-integer selection are **not supported**.
+        - Label-based **row slicing** (e.g. ``frame.loc[2:5]``) is
+          **not supported** — only the complete slice ``:`` is
+          allowed.
+        - For **column selection**, string labels, lists of strings,
+          boolean masks, and label-based slices are supported. Label
+          slices use ``pandas.Index.slice_indexer`` internally, so
+          slice semantics are **inclusive on both ends** (matching
+          pandas ``loc`` behaviour).
+        - If a label-based column slice resolves to an empty selection,
+          an empty frame (zero rows) is returned via ``head(0)``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Select specific columns
+            frame.loc[:, "Ship Name"].head(3).to_pandas()
+
+            # Filter rows with a boolean condition and select columns
+            frame.loc[frame["Order Id"] > 10300, ["Order Id", "Ship Name"]].head(5).to_pandas()
+
+            # Filter rows with a callable
+            frame.loc[
+                lambda x: x["Ship Name"].startswith("A"),
+                ["Order Id", "Ship Name"]
+            ].head(5).to_pandas()
+
+            # Boolean column mask
+            frame.loc[:, [True, False]].head(3).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -1398,6 +1971,49 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @property
     @abstractmethod
     def shape(self) -> PyLegendTuple[int, int]:
+        """
+        Return the dimensionality of the TDS frame as ``(rows, columns)``.
+
+        .. warning::
+
+            Unlike ``pandas.DataFrame.shape``, this property **executes
+            the frame** against the server to determine the row count.
+            It issues a ``COUNT`` aggregation query, so every access
+            incurs a round-trip to the database.
+
+        Returns
+        -------
+        tuple of (int, int)
+            A tuple ``(number_of_rows, number_of_columns)``.
+
+        See Also
+        --------
+        head : Return the first n rows (lazy, no execution).
+        count : Count non-null values per column (returns a frame).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``DataFrame.shape`` is an **O(1) metadata lookup**
+          that never triggers computation. Here, ``shape`` **executes
+          the current frame** to obtain the row count via a ``COUNT``
+          aggregation query. This means it requires a live connection
+          to the Legend engine and will fail on non-executable frames.
+        - The result type is always ``(int, int)``; there is no lazy
+          evaluation.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Get the shape (triggers server execution)
+            frame.head(5).shape
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -1410,6 +2026,91 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             inplace: bool = False,
             ignore_index: bool = False
     ) -> "PandasApiTdsFrame":
+        """
+        Remove rows with missing values.
+
+        Return a new TDS frame with rows containing NA / null values
+        removed. The check can be scoped to specific columns via
+        ``subset`` and controlled via ``how``.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` (drop rows) is supported.
+            ``1`` / ``'columns'`` (drop columns) raises
+            ``NotImplementedError``.
+        how : {{'any', 'all'}}, default 'any'
+            - ``'any'`` : Drop the row if **any** of the considered
+              columns contain a null value.
+            - ``'all'`` : Drop the row only if **all** of the
+              considered columns are null.
+        thresh : int, optional
+            **Not supported.** Passing any value raises
+            ``NotImplementedError``.
+        subset : list-like of str, optional
+            Column names to consider when checking for nulls. If
+            ``None`` (default), all columns are considered. An empty
+            list with ``how='any'`` keeps all rows; an empty list with
+            ``how='all'`` drops all rows.
+        inplace : bool, default False
+            Must be ``False``. ``True`` raises ``NotImplementedError``.
+        ignore_index : bool, default False
+            Must be ``False``. ``True`` raises ``NotImplementedError``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with rows containing nulls removed.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``axis=1``, ``thresh`` is set, ``inplace=True``, or
+            ``ignore_index=True``.
+        ValueError
+            If ``axis`` is not a recognised value or ``how`` is not
+            ``'any'`` or ``'all'``.
+        TypeError
+            If ``subset`` is not a list, tuple, or set.
+        KeyError
+            If any column in ``subset`` does not exist in the frame.
+
+        See Also
+        --------
+        fillna : Fill missing values instead of dropping rows.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``axis=1`` (dropping columns with nulls) is **not supported**.
+        - ``thresh`` (minimum number of non-null values to keep a row)
+          is **not supported**.
+        - ``inplace=True`` is **not supported**; a new frame is always
+          returned.
+        - ``ignore_index=True`` is **not supported**.
+        - Passing an empty ``subset=[]`` with ``how='any'`` is a
+          no-op (all rows are kept). With ``how='all'``, an empty
+          ``subset=[]`` drops **all rows** (the filter becomes
+          ``false``).
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Drop rows where any column is null
+            frame.dropna().head(5).to_pandas()
+
+            # Drop rows where all columns are null
+            frame.dropna(how="all").head(5).to_pandas()
+
+            # Only consider specific columns
+            frame.dropna(subset=["Ship Name"]).head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -1423,6 +2124,85 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             inplace: bool = False,
             limit: PyLegendOptional[int] = None
     ) -> "PandasApiTdsFrame":
+        """
+        Fill missing values with a specified value.
+
+        Replace NA / null entries in the TDS frame. A scalar ``value``
+        is applied to every column; a dict maps specific columns to
+        their fill values (columns not present in the dict are left
+        unchanged). Implemented via ``COALESCE`` at the SQL level.
+
+        Parameters
+        ----------
+        value : scalar or dict
+            Value(s) to replace nulls with. Accepted scalar types are
+            ``int``, ``float``, ``str``, ``bool``, ``date``, and
+            ``datetime``. When a dict is provided, keys must be column
+            name strings and values must be scalars of the above types.
+            Columns in the dict that do not exist in the frame are
+            silently ignored. Omitting ``value`` entirely raises
+            ``ValueError``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported. ``1`` /
+            ``'columns'`` raises ``NotImplementedError``.
+        inplace : bool, default False
+            Must be ``False``. ``True`` raises ``NotImplementedError``.
+        limit : int, optional
+            **Not supported.** Passing any value raises
+            ``NotImplementedError``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with null values replaced.
+
+        Raises
+        ------
+        ValueError
+            If ``value`` is not provided (``None``).
+            If ``axis`` is not a recognised value.
+        TypeError
+            If ``value`` is not a scalar or dict.
+            If dict keys are not strings or dict values are not
+            scalars.
+        NotImplementedError
+            If ``axis=1``, ``inplace=True``, or ``limit`` is set.
+
+        See Also
+        --------
+        dropna : Remove rows with missing values.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The ``method`` parameter (``'ffill'``, ``'bfill'``) available
+          in older pandas versions is **not present**.
+        - ``inplace=True`` is **not supported**; a new frame is always
+          returned.
+        - ``limit`` (maximum number of consecutive nulls to fill) is
+          **not supported**.
+        - ``axis=1`` (fill along columns) is **not supported**.
+        - When ``value`` is a dict, keys that do not match any column
+          in the frame are **silently ignored** (matching pandas
+          behaviour).
+        - At the SQL level, each column's fill is implemented as
+          ``COALESCE(column, fill_value)``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Fill all null values with a scalar
+            frame.fillna(value=0).head(5).to_pandas()
+
+            # Fill specific columns with different values
+            frame.fillna(value={"Ship Name": "Unknown"}).head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -1435,4 +2215,102 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             ascending: bool = True,
             pct: bool = False
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the rank of values in each column.
+
+        Replace every column's values with their rank within that
+        column. Each column is ranked independently using an SQL
+        window function (``RANK``, ``DENSE_RANK``, ``ROW_NUMBER``, or
+        ``PERCENT_RANK``).
+
+        The result is a new frame with the **same column names** but
+        all values replaced by their integer (or float when
+        ``pct=True``) rank.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported. ``1`` raises
+            ``NotImplementedError``.
+        method : {{'min', 'first', 'dense'}}, default 'min'
+            How to rank equal values:
+
+            - ``'min'`` : Lowest rank in the group of ties (SQL
+              ``RANK()``).
+            - ``'first'`` : Ranks assigned in order of appearance
+              (SQL ``ROW_NUMBER()``).
+            - ``'dense'`` : Like ``'min'`` but ranks always increase
+              by 1, no gaps (SQL ``DENSE_RANK()``).
+        numeric_only : bool, default False
+            If ``True``, only rank columns of numeric type (Integer,
+            Float, Number). Non-numeric columns are excluded from the
+            result.
+        na_option : {{'bottom'}}, default 'bottom'
+            How to rank null values. Only ``'bottom'`` is supported.
+            ``'keep'`` and ``'top'`` raise ``NotImplementedError``.
+        ascending : bool, default True
+            Whether to rank in ascending order. ``False`` ranks in
+            descending order.
+        pct : bool, default False
+            If ``True``, compute percentage ranks (SQL
+            ``PERCENT_RANK()``). Result columns are of float type.
+            Can only be used with ``method='min'``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame where every column contains integer ranks
+            (or float when ``pct=True``).
+
+        Raises
+        ------
+        NotImplementedError
+            If ``axis`` is not ``0`` or ``'index'``.
+            If ``method`` is not one of ``'min'``, ``'first'``,
+            ``'dense'`` (e.g. ``'average'`` and ``'max'`` are not
+            supported).
+            If ``na_option`` is not ``'bottom'``.
+            If ``pct=True`` with a method other than ``'min'``.
+
+        See Also
+        --------
+        PandasApiGroupbyTdsFrame.rank : Rank within groups.
+        sort_values : Sort the frame by column values.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The ``'average'`` and ``'max'`` ranking methods are **not
+          supported**. Only ``'min'``, ``'first'``, and ``'dense'``
+          are available.
+        - ``na_option`` only supports ``'bottom'``. ``'keep'`` and
+          ``'top'`` raise ``NotImplementedError``.
+        - ``pct=True`` is only supported with ``method='min'``
+          (maps to ``PERCENT_RANK()``). Combining ``pct=True`` with
+          other methods raises ``NotImplementedError``.
+        - When applied to the full frame (not via a Series), **all
+          columns** are replaced by their ranks. To append a rank
+          column instead, use bracket assignment on a single-column
+          Series: ``frame["rank_col"] = frame["col"].rank()``.
+        - Combining multiple rank calls in a single expression is
+          **not supported**
+          (e.g. ``frame["col1"].rank() + frame["col2"].rank()``).
+          Compute them in separate assignment steps instead.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Rank all columns (replaces values with ranks)
+            frame.filter(items=["Order Id"]).rank().head(5).to_pandas()
+
+            # Append a rank column via Series assignment
+            frame["Order Rank"] = frame["Order Id"].rank()
+            frame.head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
