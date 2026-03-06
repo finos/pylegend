@@ -12,13 +12,16 @@
 .. See the License for the specific language governing permissions and
 .. limitations under the License.
 
-API Reference
-=============
+Pandas TDS Frame
+================
 
-The reference guide consists detailed description of all user-facing APIs of ``pylegend`` library.
+The ``PandasApiTdsFrame`` class provides a Pandas-like interface for working with TDS (Tabular Data Store) frames.
+It offers methods for data manipulation, filtering, aggregation, joins, and window functions.
 
-.. toctree::
-   :maxdepth: 4
+Row Selection Methods
+---------------------
 
-   legendql_tds_frame
-   pandas_tds_frame
+head
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.head

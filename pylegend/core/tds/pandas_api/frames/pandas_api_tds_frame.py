@@ -315,6 +315,42 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
     @abstractmethod
     def head(self, n: int = 5) -> "PandasApiTdsFrame":
+        """
+        Return the first n rows of the TDS frame.
+
+        This function returns the first `count` rows from the frame.
+        It is useful for quickly inspecting the data without loading the entire dataset.
+
+        Parameters
+        ----------
+        count : int, default 5
+            Number of rows to return.
+
+        Returns
+        -------
+        LegendQLApiTdsFrame
+            A new TDS frame containing only the first n rows.
+
+        See Also
+        --------
+        limit : Alias for head.
+        drop : Skip the first n rows.
+        slice : Return a subset of rows by index range.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.legendql_api.northwind_orders_frame()
+
+            # Get first 5 rows (default)
+            frame.head().to_pandas()
+
+            # Get first 3 rows
+            frame.head(3).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @property
