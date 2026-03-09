@@ -220,7 +220,7 @@ class TestAssignFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         def add_offset(series, offset, *, scale=1, label=None):  # type: ignore
-            return series * scale + offset
+            return series.sum()
 
         frame = frame.apply(add_offset, args=(2,), scale=3, label="bump")
 

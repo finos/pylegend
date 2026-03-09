@@ -123,8 +123,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
           constants (e.g. ``frame.assign(col=lambda x: 5)``).
         - Column values are accessed via typed accessor methods such as
           ``x.get_integer("col")`` and ``x.get_string("col")``, or via
-          bracket notation ``x["col"]``. Standard pandas Series operations
-          are not available on the row object.
+          bracket notation ``x["col"]``.
         - Returning a non-scalar type (e.g. a list) from the callable
           raises a ``RuntimeError``, unlike pandas which would broadcast
           or create nested data.
@@ -170,8 +169,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Parameters
         ----------
         items : list of str, optional
-            Exact column names to keep. The output column order matches the
-            order of this list. All names must exist in the frame.
+            Exact column names to keep. All names must exist in the frame.
         like : str, optional
             Keep columns whose names contain this substring.
         regex : str, optional
@@ -219,8 +217,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         - In pandas, ``like`` and ``regex`` return an empty DataFrame when
           no columns match. Here, they **raise** ``ValueError`` when no
           columns match.
-        - Calls can be chained to progressively narrow the column set
-          (e.g. ``.filter(items=[...]).filter(like=...).filter(regex=...)``).
 
         Examples
         --------
@@ -313,8 +309,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         **Differences from pandas:**
 
         - The ``kind`` parameter (sort algorithm) is **not supported**.
-          Sorting is delegated to the underlying SQL engine, which chooses
-          its own algorithm.
+          Sorting is delegated to the underlying SQL engine.
         - The ``key`` parameter (per-element transform before sorting)
           is **not supported**.
         - ``inplace=True`` is **not supported**; always returns a new frame.
@@ -357,8 +352,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Select rows by positional index range.
 
         Return a new TDS frame containing rows from position ``before``
-        (inclusive) to ``after`` (inclusive). This is useful for
-        pagination or selecting a window of rows by position.
+        (inclusive) to ``after`` (inclusive).
 
         Parameters
         ----------
@@ -404,7 +398,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         **Differences from pandas:**
 
         - In pandas, ``truncate`` selects rows by **label** (index value).
-          Here, it selects rows by **positional** (integer) index only.
+          Here, it selects rows by **positional** (integer) index only
+          (its translated to LIMIT and OFFSET of the underlying SQL engine).
           Passing ``date``, ``str``, or other label-based values for
           ``before`` / ``after`` raises ``NotImplementedError``.
         - ``copy=False`` is **not supported**; a new frame is always
@@ -461,12 +456,12 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         axis : {{1, 'columns'}}, default 1
             The axis to drop along. Only column-axis (``1`` / ``'columns'``)
             is supported.
-        index : optional
+        index : None
             **Not supported.** Passing any value raises
             ``NotImplementedError``.
         columns : str, sequence of str, or set of str, optional
             Column name(s) to drop. Mutually exclusive with ``labels``.
-        level : optional
+        level : None
             **Not supported.** Passing any value raises
             ``NotImplementedError``.
         inplace : bool, default False
@@ -520,8 +515,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         - The ``index`` and ``level`` parameters are **not supported**.
         - ``inplace=True`` is **not supported**; always returns a new
           frame.
-        - Calls can be chained to progressively drop columns
-          (e.g. ``.drop(columns=["A"]).drop(columns=["B"])``).
 
         Examples
         --------
@@ -558,10 +551,11 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
         Apply one or more aggregation functions across all columns or
         specific columns, collapsing the frame into a single-row
-        summary. Supported aggregation names are ``'sum'``, ``'mean'``,
+        summary. Supported aggregation strings are ``'sum'``, ``'mean'``,
         ``'min'``, ``'max'``, ``'count'``, ``'std'``, ``'var'``, as well
         as aliases ``'len'``, ``'size'`` (both map to count), and
-        ``'average'`` / ``'avg'`` (map to mean).
+        ``'average'`` / ``'avg'`` (map to mean). Along with these,
+        callables and numpy universal functions are supported.
 
         Parameters
         ----------
@@ -989,7 +983,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             Alternative to ``mapper`` for renaming columns. Mutually
             exclusive with ``mapper`` when both are provided alongside
             ``axis``.
-        axis : {{0, 1, 'index', 'columns'}}, default 1
+        axis : {{1, 'columns'}}, default 1
             Axis to target. Only ``1`` / ``'columns'`` is supported.
             ``0`` / ``'index'`` raises ``NotImplementedError``.
         inplace : bool, default False
@@ -1099,7 +1093,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         by : str or list of str
             Column name or list of column names to group by. All names
             must exist in the current frame.
-        level : optional
+        level : None
             **Not supported.** Passing any value raises
             ``NotImplementedError``. Use ``by`` instead.
         as_index : bool, default False
@@ -1949,6 +1943,21 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         truncate : Truncate rows before and/or after some index value.
         iloc : Select rows by integer-location based indexing.
 
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - **Negative values for ``n`` are not supported.** In pandas,
+          ``head(-n)`` returns all rows except the last ``n``. Here,
+          passing a negative value raises ``NotImplementedError``.
+        - **Non-integer types raise ``TypeError``.** In pandas, passing
+          a non-int ``n`` (e.g. a string) may silently coerce or raise a
+          different error. Here, a ``TypeError`` is raised explicitly.
+        - The operation is **lazy** — it builds a ``LIMIT`` / ``OFFSET``
+          SQL clause rather than materialising rows in memory. Call
+          ``to_pandas()`` or ``execute_frame_to_string()`` to
+          materialise the result.
+
         Examples
         --------
         .. ipython:: python
@@ -1999,7 +2008,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
           that never triggers computation. Here, ``shape`` **executes
           the current frame** to obtain the row count via a ``COUNT``
           aggregation query. This means it requires a live connection
-          to the Legend engine and will fail on non-executable frames.
+          to the database. This will fail on non-executable frames.
         - The result type is always ``(int, int)``; there is no lazy
           evaluation.
 
@@ -2159,7 +2168,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Raises
         ------
         ValueError
-            If ``value`` is not provided (``None``).
+            If ``value`` is not provided.
             If ``axis`` is not a recognised value.
         TypeError
             If ``value`` is not a scalar or dict.
@@ -2183,11 +2192,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         - ``limit`` (maximum number of consecutive nulls to fill) is
           **not supported**.
         - ``axis=1`` (fill along columns) is **not supported**.
-        - When ``value`` is a dict, keys that do not match any column
-          in the frame are **silently ignored** (matching pandas
-          behaviour).
-        - At the SQL level, each column's fill is implemented as
-          ``COALESCE(column, fill_value)``.
 
         Examples
         --------

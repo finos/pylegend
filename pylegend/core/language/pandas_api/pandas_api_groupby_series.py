@@ -116,20 +116,8 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         grouped[["col_a", "col_b"]]  # -> PandasApiGroupbyTdsFrame
 
     The returned subclass matches the column type, following the
-    same mapping as ``Series``:
-
-    ================  ========================
-    Column type       GroupbySeries subclass
-    ================  ========================
-    ``Integer``       ``IntegerGroupbySeries``
-    ``Float``         ``FloatGroupbySeries``
-    ``Number``        ``NumberGroupbySeries``
-    ``String``        ``StringGroupbySeries``
-    ``Date``          ``DateGroupbySeries``
-    ``DateTime``      ``DateTimeGroupbySeries``
-    ``StrictDate``    ``StrictDateGroupbySeries``
-    ``Boolean``       ``BooleanGroupbySeries``
-    ================  ========================
+    same mapping as ``Series``.
+    For example, an integer column becomes an IntegerGroupbySeries.
 
     Operations
     ----------

@@ -113,27 +113,13 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     A ``Series`` is conceptually similar to a ``pandas.Series``: it
     represents one column of a frame and supports element-wise
     arithmetic, string methods, date-part extraction, and other
-    transformations.  Unlike a pandas ``Series``, it does **not** hold
-    data in memory — it builds SQL / PURE expressions that are
-    evaluated lazily on the server.
+    transformations.
 
     Obtaining a Series
     ------------------
     Use bracket notation on a ``PandasApiTdsFrame``.
-    The returned subclass matches the column type:
-
-    ================  =================
-    Column type       Series subclass
-    ================  =================
-    ``Integer``       ``IntegerSeries``
-    ``Float``         ``FloatSeries``
-    ``Number``        ``NumberSeries``
-    ``String``        ``StringSeries``
-    ``Date``          ``DateSeries``
-    ``DateTime``      ``DateTimeSeries``
-    ``StrictDate``    ``StrictDateSeries``
-    ``Boolean``       ``BooleanSeries``
-    ================  =================
+    The returned subclass matches the column type.
+    For example, an integer column becomes an IntegerSeries.
 
     Transformations
     ---------------
@@ -171,11 +157,10 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     ----------------------------
     Certain window functions such as ``rank()`` can be called on a
     ``Series``.  The result is a new ``Series`` whose values are the
-    window-function output for that column.  This makes it easy to
-    append ranked columns.
+    window-function output for that column.
 
-    Window functions can also be combined with arithmetic in the
-    same assignment, but only **one** window-function call is allowed
+    Series with applied functions can also be combined with arithmetic in the
+    same assignment, but only **one** function call is allowed
     per expression.  If you need multiple, split them into separate
     steps.
 

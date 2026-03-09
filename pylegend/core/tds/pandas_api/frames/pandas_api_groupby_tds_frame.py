@@ -429,8 +429,6 @@ class PandasApiGroupbyTdsFrame:
         - No ``axis``, ``skipna``, or ``**kwargs`` parameters. The
           groupby convenience methods follow the pandas
           ``DataFrameGroupBy`` signature, which omits these.
-        - ``engine`` and ``engine_kwargs`` (Numba JIT) parameters are
-          present but **not supported**.
 
         Examples
         --------
