@@ -43,7 +43,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpression,
 )
-from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.date import PyLegendDate
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -59,10 +58,10 @@ from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDa
 from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleColumn, QualifiedNameReference, QualifiedName
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function,
+    get_pure_query_from_expr,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -185,40 +184,10 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
 
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
         if self.expr is None:
             return self.raise_exception_if_no_function_applied().to_pure_query(config)
 
-        col_name = self.columns()[0].get_name()
-        full_expr = self.expr
-        has_window_func = False
-        window_expr = ""
-        function_expr = ""
-        sub_expressions = self.get_leaf_expressions()
-        for expr in sub_expressions:
-            if isinstance(expr, GroupbySeries):
-                applied_func = expr.raise_exception_if_no_function_applied().get_applied_function()
-                if isinstance(applied_func, RankFunction):
-                    assert has_window_func is False
-                    has_window_func = True
-                    c, window = applied_func.construct_column_expression_and_window_tuples()[0]
-                    window_expr = window.to_pure_expression(config)
-                    function_expr = c[1].to_pure_expression(config)
-
-        extend = ""
-        if has_window_func:
-            pure_expr = full_expr.to_pure_expression(config)
-            temp_name = escape_column_name(col_name + temp_column_name_suffix)
-            extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
-            project = f"->project(~[{escape_column_name(col_name)}:c|{pure_expr}])"
-        else:  # pragma: no cover
-            project = f"->project(~[{escape_column_name(col_name)}:c|{self.to_pure_expression(config)}])"
-
-        if len(extend) > 0:
-            extend = config.separator(1) + extend
-        project = config.separator(1) + project
-
-        return self.get_base_frame().base_frame().to_pure_query(config) + extend + project
+        return get_pure_query_from_expr(self, config)
 
     def execute_frame(
             self,
@@ -241,7 +210,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.execute_frame(ToPandasDfResultHandler(pandas_df_read_config), chunk_size)
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         if self.expr is None:
             return self.raise_exception_if_no_function_applied().to_sql_query_object(config)
 

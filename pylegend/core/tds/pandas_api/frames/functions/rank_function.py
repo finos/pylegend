@@ -94,7 +94,7 @@ class RankFunction(PandasApiAppliedFunction):
         self.__pct = pct
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
 
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
@@ -159,7 +159,7 @@ class RankFunction(PandasApiAppliedFunction):
         return f"{escaped_col_name}:{generate_pure_lambda('p,w,r', expr_str)}"
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix: str = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix: str = "__pylegend_olap_column__"
 
         extend_strs: PyLegendList[str] = []
         for c, window in self.__column_expression_and_window_tuples:
@@ -188,7 +188,7 @@ class RankFunction(PandasApiAppliedFunction):
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         self._assert_single_column_in_base_frame()
         c, window = self.__column_expression_and_window_tuples[0]
         return f"$c.{c[0] + temp_column_name_suffix}"
@@ -264,11 +264,11 @@ class RankFunction(PandasApiAppliedFunction):
                 f" but got: na_option={self.__na_option!r}"
             )
 
-        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples()
+        self.__column_expression_and_window_tuples = self.construct_column_expression_and_window_tuples("r")
 
         return True
 
-    def construct_column_expression_and_window_tuples(self) -> PyLegendList[
+    def construct_column_expression_and_window_tuples(self, frame_name: str) -> PyLegendList[
         PyLegendTuple[
             PyLegendTuple[str, PyLegendPrimitive],
             PandasApiWindow
@@ -336,7 +336,7 @@ class RankFunction(PandasApiAppliedFunction):
             if isinstance(self.__base_frame, PandasApiGroupbyTdsFrame):
                 partition_by = [col.get_name() for col in self.__base_frame.get_grouping_columns()]
 
-            tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
+            tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.base_frame())
             sort_direction: PandasApiSortDirection
             if self.__ascending:
                 sort_direction = PandasApiSortDirection.ASC

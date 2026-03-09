@@ -37,7 +37,8 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendCallable,
     PyLegendUnion,
-    PyLegendDict
+    PyLegendDict,
+    PyLegendHashable,
 )
 from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
@@ -178,14 +179,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
         from pylegend.core.language.pandas_api.pandas_api_series import Series
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
         # Type Check
         if not isinstance(key, str):
             raise TypeError(f"Column name must be a string, got: {type(key)}")
 
         # Reject cross-frame assignment
-        if isinstance(value, Series):
-            origin = value.get_base_frame()
+        if isinstance(value, (Series, GroupbySeries)):
+            origin = value.get_base_frame().base_frame() if isinstance(value, GroupbySeries) else value.get_base_frame()
             if origin is not None and origin is not self:
                 raise ValueError("Assignment from a different frame is not allowed")
 
@@ -896,6 +898,72 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending=ascending,
             pct=pct
         ))
+
+    def shift(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, ShiftFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            base_frame=self,
+            order_by=order_by,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
+        ))
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(shift_extended_frame))
+
+    def diff(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: int = 1,
+            axis: PyLegendUnion[int, str] = 0
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, DiffFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            base_frame=self,
+            order_by=order_by,
+            periods=periods,
+            axis=axis,
+        ))
+        return PandasApiAppliedFunctionTdsFrame(DiffFunction(shift_extended_frame))
+
+    def pct_change(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        if kwargs:
+            raise NotImplementedError(
+                f"Extra keyword arguments are not supported in pct_change. " f"Received: {list(kwargs.keys())}"
+            )
+
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, PctChangeFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            base_frame=self,
+            order_by=order_by,
+            periods=periods,
+            freq=freq,
+        ))
+        return PandasApiAppliedFunctionTdsFrame(PctChangeFunction(shift_extended_frame))
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
