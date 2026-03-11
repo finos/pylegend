@@ -895,16 +895,16 @@ class PandasApiGroupbyTdsFrame:
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
             # Rank within groups (only ranked columns in output)
-            frame.groupby("Ship Name")["Order Id"].rank().head(5).to_pandas()
+            frame.groupby("Ship Name")[["Order Id"]].rank().head(5).to_pandas()
 
             # Append a grouped rank column to the frame
             frame["Order Rank"] = frame.groupby(
                 "Ship Name"
-            )["Order Id"].rank()
+            )[["Order Id"]].rank()
             frame.head(5).to_pandas()
 
             # Dense rank descending within groups
-            frame.groupby("Ship Name")["Order Id"].rank(
+            frame.groupby("Ship Name")[["Order Id"]].rank(
                 method="dense", ascending=False
             ).head(5).to_pandas()
 

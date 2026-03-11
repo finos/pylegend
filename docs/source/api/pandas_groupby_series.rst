@@ -148,7 +148,7 @@ with the grouping columns and the aggregated column(s).
 
     # Lambda aggregation
     frame.groupby("Ship Name")["Order Id"].aggregate(
-        lambda x: x.mean()
+        lambda x: x.average()
     ).head(5).to_pandas()
 
 Assigning a GroupbySeries to the Frame

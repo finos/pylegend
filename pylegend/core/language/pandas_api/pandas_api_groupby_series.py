@@ -101,7 +101,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     **single** column name.
 
     Obtaining a GroupbySeries
-    ------------------------
+    -------------------------
     Use bracket notation on a ``PandasApiGroupbyTdsFrame``:
 
     .. code-block:: python
@@ -945,7 +945,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
             # Execute a grouped ranked series directly
-            frame.groupby("Ship Name")["Order Id"].rank().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].rank().to_pandas().head()
 
             # Assign a grouped rank to the parent frame
             frame["Order Rank"] = frame.groupby(

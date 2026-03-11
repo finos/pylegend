@@ -1972,9 +1972,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             # Get first 3 rows
             frame.head(3).to_pandas()
 
-            # Get zero rows (returns empty frame with columns preserved)
-            frame.head(0).to_pandas()
-
         """
         pass  # pragma: no cover
 
