@@ -21,6 +21,7 @@ from pylegend.core.language import (
     PyLegendString,
     PyLegendInteger,
     PyLegendFloat,
+    PyLegendDecimal,
     PyLegendNumber,
     PyLegendStrictDate,
     PyLegendDateTime,
@@ -31,6 +32,7 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiString,
     LegendQLApiInteger,
     LegendQLApiFloat,
+    LegendQLApiDecimal,
     LegendQLApiNumber,
     LegendQLApiStrictDate,
     LegendQLApiDateTime,
@@ -86,6 +88,9 @@ class LegendQLApiTdsRow(AbstractTdsRow):
     def get_float(self, column: str) -> LegendQLApiFloat:
         return LegendQLApiFloat(super().get_float(column))
 
+    def get_decimal(self, column: str) -> LegendQLApiDecimal:
+        return LegendQLApiDecimal(super().get_decimal(column))
+
     def get_date(self, column: str) -> LegendQLApiDate:
         return LegendQLApiDate(super().get_date(column))
 
@@ -105,6 +110,8 @@ class LegendQLApiTdsRow(AbstractTdsRow):
             return LegendQLApiInteger(res)
         if isinstance(res, PyLegendFloat):
             return LegendQLApiFloat(res)
+        if isinstance(res, PyLegendDecimal):
+            return LegendQLApiDecimal(res)
         if isinstance(res, PyLegendNumber):
             return LegendQLApiNumber(res)
         if isinstance(res, PyLegendStrictDate):

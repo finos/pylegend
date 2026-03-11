@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from decimal import Decimal as PythonDecimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
@@ -25,6 +26,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionNullReturn,
@@ -49,6 +51,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringLiteralExpression",
     "PyLegendIntegerLiteralExpression",
     "PyLegendFloatLiteralExpression",
+    "PyLegendDecimalLiteralExpression",
     "PyLegendDateTimeLiteralExpression",
     "PyLegendStrictDateLiteralExpression",
     "convert_literal_to_literal_expression",
@@ -137,6 +140,32 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
         return True
 
 
+class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
+    __value: PythonDecimal
+
+    def __init__(self, value: PythonDecimal) -> None:
+        self.__value = value
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return Cast(
+            expression=StringLiteral(value=str(self.__value), quoted=False),
+            type_=ColumnType(name="DECIMAL", parameters=[])
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        s = str(self.__value)
+        if s.startswith('-'):
+            return f"minus({s[1:]}D)"
+        return f"{s}D"
+
+    def is_non_nullable(self) -> bool:
+        return True
+
+
 class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
     __value: datetime
 
@@ -201,12 +230,14 @@ class PyLegendNullLiteralExpression(PyLegendExpressionNullReturn):
 
 
 def convert_literal_to_literal_expression(
-        literal: PyLegendUnion[int, float, bool, str, datetime, date, None]
+        literal: PyLegendUnion[int, float, bool, str, datetime, date, PythonDecimal, None]
 ) -> PyLegendExpression:
     if isinstance(literal, bool):
         return PyLegendBooleanLiteralExpression(literal)
     if isinstance(literal, int):
         return PyLegendIntegerLiteralExpression(literal)
+    if isinstance(literal, PythonDecimal):
+        return PyLegendDecimalLiteralExpression(literal)
     if isinstance(literal, float):
         return PyLegendFloatLiteralExpression(literal)
     if isinstance(literal, str):

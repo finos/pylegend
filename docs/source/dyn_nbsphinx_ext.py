@@ -212,11 +212,13 @@ def process_docstrings(app, what, name, obj, options, lines):
                             for out in cell.outputs:
                                 if out.output_type == 'stream':
                                     if out.text.strip():
-                                        new_lines.append(indent + ".. testoutput::")
-                                        new_lines.append(indent + "    :options: +ELLIPSIS")
+                                        new_lines.append(indent + ".. raw:: html")
                                         new_lines.append("")
+                                        new_lines.append(indent + "    <pre class=\"nb-output\">")
                                         for l in out.text.split('\n'):
-                                            new_lines.append(indent + "    " + l)
+                                            import html as _html
+                                            new_lines.append(indent + "    " + _html.escape(l))
+                                        new_lines.append(indent + "    </pre>")
                                         new_lines.append("")
                                 elif out.output_type in ('execute_result', 'display_data'):
                                     if 'text/html' in out.data:

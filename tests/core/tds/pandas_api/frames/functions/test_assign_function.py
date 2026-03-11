@@ -15,6 +15,7 @@
 import json
 from textwrap import dedent
 from datetime import date, datetime
+from decimal import Decimal as PythonDecimal
 import pytest
 
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -167,6 +168,29 @@ class TestAssignFunction:
             "#Table(test_schema.test_table)#\n"
             "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, floatcol:c|3.14])\n"
             "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, floatcol:c|$c.floatcol, datecol:c|%2023-12-25])"
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
+
+    def test_assign_decimal(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.integer_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+
+        # Decimal column
+        frame = frame.assign(decimalcol=lambda x: PythonDecimal("9.99"))  # type: ignore
+        expected_sql = dedent('''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2",
+                CAST('9.99' AS DECIMAL) AS "decimalcol"
+            FROM
+                test_schema.test_table AS "root"''')
+        assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql
+        expected_pure = (
+            "#Table(test_schema.test_table)#\n"
+            "  ->project(~[col1:c|$c.col1, col2:c|$c.col2, decimalcol:c|9.99D])"
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure)
 
