@@ -18,7 +18,7 @@ import pytest
 from pylegend.samples.legendql_api import northwind_orders_frame
 
 
-# @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on windows")
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on windows")
 def test_northwind_orders_frame() -> None:
     frame = northwind_orders_frame()
     frame = frame.select(["Order Id"]).head(5)
