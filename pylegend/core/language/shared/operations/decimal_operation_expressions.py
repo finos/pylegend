@@ -199,8 +199,17 @@ class PyLegendDecimalDivideScaledExpression(PyLegendExpressionDecimalReturn):
         return RoundExpression(ArithmeticExpression(ArithmeticType.DIVIDE, op1, op2), scale)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        from pylegend.core.language.shared.helpers import expr_has_matching_start_and_end_parentheses
+        from pylegend.core.language.pandas_api.pandas_api_series import Series
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
         op1 = self.__operand1.to_pure_expression(config)
+        if not (self.__operand1.is_non_nullable()
+                or (isinstance(self.__operand1, (Series, GroupbySeries)) and self.__operand1.expr is not None)):
+            op1 = f"toOne({op1[1:-1] if expr_has_matching_start_and_end_parentheses(op1) else op1})"
         op2 = self.__operand2.to_pure_expression(config)
+        if not (self.__operand2.is_non_nullable()
+                or (isinstance(self.__operand2, (Series, GroupbySeries)) and self.__operand2.expr is not None)):
+            op2 = f"toOne({op2[1:-1] if expr_has_matching_start_and_end_parentheses(op2) else op2})"
         scale = self.__scale.to_pure_expression(config)
         return generate_pure_functional_call("divide", [op1, op2, scale])
 
