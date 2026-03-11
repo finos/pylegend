@@ -175,17 +175,6 @@ columns:
     import pylegend
     frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-    # Arithmetic combined with grouped rank
-    frame["Rank Plus 5"] = frame.groupby(
-        "Ship Name"
-    )["Order Id"].rank() + 5
-    frame.head(5).to_pandas()
-
-.. ipython:: python
-
-    import pylegend
-    frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
     # Percentage rank, descending
     frame["Pct Rank"] = frame.groupby(
         "Ship Name"

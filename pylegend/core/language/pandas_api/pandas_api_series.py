@@ -974,7 +974,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
             # Execute a ranked Series directly as a single-column query
-            frame["Order Id"].rank().head(5).to_pandas()
+            frame["Order Id"].rank().to_pandas().head()
 
             # Assign a rank column to the frame
             frame["Order Rank"] = frame["Order Id"].rank()
