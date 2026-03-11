@@ -299,9 +299,6 @@ class PyLegendDecimalRoundExpression(PyLegendBinaryExpression, PyLegendExpressio
             second_operand_needs_to_be_non_nullable=True
         )
 
-    def is_non_nullable(self) -> bool:
-        return True
-
 
 class PyLegendNumberToDecimalExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
 
