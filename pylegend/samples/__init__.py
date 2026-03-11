@@ -18,4 +18,5 @@ from pylegend.samples import legendql_api
 
 __all__: PyLegendSequence[str] = [
     "legendql_api",
+    "pandas_api",
 ]
