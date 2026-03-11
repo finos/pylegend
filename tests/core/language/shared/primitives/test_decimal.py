@@ -455,6 +455,8 @@ class TestPyLegendDecimalUnit:
         """Covers decimal divide(other, scale) SQL without legend server"""
         result = self.tds_row.get_decimal("col1").divide(self.tds_row.get_decimal("col2"), 2)
         assert isinstance(result, PyLegendDecimal)
+        # Verify the underlying expression is non-nullable
+        assert result.value().is_non_nullable() is True
         sql = self.db_extension.process_expression(
             result.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
             config=self.sql_to_string_config
