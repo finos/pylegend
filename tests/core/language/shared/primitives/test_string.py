@@ -163,7 +163,7 @@ class TestPyLegendString:
         assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_decimal(10, 2)) == \
                'CAST("root".col2 AS NUMERIC(10, 2))'
         assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_decimal(10, 2)) == \
-               'toOne($t.col2)->parseDecimal()'
+               'toOne($t.col2)->parseDecimal(10, 2)'
 
     def test_string_parse_decimal_partial_params_error(self) -> None:
         with pytest.raises(TypeError, match="parse_decimal requires both precision and scale"):
