@@ -56,6 +56,7 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
         "PyLegendNumber": "NumberSeries",
         "PyLegendInteger": "IntegerSeries",
         "PyLegendFloat": "FloatSeries",
+        "PyLegendDecimal": "DecimalSeries",
         "PyLegendDate": "DateSeries",
         "PyLegendDateTime": "DateTimeSeries",
         "PyLegendStrictDate": "StrictDateSeries"
@@ -67,6 +68,7 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
         "PyLegendNumber": "NumberGroupbySeries",
         "PyLegendInteger": "IntegerGroupbySeries",
         "PyLegendFloat": "FloatGroupbySeries",
+        "PyLegendDecimal": "DecimalGroupbySeries",
         "PyLegendDate": "DateGroupbySeries",
         "PyLegendDateTime": "DateTimeGroupbySeries",
         "PyLegendStrictDate": "StrictDateGroupbySeries"
