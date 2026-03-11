@@ -51,7 +51,6 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringParseIntExpression,
     PyLegendStringParseFloatExpression,
     PyLegendStringParseDecimalExpression,
-    PyLegendStringParseNumericExpression,
     PyLegendStringConcatExpression,
     PyLegendStringLessThanExpression,
     PyLegendStringLessThanEqualExpression,
@@ -172,7 +171,7 @@ class PyLegendString(PyLegendPrimitive):
         from pylegend.core.language.shared.primitives.precise_primitives import PyLegendNumeric
         if precision is not None and scale is not None:
             return PyLegendNumeric(
-                PyLegendStringParseNumericExpression(self.__value, precision, scale),
+                PyLegendStringParseDecimalExpression(self.__value, precision, scale),
                 precision,
                 scale
             )
