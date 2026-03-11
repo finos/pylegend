@@ -900,7 +900,7 @@ class PandasApiGroupbyTdsFrame:
             # Append a grouped rank column to the frame
             frame["Order Rank"] = frame.groupby(
                 "Ship Name"
-            )[["Order Id"]].rank()
+            )["Order Id"].rank()
             frame.head(5).to_pandas()
 
             # Dense rank descending within groups
