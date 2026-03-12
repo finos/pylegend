@@ -23,7 +23,6 @@ from decimal import Decimal as PythonDecimal
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionDecimalReturn,
-    PyLegendExpressionNumberReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -43,7 +42,6 @@ from pylegend.core.language.shared.operations.decimal_operation_expressions impo
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendDecimalLiteralExpression,
     PyLegendIntegerLiteralExpression,
-    PyLegendFloatLiteralExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendInteger, PyLegendFloat
@@ -201,19 +199,6 @@ class PyLegendDecimal(PyLegendNumber):
         if isinstance(val, (PythonDecimal)):
             return PyLegendDecimalLiteralExpression(val)
         return val.__value_copy
-
-    @staticmethod
-    def __convert_to_number_expr(
-            val: PyLegendUnion[int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal",
-                               "PyLegendNumber"]
-    ) -> PyLegendExpressionNumberReturn:
-        if isinstance(val, int):
-            return PyLegendIntegerLiteralExpression(val)
-        if isinstance(val, PythonDecimal):
-            return PyLegendDecimalLiteralExpression(val)
-        if isinstance(val, float):
-            return PyLegendFloatLiteralExpression(val)
-        return val.value()
 
     def to_sql_expression(
             self,
