@@ -1198,6 +1198,39 @@ class TestGroupByAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Joined:{r | $r.col2}:{c | $c->joinStrings(\' \')}])')
 
+    def test_query_gen_group_by_join_strings_default_separator_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.number_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col1"],
+            ("Joined", lambda r: r.col2, lambda c: c.join_strings()),  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Joined, Type: String)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                STRING_AGG("root".col2, ';') AS "Joined"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Joined:{r | $r.col2}:{c | $c->joinStrings(';')}]
+              )'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Joined:{r | $r.col2}:{c | $c->joinStrings(\';\')}])')
+
     def test_query_gen_group_by_strictdate_max_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
@@ -1329,6 +1362,57 @@ class TestGroupByAppliedFunction:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
+
+    @pytest.mark.parametrize(
+        "col_factory, col_type_name",
+        [
+            (PrimitiveTdsColumn.integer_column, "Integer"),
+            (PrimitiveTdsColumn.float_column, "Float"),
+            (PrimitiveTdsColumn.number_column, "Number"),
+            (PrimitiveTdsColumn.string_column, "String"),
+            (PrimitiveTdsColumn.boolean_column, "Boolean"),
+            (PrimitiveTdsColumn.strictdate_column, "StrictDate"),
+            (PrimitiveTdsColumn.date_column, "Date"),
+            (PrimitiveTdsColumn.datetime_column, "DateTime"),
+        ],
+        ids=["integer", "float", "number", "string", "boolean", "strictdate", "date", "datetime"],
+    )
+    def test_query_gen_group_by_distinct_value_agg(self, col_factory, col_type_name) -> None:  # type: ignore
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            col_factory("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col1"],
+            ("DistVal", lambda r: r.col2, lambda c: c.distinct_value()),  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            f"[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: DistVal, Type: {col_type_name})]"
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                core_unique_value_only("root".col2) AS "DistVal"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        # Skipping pure compilation for Boolean - Legend engine parser does not support
+        # BOOLEAN column data type in relations (error: "Unsupported column data type 'BOOLEAN'")
+        if col_type_name != "Boolean":
+            assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+                '''\
+                #Table(test_schema.test_table)#
+                  ->groupBy(
+                    ~[col1],
+                    ~[DistVal:{r | $r.col2}:{c | $c->uniqueValueOnly()}]
+                  )'''
+            )
+            assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+                   ('#Table(test_schema.test_table)#'
+                    '->groupBy(~[col1], ~[DistVal:{r | $r.col2}:{c | $c->uniqueValueOnly()}])')
 
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])

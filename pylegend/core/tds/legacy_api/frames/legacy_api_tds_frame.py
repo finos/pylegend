@@ -28,6 +28,7 @@ from pylegend.core.language import (
     PyLegendBoolean,
     PyLegendPrimitiveOrPythonPrimitive,
     LegacyApiAggregateSpecification,
+    LegacyApiOLAPGroupByOperation,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -132,5 +133,25 @@ class LegacyApiTdsFrame(PyLegendTdsFrame):
             self,
             grouping_columns: PyLegendList[str],
             aggregations: PyLegendList[LegacyApiAggregateSpecification],
+    ) -> "LegacyApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def column_value_difference(
+            self,
+            other: "LegacyApiTdsFrame",
+            self_join_columns: PyLegendList[str],
+            other_join_columns: PyLegendList[str],
+            columns_to_check: PyLegendList[str]
+    ) -> "LegacyApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def olap_group_by(
+            self,
+            column_name_list: PyLegendList[str],
+            operations_list: PyLegendList[LegacyApiOLAPGroupByOperation],
+            sort_column_list: PyLegendList[str],
+            sort_direction_list: PyLegendOptional[PyLegendList[str]] = None
     ) -> "LegacyApiTdsFrame":
         pass  # pragma: no cover

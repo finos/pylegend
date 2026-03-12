@@ -189,6 +189,10 @@ class TestPyLegendInteger:
                'CAST("root".col2 AS TEXT)'
         assert self.__generate_pure_string(lambda x: x.get_integer("col2").to_string()) == \
                'toOne($t.col2)->toString()'
+        assert self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2").toString()) == \
+               'CAST("root".col2 AS TEXT)'
+        assert self.__generate_pure_string(lambda x: x.get_integer("col2").toString()) == \
+               'toOne($t.col2)->toString()'
 
     def test_integer_to_char_expr(self) -> None:
         assert self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2").char()) == \
@@ -237,6 +241,37 @@ class TestPyLegendInteger:
         assert self.__generate_pure_string(
             lambda x: eval(f'10 {py_op} x.get_integer("col2")')
         ) == f'10->{pure_fn}(toOne($t.col2))'
+
+    def test_integer_in_list_expr(self) -> None:
+        assert self.__generate_sql_string_no_integer_assert(
+            lambda x: x.get_integer("col2").in_list([1, 2, 3])) == \
+            '"root".col2 IN (1, 2, 3)'
+        assert self.__generate_sql_string_no_integer_assert(
+            lambda x: x.get_integer("col2").in_list([42])) == \
+            '"root".col2 IN (42)'
+        assert self.__generate_sql_string_no_integer_assert(
+            lambda x: x.get_integer("col2").in_list([1, x.get_integer("col1")])) == \
+            '"root".col2 IN (1, "root".col1)'
+        assert self.__generate_pure_string(lambda x: x.get_integer("col2").in_list([1, 2, 3])) == \
+               '$t.col2->in([1, 2, 3])'
+        assert self.__generate_pure_string(lambda x: x.get_integer("col2").in_list([42])) == \
+               '$t.col2->in([42])'
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2").in_list([]))
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of integer values."
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string_no_integer_assert(
+                lambda x: x.get_integer("col2").in_list("not_a_list")  # type: ignore[arg-type]
+            )
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of integer values."
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string_no_integer_assert(
+                lambda x: x.get_integer("col2").in_list(["a", "b"])  # type: ignore[list-item]
+            )
+        assert t.value.args[0].startswith("in_list list element should be a int or an integer expression")
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

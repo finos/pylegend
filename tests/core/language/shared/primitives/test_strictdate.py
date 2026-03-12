@@ -62,6 +62,43 @@ class TestPyLegendStrictDate:
             self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1, "HOURS"))
         assert v.value.args[0] == 'Unknown duration unit - HOURS. Supported values are - YEARS, MONTHS, WEEKS, DAYS'
 
+    def test_strictdate_timedelta_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(2, "YEARS")) == \
+               '("root".col2::DATE + (INTERVAL \'2 YEARS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(-2, "MONTHS")) == \
+               '("root".col2::DATE + (INTERVAL \'-2 MONTHS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(3, "WEEKS")) == \
+               '("root".col2::DATE + (INTERVAL \'3 WEEKS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(10, "DAYS")) == \
+               '("root".col2::DATE + (INTERVAL \'10 DAYS\'))::DATE'
+        assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").timedelta(2, "YEARS")) == \
+               'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'
+        assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").timedelta(-2, "YEARS")) == \
+               'toOne($t.col2)->adjust(minus(2), DurationUnit.\'YEARS\')'
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(1.0, "YEARS"))
+        assert t.value.args[0] == (
+            'timedelta number parameter should be a int or an integer expression (PyLegendInteger).'
+            ' Got value 1.0 of type: <class \'float\'>')
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(2, "Invalid"))
+        assert v.value.args[0] == ("Unknown duration unit - Invalid. Supported values are - YEARS, MONTHS, WEEKS, "
+                                   "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
+
+    def test_strictdate_adjust_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(2, "YEARS")) == \
+               '("root".col2::DATE + (INTERVAL \'2 YEARS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(-3, "MONTHS")) == \
+               '("root".col2::DATE + (INTERVAL \'-3 MONTHS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(5, "DAYS")) == \
+               '("root".col2::DATE + (INTERVAL \'5 DAYS\'))::DATE'
+        assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").adjust(2, "YEARS")) == \
+               'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'
+        assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").adjust(-2, "YEARS")) == \
+               'toOne($t.col2)->adjust(minus(2), DurationUnit.\'YEARS\')'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

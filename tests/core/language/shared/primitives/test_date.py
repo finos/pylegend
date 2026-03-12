@@ -24,6 +24,10 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import today, now
+from pylegend.core.language.shared.functions import (
+    most_recent_day_of_week,
+    previous_day_of_week
+)
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
@@ -59,6 +63,10 @@ class TestPyLegendDate:
                'toOne($t.col2)->firstDayOfYear()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_quarter().first_day_of_year()) == \
                'toOne($t.col2)->firstDayOfQuarter()->firstDayOfYear()'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").firstDayOfYear()) == \
+               'DATE_TRUNC(\'year\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").firstDayOfYear()) == \
+               'toOne($t.col2)->firstDayOfYear()'
 
     def test_first_day_of_quarter(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_quarter()) == \
@@ -69,6 +77,10 @@ class TestPyLegendDate:
                'toOne($t.col2)->firstDayOfQuarter()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_quarter()) == \
                'toOne($t.col2)->firstDayOfYear()->firstDayOfQuarter()'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").firstDayOfQuarter()) == \
+               'DATE_TRUNC(\'quarter\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").firstDayOfQuarter()) == \
+               'toOne($t.col2)->firstDayOfQuarter()'
 
     def test_first_day_of_month(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_month()) == \
@@ -79,6 +91,10 @@ class TestPyLegendDate:
                'toOne($t.col2)->firstDayOfMonth()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_month()) == \
                'toOne($t.col2)->firstDayOfYear()->firstDayOfMonth()'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").firstDayOfMonth()) == \
+               'DATE_TRUNC(\'month\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").firstDayOfMonth()) == \
+               'toOne($t.col2)->firstDayOfMonth()'
 
     def test_first_day_of_week(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_day_of_week()) == \
@@ -89,6 +105,10 @@ class TestPyLegendDate:
                'toOne($t.col2)->firstDayOfWeek()'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").first_day_of_year().first_day_of_week()) == \
                'toOne($t.col2)->firstDayOfYear()->firstDayOfWeek()'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").firstDayOfWeek()) == \
+               'DATE_TRUNC(\'week\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").firstDayOfWeek()) == \
+               'toOne($t.col2)->firstDayOfWeek()'
 
     def test_first_hour_of_day(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").first_hour_of_day()) == \
@@ -155,6 +175,10 @@ class TestPyLegendDate:
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().month()) ==
                'toOne($t.col2)->firstMinuteOfHour()->month()')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").monthNumber()) == \
+               'DATE_PART(\'month\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").monthNumber()) == \
+               'toOne($t.col2)->month()'
 
     def test_day(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").day()) == \
@@ -167,6 +191,10 @@ class TestPyLegendDate:
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().day()) ==
                'toOne($t.col2)->firstMinuteOfHour()->dayOfMonth()')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").dayOfMonth()) == \
+               'DATE_PART(\'day\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").dayOfMonth()) == \
+               'toOne($t.col2)->dayOfMonth()'
 
     def test_hour(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").hour()) == \
@@ -227,6 +255,10 @@ class TestPyLegendDate:
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().quarter()) ==
                'toOne($t.col2)->firstMinuteOfHour()->quarter()')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").quarterNumber()) == \
+               'DATE_PART(\'quarter\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").quarterNumber()) == \
+               'toOne($t.col2)->quarter()'
 
     def test_week_of_year(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").week_of_year()) == \
@@ -239,6 +271,10 @@ class TestPyLegendDate:
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().week_of_year()) ==
                'toOne($t.col2)->firstMinuteOfHour()->weekOfYear()')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").weekOfYear()) == \
+               'DATE_PART(\'week\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").weekOfYear()) == \
+               'toOne($t.col2)->weekOfYear()'
 
     def test_day_of_year(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").day_of_year()) == \
@@ -263,6 +299,10 @@ class TestPyLegendDate:
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().day_of_week()) ==
                'toOne($t.col2)->firstMinuteOfHour()->dayOfWeekNumber()')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").dayOfWeekNumber()) == \
+               'DATE_PART(\'dow\', "root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").dayOfWeekNumber()) == \
+               'toOne($t.col2)->dayOfWeekNumber()'
 
     def test_today(self) -> None:
         assert self.__generate_sql_string(lambda x: today()) == \
@@ -288,17 +328,67 @@ class TestPyLegendDate:
             lambda x: now().first_minute_of_hour().day_of_week()) ==
                 'now()->firstMinuteOfHour()->dayOfWeekNumber()')
 
+    def test_most_recent_day_of_week(self) -> None:
+        for day in ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"):
+            assert most_recent_day_of_week(day) is not None
+        assert most_recent_day_of_week("Monday") is not None
+        assert most_recent_day_of_week("  FRIDAY  ") is not None
+
+        with pytest.raises(ValueError) as v:
+            most_recent_day_of_week("notaday")
+        assert "Invalid day of week: 'notaday'" in v.value.args[0]
+        assert "Must be one of: monday, tuesday, wednesday, thursday, friday, saturday, sunday" in v.value.args[0]
+
+        with pytest.raises(TypeError) as t:
+            most_recent_day_of_week(123)  # type: ignore
+        assert "day_of_week must be a string, got int" in t.value.args[0]
+
+        assert self.__generate_sql_string(lambda x: most_recent_day_of_week("monday")) == \
+               "core_most_recent_day_of_week('Monday', CURRENT_TIMESTAMP)"
+        assert (self.__generate_sql_string(
+            lambda x: most_recent_day_of_week("Friday").first_day_of_month()) ==
+                "DATE_TRUNC('month', core_most_recent_day_of_week('Friday', CURRENT_TIMESTAMP))")
+        assert self.__generate_pure_string(lambda x: most_recent_day_of_week("monday")) == \
+               'mostRecentDayOfWeek(DayOfWeek.\'Monday\')'
+        assert (self.__generate_pure_string(
+            lambda x: most_recent_day_of_week("Friday").first_day_of_month()) ==
+                'mostRecentDayOfWeek(DayOfWeek.\'Friday\')->firstDayOfMonth()')
+
+    def test_previous_day_of_week(self) -> None:
+        with pytest.raises(ValueError) as v:
+            previous_day_of_week("notaday")
+        assert "Invalid day of week: 'notaday'" in v.value.args[0]
+
+        with pytest.raises(TypeError) as t:
+            previous_day_of_week(123)  # type: ignore
+        assert "day_of_week must be a string, got int" in t.value.args[0]
+
+        assert self.__generate_sql_string(lambda x: previous_day_of_week("monday")) == \
+               "core_previous_day_of_week('Monday', CURRENT_TIMESTAMP)"
+        assert (self.__generate_sql_string(
+            lambda x: previous_day_of_week("Saturday").first_day_of_month()) ==
+                "DATE_TRUNC('month', core_previous_day_of_week('Saturday', CURRENT_TIMESTAMP))")
+        assert self.__generate_pure_string(lambda x: previous_day_of_week("monday")) == \
+               'previousDayOfWeek(DayOfWeek.\'Monday\')'
+        assert (self.__generate_pure_string(
+            lambda x: previous_day_of_week("Saturday").first_day_of_month()) ==
+                'previousDayOfWeek(DayOfWeek.\'Saturday\')->firstDayOfMonth()')
+
     def test_date_part(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").date_part()) == \
-               'CAST("root".col2 AS DATE)'
+               'DATE("root".col2)'
         assert (self.__generate_sql_string(
             lambda x: x.get_date("col2").first_minute_of_hour().date_part()) ==
-                'CAST(DATE_TRUNC(\'hour\', "root".col2) AS DATE)')
+                'DATE(DATE_TRUNC(\'hour\', "root".col2))')
         assert self.__generate_pure_string(lambda x: x.get_date("col2").date_part()) == \
                'toOne($t.col2)->datePart()->cast(@StrictDate)'
         assert (self.__generate_pure_string(
             lambda x: x.get_date("col2").first_minute_of_hour().date_part()) ==
                'toOne($t.col2)->firstMinuteOfHour()->datePart()->cast(@StrictDate)')
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").datePart()) == \
+               'DATE("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").datePart()) == \
+               'toOne($t.col2)->datePart()->cast(@StrictDate)'
 
     def test_date_lt_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2") < x.get_date("col1")) == \
@@ -371,6 +461,15 @@ class TestPyLegendDate:
         assert t.value.args[0] == ("Unknown duration unit - Invalid. Supported values are - YEARS, MONTHS, WEEKS, "
                                    "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
 
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").adjust(2, "YEARS")) == \
+               '("root".col2::DATE + (INTERVAL \'2 YEARS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").adjust(-2, "MONTHS")) == \
+               '("root".col2::DATE + (INTERVAL \'-2 MONTHS\'))::DATE'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").adjust(2, "YEARS")) == \
+               'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").adjust(-2, "YEARS")) == \
+               'toOne($t.col2)->adjust(minus(2), DurationUnit.\'YEARS\')'
+
     def test_date_diff_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "YEARS")) == \
                '(EXTRACT(YEAR FROM "root".col1) - EXTRACT(YEAR FROM "root".col2))'
@@ -401,6 +500,49 @@ class TestPyLegendDate:
             self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "invalid"))
         assert t.value.args[0] == ("Unknown duration unit - invalid. Supported values are - YEARS, MONTHS, WEEKS, "
                                    "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
+
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").date_diff(x.get_date("col1"), "YEARS")) == \
+               '(EXTRACT(YEAR FROM "root".col1) - EXTRACT(YEAR FROM "root".col2))'
+        assert self.__generate_pure_string(lambda x: x.get_date("col2").date_diff(x.get_date("col1"), "YEARS")) == \
+               'toOne($t.col2)->dateDiff(toOne($t.col1), DurationUnit.\'YEARS\')'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").date_diff(x.get_date("col1"), "DAYS")) == \
+               'CAST(CAST("root".col2 AS DATE) - CAST("root".col1 AS DATE) AS INTEGER)'
+
+    def test_date_in_list_expr(self) -> None:
+        assert self.__generate_sql_string(
+            lambda x: x.get_date("col2").in_list([
+                datetime.date(2024, 1, 1), datetime.date(2024, 6, 15)
+            ])) == \
+               '"root".col2 IN (CAST(\'2024-01-01\' AS DATE), CAST(\'2024-06-15\' AS DATE))'
+        assert self.__generate_sql_string(
+            lambda x: x.get_date("col2").in_list([
+                datetime.datetime(2024, 1, 1, 12, 0, 0)
+            ])) == '"root".col2 IN (CAST(\'2024-01-01T12:00:00\' AS TIMESTAMP))'
+        assert self.__generate_sql_string(
+            lambda x: x.get_date("col2").in_list([
+                datetime.date(2024, 1, 1), x.get_date("col1")
+            ])) == \
+            '"root".col2 IN (CAST(\'2024-01-01\' AS DATE), "root".col1)'
+        assert self.__generate_pure_string(
+            lambda x: x.get_date("col2").in_list([
+                datetime.date(2024, 1, 1), datetime.date(2024, 6, 15)
+            ])) == "$t.col2->in([%2024-01-01, %2024-06-15])"
+        assert self.__generate_pure_string(
+            lambda x: x.get_date("col2").in_list([
+                datetime.datetime(2024, 1, 1, 12, 0, 0)
+            ])) == "$t.col2->in([%2024-01-01T12:00:00])"
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string(lambda x: x.get_date("col2").in_list([]))
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of date values."
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string(lambda x: x.get_date("col2").in_list("not_a_list"))
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of date values."
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_date("col2").in_list([1, 2]))
+        assert t.value.args[0].startswith("in_list list element should be a datetime.date/datetime.datetime")
 
     def test_e2e_date_adjust_expr(
             self,

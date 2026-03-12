@@ -95,6 +95,10 @@ class TestPyLegendString:
                "(\"root\".col2 LIKE '%Abc%')"
         assert self.__generate_sql_string(lambda x: x.get_string("col2").contains("A_b%c")) == \
                "(\"root\".col2 LIKE '%A\\_b\\%c%')"
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").string_contains("Abc")) == \
+               "(\"root\".col2 LIKE '%Abc%')"
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").string_contains("A_b%c")) == \
+               "(\"root\".col2 LIKE '%A\\_b\\%c%')"
         with pytest.raises(TypeError) as t:
             self.__generate_pure_string(lambda x: x.get_string("col2").contains(x.get_string("col2")))
         assert t.value.args[0].startswith("contains/in other parameter should be a str")
@@ -250,9 +254,13 @@ class TestPyLegendString:
                '("root".col2 = \'Hello\')'
         assert self.__generate_sql_string(lambda x: 'Hello' == (x["col2"] + x["col1"])) == \
                '(CONCAT("root".col2, "root".col1) = \'Hello\')'
+        assert self.__generate_sql_string(lambda x: x["col2"].equals('Hello')) == \
+               '("root".col2 = \'Hello\')'
         assert self.__generate_pure_string(lambda x: x["col2"] == x["col1"]) == \
                '($t.col2 == $t.col1)'
         assert self.__generate_pure_string(lambda x: x["col2"] == 'Hello') == \
+               '($t.col2 == \'Hello\')'
+        assert self.__generate_pure_string(lambda x: x["col2"].equals('Hello')) == \
                '($t.col2 == \'Hello\')'
         assert self.__generate_pure_string(lambda x: 'Hello' == x["col2"]) == \
                '($t.col2 == \'Hello\')'
@@ -416,6 +424,31 @@ class TestPyLegendString:
         assert (t.value.args[0] ==
                 "coalesce parameter should be a str or a string expression (PyLegendString). "
                 "Got value 2 of type: <class 'int'>")
+
+    def test_string_in_list_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").in_list(["a", "b", "c"])) == \
+               '"root".col2 IN (\'a\', \'b\', \'c\')'
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").in_list(["hello"])) == \
+               '"root".col2 IN (\'hello\')'
+        assert self.__generate_sql_string(
+            lambda x: x.get_string("col2").in_list(["a", x.get_string("col1")])) == \
+            '"root".col2 IN (\'a\', "root".col1)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").in_list(["a", "b", "c"])) == \
+               "$t.col2->in(['a', 'b', 'c'])"
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").in_list(["hello"])) == \
+               "$t.col2->in(['hello'])"
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string(lambda x: x.get_string("col2").in_list([]))
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of string values."
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string(lambda x: x.get_string("col2").in_list("not_a_list"))
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of string values."
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_string("col2").in_list([1, 2]))
+        assert t.value.args[0].startswith("in_list list element should be a str or a string expression")
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

@@ -16,6 +16,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendOptional,
+    PyLegendList,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
@@ -41,7 +42,9 @@ from pylegend.core.sql.metamodel import (
     StringLiteral,
     FunctionCall,
     QualifiedName,
-    IntegerLiteral
+    IntegerLiteral,
+    InPredicate,
+    InListExpression,
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,
@@ -97,6 +100,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringMatchExpression",
     "PyLegendStringCoalesceExpression",
     "PyLegendStringParseDecimalExpression",
+    "PyLegendStringCoalesceExpression",
+    "PyLegendStringInListExpression",
 ]
 
 
@@ -1251,6 +1256,34 @@ class PyLegendCurrentUserExpression(PyLegendNullaryExpression, PyLegendExpressio
             self,
             PyLegendCurrentUserExpression.__to_sql_func,
             PyLegendCurrentUserExpression.__to_pure_func,
+            non_nullable=True
+        )
+
+
+class PyLegendStringInListExpression(PyLegendNaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expressions: list[Expression],
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return InPredicate(
+            value=expressions[0],
+            valueList=InListExpression(values=expressions[1:])
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("in", [op_expr[0], '[' + ', '.join(op_expr[1:]) + ']'])
+
+    def __init__(self, operands: PyLegendList[PyLegendExpression]) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendNaryExpression.__init__(
+            self,
+            operands,
+            PyLegendStringInListExpression.__to_sql_func,
+            PyLegendStringInListExpression.__to_pure_func,
             non_nullable=True
         )
 

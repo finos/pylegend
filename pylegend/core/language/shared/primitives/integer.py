@@ -16,9 +16,11 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    PyLegendList,
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.expression import PyLegendExpressionIntegerReturn
 from pylegend.core.language.shared.literal_expressions import PyLegendIntegerLiteralExpression
 from pylegend.core.sql.metamodel import (
@@ -40,7 +42,8 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
     PyLegendIntegerBitXorExpression,
     PyLegendIntegerBitShiftLeftExpression,
     PyLegendIntegerBitShiftRightExpression,
-    PyLegendIntegerBitNotExpression
+    PyLegendIntegerBitNotExpression,
+    PyLegendIntegerInListExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendFloat
@@ -220,6 +223,16 @@ class PyLegendInteger(PyLegendNumber):
     @grammar_method
     def __rrshift__(self, other: PyLegendUnion[int, "PyLegendInteger"]) -> "PyLegendInteger":
         return self._create_binary_expression(other, PyLegendIntegerBitShiftRightExpression, "right shift (>>)", reverse=True)
+
+    @grammar_method
+    def in_list(self, lst: PyLegendList[PyLegendUnion[int, "PyLegendInteger"]]) -> "PyLegendBoolean":
+        if not isinstance(lst, list) or len(lst) == 0:
+            raise ValueError("in_list parameter should be a non-empty list of integer values.")
+        operands = [self.__value_copy]
+        for item in lst:
+            PyLegendInteger.__validate__param_to_be_integer(item, "in_list list element")
+            operands.append(PyLegendInteger.__convert_to_integer_expr(item))
+        return PyLegendBoolean(PyLegendIntegerInListExpression(operands))  # type: ignore
 
     def _create_binary_expression(
             self,

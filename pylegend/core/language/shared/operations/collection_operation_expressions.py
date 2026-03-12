@@ -24,6 +24,8 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionDateReturn,
+    PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
@@ -33,6 +35,8 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
+    FunctionCall,
+    QualifiedName,
 )
 from pylegend.core.sql.metamodel_extension import (
     CountExpression,
@@ -73,6 +77,14 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDateMinExpression",
     "PyLegendDateMaxExpression",
     "PyLegendDateMinExpression",
+    "PyLegendIntegerUniqueValueOnlyExpression",
+    "PyLegendFloatUniqueValueOnlyExpression",
+    "PyLegendNumberUniqueValueOnlyExpression",
+    "PyLegendStringUniqueValueOnlyExpression",
+    "PyLegendStrictDateUniqueValueOnlyExpression",
+    "PyLegendDateUniqueValueOnlyExpression",
+    "PyLegendDateTimeUniqueValueOnlyExpression",
+    "PyLegendBooleanUniqueValueOnlyExpression"
 ]
 
 
@@ -631,3 +643,87 @@ class PyLegendDateMinExpression(PyLegendUnaryExpression, PyLegendExpressionDateR
             PyLegendDateMinExpression.__to_sql_func,
             PyLegendDateMinExpression.__to_pure_func
         )
+
+
+class PyLegendUniqueValueOnlyExpressionBase(PyLegendUnaryExpression):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["core_unique_value_only"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("uniqueValueOnly", [op_expr])
+
+    def __init__(self, operand: PyLegendExpression) -> None:
+        PyLegendUnaryExpression.__init__(
+            self, operand,
+            PyLegendUniqueValueOnlyExpressionBase.__to_sql_func,
+            PyLegendUniqueValueOnlyExpressionBase.__to_pure_func
+        )
+
+
+class PyLegendIntegerUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionIntegerReturn):
+
+    def __init__(self, operand: PyLegendExpressionIntegerReturn) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendBooleanUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionBooleanReturn):
+
+    def __init__(self, operand: PyLegendExpressionBooleanReturn) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendFloatUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionFloatReturn):
+
+    def __init__(self, operand: PyLegendExpressionFloatReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendNumberUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionNumberReturn):
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendStringUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionStringReturn):
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendStrictDateUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionStrictDateReturn):
+
+    def __init__(self, operand: PyLegendExpressionStrictDateReturn) -> None:
+        PyLegendExpressionStrictDateReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendDateUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionDateReturn):
+
+    def __init__(self, operand: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionDateReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendDateTimeUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionDateTimeReturn):
+
+    def __init__(self, operand: PyLegendExpressionDateTimeReturn) -> None:
+        PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)

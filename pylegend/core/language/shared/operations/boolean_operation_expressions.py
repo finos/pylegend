@@ -17,11 +17,18 @@ from pylegend._typing import (
     PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
+    PyLegendExpression,
     PyLegendExpressionBooleanReturn,
+    PyLegendExpressionStringReturn,
+    PyLegendExpressionIntegerReturn,
+    PyLegendExpressionFloatReturn,
+    PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionStrictDateReturn,
 )
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
+from pylegend.core.language.shared.operations.nary_expression import PyLegendNaryExpression
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -30,6 +37,8 @@ from pylegend.core.sql.metamodel import (
     NotExpression,
     ComparisonExpression,
     ComparisonOperator,
+    SearchedCaseExpression,
+    WhenClause,
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -43,7 +52,13 @@ __all__: PyLegendSequence[str] = [
     "PyLegendBooleanLessThanEqualExpression",
     "PyLegendBooleanGreaterThanExpression",
     "PyLegendBooleanGreaterThanEqualExpression",
-    "PyLegendBooleanXorExpression"
+    "PyLegendBooleanXorExpression",
+    "PyLegendBooleanCaseExpression",
+    "PyLegendStringCaseExpression",
+    "PyLegendIntegerCaseExpression",
+    "PyLegendFloatCaseExpression",
+    "PyLegendDateTimeCaseExpression",
+    "PyLegendStrictDateCaseExpression",
 ]
 
 
@@ -266,3 +281,78 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
         )
+
+
+class PyLegendCaseExpressionBase(PyLegendNaryExpression):
+
+    @staticmethod
+    def __to_sql_func(
+            expressions: list[Expression],
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return SearchedCaseExpression(
+            whenClauses=[WhenClause(operand=expressions[0], result=expressions[1])],
+            defaultValue=expressions[2]
+        )
+
+    @staticmethod
+    def __to_pure_func(op_exprs: list[str], config: FrameToPureConfig) -> str:
+        return f"if({op_exprs[0]}, |{op_exprs[1]}, |{op_exprs[2]})"
+
+    def __init__(
+            self,
+            condition: PyLegendExpressionBooleanReturn,
+            if_true: PyLegendExpression,
+            if_false: PyLegendExpression,
+    ) -> None:
+        PyLegendNaryExpression.__init__(
+            self,
+            [condition, if_true, if_false],
+            PyLegendCaseExpressionBase.__to_sql_func,
+            PyLegendCaseExpressionBase.__to_pure_func,
+            non_nullable=False,
+            operands_non_nullable_flags=[True, False, False]
+        )
+
+
+class PyLegendBooleanCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionBooleanReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
+class PyLegendStringCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionStringReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+        PyLegendExpressionStringReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
+class PyLegendIntegerCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionIntegerReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+        PyLegendExpressionIntegerReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
+class PyLegendFloatCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionFloatReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
+class PyLegendDateTimeCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionDateTimeReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+        PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
+class PyLegendStrictDateCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionStrictDateReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+        PyLegendExpressionStrictDateReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)

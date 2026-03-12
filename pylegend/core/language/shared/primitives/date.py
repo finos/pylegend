@@ -17,6 +17,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    PyLegendList,
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
@@ -58,6 +59,7 @@ from pylegend.core.language.shared.operations.date_operation_expressions import 
     PyLegendDateGreaterThanEqualExpression,
     PyLegendDateAdjustExpression,
     PyLegendDateDiffExpression,
+    PyLegendDateInListExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -201,6 +203,70 @@ class PyLegendDate(PyLegendPrimitive):
         self.validate_duration_unit_param(duration_unit)
         duration_unit_op = PyLegendStringLiteralExpression(duration_unit.upper())
         return PyLegendInteger(PyLegendDateDiffExpression([self.__value, other_op, duration_unit_op]))
+
+    @grammar_method
+    def adjust(self, number: PyLegendUnion[int, "PyLegendInteger"], duration_unit: str) -> "PyLegendDate":
+        return self.timedelta(number, duration_unit)
+
+    @grammar_method
+    def date_diff(
+            self,
+            other: PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"],
+            duration_unit: str) -> "PyLegendInteger":
+        return self.diff(other, duration_unit)
+
+    @grammar_method
+    def monthNumber(self) -> "PyLegendInteger":
+        return self.month()
+
+    @grammar_method
+    def quarterNumber(self) -> "PyLegendInteger":
+        return self.quarter()
+
+    @grammar_method
+    def dayOfWeekNumber(self) -> "PyLegendInteger":
+        return self.day_of_week()
+
+    @grammar_method
+    def dayOfMonth(self) -> "PyLegendInteger":
+        return self.day()
+
+    @grammar_method
+    def weekOfYear(self) -> "PyLegendInteger":
+        return self.week_of_year()
+
+    @grammar_method
+    def datePart(self) -> "PyLegendStrictDate":
+        return self.date_part()
+
+    @grammar_method
+    def firstDayOfYear(self) -> "PyLegendDate":
+        return self.first_day_of_year()
+
+    @grammar_method
+    def firstDayOfQuarter(self) -> "PyLegendDate":
+        return self.first_day_of_quarter()
+
+    @grammar_method
+    def firstDayOfMonth(self) -> "PyLegendDate":
+        return self.first_day_of_month()
+
+    @grammar_method
+    def firstDayOfWeek(self) -> "PyLegendDate":
+        return self.first_day_of_week()
+
+    @grammar_method
+    def in_list(
+            self,
+            lst: PyLegendList[PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"]]
+    ) -> "PyLegendBoolean":
+        if not isinstance(lst, list) or len(lst) == 0:
+            raise ValueError("in_list parameter should be a non-empty list of date values.")
+        operands = [self.__value]
+        for item in lst:
+            PyLegendDate.validate_param_to_be_date(item, "in_list list element")
+            operands.append(PyLegendDate.__convert_to_date_expr(item))
+        return PyLegendBoolean(PyLegendDateInListExpression(operands))  # type: ignore
 
     @grammar_method
     def __lt__(

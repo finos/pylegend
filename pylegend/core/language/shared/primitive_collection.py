@@ -56,6 +56,14 @@ from pylegend.core.language.shared.operations.collection_operation_expressions i
     PyLegendStrictDateMinExpression,
     PyLegendDateMaxExpression,
     PyLegendDateMinExpression,
+    PyLegendIntegerUniqueValueOnlyExpression,
+    PyLegendFloatUniqueValueOnlyExpression,
+    PyLegendNumberUniqueValueOnlyExpression,
+    PyLegendStringUniqueValueOnlyExpression,
+    PyLegendStrictDateUniqueValueOnlyExpression,
+    PyLegendDateUniqueValueOnlyExpression,
+    PyLegendDateTimeUniqueValueOnlyExpression,
+    PyLegendBooleanUniqueValueOnlyExpression,
 )
 
 
@@ -164,6 +172,13 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
         )
         return PyLegendNumber(PyLegendVariancePopulationExpression(nested_expr))  # type: ignore
 
+    def distinct_value(self) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            else self.__nested.value()
+        )
+        return PyLegendNumber(PyLegendNumberUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
+
 
 class PyLegendIntegerCollection(PyLegendNumberCollection):
     __nested: PyLegendUnion[int, PyLegendInteger]
@@ -193,6 +208,13 @@ class PyLegendIntegerCollection(PyLegendNumberCollection):
         )
         return PyLegendInteger(PyLegendIntegerSumExpression(nested_expr))  # type: ignore
 
+    def distinct_value(self) -> "PyLegendInteger":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, int)
+            else self.__nested.value()
+        )
+        return PyLegendInteger(PyLegendIntegerUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
+
 
 class PyLegendFloatCollection(PyLegendNumberCollection):
     __nested: PyLegendUnion[float, PyLegendFloat]
@@ -221,6 +243,13 @@ class PyLegendFloatCollection(PyLegendNumberCollection):
             else self.__nested.value()
         )
         return PyLegendFloat(PyLegendFloatSumExpression(nested_expr))  # type: ignore
+
+    def distinct_value(self) -> "PyLegendFloat":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, float)
+            else self.__nested.value()
+        )
+        return PyLegendFloat(PyLegendFloatUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
 
 
 class PyLegendDecimalCollection(PyLegendNumberCollection):
@@ -260,6 +289,16 @@ class PyLegendStringCollection(PyLegendPrimitiveCollection):
         separator_expr = convert_literal_to_literal_expression(separator)
         return PyLegendString(PyLegendJoinStringsExpression(nested_expr, separator_expr))  # type: ignore
 
+    def join_strings(self) -> "PyLegendString":
+        return self.join(separator=";")
+
+    def distinct_value(self) -> "PyLegendString":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, str)
+            else self.__nested.value()
+        )
+        return PyLegendString(PyLegendStringUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
+
 
 class PyLegendBooleanCollection(PyLegendPrimitiveCollection):
     __nested: PyLegendUnion[bool, PyLegendBoolean]
@@ -267,6 +306,13 @@ class PyLegendBooleanCollection(PyLegendPrimitiveCollection):
     def __init__(self, nested: PyLegendUnion[bool, PyLegendBoolean]) -> None:
         super().__init__(nested)
         self.__nested = nested
+
+    def distinct_value(self) -> "PyLegendBoolean":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, bool)
+            else self.__nested.value()
+        )
+        return PyLegendBoolean(PyLegendBooleanUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
 
 
 class PyLegendDateCollection(PyLegendPrimitiveCollection):
@@ -290,6 +336,13 @@ class PyLegendDateCollection(PyLegendPrimitiveCollection):
         )
         return PyLegendDate(PyLegendDateMinExpression(nested_expr))  # type: ignore
 
+    def distinct_value(self) -> "PyLegendDate":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (date, datetime))
+            else self.__nested.value()
+        )
+        return PyLegendDate(PyLegendDateUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
+
 
 class PyLegendDateTimeCollection(PyLegendDateCollection):
     __nested: PyLegendUnion[datetime, PyLegendDateTime]
@@ -297,6 +350,13 @@ class PyLegendDateTimeCollection(PyLegendDateCollection):
     def __init__(self, nested: PyLegendUnion[datetime, PyLegendDateTime]) -> None:
         super().__init__(nested)
         self.__nested = nested
+
+    def distinct_value(self) -> "PyLegendDateTime":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, datetime)
+            else self.__nested.value()
+        )
+        return PyLegendDateTime(PyLegendDateTimeUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
 
 
 class PyLegendStrictDateCollection(PyLegendDateCollection):
@@ -319,6 +379,13 @@ class PyLegendStrictDateCollection(PyLegendDateCollection):
             else self.__nested.value()
         )
         return PyLegendStrictDate(PyLegendStrictDateMinExpression(nested_expr))  # type: ignore
+
+    def distinct_value(self) -> "PyLegendStrictDate":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, date)
+            else self.__nested.value()
+        )
+        return PyLegendStrictDate(PyLegendStrictDateUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
 
 
 def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> PyLegendPrimitiveCollection:
