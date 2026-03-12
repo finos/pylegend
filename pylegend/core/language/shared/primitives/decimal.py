@@ -37,7 +37,6 @@ from pylegend.core.language.shared.operations.decimal_operation_expressions impo
     PyLegendDecimalNegativeExpression,
     PyLegendDecimalSubtractExpression,
     PyLegendDecimalMultiplyExpression,
-    PyLegendDecimalDivideExpression,
     PyLegendDecimalDivideScaledExpression,
     PyLegendDecimalRoundExpression,
 )
@@ -147,28 +146,6 @@ class PyLegendDecimal(PyLegendNumber):
             return PyLegendDecimal(PyLegendDecimalMultiplyExpression(other_op, self.__value_copy))
         else:
             return super().__rmul__(other)
-
-    @grammar_method
-    def __truediv__(
-            self,
-            other: PyLegendUnion[
-                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
-            ]
-    ) -> "PyLegendDecimal":
-        PyLegendNumber.validate_param_to_be_number(other, "Decimal divide (/) parameter")
-        other_op = PyLegendDecimal.__convert_to_number_expr(other)
-        return PyLegendDecimal(PyLegendDecimalDivideExpression(self.__value_copy, other_op))
-
-    @grammar_method
-    def __rtruediv__(
-            self,
-            other: PyLegendUnion[
-                int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal", "PyLegendNumber"
-            ]
-    ) -> "PyLegendDecimal":
-        PyLegendNumber.validate_param_to_be_number(other, "Decimal divide (/) parameter")
-        other_op = PyLegendDecimal.__convert_to_number_expr(other)
-        return PyLegendDecimal(PyLegendDecimalDivideExpression(other_op, self.__value_copy))
 
     @grammar_method
     def __abs__(self) -> "PyLegendDecimal":
