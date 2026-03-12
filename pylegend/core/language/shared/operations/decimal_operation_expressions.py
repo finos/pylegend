@@ -48,7 +48,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDecimalNegativeExpression",
     "PyLegendDecimalSubtractExpression",
     "PyLegendDecimalMultiplyExpression",
-    "PyLegendDecimalDivideExpression",
     "PyLegendDecimalDivideScaledExpression",
     "PyLegendDecimalRoundExpression",
     "PyLegendNumberToDecimalExpression",
@@ -137,35 +136,6 @@ class PyLegendDecimalMultiplyExpression(PyLegendBinaryExpression, PyLegendExpres
             operand2,
             PyLegendDecimalMultiplyExpression.__to_sql_func,
             PyLegendDecimalMultiplyExpression.__to_pure_func,
-            non_nullable=True,
-            first_operand_needs_to_be_non_nullable=True,
-            second_operand_needs_to_be_non_nullable=True
-        )
-
-
-class PyLegendDecimalDivideExpression(PyLegendBinaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.DIVIDE, expression1, expression2)
-
-    @staticmethod
-    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
-        return f"({op1_expr} / {op2_expr})"
-
-    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
-        PyLegendExpressionDecimalReturn.__init__(self)
-        PyLegendBinaryExpression.__init__(
-            self,
-            operand1,
-            operand2,
-            PyLegendDecimalDivideExpression.__to_sql_func,
-            PyLegendDecimalDivideExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
             second_operand_needs_to_be_non_nullable=True
