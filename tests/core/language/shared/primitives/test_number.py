@@ -520,6 +520,30 @@ class TestPyLegendNumber:
         assert self.__generate_sql_string(lambda x: pi()) == 'PI()'
         assert self.__generate_pure_string(lambda x: pi()) == 'pi()'
 
+    def test_number_to_decimal_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").to_decimal()) == \
+               'CAST("root".col2 AS DECIMAL)'
+        assert self.__generate_sql_string(
+            lambda x: (x.get_number("col2") + x.get_number("col1")).to_decimal()
+        ) == 'CAST(("root".col2 + "root".col1) AS DECIMAL)'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").to_decimal()) == \
+               'toOne($t.col2)->toDecimal()'
+        assert self.__generate_pure_string(
+            lambda x: (x.get_number("col2") + x.get_number("col1")).to_decimal()
+        ) == '(toOne($t.col2) + toOne($t.col1))->toDecimal()'
+
+    def test_number_to_float_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_number("col2").to_float()) == \
+               'CAST("root".col2 AS DOUBLE PRECISION)'
+        assert self.__generate_sql_string(
+            lambda x: (x.get_number("col2") + x.get_number("col1")).to_float()
+        ) == 'CAST(("root".col2 + "root".col1) AS DOUBLE PRECISION)'
+        assert self.__generate_pure_string(lambda x: x.get_number("col2").to_float()) == \
+               'toOne($t.col2)->toFloat()'
+        assert self.__generate_pure_string(
+            lambda x: (x.get_number("col2") + x.get_number("col1")).to_float()
+        ) == '(toOne($t.col2) + toOne($t.col1))->toFloat()'
+
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),

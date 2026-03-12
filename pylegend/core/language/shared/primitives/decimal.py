@@ -16,12 +16,14 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    PyLegendOptional,
     TYPE_CHECKING,
 )
 from decimal import Decimal as PythonDecimal
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
-from pylegend.core.language.shared.expression import PyLegendExpressionDecimalReturn
-from pylegend.core.language.shared.literal_expressions import PyLegendDecimalLiteralExpression
+from pylegend.core.language.shared.expression import (
+    PyLegendExpressionDecimalReturn,
+)
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
@@ -34,6 +36,12 @@ from pylegend.core.language.shared.operations.decimal_operation_expressions impo
     PyLegendDecimalNegativeExpression,
     PyLegendDecimalSubtractExpression,
     PyLegendDecimalMultiplyExpression,
+    PyLegendDecimalDivideScaledExpression,
+    PyLegendDecimalRoundExpression,
+)
+from pylegend.core.language.shared.literal_expressions import (
+    PyLegendDecimalLiteralExpression,
+    PyLegendIntegerLiteralExpression,
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendInteger, PyLegendFloat
@@ -148,6 +156,41 @@ class PyLegendDecimal(PyLegendNumber):
     @grammar_method
     def __pos__(self) -> "PyLegendDecimal":
         return self
+
+    @grammar_method
+    def round(
+            self,
+            n: PyLegendOptional[int] = None
+    ) -> "PyLegendDecimal":
+        if n is None:
+            return PyLegendDecimal(
+                PyLegendDecimalRoundExpression(self.__value_copy, PyLegendIntegerLiteralExpression(0))
+            )
+        else:
+            if not isinstance(n, int):
+                raise TypeError("Round parameter should be an int. Passed - " + str(type(n)))
+            return PyLegendDecimal(
+                PyLegendDecimalRoundExpression(self.__value_copy, PyLegendIntegerLiteralExpression(n))
+            )
+
+    @grammar_method
+    def __round__(self, n: PyLegendOptional[int] = None) -> "PyLegendDecimal":
+        return self.round(n)
+
+    @grammar_method
+    def divide(
+            self,
+            other: PyLegendUnion[PythonDecimal, "PyLegendDecimal"],
+            scale: int
+    ) -> "PyLegendDecimal":
+        if not isinstance(scale, int):
+            raise TypeError("Divide scale parameter should be an int. Passed - " + str(type(scale)))
+        other_op = PyLegendDecimal.__convert_to_decimal_expr(other)
+        return PyLegendDecimal(
+            PyLegendDecimalDivideScaledExpression(
+                self.__value_copy, other_op, PyLegendIntegerLiteralExpression(scale)
+            )
+        )
 
     @staticmethod
     def __convert_to_decimal_expr(

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+
 import pytest
 import typing
 from decimal import Decimal as PythonDecimal
@@ -207,6 +209,106 @@ class TestPyLegendDecimal:
         assert self.__generate_pure_string(lambda x: PythonDecimal("3.0") * x.get_decimal("col2")) == \
                '(3.0D * toOne($t.col2))'
 
+    def test_decimal_divide_expr(self) -> None:
+        # Decimal / Decimal
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2") / x.get_decimal("col1")) == \
+               '((1.0 * "root".col2) / "root".col1)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col2") / x.get_decimal("col1")) == \
+               '(toOne($t.col2) / toOne($t.col1))'
+
+        # Decimal / PythonDecimal
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2") / PythonDecimal("2.0")) == \
+               '((1.0 * "root".col2) / CAST(\'2.0\' AS DECIMAL))'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col2") / PythonDecimal("2.0")) == \
+               '(toOne($t.col2) / 2.0D)'
+
+        # PythonDecimal / Decimal
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: PythonDecimal("2.0") / x.get_decimal("col2")) == \
+               '((1.0 * CAST(\'2.0\' AS DECIMAL)) / "root".col2)'
+        assert self.__generate_pure_string(lambda x: PythonDecimal("2.0") / x.get_decimal("col2")) == \
+               '(2.0D / toOne($t.col2))'
+
+    def test_decimal_divide_with_float_and_int(self) -> None:
+        # Decimal / float
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2") / 2.0) == \
+               '((1.0 * "root".col2) / 2.0)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col2") / 2.0) == \
+               '(toOne($t.col2) / 2.0)'
+
+        # float / Decimal
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: 2.0 / x.get_decimal("col2")) == \
+               '((1.0 * 2.0) / "root".col2)'
+        assert self.__generate_pure_string(lambda x: 2.0 / x.get_decimal("col2")) == \
+               '(2.0 / toOne($t.col2))'
+
+        # Decimal / int
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2") / 3) == \
+               '((1.0 * "root".col2) / 3)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col2") / 3) == \
+               '(toOne($t.col2) / 3)'
+
+        # int / Decimal
+        assert self.__generate_sql_string_no_decimal_assert(lambda x: 3 / x.get_decimal("col2")) == \
+               '((1.0 * 3) / "root".col2)'
+        assert self.__generate_pure_string(lambda x: 3 / x.get_decimal("col2")) == \
+               '(3 / toOne($t.col2))'
+
+    def test_decimal_divide_scaled_expr(self) -> None:
+        assert self.__generate_sql_string(
+            lambda x: x.get_decimal("col2").divide(x.get_decimal("col1"), 2)
+        ) == 'ROUND(((1.0 * "root".col2) / "root".col1), 2)'
+        assert self.__generate_pure_string(
+            lambda x: x.get_decimal("col2").divide(x.get_decimal("col1"), 2)
+        ) == 'toOne($t.col2)->divide(toOne($t.col1), 2)'
+
+        assert self.__generate_sql_string(
+            lambda x: x.get_decimal("col2").divide(PythonDecimal("0.1"), 3)
+        ) == 'ROUND(((1.0 * "root".col2) / CAST(\'0.1\' AS DECIMAL)), 3)'
+        assert self.__generate_pure_string(
+            lambda x: x.get_decimal("col2").divide(PythonDecimal("0.1"), 3)
+        ) == 'toOne($t.col2)->divide(0.1D, 3)'
+
+    def test_decimal_divide_scaled_type_error(self) -> None:
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(
+                lambda x: x.get_decimal("col2").divide(x.get_decimal("col1"), 2.5)  # type: ignore
+            )
+        assert "Divide scale parameter should be an int" in t.value.args[0]
+
+    def test_decimal_round_expr(self) -> None:
+        # round() no args
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col2").round()) == \
+               'ROUND("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col2").round()) == \
+               'toOne($t.col2)->round()'
+
+        # round(0)
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col2").round(0)) == \
+               'ROUND("root".col2)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col2").round(0)) == \
+               'toOne($t.col2)->round()'
+
+        # round(2)
+        assert self.__generate_sql_string(lambda x: x.get_decimal("col2").round(2)) == \
+               'ROUND("root".col2, 2)'
+        assert self.__generate_pure_string(lambda x: x.get_decimal("col2").round(2)) == \
+               'toOne($t.col2)->round(2)'
+
+        # __round__ via built-in round()
+        assert self.__generate_sql_string(lambda x: round(x.get_decimal("col2"))) == \
+               'ROUND("root".col2)'
+        assert self.__generate_pure_string(lambda x: round(x.get_decimal("col2"))) == \
+               'toOne($t.col2)->round()'
+        assert self.__generate_sql_string(lambda x: round(x.get_decimal("col2"), 2)) == \
+               'ROUND("root".col2, 2)'
+        assert self.__generate_pure_string(lambda x: round(x.get_decimal("col2"), 2)) == \
+               'toOne($t.col2)->round(2)'
+
+    def test_decimal_round_type_error(self) -> None:
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string(lambda x: x.get_decimal("col2").round(2.5))  # type: ignore
+        assert "Round parameter should be an int" in t.value.args[0]
+
     @typing.no_type_check
     def test_decimal_python_decimal_equals_expr(self) -> None:
         assert self.__generate_sql_string_no_decimal_assert(lambda x: x["col2"] == PythonDecimal("-1.5")) == \
@@ -283,3 +385,53 @@ class TestPyLegendDecimalUnit:
         collection = create_primitive_collection(dec)
         result = collection.count()
         assert isinstance(result, PyLegendInteger)
+
+    def test_decimal_to_decimal_expr(self) -> None:
+        """Covers PyLegendNumber.to_decimal() called on a Decimal column"""
+        result = self.tds_row.get_decimal("col1").to_decimal()
+        assert isinstance(result, PyLegendDecimal)
+        sql = self.db_extension.process_expression(
+            result.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert sql == 'CAST("root".col1 AS DECIMAL)'
+
+    def test_decimal_to_float_expr(self) -> None:
+        """Covers PyLegendNumber.to_float() called on a Decimal column"""
+        from pylegend.core.language import PyLegendFloat
+        result = self.tds_row.get_decimal("col1").to_float()
+        assert isinstance(result, PyLegendFloat)
+        sql = self.db_extension.process_expression(
+            result.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert sql == 'CAST("root".col1 AS DOUBLE PRECISION)'
+
+    def test_decimal_round_unit(self) -> None:
+        """Covers decimal round SQL without legend server"""
+        result = self.tds_row.get_decimal("col1").round()
+        assert isinstance(result, PyLegendDecimal)
+        sql = self.db_extension.process_expression(
+            result.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert sql == 'ROUND("root".col1)'
+
+        result2 = self.tds_row.get_decimal("col1").round(3)
+        sql2 = self.db_extension.process_expression(
+            result2.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert sql2 == 'ROUND("root".col1, 3)'
+
+    def test_decimal_divide_scaled_unit(self) -> None:
+        """Covers decimal divide(other, scale) SQL without legend server"""
+        result = self.tds_row.get_decimal("col1").divide(self.tds_row.get_decimal("col2"), 2)
+        assert isinstance(result, PyLegendDecimal)
+        # Verify the underlying expression is non-nullable
+        assert result.value().is_non_nullable() is True
+        sql = self.db_extension.process_expression(
+            result.to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert sql == 'ROUND(((1.0 * "root".col1) / "root".col2), 2)'

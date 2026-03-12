@@ -153,6 +153,24 @@ class TestPyLegendString:
         assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_float()) == \
                'toOne($t.col2)->parseFloat()'
 
+    def test_string_parse_decimal_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_decimal()) == \
+               'CAST("root".col2 AS DECIMAL)'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_decimal()) == \
+               'toOne($t.col2)->parseDecimal()'
+
+    def test_string_parse_decimal_with_precision_scale_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_string("col2").parse_decimal(10, 2)) == \
+               'CAST("root".col2 AS NUMERIC(10, 2))'
+        assert self.__generate_pure_string(lambda x: x.get_string("col2").parse_decimal(10, 2)) == \
+               'toOne($t.col2)->parseDecimal(10, 2)'
+
+    def test_string_parse_decimal_partial_params_error(self) -> None:
+        with pytest.raises(TypeError, match="parse_decimal requires both precision and scale"):
+            self.__generate_sql_string(lambda x: x.get_string("col2").parse_decimal(precision=10))
+        with pytest.raises(TypeError, match="parse_decimal requires both precision and scale"):
+            self.__generate_sql_string(lambda x: x.get_string("col2").parse_decimal(scale=2))
+
     def test_string_add_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_string("col2") + x.get_string("col1")) == \
                'CONCAT("root".col2, "root".col1)'
