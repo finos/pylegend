@@ -15,7 +15,8 @@
 import copy
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
-from typing import TYPE_CHECKING, overload
+from io import StringIO
+from typing import IO, TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
@@ -745,8 +746,24 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         as (number of rows, number of columns).
         """
 
-        col_name = self.columns()[0].get_name()
-        newframe = self.aggregate(func={col_name: "count"}, axis=0)
+        col = self.columns()[0]
+        col_name = col.get_name()
+        col_type = col.get_type()
+
+        fill_value_map: PyLegendDict[str, PyLegendUnion[int, float, str, bool, date, datetime]] = {
+            "Integer": 0,
+            "Float": 0.0,
+            "Number": 0,
+            "Decimal": 0,
+            "String": "",
+            "Boolean": False,
+            "Date": date(1970, 1, 1),
+            "StrictDate": date(1970, 1, 1),
+            "DateTime": datetime(1970, 1, 1),
+        }
+        fill_value = fill_value_map.get(col_type, 0)
+
+        newframe = self.fillna(value={col_name: fill_value}).aggregate(func={col_name: "count"}, axis=0)
 
         df = newframe.execute_frame_to_pandas_df()
 
@@ -878,6 +895,147 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending=ascending,
             pct=pct
         ))
+
+    def info(
+            self,
+            verbose: PyLegendOptional[bool] = None,
+            buf: PyLegendOptional[PyLegendUnion["IO[str]", "StringIO"]] = None,
+            max_cols: PyLegendOptional[int] = None,
+            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
+            show_counts: PyLegendOptional[bool] = None
+    ) -> None:
+        """
+        Print a concise summary of the TdsFrame.
+
+        This method prints information about the TdsFrame including
+        column names, non-null counts, and column types.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            Whether to print the full summary. By default, all columns are shown.
+        buf : writable buffer, defaults to sys.stdout
+            Where to send the output. By default, the output is printed to
+            sys.stdout. Pass a writable buffer if you need to further process
+            the output.
+        max_cols : int, optional
+            When to switch from the verbose to the truncated output. If the
+            TdsFrame has more than max_cols columns, the truncated output is
+            used. By default, all columns are shown.
+        memory_usage : bool, str, optional
+            Not implemented yet.
+        show_counts : bool, optional
+            Whether to show the non-null counts. By default, True.
+            A value of True always shows the counts, and False never shows
+            the counts.
+        """
+        import sys
+
+        if memory_usage is not None:
+            raise NotImplementedError("memory_usage parameter is not implemented yet in Pandas API")
+
+        if max_cols is not None and not isinstance(max_cols, int):
+            raise TypeError(f"max_cols must be an integer, but got {type(max_cols)}")
+
+        if buf is not None and not hasattr(buf, 'write'):
+            raise TypeError("buf is not a writable buffer")
+
+        cols = self.columns()
+        num_cols = len(cols)
+
+        # Determine verbosity
+        if verbose is not None:
+            show_all_cols = bool(verbose)
+        elif max_cols is not None:
+            show_all_cols = num_cols <= max_cols
+        else:
+            show_all_cols = True
+
+        # Determine whether to show non-null counts
+        do_show_counts = bool(show_counts) if show_counts is not None else True
+
+        # Build output lines
+        lines: PyLegendList[str] = []
+
+        # Class name line - use the actual class of self
+        class_name = f"{self.__class__.__module__}.{self.__class__.__qualname__}"
+        lines.append(f"<class '{class_name}'>")
+
+        # RangeIndex line
+        total_rows = self.shape[0]
+        lines.append(f"RangeIndex: {total_rows} entries")
+
+        if show_all_cols:
+            lines.append(f"Data columns (total {num_cols} columns):")
+
+            # Get non-null counts if needed
+            non_null_counts: PyLegendOptional[PyLegendDict[str, int]] = None
+            if do_show_counts:
+                count_df = self.count().execute_frame_to_pandas_df()
+                non_null_counts = {}
+                for col in cols:
+                    col_name = col.get_name()
+                    if col_name in count_df.columns:
+                        non_null_counts[col_name] = int(count_df[col_name].iloc[0])
+                    else:
+                        non_null_counts[col_name] = 0
+
+            # Calculate column widths for alignment
+            idx_width = max(len(str(num_cols - 1)), len("#"))
+            name_width = max((len(col.get_name()) for col in cols), default=len("Column"))
+            name_width = max(name_width, len("Column"))
+            dtype_width = max((len(col.get_type()) for col in cols), default=len("Dtype"))
+            dtype_width = max(dtype_width, len("Dtype"))
+
+            if do_show_counts and non_null_counts is not None:
+                count_width = max(
+                    max(len(f"{non_null_counts[col.get_name()]} non-null") for col in cols),
+                    len("Non-Null Count")
+                )
+
+                header = (
+                    f"{'#':<{idx_width}}  {'Column':<{name_width}}  {'Non-Null Count':<{count_width}}  {'Dtype':<{dtype_width}}"
+                )
+                separator = (
+                    f"{'-' * idx_width}  {'-' * name_width}  {'-' * count_width}  {'-' * dtype_width}"
+                )
+                lines.append(header)
+                lines.append(separator)
+
+                for i, col in enumerate(cols):
+                    col_name = col.get_name()
+                    col_dtype = col.get_type()
+                    count_str = f"{non_null_counts[col_name]} non-null"
+                    lines.append(
+                        f"{i:<{idx_width}}  {col_name:<{name_width}}  {count_str:<{count_width}}  {col_dtype:<{dtype_width}}"
+                    )
+            else:
+                header = f"{'#':<{idx_width}}  {'Column':<{name_width}}  {'Dtype':<{dtype_width}}"
+                separator = f"{'-' * idx_width}  {'-' * name_width}  {'-' * dtype_width}"
+                lines.append(header)
+                lines.append(separator)
+
+                for i, col in enumerate(cols):
+                    col_name = col.get_name()
+                    col_dtype = col.get_type()
+                    lines.append(f"{i:<{idx_width}}  {col_name:<{name_width}}  {col_dtype:<{dtype_width}}")
+        else:
+            lines.append(f"Columns: {num_cols} entries, {cols[0].get_name()} to {cols[-1].get_name()}")
+
+        # Dtype summary
+        dtype_counts: PyLegendDict[str, int] = {}
+        for col in cols:
+            d = col.get_type()
+            dtype_counts[d] = dtype_counts.get(d, 0) + 1
+        dtypes_str = ", ".join(f"{d}({c})" for d, c in sorted(dtype_counts.items()))
+        lines.append(f"dtypes: {dtypes_str}")
+
+        output = "\n".join(lines) + "\n"
+
+        if buf is not None:
+            buf.write(output)
+        else:
+            sys.stdout.write(output)
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:
