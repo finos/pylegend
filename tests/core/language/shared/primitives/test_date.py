@@ -23,7 +23,7 @@ from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQ
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import today, now
+from pylegend.core.language import today, now, DurationUnit
 from pylegend.core.language.shared.functions import (
     most_recent_day_of_week,
     previous_day_of_week
@@ -464,6 +464,8 @@ class TestPyLegendDate:
         assert self.__generate_sql_string(lambda x: x.get_date("col2").adjust(2, "YEARS")) == \
                '("root".col2::DATE + (INTERVAL \'2 YEARS\'))::DATE'
         assert self.__generate_sql_string(lambda x: x.get_date("col2").adjust(-2, "MONTHS")) == \
+               '("root".col2::DATE + (INTERVAL \'-2 MONTHS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_date("col2").adjust(-2, DurationUnit.MONTHS)) == \
                '("root".col2::DATE + (INTERVAL \'-2 MONTHS\'))::DATE'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").adjust(2, "YEARS")) == \
                'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'

@@ -35,7 +35,8 @@ from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_me
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.shared.operations.date_operation_expressions import (
     PyLegendDateTimeBucketExpression,
-    PyLegendStrictDateAdjustExpression
+    PyLegendStrictDateAdjustExpression,
+    DurationUnit,
 )
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 
@@ -88,7 +89,11 @@ class PyLegendStrictDate(PyLegendDate):
         return PyLegendStrictDate(PyLegendStrictDateAdjustExpression([self.__value, number_op, duration_unit_op]))
 
     @grammar_method
-    def adjust(self, number: PyLegendUnion[int, "PyLegendInteger"], duration_unit: str) -> "PyLegendStrictDate":
+    def adjust(
+            self,
+            number: PyLegendUnion[int, "PyLegendInteger"],
+            duration_unit: PyLegendUnion[str, "DurationUnit"]) -> "PyLegendStrictDate":
+        duration_unit = duration_unit.name if isinstance(duration_unit, DurationUnit) else duration_unit
         return self.timedelta(number, duration_unit)
 
     @staticmethod

@@ -18,6 +18,7 @@ from pylegend.core.database.sql_to_string import (
     SqlToStringConfig,
     SqlToStringDbExtension,
 )
+from pylegend.core.language import DurationUnit
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -93,6 +94,8 @@ class TestPyLegendStrictDate:
         assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(-3, "MONTHS")) == \
                '("root".col2::DATE + (INTERVAL \'-3 MONTHS\'))::DATE'
         assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(5, "DAYS")) == \
+               '("root".col2::DATE + (INTERVAL \'5 DAYS\'))::DATE'
+        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(5, DurationUnit.DAYS)) == \
                '("root".col2::DATE + (INTERVAL \'5 DAYS\'))::DATE'
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").adjust(2, "YEARS")) == \
                'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'

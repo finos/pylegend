@@ -14,6 +14,7 @@
 
 from abc import ABCMeta, abstractmethod
 import pandas as pd
+from pylegend import LegendClient
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -75,11 +76,7 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         return self.to_pure(config)
 
-    def execute_frame(
-            self,
-            result_handler: ResultHandler[R],
-            chunk_size: PyLegendOptional[int] = None
-    ) -> R:
+    def get_legend_client(self) -> LegendClient:
         from pylegend.core.tds.abstract.frames.input_tds_frame import InputTdsFrame, ExecutableInputTdsFrame
 
         tds_frames = self.get_all_tds_frames()
@@ -104,8 +101,14 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                 "Found tds frames with multiple legend_clients (which is not supported): [" +
                 (", ".join([str(f) for f in all_legend_clients]) + "]")
             )
-        legend_client = all_legend_clients[0]
-        result = legend_client.execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
+        return all_legend_clients[0]
+
+    def execute_frame(
+            self,
+            result_handler: ResultHandler[R],
+            chunk_size: PyLegendOptional[int] = None
+    ) -> R:
+        result = self.get_legend_client().execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
         return result_handler.handle_result(self, result)
 
     def execute_frame_to_string(

@@ -60,6 +60,7 @@ from pylegend.core.language.shared.operations.date_operation_expressions import 
     PyLegendDateAdjustExpression,
     PyLegendDateDiffExpression,
     PyLegendDateInListExpression,
+    DurationUnit,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -205,7 +206,11 @@ class PyLegendDate(PyLegendPrimitive):
         return PyLegendInteger(PyLegendDateDiffExpression([self.__value, other_op, duration_unit_op]))
 
     @grammar_method
-    def adjust(self, number: PyLegendUnion[int, "PyLegendInteger"], duration_unit: str) -> "PyLegendDate":
+    def adjust(
+            self,
+            number: PyLegendUnion[int, "PyLegendInteger"],
+            duration_unit: PyLegendUnion[str, "DurationUnit"]) -> "PyLegendDate":
+        duration_unit = duration_unit.name if isinstance(duration_unit, DurationUnit) else duration_unit
         return self.timedelta(number, duration_unit)
 
     @grammar_method

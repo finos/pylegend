@@ -72,6 +72,7 @@ from pylegend.core.sql.metamodel_extension import (
     DateTimeBucketExpression,
     DateType,
 )
+from enum import Enum
 
 
 __all__: PyLegendSequence[str] = [
@@ -107,8 +108,22 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateInListExpression",
     "PyLegendPreviousDayOfWeekExpression",
     "PyLegendMostRecentDayOfWeekExpression",
-    "PyLegendStrictDateAdjustExpression"
+    "PyLegendStrictDateAdjustExpression",
+    "DurationUnit"
 ]
+
+
+class DurationUnit(Enum):
+    YEARS = 1
+    MONTHS = 2
+    WEEKS = 3
+    DAYS = 4
+    HOURS = 5
+    MINUTES = 6
+    SECONDS = 7
+    MILLISECONDS = 8
+    MICROSECONDS = 9
+    NANOSECONDS = 10
 
 
 class PyLegendFirstDayOfYearExpression(PyLegendUnaryExpression, PyLegendExpressionDateReturn):
