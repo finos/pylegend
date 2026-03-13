@@ -21,3 +21,7 @@ The reference guide consists detailed description of all user-facing APIs of ``p
    :maxdepth: 4
 
    legendql_tds_frame
+   pandas_tds_frame
+   pandas_series
+   pandas_groupby_tds_frame
+   pandas_groupby_series

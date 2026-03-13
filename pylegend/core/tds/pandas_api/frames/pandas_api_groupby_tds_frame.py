@@ -34,6 +34,22 @@ if TYPE_CHECKING:
 
 
 class PandasApiGroupbyTdsFrame:
+    """
+    Groupby object for applying aggregation and window operations per group.
+
+    Created by calling :meth:`PandasApiTdsFrame.groupby
+    <pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.groupby>`.
+    Supports column selection via bracket notation before calling an
+    aggregation method, mirroring the pandas
+    ``frame.groupby(...)["col"].agg(...)`` pattern.
+
+    The groupby columns also serve as the ``PARTITION BY`` clause when
+    OLAP window functions such as ``rank`` are applied.
+
+    See Also
+    --------
+    PandasApiTdsFrame.groupby : Create this object from a TDS frame.
+    """
     __base_frame: PandasApiBaseTdsFrame
     __by: PyLegendUnion[str, PyLegendList[str]]
     __level: PyLegendOptional[PyLegendUnion[str, int, PyLegendList[str]]]
@@ -252,6 +268,81 @@ class PandasApiGroupbyTdsFrame:
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> "PandasApiTdsFrame":
+        """
+        Aggregate each group using one or more operations.
+
+        Apply aggregation function(s) to each group defined by the
+        preceding ``groupby`` call. The grouping columns always appear
+        in the result alongside the aggregated values. When
+        ``sort=True`` was passed to ``groupby`` (the default), the
+        result is sorted by the grouping columns.
+
+        Parameters
+        ----------
+        func : str, callable, np.ufunc, list, or dict
+            Aggregation specification. Accepted forms:
+
+            - ``str`` : A named aggregation (e.g. ``'sum'``) applied to
+              all non-grouping columns (or selected columns if bracket
+              notation was used after ``groupby``).
+            - ``callable`` : A function that receives a column Series
+              proxy and returns an aggregated value
+              (e.g. ``lambda x: x.sum()``).
+            - ``np.ufunc`` : A NumPy universal function (e.g.
+              ``np.sum``).
+            - ``list`` : A list of the above, producing one output
+              column per function per input column.
+            - ``dict`` : A mapping of column name → aggregation(s).
+              Only the specified columns appear in the result.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+        *args
+            Not supported.
+        **kwargs
+            Not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group and the aggregated
+            columns.
+
+        See Also
+        --------
+        agg : Alias for aggregate.
+        PandasApiTdsFrame.aggregate : Frame-level aggregation (no grouping).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The result always contains the grouping columns as regular
+          columns (never as the index), because ``as_index`` is always
+          ``False``.
+        - Extra ``*args`` / ``**kwargs`` are **not forwarded** to the
+          aggregation function.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Dict-based aggregation on groups
+            frame.groupby("Ship Name").aggregate(
+                {"Order Id": "count"}
+            ).head(5).to_pandas()
+
+            # Multiple aggregations per column
+            frame.groupby("Ship Name").aggregate(
+                {"Order Id": ["min", "max"]}
+            ).head(5).to_pandas()
+
+            # Broadcast a single function to all non-grouping columns
+            frame.groupby("Ship Name", sort=False).aggregate("count").head(5).to_pandas()
+
+        """
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
         from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
@@ -285,6 +376,16 @@ class PandasApiGroupbyTdsFrame:
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> "PandasApiTdsFrame":
+        """
+        Aggregate each group using one or more operations.
+
+        Alias for :meth:`aggregate`. See ``aggregate`` for full
+        documentation.
+
+        See Also
+        --------
+        aggregate : Equivalent method (canonical name).
+        """
 
         return self.aggregate(func, axis, *args, **kwargs)
 
@@ -295,6 +396,56 @@ class PandasApiGroupbyTdsFrame:
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the sum of values within each group.
+
+        Convenience method equivalent to ``aggregate('sum')`` on the
+        groupby object.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+        min_count : int, default 0
+            Must be ``0``. Non-zero values are not supported.
+        engine : None
+            Not supported. Must be ``None``.
+        engine_kwargs : None
+            Not supported. Must be ``None``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If any parameter is set to an unsupported value.
+
+        See Also
+        --------
+        aggregate : General grouped aggregation.
+        PandasApiTdsFrame.sum : Frame-level sum (no grouping).
+
+        Notes
+        -----
+        **Differences from the frame-level** :meth:`PandasApiTdsFrame.sum`:
+
+        - No ``axis``, ``skipna``, or ``**kwargs`` parameters. The
+          groupby convenience methods follow the pandas
+          ``DataFrameGroupBy`` signature, which omits these.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].sum().head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in sum function.")
         if min_count != 0:
@@ -311,6 +462,46 @@ class PandasApiGroupbyTdsFrame:
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the mean of values within each group.
+
+        Convenience method equivalent to ``aggregate('mean')`` on the
+        groupby object.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+        engine : None
+            Not supported. Must be ``None``.
+        engine_kwargs : None
+            Not supported. Must be ``None``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If any parameter is set to an unsupported value.
+
+        See Also
+        --------
+        aggregate : General grouped aggregation.
+        PandasApiTdsFrame.mean : Frame-level mean (no grouping).
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].mean().head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in mean function.")
         if engine is not None:
@@ -326,6 +517,58 @@ class PandasApiGroupbyTdsFrame:
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the minimum value within each group.
+
+        Convenience method equivalent to ``aggregate('min')`` on the
+        groupby object. For string columns, returns the
+        lexicographically smallest value per group.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+        min_count : int, default -1
+            Must be ``-1``. Other values are not supported.
+        engine : None
+            Not supported. Must be ``None``.
+        engine_kwargs : None
+            Not supported. Must be ``None``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If any parameter is set to an unsupported value.
+
+        See Also
+        --------
+        max : Compute group maximums.
+        aggregate : General grouped aggregation.
+        PandasApiTdsFrame.min : Frame-level min (no grouping).
+
+        Notes
+        -----
+        **Differences from the frame-level** :meth:`PandasApiTdsFrame.min`:
+
+        - The ``min_count`` parameter defaults to ``-1`` (matching
+          the pandas ``DataFrameGroupBy.min`` default) rather than
+          being absent.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].min().head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in min function.")
         if min_count != -1:
@@ -343,6 +586,50 @@ class PandasApiGroupbyTdsFrame:
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the maximum value within each group.
+
+        Convenience method equivalent to ``aggregate('max')`` on the
+        groupby object. For string columns, returns the
+        lexicographically largest value per group.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+        min_count : int, default -1
+            Must be ``-1``. Other values are not supported.
+        engine : None
+            Not supported. Must be ``None``.
+        engine_kwargs : None
+            Not supported. Must be ``None``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If any parameter is set to an unsupported value.
+
+        See Also
+        --------
+        min : Compute group minimums.
+        aggregate : General grouped aggregation.
+        PandasApiTdsFrame.max : Frame-level max (no grouping).
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].max().head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in max function.")
         if min_count != -1:
@@ -360,6 +647,52 @@ class PandasApiGroupbyTdsFrame:
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the sample standard deviation within each group.
+
+        Convenience method equivalent to ``aggregate('std')`` on the
+        groupby object. Uses ``ddof=1`` (sample standard deviation),
+        mapping to ``STDDEV_SAMP`` at the SQL level.
+
+        Parameters
+        ----------
+        ddof : int, default 1
+            Degrees of freedom. Must be ``1``. Population standard
+            deviation (``ddof=0``) is not supported.
+        engine : None
+            Not supported. Must be ``None``.
+        engine_kwargs : None
+            Not supported. Must be ``None``.
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof != 1``, or if ``engine``, ``engine_kwargs``, or
+            ``numeric_only`` are set to unsupported values.
+
+        See Also
+        --------
+        var : Compute group variances.
+        aggregate : General grouped aggregation.
+        PandasApiTdsFrame.std : Frame-level std (no grouping).
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].std().head(5).to_pandas()
+
+        """
         if ddof != 1:
             raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
         if engine is not None:
@@ -377,6 +710,52 @@ class PandasApiGroupbyTdsFrame:
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the sample variance within each group.
+
+        Convenience method equivalent to ``aggregate('var')`` on the
+        groupby object. Uses ``ddof=1`` (sample variance), mapping
+        to ``VAR_SAMP`` at the SQL level.
+
+        Parameters
+        ----------
+        ddof : int, default 1
+            Degrees of freedom. Must be ``1``. Population variance
+            (``ddof=0``) is not supported.
+        engine : None
+            Not supported. Must be ``None``.
+        engine_kwargs : None
+            Not supported. Must be ``None``.
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof != 1``, or if ``engine``, ``engine_kwargs``, or
+            ``numeric_only`` are set to unsupported values.
+
+        See Also
+        --------
+        std : Compute group standard deviations.
+        aggregate : General grouped aggregation.
+        PandasApiTdsFrame.var : Frame-level var (no grouping).
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].var().head(5).to_pandas()
+
+        """
         if ddof != 1:
             raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
         if engine is not None:
@@ -388,6 +767,42 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("var", 0)
 
     def count(self) -> "PandasApiTdsFrame":
+        """
+        Count non-null values within each group.
+
+        Convenience method equivalent to ``aggregate('count')`` on the
+        groupby object. Returns the number of non-null values per column
+        for each group.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        See Also
+        --------
+        sum : Compute group sums.
+        aggregate : General grouped aggregation.
+        PandasApiTdsFrame.count : Frame-level count (no grouping).
+
+        Notes
+        -----
+        **Differences from the frame-level** :meth:`PandasApiTdsFrame.count`:
+
+        - The groupby ``count`` takes **no parameters** (no ``axis``,
+          ``numeric_only``, or ``**kwargs``), matching the pandas
+          ``DataFrameGroupBy.count`` signature.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].count().head(5).to_pandas()
+
+        """
         return self.aggregate("count", 0)
 
     def rank(
@@ -398,6 +813,102 @@ class PandasApiGroupbyTdsFrame:
             pct: bool = False,
             axis: PyLegendUnion[int, str] = 0
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the rank of values within each group.
+
+        Rank each value within its group defined by the preceding
+        ``groupby`` call. The grouping columns act as the
+        ``PARTITION BY`` clause in the underlying SQL window function.
+        Only the ranked (non-grouping) columns appear in the result.
+
+        Parameters
+        ----------
+        method : {{'min', 'first', 'dense'}}, default 'min'
+            How to rank equal values:
+
+            - ``'min'`` : Lowest rank in the group of ties (SQL
+              ``RANK()``).
+            - ``'first'`` : Ranks assigned in order of appearance
+              within the group (SQL ``ROW_NUMBER()``).
+            - ``'dense'`` : Like ``'min'`` but ranks always increase
+              by 1, no gaps (SQL ``DENSE_RANK()``).
+        ascending : bool, default True
+            Whether to rank in ascending order. ``False`` ranks in
+            descending order.
+        na_option : {{'bottom'}}, default 'bottom'
+            How to rank null values. Only ``'bottom'`` is supported.
+            ``'keep'`` and ``'top'`` raise ``NotImplementedError``.
+        pct : bool, default False
+            If ``True``, compute percentage ranks (SQL
+            ``PERCENT_RANK()``). Result columns are of float type.
+            Can only be used with ``method='min'``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame containing only the ranked columns (the
+            grouping columns are **not** included in the output). Each
+            column contains integer ranks (or float when
+            ``pct=True``).
+
+        Raises
+        ------
+        NotImplementedError
+            If ``method`` is not one of ``'min'``, ``'first'``,
+            ``'dense'``.
+            If ``na_option`` is not ``'bottom'``.
+            If ``pct=True`` with a method other than ``'min'``.
+            If ``axis`` is not ``0`` or ``'index'``.
+
+        See Also
+        --------
+        PandasApiTdsFrame.rank : Frame-level rank (no partitioning).
+        aggregate : Grouped aggregation.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The ``'average'`` and ``'max'`` ranking methods are **not
+          supported**.
+        - ``na_option`` only supports ``'bottom'``.
+        - ``pct=True`` is only supported with ``method='min'``.
+        - The result contains **only the ranked columns**, not the
+          grouping columns. In pandas, ``DataFrameGroupBy.rank``
+          returns a frame with the same shape as the input, preserving
+          all columns. Here, grouping columns are excluded from the
+          output. To preserve all columns, use bracket assignment
+          with a single-column selection:
+          ``frame["rank"] = frame.groupby("grp")["col"].rank()``.
+        - ``numeric_only`` is not exposed in the groupby ``rank``
+          signature (it is always ``False``).
+        - Combining multiple rank calls in a single expression is
+          **not supported**. Compute them in separate steps.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Rank within groups (only ranked columns in output)
+            frame.groupby("Ship Name")[["Order Id"]].rank().head(5).to_pandas()
+
+            # Append a grouped rank column to the frame
+            frame["Order Rank"] = frame.groupby(
+                "Ship Name"
+            )["Order Id"].rank()
+            frame.head(5).to_pandas()
+
+            # Dense rank descending within groups
+            frame.groupby("Ship Name")[["Order Id"]].rank(
+                method="dense", ascending=False
+            ).head(5).to_pandas()
+
+        """
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame
         )
