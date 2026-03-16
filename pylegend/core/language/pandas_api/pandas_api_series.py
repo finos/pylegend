@@ -150,8 +150,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         A ``Series`` can only be assigned to the **same frame** it was
         derived from.  Assigning a ``Series`` from a different frame
-        raises ``ValueError("Assignment from a different frame is not
-        allowed")``.
+        raises ``ValueError``.
 
     Window functions on a Series
     ----------------------------
@@ -159,10 +158,11 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     ``Series``.  The result is a new ``Series`` whose values are the
     window-function output for that column.
 
-    Series with applied functions can also be combined with arithmetic in the
+    Series with applied functions (aggregations or window functions)
+    can also be combined with arithmetic in the
     same assignment, but only **one** function call is allowed
-    per expression.  If you need multiple, split them into separate
-    steps.
+    per expression.  If multiple function calls are needed,
+    split them into separate steps.
 
     See Also
     --------
@@ -175,19 +175,17 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     **Differences from pandas:**
 
     - A ``Series`` is **not** a first-class data container. It is an
-      expression builder that lazily constructs SQL / PURE. No data
+      expression builder that lazily constructs the query. No data
       is materialised until ``execute_frame_to_string()`` or
       ``to_pandas()`` is called.
     - Cross-frame assignment is **not allowed**. In pandas you can
       freely assign a Series from one DataFrame to another (alignment
       happens on the index); here the Series must originate from the
-      **same** frame instance.
+      **same** frame instance. If you need cross-frame assignment, use join or merge.
     - Applying a function on a computed series expression is **not
       supported** in certain cases. For example,
       ``(frame['col'] + 5).rank()`` raises ``NotImplementedError``.
       Instead, do ``frame['col'].rank() + 5``.
-    - Boolean column support is limited (Boolean columns are not
-      yet fully supported in PURE).
 
     Examples
     --------
@@ -202,38 +200,15 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         # Arithmetic on a Series (returns a new Series)
         doubled = frame["Order Id"] * 2
-        doubled.head(5).to_pandas()
+        doubled.to_pandas().head()
 
         # String methods on a StringSeries
         upper_name = frame["Ship Name"].upper()
-        upper_name.head(5).to_pandas()
-
-    .. ipython:: python
-
-        import pylegend
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
+        upper_name.to_pandas().head()
 
         # Overwrite an existing column
-        frame["Order Id"] = frame["Order Id"] + 1000
+        frame["Ship Name"] = frame["Ship Name"].upper()
         frame.head(5).to_pandas()
-
-        # Create a new column from a Series expression
-        frame["Upper Ship"] = frame["Ship Name"].upper()
-        frame.head(5).to_pandas()
-
-    .. ipython:: python
-
-        import pylegend
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Assign a constant
-        frame["Flag"] = 1
-        frame.head(3).to_pandas()
-
-    .. ipython:: python
-
-        import pylegend
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
         # Append a rank column via Series
         frame["Order Rank"] = frame["Order Id"].rank()
@@ -978,15 +953,6 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
             # Assign a rank column to the frame
             frame["Order Rank"] = frame["Order Id"].rank()
-            frame.head(5).to_pandas()
-
-        .. ipython:: python
-
-            import pylegend
-            frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-            # Percentage rank, descending
-            frame["Order Pct"] = frame["Order Id"].rank(pct=True, ascending=False)
             frame.head(5).to_pandas()
 
         """

@@ -156,12 +156,6 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         frame["new_col"] = frame.groupby("grp")["val"].rank()
 
     The assignment **must** target the same frame that was grouped.
-    Arithmetic can also be combined with a single window-function
-    call:
-
-    .. code-block:: python
-
-        frame["rank_plus_5"] = frame.groupby("grp")["val"].rank() + 5
 
     See Also
     --------
@@ -175,16 +169,13 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     - A ``GroupbySeries`` is **not** iterable and does not support
       direct data access. It is an expression builder that lazily
-      constructs SQL / PURE.
-    - Aggregation on a **computed** ``GroupbySeries`` expression is
+      constructs the query.
+    - Applying functions on a **computed** ``GroupbySeries`` expression is
       **not supported**. For example,
       ``(frame.groupby('grp')['col'] + 5).sum()`` raises
       ``NotImplementedError``. Instead, do
-      ``frame.groupby('grp')['col'].sum()``.
-    - Calling ``rank()`` on a computed ``GroupbySeries`` expression
-      is also **not supported**. Call ``rank()`` first, then apply
-      arithmetic: ``frame.groupby('grp')['col'].rank() + 5``.
-    - Only **one** window-function call is allowed per expression.
+      ``frame.groupby('grp')['col'].sum() + 5``.
+    - Only **one** function call is allowed per expression.
       To combine multiple, use separate assignment steps.
     - A bare ``GroupbySeries`` (without an aggregation or window
       function) **cannot be executed**. You must call an operation
@@ -198,26 +189,20 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
         # Grouped aggregation via GroupbySeries
-        frame.groupby("Ship Name")["Order Id"].sum().head(5).to_pandas()
+        frame.groupby("Ship Name")["Order Id"].sum().head().to_pandas()
 
-    .. ipython:: python
-
-        import pylegend
         frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
         # Assign a grouped rank back to the frame
         frame["Order Rank"] = frame.groupby("Ship Name")["Order Id"].rank()
         frame.head(5).to_pandas()
 
-    .. ipython:: python
-
-        import pylegend
         frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
         # Arithmetic with a grouped rank
-        frame["Rank Plus 5"] = frame.groupby(
+        frame["Grouped Rank"] = frame.groupby(
             "Ship Name"
-        )["Order Id"].rank() + 5
+        )["Order Id"].rank()
         frame.head(5).to_pandas()
 
     """
@@ -953,9 +938,6 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             )["Order Id"].rank()
             frame.head(5).to_pandas()
 
-        .. ipython:: python
-
-            import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
             # Dense rank, descending

@@ -190,7 +190,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         TypeError
             If more than one of ``items``, ``like``, or ``regex`` is
             provided, or if none of them is provided.
-            Also raised if ``items`` is a string instead of a list, or
+            If ``items`` is a string instead of a list, or
             if ``like`` / ``regex`` is not a string.
         ValueError
             If ``axis`` is not ``1`` or ``'columns'``.
@@ -210,7 +210,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
         - In pandas, ``filter`` supports both row-axis (``axis=0``) and
           column-axis (``axis=1``) filtering. Here, **only column-axis
-          filtering is supported** (``axis=1`` or ``'columns'``). Passing
+          filtering is supported** (``axis=1`` or ``axis='columns'``). Passing
           ``axis=0`` or ``'index'`` raises ``ValueError``.
         - In pandas, ``items`` silently ignores names that do not exist in
           the frame. Here, **all names must exist**; unknown names raise a
@@ -292,9 +292,13 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         ------
         ValueError
             If a column in ``by`` does not exist in the frame.
+        ValueError
             If the length of ``ascending`` does not match ``by``.
+        ValueError
             If ``axis`` is not ``0`` or ``'index'``.
+        ValueError
             If ``inplace`` is ``True``.
+        ValueError
             If ``ignore_index`` is ``False``.
         NotImplementedError
             If ``kind`` or ``key`` is provided.
@@ -310,12 +314,12 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         **Differences from pandas:**
 
         - The ``kind`` parameter (sort algorithm) is **not supported**.
-          Sorting is delegated to the underlying SQL engine.
+          Sorting is delegated to the underlying Legend Engine.
         - The ``key`` parameter (per-element transform before sorting)
           is **not supported**.
         - ``inplace=True`` is **not supported**; always returns a new frame.
         - ``ignore_index`` must be ``True``; ``False`` is **not supported**
-          because TDS frames do not have a meaningful integer index.
+          because TDS frames do not have an index.
         - ``axis=1`` (sorting columns) is **not supported**; only row-wise
           sorting via ``axis=0`` is available.
 
@@ -358,10 +362,12 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Parameters
         ----------
         before : int or None, default 0
+            Only ``int`` and ``None`` are supported.
             First row index to include (0-based, inclusive). Negative
             values are silently clamped to ``0``. ``None`` is treated
             as ``0``.
         after : int or None, default None
+            Only ``int`` and ``None`` are supported.
             Last row index to include (0-based, inclusive). ``None``
             means no upper bound (all remaining rows are returned).
             Negative values result in an empty frame.
@@ -381,8 +387,10 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Raises
         ------
         NotImplementedError
-            If ``axis`` is not ``0`` or ``'index'``.
+            If ``axis not ``0`` or ``'index'``.
             If ``copy`` is ``False``.
+            If ``before`` or ``after`` is a non-integer type (e.g. a
+            string or date).
             If ``before`` or ``after`` is a non-integer type (e.g. a
             string or date).
         ValueError
@@ -634,6 +642,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         .. ipython:: python
 
             import pylegend
+            import numpy as np
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
             # Aggregate a single column with a string function
@@ -646,7 +655,12 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             frame.aggregate("count").to_pandas()
 
             # Use a lambda for custom aggregation
-            frame.aggregate({"Order Id": lambda x: x.max()}).to_pandas()
+            frame.aggregate({
+                "Order Id": lambda x: x.max(),
+                "Order Date": np.min,
+                "Order Date": np.max,
+                "Shipped Date": "min"
+            }).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -660,45 +674,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         """
-        Aggregate the TDS frame using one or more operations.
-
         Alias for :meth:`aggregate`. See ``aggregate`` for full
         documentation.
-
-        Parameters
-        ----------
-        func : str, callable, np.ufunc, list, or dict
-            Aggregation specification. See :meth:`aggregate`.
-        axis : {{0, 'index'}}, default 0
-            Axis along which to aggregate. Only ``0`` / ``'index'``
-            is supported.
-        *args
-            Not supported.
-        **kwargs
-            Not supported.
-
-        Returns
-        -------
-        PandasApiTdsFrame
-            A new single-row TDS frame with the aggregated values.
-
-        See Also
-        --------
-        aggregate : Equivalent method (canonical name).
-        groupby : Group rows before aggregating.
-
-        Examples
-        --------
-        .. ipython:: python
-
-            import pylegend
-            frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-            # agg is an alias for aggregate
-            frame.agg({"Order Id": "count"}).to_pandas()
-
-            # Use a lambda
-            frame.agg({"Order Id": lambda x: x.max()}).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -1933,10 +1910,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Raises
         ------
         TypeError
-            If ``n`` is not an int (e.g. a string).
+            If ``n`` is not an int.
         NotImplementedError
-            If ``n`` is negative. Negative indexing is not supported yet
-            in the Pandas API head.
+            If ``n`` is negative.
 
         See Also
         --------
@@ -1951,11 +1927,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         - **Negative values for ``n`` are not supported.** In pandas,
           ``head(-n)`` returns all rows except the last ``n``. Here,
           passing a negative value raises ``NotImplementedError``.
-        - **Non-integer types raise ``TypeError``.** In pandas, passing
-          a non-int ``n`` (e.g. a string) may silently coerce or raise a
-          different error. Here, a ``TypeError`` is raised explicitly.
-        - The operation is **lazy** — it builds a ``LIMIT`` / ``OFFSET``
-          SQL clause rather than materialising rows in memory. Call
+        - The operation is **lazy** — it builds a query
+          rather than materialising rows in memory. Call
           ``to_pandas()`` or ``execute_frame_to_string()`` to
           materialise the result.
 
@@ -2195,14 +2168,20 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         --------
         .. ipython:: python
 
+            import datetime
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
+            frame = frame.sort_values("Shipped Date")
+            frame = frame.head()
 
-            # Fill all null values with a scalar
-            frame.fillna(value=0).head(5).to_pandas()
+            # check initial count of all the non-null values
+            frame.to_pandas()
 
-            # Fill specific columns with different values
-            frame.fillna(value={"Ship Name": "Unknown"}).head(5).to_pandas()
+            # Fill all null values of the "Shipped Date" column with a fixed date
+            frame = frame.fillna({
+                "Shipped Date": datetime.date(1, 1, 1)
+            })
+            frame.to_pandas()
 
         """
         pass  # pragma: no cover
@@ -2310,8 +2289,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             # Rank all columns (replaces values with ranks)
             frame.filter(items=["Order Id"]).rank().head(5).to_pandas()
 
-            # Append a rank column via Series assignment
-            frame["Order Rank"] = frame["Order Id"].rank()
+            # Append a percentage rank column via Series assignment
+            frame["Order Rank"] = frame["Order Id"].rank(pct=True)
             frame.head(5).to_pandas()
 
         """
@@ -2327,6 +2306,86 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             fill_value: PyLegendOptional[PyLegendHashable] = None,
             suffix: PyLegendOptional[str] = None
     ) -> "PandasApiTdsFrame":
+        """
+        Shift values by desired number of periods.
+
+        Replace every column's values with their shifted values. Because
+        underlying TDS is inherently unordered, this requires
+        an explicit ``order_by`` parameter to define the ordering for the 
+        window function (``LAG`` or ``LEAD``).
+
+        Parameters
+        ----------
+        order_by : str or sequence of str
+            Column name(s) to order the frame by before applying the shift.
+            Unlike pandas, this is required to ensure deterministic output.
+            All specified columns must be present in the base frame.
+        periods : int or sequence of int, default 1
+            Number of periods to shift. Currently, only ``1`` (shift down, 
+            equivalent to SQL ``LAG``) and ``-1`` (shift up, equivalent to SQL ``LEAD``) are supported. 
+            If a sequence is provided, it cannot contain duplicate values.
+        freq : None
+            Not supported. Must be ``None``.
+        axis : {{0, 'index'}}, default 0
+            Axis to shift along. Only ``0`` / ``'index'`` is supported.
+        fill_value : None
+            Not supported. Must be ``None``. Missing values introduced by 
+            the shift will always be null.
+        suffix : str, default None
+            If provided, renames the resulting shifted columns by appending 
+            this string to the original column names. This argument can 
+            only be used if ``periods`` is a sequence (not a single integer).
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with the shifted columns.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``periods`` contains any values other than ``1`` or ``-1``.
+            If ``freq`` is not ``None``.
+            If ``axis`` is not ``0`` or ``'index'``.
+            If ``fill_value`` is not ``None``.
+        ValueError
+            If any column specified in ``order_by`` is not present in the frame.
+            If ``periods`` contains duplicate values.
+            If ``suffix`` is specified but ``periods`` is a single integer.
+
+        See Also
+        --------
+        rank : Rank as ascending or descending.
+        PandasApiGroupbyTdsFrame.shift : Shift values within groups.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The ``order_by`` parameter is **mandatory**. In pandas, ``shift`` 
+          relies on the implicit order of the dataframe's index. Here, 
+          an explicit order must be provided.
+        - ``periods`` is strictly limited to ``1`` or ``-1``. Arbitrary 
+          integer shifts are **not supported**.
+        - ``fill_value`` is **not supported** and must be ``None``.
+        - The ``freq`` parameter is **not supported** and must be ``None``.
+        - ``axis=1`` (shifting horizontally across columns) is **not 
+          supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Shift the entire frame down
+            frame.head(5).shift(
+                order_by="Order Date",
+                periods=1
+            ).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod

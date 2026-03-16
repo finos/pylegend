@@ -932,6 +932,86 @@ class PandasApiGroupbyTdsFrame:
             fill_value: PyLegendOptional[PyLegendHashable] = None,
             suffix: PyLegendOptional[str] = None
     ) -> "PandasApiTdsFrame":
+        """
+        Shift values by desired number of periods within each group.
+
+        Replace every column's values with their shifted values, computing
+        the shift independently for each group. Because the underlying TDS
+        is inherently unordered, this requires an explicit
+        ``order_by`` parameter to define the ordering for the window
+        function partitioned by the group keys.
+
+        Parameters
+        ----------
+        order_by : str or sequence of str
+            Column name(s) to order the frame by within each group before
+            applying the shift. Unlike pandas, this is required to ensure 
+            deterministic output. All specified columns must be present in
+            the base frame.
+        periods : int or sequence of int, default 1
+            Number of periods to shift. Currently, only ``1`` (shift down,
+            SQL ``LAG``) and ``-1`` (shift up, SQL ``LEAD``) are supported.
+            If a sequence is provided, it cannot contain duplicate values.
+        freq : None
+            Not supported. Must be ``None``.
+        axis : {0, 'index'}, default 0
+            Axis to shift along. Only ``0`` / ``'index'`` is supported.
+        fill_value : None
+            Not supported. Must be ``None``. Missing values introduced by
+            the shift will always be null.
+        suffix : str, default None
+            If provided, renames the resulting shifted columns by appending
+            this string to the original column names. This argument can
+            only be used if ``periods`` is a sequence (not a single integer).
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with the shifted columns computed per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``periods`` contains any values other than ``1`` or ``-1``.
+            If ``freq`` is not ``None``.
+            If ``axis`` is not ``0`` or ``'index'``.
+            If ``fill_value`` is not ``None``.
+        ValueError
+            If any column specified in ``order_by`` is not present in the frame.
+            If ``periods`` contains duplicate values.
+            If ``suffix`` is specified but ``periods`` is a single integer.
+
+        See Also
+        --------
+        PandasApiTdsFrame.shift : Shift values for the entire frame.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The ``order_by`` parameter is **mandatory**. In pandas, ``shift``
+          relies on the implicit order of the dataframe's index. Here,
+          because it translates to SQL, an explicit order must be provided.
+        - ``periods`` is strictly limited to ``1`` or ``-1``. Arbitrary
+          integer shifts are **not supported**.
+        - ``fill_value`` is **not supported** and must remain ``None``.
+        - The ``freq`` parameter is **not supported** and must be ``None``.
+        - ``axis=1`` (shifting horizontally across columns) is **not
+          supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Shift the entire frame down by 1 row within each 'Ship Name' group,
+            frame.groupby("Ship Name")[["Order Date", "Shipped Date"]].shift(
+                order_by="Order Date",
+                periods=1
+            ).head(3).to_pandas()
+        """
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame
         )

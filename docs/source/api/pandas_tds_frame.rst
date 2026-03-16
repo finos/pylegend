@@ -183,6 +183,11 @@ rank
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rank
 
+shift
+~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.shift
+
 Frame Properties
 ----------------
 

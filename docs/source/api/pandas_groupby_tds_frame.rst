@@ -13,10 +13,7 @@
 .. limitations under the License.
 
 Pandas Groupby TDS Frame
-=========================
-
-.. autoclass:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame
-   :no-members:
+========================
 
 The ``PandasApiGroupbyTdsFrame`` class is returned by
 :meth:`PandasApiTdsFrame.groupby <pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.groupby>`
@@ -78,3 +75,8 @@ rank
 ~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.rank
+
+shift
+~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.shift
