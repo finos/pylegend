@@ -219,10 +219,10 @@ class TestColumnValueDifferenceFunction:
                   ->rename(~val, ~val_2)
                   ->rename(~id, ~id_gen_r),
                 JoinKind.LEFT,
-                {l, r  $l.id == $r.id_gen_r}
+                {l, r | $l.id == $r.id_gen_r}
               )
-              ->filter({r  $r.val_1->isNotEmpty()})
-              ->extend(~val_valueDifference:{r  toOne($r.val_1) - toOne($r.val_2)})
+              ->filter({r | $r.val_1->isNotEmpty()})
+              ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
               ->select(~[id, val_1, val_2, val_valueDifference])
               ->concatenate(
                 #Table(test_schema.test_table1)#
@@ -234,10 +234,10 @@ class TestColumnValueDifferenceFunction:
                       ->rename(~val, ~val_2)
                       ->rename(~id, ~id_gen_r),
                     JoinKind.RIGHT,
-                    {l, r  $l.id == $r.id_gen_r}
+                    {l, r | $l.id == $r.id_gen_r}
                   )
-                  ->filter({r  $r.val_1->isEmpty()})
-                  ->extend(~val_valueDifference:{r  toOne($r.val_1) - toOne($r.val_2)})
+                  ->filter({r | $r.val_1->isEmpty()})
+                  ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
                   ->select(~[id, val_1, val_2, val_valueDifference])
               )'''
         )
@@ -246,17 +246,17 @@ class TestColumnValueDifferenceFunction:
             '->select(~[id, val])->rename(~val, ~val_1)'
             '->join(#Table(test_schema.test_table2)#->select(~[id, val])'
             '->rename(~val, ~val_2)->rename(~id, ~id_gen_r), '
-            'JoinKind.LEFT, {l, r  $l.id == $r.id_gen_r})'
-            '->filter({r  $r.val_1->isNotEmpty()})'
-            '->extend(~val_valueDifference:{r  toOne($r.val_1) - toOne($r.val_2)})'
+            'JoinKind.LEFT, {l, r | $l.id == $r.id_gen_r})'
+            '->filter({r | $r.val_1->isNotEmpty()})'
+            '->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})'
             '->select(~[id, val_1, val_2, val_valueDifference])'
             '->concatenate(#Table(test_schema.test_table1)#'
             '->select(~[id, val])->rename(~val, ~val_1)'
             '->join(#Table(test_schema.test_table2)#->select(~[id, val])'
             '->rename(~val, ~val_2)->rename(~id, ~id_gen_r), '
-            'JoinKind.RIGHT, {l, r  $l.id == $r.id_gen_r})'
-            '->filter({r  $r.val_1->isEmpty()})'
-            '->extend(~val_valueDifference:{r  toOne($r.val_1) - toOne($r.val_2)})'
+            'JoinKind.RIGHT, {l, r | $l.id == $r.id_gen_r})'
+            '->filter({r | $r.val_1->isEmpty()})'
+            '->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})'
             '->select(~[id, val_1, val_2, val_valueDifference]))'
         )
 
@@ -402,10 +402,10 @@ class TestColumnValueDifferenceFunction:
                   ->rename(~key1, ~key1_gen_r)
                   ->rename(~key2, ~key2_gen_r),
                 JoinKind.LEFT,
-                {l, r  ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}
+                {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}
               )
-              ->filter({r  $r.val_1->isNotEmpty()})
-              ->extend(~val_valueDifference:{r  toOne($r.val_1) - toOne($r.val_2)})
+              ->filter({r | $r.val_1->isNotEmpty()})
+              ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
               ->select(~[key1, key2, val_1, val_2, val_valueDifference])
               ->concatenate(
                 #Table(test_schema.test_table1)#
@@ -418,10 +418,10 @@ class TestColumnValueDifferenceFunction:
                       ->rename(~key1, ~key1_gen_r)
                       ->rename(~key2, ~key2_gen_r),
                     JoinKind.RIGHT,
-                    {l, r  ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}
+                    {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}
                   )
-                  ->filter({r  $r.val_1->isEmpty()})
-                  ->extend(~val_valueDifference:{r  toOne($r.val_1) - toOne($r.val_2)})
+                  ->filter({r | $r.val_1->isEmpty()})
+                  ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
                   ->select(~[key1, key2, val_1, val_2, val_valueDifference])
               )'''
         )
@@ -568,12 +568,12 @@ class TestColumnValueDifferenceFunction:
                   ->rename(~valB, ~valB_2)
                   ->rename(~id, ~id_gen_r),
                 JoinKind.LEFT,
-                {l, r  $l.id == $r.id_gen_r}
+                {l, r | $l.id == $r.id_gen_r}
               )
-              ->filter({r  $r.valA_1->isNotEmpty() && $r.valB_1->isNotEmpty()})
+              ->filter({r | $r.valA_1->isNotEmpty() && $r.valB_1->isNotEmpty()})
               ->extend(~[
-                valA_valueDifference:{r  toOne($r.valA_1) - toOne($r.valA_2)},
-                valB_valueDifference:{r  toOne($r.valB_1) - toOne($r.valB_2)}
+                valA_valueDifference:{r | toOne($r.valA_1) - toOne($r.valA_2)},
+                valB_valueDifference:{r | toOne($r.valB_1) - toOne($r.valB_2)}
               ])
               ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])
               ->concatenate(
@@ -588,12 +588,12 @@ class TestColumnValueDifferenceFunction:
                       ->rename(~valB, ~valB_2)
                       ->rename(~id, ~id_gen_r),
                     JoinKind.RIGHT,
-                    {l, r  $l.id == $r.id_gen_r}
+                    {l, r | $l.id == $r.id_gen_r}
                   )
                   ->filter({r  $r.valA_1->isEmpty() && $r.valB_1->isEmpty()})
                   ->extend(~[
-                    valA_valueDifference:{r  toOne($r.valA_1) - toOne($r.valA_2)},
-                    valB_valueDifference:{r  toOne($r.valB_1) - toOne($r.valB_2)}
+                    valA_valueDifference:{r | toOne($r.valA_1) - toOne($r.valA_2)},
+                    valB_valueDifference:{r | toOne($r.valB_1) - toOne($r.valB_2)}
                   ])
                   ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])
               )'''
