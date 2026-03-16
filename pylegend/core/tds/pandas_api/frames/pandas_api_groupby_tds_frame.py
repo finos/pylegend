@@ -19,6 +19,8 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendDict,
     PyLegendSet,
+    PyLegendHashable,
+    PyLegendSequence,
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
@@ -202,22 +204,26 @@ class PandasApiGroupbyTdsFrame:
             if col_type == "Boolean":  # pragma: no cover (Boolean column not supported in PURE)
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import BooleanGroupbySeries
                 return BooleanGroupbySeries(new_frame)
-            elif col_type == "String":
+            elif col_type in ("String", "Varchar"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import StringGroupbySeries
                 return StringGroupbySeries(new_frame)
             elif col_type == "Number":
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import NumberGroupbySeries
                 return NumberGroupbySeries(new_frame)
-            elif col_type == "Integer":
+            elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+                              "Int", "UInt", "BigInt", "UBigInt"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import IntegerGroupbySeries
                 return IntegerGroupbySeries(new_frame)
-            elif col_type == "Float":
+            elif col_type in ("Float", "Float4", "Double"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries
                 return FloatGroupbySeries(new_frame)
+            elif col_type in ("Decimal", "Numeric"):
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DecimalGroupbySeries
+                return DecimalGroupbySeries(new_frame)
             elif col_type == "Date":
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateGroupbySeries
                 return DateGroupbySeries(new_frame)
-            elif col_type == "DateTime":
+            elif col_type in ("DateTime", "Timestamp"):
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateTimeGroupbySeries
                 return DateTimeGroupbySeries(new_frame)
             elif col_type == "StrictDate":
@@ -405,3 +411,61 @@ class PandasApiGroupbyTdsFrame:
             ascending=ascending,
             pct=pct
         ))
+
+    def shift(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            fill_value: PyLegendOptional[PyLegendHashable] = None,
+            suffix: PyLegendOptional[str] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, ShiftFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            order_by=order_by,
+            base_frame=self,
+            periods=periods,
+            freq=freq,
+            axis=axis,
+            fill_value=fill_value,
+            suffix=suffix
+        ))
+        return PandasApiAppliedFunctionTdsFrame(ShiftFunction(shift_extended_frame))
+
+    def diff(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, DiffFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            order_by=order_by,
+            base_frame=self,
+            periods=periods,
+        ))
+        return PandasApiAppliedFunctionTdsFrame(DiffFunction(shift_extended_frame))
+
+    def pct_change(
+            self,
+            order_by: PyLegendUnion[str, PyLegendSequence[str]],
+            periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
+            freq: PyLegendOptional[PyLegendUnion[str, int]] = None
+    ) -> "PandasApiTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.shift_function import ShiftExtendFunction, PctChangeFunction
+        shift_extended_frame = PandasApiAppliedFunctionTdsFrame(ShiftExtendFunction(
+            order_by=order_by,
+            base_frame=self,
+            periods=periods,
+            freq=freq
+        ))
+        return PandasApiAppliedFunctionTdsFrame(PctChangeFunction(shift_extended_frame))

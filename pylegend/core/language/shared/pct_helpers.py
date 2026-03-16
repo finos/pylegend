@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import datetime, date
+from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendUnion,
@@ -23,9 +24,11 @@ from pylegend.core.language import (
     PyLegendStringLiteralExpression,
     PyLegendIntegerLiteralExpression,
     PyLegendFloatLiteralExpression,
+    PyLegendDecimalLiteralExpression,
     PyLegendStrictDateLiteralExpression,
     PyLegendDateTimeLiteralExpression,
     PyLegendFloat,
+    PyLegendDecimal,
     PyLegendDateTime,
     PyLegendStrictDate,
     PyLegendString,
@@ -39,7 +42,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-def c(constant: PyLegendUnion[int, float, bool, str, datetime, date]) -> PyLegendPrimitive:
+def c(constant: PyLegendUnion[int, float, bool, str, datetime, date, PythonDecimal]) -> PyLegendPrimitive:
     expr = convert_literal_to_literal_expression(constant)
     if isinstance(expr, PyLegendBooleanLiteralExpression):
         return PyLegendBoolean(expr)
@@ -49,6 +52,8 @@ def c(constant: PyLegendUnion[int, float, bool, str, datetime, date]) -> PyLegen
         return PyLegendInteger(expr)
     if isinstance(expr, PyLegendFloatLiteralExpression):
         return PyLegendFloat(expr)
+    if isinstance(expr, PyLegendDecimalLiteralExpression):
+        return PyLegendDecimal(expr)
     if isinstance(expr, PyLegendDateTimeLiteralExpression):
         return PyLegendDateTime(expr)
     if isinstance(expr, PyLegendStrictDateLiteralExpression):

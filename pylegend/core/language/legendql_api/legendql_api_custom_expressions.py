@@ -21,6 +21,7 @@ from pylegend.core.language import (
     PyLegendNumber,
     PyLegendInteger,
     PyLegendFloat,
+    PyLegendDecimal,
     PyLegendDate,
     PyLegendDateTime,
     PyLegendStrictDate,
@@ -64,6 +65,7 @@ __all__: PyLegendSequence[str] = [
     "LegendQLApiNumber",
     "LegendQLApiInteger",
     "LegendQLApiFloat",
+    "LegendQLApiDecimal",
     "LegendQLApiDate",
     "LegendQLApiDateTime",
     "LegendQLApiStrictDate",
@@ -123,6 +125,11 @@ class LegendQLApiInteger(LegendQLApiPrimitive, PyLegendInteger):
 class LegendQLApiFloat(LegendQLApiPrimitive, PyLegendFloat):
     def __init__(self, expr: PyLegendFloat):
         PyLegendFloat.__init__(self, expr.value())
+
+
+class LegendQLApiDecimal(LegendQLApiPrimitive, PyLegendDecimal):
+    def __init__(self, expr: PyLegendDecimal):
+        PyLegendDecimal.__init__(self, expr.value())
 
 
 class LegendQLApiDate(LegendQLApiPrimitive, PyLegendDate):

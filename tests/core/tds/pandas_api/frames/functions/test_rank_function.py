@@ -132,11 +132,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
+                "root"."col1__pylegend_olap_column__" AS "col1"
             FROM
                 (
                     SELECT
-                        rank() OVER (ORDER BY "root"."col1") AS "col1__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (ORDER BY "root"."col1") AS "col1__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -151,9 +151,9 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~col1)]), ~col1__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
               ->project(~[
-                col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__
+                col1:p|$p.col1__pylegend_olap_column__
               ])
         '''
         expected = dedent(expected).strip()
@@ -170,13 +170,13 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1",
-                "root"."col2__INTERNAL_PYLEGEND_COLUMN__" AS "col2"
+                "root"."col1__pylegend_olap_column__" AS "col1",
+                "root"."col2__pylegend_olap_column__" AS "col2"
             FROM
                 (
                     SELECT
-                        rank() OVER (ORDER BY "root"."col1") AS "col1__INTERNAL_PYLEGEND_COLUMN__",
-                        rank() OVER (ORDER BY "root"."col2") AS "col2__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (ORDER BY "root"."col1") AS "col1__pylegend_olap_column__",
+                        rank() OVER (ORDER BY "root"."col2") AS "col2__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -192,11 +192,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->extend(over([ascending(~col2)]), ~col2__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~col1)]), ~col1__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~col2)]), ~col2__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
               ->project(~[
-                col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__,
-                col2:p|$p.col2__INTERNAL_PYLEGEND_COLUMN__
+                col1:p|$p.col1__pylegend_olap_column__,
+                col2:p|$p.col2__pylegend_olap_column__
               ])
         '''
         expected = dedent(expected).strip()
@@ -210,11 +210,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
+                "root"."col1__pylegend_olap_column__" AS "col1"
             FROM
                 (
                     SELECT
-                        dense_rank() OVER (ORDER BY "root"."col1" DESC) AS "col1__INTERNAL_PYLEGEND_COLUMN__"
+                        dense_rank() OVER (ORDER BY "root"."col1" DESC) AS "col1__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -229,9 +229,9 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([descending(~col1)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->denseRank($w, $r)})
+              ->extend(over([descending(~col1)]), ~col1__pylegend_olap_column__:{p,w,r | $p->denseRank($w, $r)})
               ->project(~[
-                col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__
+                col1:p|$p.col1__pylegend_olap_column__
               ])
         '''
         expected = dedent(expected).strip()
@@ -245,11 +245,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
+                "root"."col1__pylegend_olap_column__" AS "col1"
             FROM
                 (
                     SELECT
-                        row_number() OVER (ORDER BY "root"."col1") AS "col1__INTERNAL_PYLEGEND_COLUMN__"
+                        row_number() OVER (ORDER BY "root"."col1") AS "col1__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -264,9 +264,9 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rowNumber($r)})
+              ->extend(over([ascending(~col1)]), ~col1__pylegend_olap_column__:{p,w,r | $p->rowNumber($r)})
               ->project(~[
-                col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__
+                col1:p|$p.col1__pylegend_olap_column__
               ])
         '''
         expected = dedent(expected).strip()
@@ -280,11 +280,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."col1__INTERNAL_PYLEGEND_COLUMN__" AS "col1"
+                "root"."col1__pylegend_olap_column__" AS "col1"
             FROM
                 (
                     SELECT
-                        percent_rank() OVER (ORDER BY "root"."col1") AS "col1__INTERNAL_PYLEGEND_COLUMN__"
+                        percent_rank() OVER (ORDER BY "root"."col1") AS "col1__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -299,9 +299,9 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~col1)]), ~col1__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over([ascending(~col1)]), ~col1__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
               ->project(~[
-                col1:p|$p.col1__INTERNAL_PYLEGEND_COLUMN__
+                col1:p|$p.col1__pylegend_olap_column__
               ])
         '''
         expected = dedent(expected).strip()
@@ -318,13 +318,13 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."int_col__INTERNAL_PYLEGEND_COLUMN__" AS "int_col",
-                "root"."float_col__INTERNAL_PYLEGEND_COLUMN__" AS "float_col"
+                "root"."int_col__pylegend_olap_column__" AS "int_col",
+                "root"."float_col__pylegend_olap_column__" AS "float_col"
             FROM
                 (
                     SELECT
-                        rank() OVER (ORDER BY "root"."int_col") AS "int_col__INTERNAL_PYLEGEND_COLUMN__",
-                        rank() OVER (ORDER BY "root"."float_col") AS "float_col__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (ORDER BY "root"."int_col") AS "int_col__pylegend_olap_column__",
+                        rank() OVER (ORDER BY "root"."float_col") AS "float_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -342,11 +342,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~int_col)]), ~int_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->extend(over([ascending(~float_col)]), ~float_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~int_col)]), ~int_col__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~float_col)]), ~float_col__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
               ->project(~[
-                int_col:p|$p.int_col__INTERNAL_PYLEGEND_COLUMN__,
-                float_col:p|$p.float_col__INTERNAL_PYLEGEND_COLUMN__
+                int_col:p|$p.int_col__pylegend_olap_column__,
+                float_col:p|$p.float_col__pylegend_olap_column__
               ])
         '''
         expected = dedent(expected).strip()
@@ -368,21 +368,21 @@ class TestRankFunctionOnBaseFrame:
                 "root"."name" AS "name",
                 "root"."age" AS "age",
                 "root"."height" AS "height",
-                "root"."new_col__INTERNAL_PYLEGEND_COLUMN__" AS "new_col"
+                "root"."new_col__pylegend_olap_column__" AS "new_col"
             FROM
                 (
                     SELECT
                         "root"."name" AS "name",
                         "root"."age" AS "age",
                         "root"."height" AS "height",
-                        ("root"."new_col__INTERNAL_PYLEGEND_COLUMN__" + percent_rank() OVER (ORDER BY "root"."name")) AS "new_col__INTERNAL_PYLEGEND_COLUMN__"
+                        ("root"."new_col__pylegend_olap_column__" + percent_rank() OVER (ORDER BY "root"."name")) AS "new_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".name AS "name",
                                 "root".age AS "age",
                                 "root".height AS "height",
-                                ((rank() OVER (ORDER BY "root".age) + 2) + 5) AS "new_col__INTERNAL_PYLEGEND_COLUMN__"
+                                ((rank() OVER (ORDER BY "root".age) + 2) + 5) AS "new_col__pylegend_olap_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -393,10 +393,10 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~age)]), ~age__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->project(~[name:c|$c.name, age:c|$c.age, height:c|$c.height, new_col:c|((toOne($c.age__INTERNAL_PYLEGEND_COLUMN__) + 2) + 5)])
-              ->extend(over([ascending(~name)]), ~name__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
-              ->project(~[name:c|$c.name, age:c|$c.age, height:c|$c.height, new_col:c|(toOne($c.new_col) + toOne($c.name__INTERNAL_PYLEGEND_COLUMN__))])
+              ->extend(over([ascending(~age)]), ~age__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->project(~[name:c|$c.name, age:c|$c.age, height:c|$c.height, new_col:c|((toOne($c.age__pylegend_olap_column__) + 2) + 5)])
+              ->extend(over([ascending(~name)]), ~name__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
+              ->project(~[name:c|$c.name, age:c|$c.age, height:c|$c.height, new_col:c|(toOne($c.new_col) + toOne($c.name__pylegend_olap_column__))])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -413,8 +413,8 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~'present height')]), ~present height__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->project(~[name:c|$c.name, present age:c|$c.present age, present height:c|$c.present height, ranked height:c|$c.present height__INTERNAL_PYLEGEND_COLUMN__])
+              ->extend(over([ascending(~'present height')]), ~present height__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->project(~[name:c|$c.name, present age:c|$c.present age, present height:c|$c.present height, ranked height:c|$c.present height__pylegend_olap_column__])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -431,11 +431,11 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             SELECT
-                "root"."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
+                "root"."height__pylegend_olap_column__" AS "height"
             FROM
                 (
                     SELECT
-                        rank() OVER (ORDER BY "root"."height") AS "height__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (ORDER BY "root"."height") AS "height__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -451,9 +451,9 @@ class TestRankFunctionOnBaseFrame:
         expected = '''
             #Table(test_schema.test_table)#
               ->select(~[height])
-              ->extend(over([ascending(~height)]), ~height__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over([ascending(~height)]), ~height__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
               ->project(~[
-                height:p|$p.height__INTERNAL_PYLEGEND_COLUMN__
+                height:p|$p.height__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -463,11 +463,11 @@ class TestRankFunctionOnBaseFrame:
         series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
-                "root"."height__INTERNAL_PYLEGEND_COLUMN__" AS "height"
+                "root"."height__pylegend_olap_column__" AS "height"
             FROM
                 (
                     SELECT
-                        (rank() OVER (ORDER BY "root".height) + 5) AS "height__INTERNAL_PYLEGEND_COLUMN__"
+                        (rank() OVER (ORDER BY "root".height) + 5) AS "height__pylegend_olap_column__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -477,8 +477,8 @@ class TestRankFunctionOnBaseFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over([ascending(~height)]), ~height__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->project(~[height:c|(toOne($c.height__INTERNAL_PYLEGEND_COLUMN__) + 5)])
+              ->extend(over([ascending(~height)]), ~height__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->project(~[height:c|(toOne($c.height__pylegend_olap_column__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert series.to_pure_query(FrameToPureConfig()) == expected
@@ -534,13 +534,13 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col",
-                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col"
+                "root"."val_col__pylegend_olap_column__" AS "val_col",
+                "root"."random_col__pylegend_olap_column__" AS "random_col"
             FROM
                 (
                     SELECT
-                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__",
-                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__pylegend_olap_column__",
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -557,11 +557,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
               ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__,
-                random_col:p|$p.random_col__INTERNAL_PYLEGEND_COLUMN__
+                val_col:p|$p.val_col__pylegend_olap_column__,
+                random_col:p|$p.random_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -579,13 +579,13 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col",
-                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col"
+                "root"."val_col__pylegend_olap_column__" AS "val_col",
+                "root"."random_col__pylegend_olap_column__" AS "random_col"
             FROM
                 (
                     SELECT
-                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__",
-                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__INTERNAL_PYLEGEND_COLUMN__"
+                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__pylegend_olap_column__",
+                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -602,11 +602,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
               ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__,
-                random_col:p|$p.random_col__INTERNAL_PYLEGEND_COLUMN__
+                val_col:p|$p.val_col__pylegend_olap_column__,
+                random_col:p|$p.random_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -624,13 +624,13 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col",
-                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col"
+                "root"."val_col__pylegend_olap_column__" AS "val_col",
+                "root"."random_col__pylegend_olap_column__" AS "random_col"
             FROM
                 (
                     SELECT
-                        dense_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__",
-                        dense_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__INTERNAL_PYLEGEND_COLUMN__"
+                        dense_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__pylegend_olap_column__",
+                        dense_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -647,11 +647,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->denseRank($w, $r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->denseRank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->denseRank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__pylegend_olap_column__:{p,w,r | $p->denseRank($w, $r)})
               ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__,
-                random_col:p|$p.random_col__INTERNAL_PYLEGEND_COLUMN__
+                val_col:p|$p.val_col__pylegend_olap_column__,
+                random_col:p|$p.random_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -669,13 +669,13 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col",
-                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col"
+                "root"."val_col__pylegend_olap_column__" AS "val_col",
+                "root"."random_col__pylegend_olap_column__" AS "random_col"
             FROM
                 (
                     SELECT
-                        row_number() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__",
-                        row_number() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__INTERNAL_PYLEGEND_COLUMN__"
+                        row_number() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__pylegend_olap_column__",
+                        row_number() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col") AS "random_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -692,11 +692,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rowNumber($r)})
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rowNumber($r)})
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->rowNumber($r)})
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__pylegend_olap_column__:{p,w,r | $p->rowNumber($r)})
               ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__,
-                random_col:p|$p.random_col__INTERNAL_PYLEGEND_COLUMN__
+                val_col:p|$p.val_col__pylegend_olap_column__,
+                random_col:p|$p.random_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -714,13 +714,13 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col",
-                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col"
+                "root"."val_col__pylegend_olap_column__" AS "val_col",
+                "root"."random_col__pylegend_olap_column__" AS "random_col"
             FROM
                 (
                     SELECT
-                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col" DESC) AS "val_col__INTERNAL_PYLEGEND_COLUMN__",
-                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col" DESC) AS "random_col__INTERNAL_PYLEGEND_COLUMN__"
+                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col" DESC) AS "val_col__pylegend_olap_column__",
+                        percent_rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col" DESC) AS "random_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -737,11 +737,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
-              ->extend(over(~[group_col], [descending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
+              ->extend(over(~[group_col], [descending(~random_col)]), ~random_col__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
               ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__,
-                random_col:p|$p.random_col__INTERNAL_PYLEGEND_COLUMN__
+                val_col:p|$p.val_col__pylegend_olap_column__,
+                random_col:p|$p.random_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -759,11 +759,11 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
+                "root"."val_col__pylegend_olap_column__" AS "val_col"
             FROM
                 (
                     SELECT
-                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
+                        rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."val_col") AS "val_col__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -780,9 +780,9 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
               ->project(~[
-                val_col:p|$p.val_col__INTERNAL_PYLEGEND_COLUMN__
+                val_col:p|$p.val_col__pylegend_olap_column__
               ])
         '''  # noqa: E501
         expected = dedent(expected).strip()
@@ -792,11 +792,11 @@ class TestRankFunctionOnGroupbyFrame:
         series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
-                "root"."val_col__INTERNAL_PYLEGEND_COLUMN__" AS "val_col"
+                "root"."val_col__pylegend_olap_column__" AS "val_col"
             FROM
                 (
                     SELECT
-                        (rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) + 5) AS "val_col__INTERNAL_PYLEGEND_COLUMN__"
+                        (rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) + 5) AS "val_col__pylegend_olap_column__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -806,8 +806,8 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->project(~[val_col:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
+              ->extend(over(~[group_col], [ascending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->project(~[val_col:c|(toOne($c.val_col__pylegend_olap_column__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert series.to_pure_query(FrameToPureConfig()) == expected
@@ -828,14 +828,14 @@ class TestRankFunctionOnGroupbyFrame:
                 "root"."group_col" AS "group_col",
                 "root"."val_col" AS "val_col",
                 "root"."random_col" AS "random_col",
-                "root"."val_col_rank__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_rank"
+                "root"."val_col_rank__pylegend_olap_column__" AS "val_col_rank"
             FROM
                 (
                     SELECT
                         "root".group_col AS "group_col",
                         "root".val_col AS "val_col",
                         "root".random_col AS "random_col",
-                        (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank__INTERNAL_PYLEGEND_COLUMN__"
+                        (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank__pylegend_olap_column__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -845,8 +845,8 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
-              ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|$c.random_col, val_col_rank:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
+              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
+              ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|$c.random_col, val_col_rank:c|(toOne($c.val_col__pylegend_olap_column__) + 5)])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected
@@ -857,22 +857,22 @@ class TestRankFunctionOnGroupbyFrame:
             SELECT
                 "root"."group_col" AS "group_col",
                 "root"."val_col" AS "val_col",
-                "root"."random_col__INTERNAL_PYLEGEND_COLUMN__" AS "random_col",
+                "root"."random_col__pylegend_olap_column__" AS "random_col",
                 "root"."val_col_rank" AS "val_col_rank"
             FROM
                 (
                     SELECT
                         "root"."group_col" AS "group_col",
                         "root"."val_col" AS "val_col",
-                        MOD(rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col"), 2) AS "random_col__INTERNAL_PYLEGEND_COLUMN__",
-                        "root"."val_col_rank__INTERNAL_PYLEGEND_COLUMN__" AS "val_col_rank"
+                        MOD(rank() OVER (PARTITION BY "root"."group_col" ORDER BY "root"."random_col"), 2) AS "random_col__pylegend_olap_column__",
+                        "root"."val_col_rank__pylegend_olap_column__" AS "val_col_rank"
                     FROM
                         (
                             SELECT
                                 "root".group_col AS "group_col",
                                 "root".val_col AS "val_col",
                                 "root".random_col AS "random_col",
-                                (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank__INTERNAL_PYLEGEND_COLUMN__"
+                                (percent_rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col DESC) + 5) AS "val_col_rank__pylegend_olap_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -883,10 +883,10 @@ class TestRankFunctionOnGroupbyFrame:
 
         expected = '''
             #Table(test_schema.test_table)#
-              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->percentRank($w, $r)})
-              ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|$c.random_col, val_col_rank:c|(toOne($c.val_col__INTERNAL_PYLEGEND_COLUMN__) + 5)])
-              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__INTERNAL_PYLEGEND_COLUMN__:{p,w,r | $p->rank($w, $r)})
-              ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|toOne($c.random_col__INTERNAL_PYLEGEND_COLUMN__)->rem(2), val_col_rank:c|$c.val_col_rank])
+              ->extend(over(~[group_col], [descending(~val_col)]), ~val_col__pylegend_olap_column__:{p,w,r | $p->percentRank($w, $r)})
+              ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|$c.random_col, val_col_rank:c|(toOne($c.val_col__pylegend_olap_column__) + 5)])
+              ->extend(over(~[group_col], [ascending(~random_col)]), ~random_col__pylegend_olap_column__:{p,w,r | $p->rank($w, $r)})
+              ->project(~[group_col:c|$c.group_col, val_col:c|$c.val_col, random_col:c|toOne($c.random_col__pylegend_olap_column__)->rem(2), val_col_rank:c|$c.val_col_rank])
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame.to_pure_query(FrameToPureConfig()) == expected

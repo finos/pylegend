@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from datetime import date, datetime
+from decimal import Decimal as PythonDecimal
 
 from pylegend._typing import (
     PyLegendList,
@@ -29,7 +30,8 @@ from pylegend.core.language import (
     PyLegendBoolean,
     PyLegendString,
     PyLegendDate,
-    PyLegendDateTime
+    PyLegendDateTime,
+    PyLegendDecimal,
 )
 from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
@@ -53,7 +55,10 @@ class AssignFunction(PandasApiAppliedFunction):
     __base_frame: PandasApiBaseTdsFrame
     __col_definitions: PyLegendDict[
         str,
-        PyLegendCallable[[PandasApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+        PyLegendCallable[
+            [PandasApiTdsRow],
+            PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]
+        ],
     ]
 
     @classmethod
@@ -66,14 +71,16 @@ class AssignFunction(PandasApiAppliedFunction):
             col_definitions: PyLegendDict[
                 str,
                 PyLegendCallable[
-                    [PandasApiTdsRow], PyLegendUnion[int, float, bool, str, date, datetime, PyLegendPrimitive]],
+                    [PandasApiTdsRow],
+                    PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]
+                ],
             ]
     ) -> None:
         self.__base_frame = base_frame
         self.__col_definitions = col_definitions
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.__base_frame.to_sql_query_object(config)
         should_create_sub_query = (len(base_query.groupBy) > 0) or base_query.select.distinct
@@ -130,7 +137,7 @@ class AssignFunction(PandasApiAppliedFunction):
         return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix = "__INTERNAL_PYLEGEND_COLUMN__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         base_cols = [c.get_name() for c in self.__base_frame.columns()]
 
@@ -149,7 +156,7 @@ class AssignFunction(PandasApiAppliedFunction):
                         continue
 
                     if isinstance(applied_func, RankFunction):
-                        c, window = applied_func.construct_column_expression_and_window_tuples()[0]
+                        c, window = applied_func.construct_column_expression_and_window_tuples("r")[0]
                         window_expr = window.to_pure_expression(config)
                         function_expr = c[1].to_pure_expression(config)
                         target_col_name = c[0] + temp_column_name_suffix
@@ -192,6 +199,8 @@ class AssignFunction(PandasApiAppliedFunction):
                 new_cols.append(PrimitiveTdsColumn.integer_column(col))
             elif isinstance(res, (float, PyLegendFloat)):
                 new_cols.append(PrimitiveTdsColumn.float_column(col))
+            elif isinstance(res, (PythonDecimal, PyLegendDecimal)):
+                new_cols.append(PrimitiveTdsColumn.decimal_column(col))
             elif isinstance(res, PyLegendNumber):
                 new_cols.append(PrimitiveTdsColumn.number_column(col))  # pragma: no cover
             elif isinstance(res, (bool, PyLegendBoolean)):

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendSequence
 )
@@ -23,6 +24,7 @@ from pylegend.core.language import (
     PyLegendNumber,
     PyLegendInteger,
     PyLegendFloat,
+    PyLegendDecimal,
     PyLegendDate,
     PyLegendDateTime,
     PyLegendStrictDate,
@@ -42,6 +44,8 @@ def tds_column_for_primitive(name: str, result: PyLegendPrimitiveOrPythonPrimiti
         return PrimitiveTdsColumn.integer_column(name)
     elif isinstance(result, (float, PyLegendFloat)):
         return PrimitiveTdsColumn.float_column(name)
+    elif isinstance(result, (PythonDecimal, PyLegendDecimal)):
+        return PrimitiveTdsColumn.decimal_column(name)
     elif isinstance(result, PyLegendNumber):
         return PrimitiveTdsColumn.number_column(name)
     elif isinstance(result, PyLegendDateTime):

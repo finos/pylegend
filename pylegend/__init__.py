@@ -43,6 +43,7 @@ from pylegend.core.language import (
     current_user,
 )
 from pylegend import samples
+from pylegend.core.language import type_factory
 
 
 __all__: PyLegendSequence[str] = [
@@ -71,6 +72,7 @@ __all__: PyLegendSequence[str] = [
     "current_user",
 
     "samples",
+    "type_factory",
 ]
 
 
