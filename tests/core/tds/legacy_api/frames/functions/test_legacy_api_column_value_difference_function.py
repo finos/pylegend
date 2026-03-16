@@ -590,7 +590,7 @@ class TestColumnValueDifferenceFunction:
                     JoinKind.RIGHT,
                     {l, r | $l.id == $r.id_gen_r}
                   )
-                  ->filter({r  $r.valA_1->isEmpty() && $r.valB_1->isEmpty()})
+                  ->filter({r | $r.valA_1->isEmpty() && $r.valB_1->isEmpty()})
                   ->extend(~[
                     valA_valueDifference:{r | toOne($r.valA_1) - toOne($r.valA_2)},
                     valB_valueDifference:{r | toOne($r.valB_1) - toOne($r.valB_2)}
