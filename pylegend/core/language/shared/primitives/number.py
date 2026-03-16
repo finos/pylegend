@@ -75,6 +75,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives.integer import PyLegendInteger
     from pylegend.core.language.shared.primitives.float import PyLegendFloat
+    from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
 
 
 __all__: PyLegendSequence[str] = [
@@ -365,6 +366,22 @@ class PyLegendNumber(PyLegendPrimitive):
     @grammar_method
     def __round__(self, n: PyLegendOptional[int] = None) -> "PyLegendNumber":
         return self.round(n)
+
+    @grammar_method
+    def to_decimal(self) -> "PyLegendDecimal":
+        from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
+        from pylegend.core.language.shared.operations.decimal_operation_expressions import (
+            PyLegendNumberToDecimalExpression,
+        )
+        return PyLegendDecimal(PyLegendNumberToDecimalExpression(self.__value))
+
+    @grammar_method
+    def to_float(self) -> "PyLegendFloat":
+        from pylegend.core.language.shared.primitives.float import PyLegendFloat
+        from pylegend.core.language.shared.operations.decimal_operation_expressions import (
+            PyLegendNumberToFloatExpression,
+        )
+        return PyLegendFloat(PyLegendNumberToFloatExpression(self.__value))
 
     @staticmethod
     def __convert_to_number_expr(
