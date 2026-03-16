@@ -945,7 +945,7 @@ class PandasApiGroupbyTdsFrame:
         ----------
         order_by : str or sequence of str
             Column name(s) to order the frame by within each group before
-            applying the shift. Unlike pandas, this is required to ensure 
+            applying the shift. Unlike pandas, this is required to ensure
             deterministic output. All specified columns must be present in
             the base frame.
         periods : int or sequence of int, default 1

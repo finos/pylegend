@@ -2311,7 +2311,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
 
         Replace every column's values with their shifted values. Because
         underlying TDS is inherently unordered, this requires
-        an explicit ``order_by`` parameter to define the ordering for the 
+        an explicit ``order_by`` parameter to define the ordering for the
         window function (``LAG`` or ``LEAD``).
 
         Parameters
@@ -2321,19 +2321,19 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             Unlike pandas, this is required to ensure deterministic output.
             All specified columns must be present in the base frame.
         periods : int or sequence of int, default 1
-            Number of periods to shift. Currently, only ``1`` (shift down, 
-            equivalent to SQL ``LAG``) and ``-1`` (shift up, equivalent to SQL ``LEAD``) are supported. 
+            Number of periods to shift. Currently, only ``1`` (shift down,
+            equivalent to SQL ``LAG``) and ``-1`` (shift up, equivalent to SQL ``LEAD``) are supported.
             If a sequence is provided, it cannot contain duplicate values.
         freq : None
             Not supported. Must be ``None``.
         axis : {{0, 'index'}}, default 0
             Axis to shift along. Only ``0`` / ``'index'`` is supported.
         fill_value : None
-            Not supported. Must be ``None``. Missing values introduced by 
+            Not supported. Must be ``None``. Missing values introduced by
             the shift will always be null.
         suffix : str, default None
-            If provided, renames the resulting shifted columns by appending 
-            this string to the original column names. This argument can 
+            If provided, renames the resulting shifted columns by appending
+            this string to the original column names. This argument can
             only be used if ``periods`` is a sequence (not a single integer).
 
         Returns
@@ -2362,14 +2362,14 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         -----
         **Differences from pandas:**
 
-        - The ``order_by`` parameter is **mandatory**. In pandas, ``shift`` 
-          relies on the implicit order of the dataframe's index. Here, 
+        - The ``order_by`` parameter is **mandatory**. In pandas, ``shift``
+          relies on the implicit order of the dataframe's index. Here,
           an explicit order must be provided.
-        - ``periods`` is strictly limited to ``1`` or ``-1``. Arbitrary 
+        - ``periods`` is strictly limited to ``1`` or ``-1``. Arbitrary
           integer shifts are **not supported**.
         - ``fill_value`` is **not supported** and must be ``None``.
         - The ``freq`` parameter is **not supported** and must be ``None``.
-        - ``axis=1`` (shifting horizontally across columns) is **not 
+        - ``axis=1`` (shifting horizontally across columns) is **not
           supported**.
 
         Examples
