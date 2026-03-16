@@ -160,7 +160,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateColumnExpression",
     "PyLegendDateTimeColumnExpression",
     "PyLegendStrictDateColumnExpression",
-    "DurationUnit"
+    "DurationUnit",
 
     "PyLegendBooleanLiteralExpression",
     "PyLegendStringLiteralExpression",
