@@ -994,10 +994,16 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 )
 
                 header = (
-                    f"{'#':<{idx_width}}  {'Column':<{name_width}}  {'Non-Null Count':<{count_width}}  {'Dtype':<{dtype_width}}"
+                    f"{'#':<{idx_width}}  "
+                    f"{'Column':<{name_width}}  "
+                    f"{'Non-Null Count':<{count_width}}  "
+                    f"{'Dtype':<{dtype_width}}"
                 )
                 separator = (
-                    f"{'-' * idx_width}  {'-' * name_width}  {'-' * count_width}  {'-' * dtype_width}"
+                    f"{'-' * idx_width}  "
+                    f"{'-' * name_width}  "
+                    f"{'-' * count_width}  "
+                    f"{'-' * dtype_width}"
                 )
                 lines.append(header)
                 lines.append(separator)
@@ -1007,18 +1013,33 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                     col_dtype = col.get_type()
                     count_str = f"{non_null_counts[col_name]} non-null"
                     lines.append(
-                        f"{i:<{idx_width}}  {col_name:<{name_width}}  {count_str:<{count_width}}  {col_dtype:<{dtype_width}}"
+                        f"{i:<{idx_width}}  "
+                        f"{col_name:<{name_width}}  "
+                        f"{count_str:<{count_width}}  "
+                        f"{col_dtype:<{dtype_width}}"
                     )
             else:
-                header = f"{'#':<{idx_width}}  {'Column':<{name_width}}  {'Dtype':<{dtype_width}}"
-                separator = f"{'-' * idx_width}  {'-' * name_width}  {'-' * dtype_width}"
+                header = (
+                    f"{'#':<{idx_width}}  "
+                    f"{'Column':<{name_width}}  "
+                    f"{'Dtype':<{dtype_width}}"
+                )
+                separator = (
+                    f"{'-' * idx_width}  "
+                    f"{'-' * name_width}  "
+                    f"{'-' * dtype_width}"
+                )
                 lines.append(header)
                 lines.append(separator)
 
                 for i, col in enumerate(cols):
                     col_name = col.get_name()
                     col_dtype = col.get_type()
-                    lines.append(f"{i:<{idx_width}}  {col_name:<{name_width}}  {col_dtype:<{dtype_width}}")
+                    lines.append(
+                        f"{i:<{idx_width}}  "
+                        f"{col_name:<{name_width}}  "
+                        f"{col_dtype:<{dtype_width}}"
+                    )
         else:
             lines.append(f"Columns: {num_cols} entries, {cols[0].get_name()} to {cols[-1].get_name()}")
 
@@ -1036,6 +1057,47 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             buf.write(output)
         else:
             sys.stdout.write(output)
+
+    def drop_duplicates(
+            self,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendList[str]]] = None,
+            *,
+            keep: str = 'first',
+            inplace: bool = False,
+            ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        """
+        Return TdsFrame with duplicate rows removed.
+
+        Parameters
+        ----------
+        subset : column label or list of labels, optional
+            Only consider certain columns for identifying duplicates,
+            by default use all of the columns.
+        keep : {'first'}, default 'first'
+            Determines which duplicates (if any) to keep.
+            Only 'first' is supported.
+        inplace : bool, default False
+            Not implemented yet.
+        ignore_index : bool, default False
+            Not implemented yet.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            TdsFrame with duplicates removed.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.drop_duplicates import DropDuplicatesFunction
+        return PandasApiAppliedFunctionTdsFrame(DropDuplicatesFunction(
+            base_frame=self,
+            subset=subset,
+            keep=keep,
+            inplace=inplace,
+            ignore_index=ignore_index
+        ))
 
     @abstractmethod
     def get_super_type(self) -> PyLegendType[PyLegendTdsFrame]:

@@ -370,3 +370,14 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             show_counts: PyLegendOptional[bool] = None
     ) -> None:
         pass  # pragma: no cover
+
+    @abstractmethod
+    def drop_duplicates(
+            self,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendList[str]]] = None,
+            *,
+            keep: str = 'first',
+            inplace: bool = False,
+            ignore_index: bool = False
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
