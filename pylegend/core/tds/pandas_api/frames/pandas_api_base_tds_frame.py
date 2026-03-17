@@ -1061,10 +1061,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 non_null_counts = {}
                 for col in cols:
                     col_name = col.get_name()
-                    if col_name in count_df.columns:
-                        non_null_counts[col_name] = int(count_df[col_name].iloc[0])
-                    else:
-                        non_null_counts[col_name] = 0
+                    non_null_counts[col_name] = int(count_df[col_name].iloc[0])
 
             # Calculate column widths for alignment
             idx_width = max(len(str(num_cols - 1)), len("#"))
