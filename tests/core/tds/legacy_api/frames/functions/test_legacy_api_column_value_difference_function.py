@@ -123,7 +123,21 @@ class TestColumnValueDifferenceFunction:
                                 "root"."id" AS "id",
                                 "root"."val_1" AS "val_1",
                                 "root"."val_2" AS "val_2",
-                                ("root"."val_1" - "root"."val_2") AS "val_valueDifference"
+                                CASE
+                                    WHEN
+                                        ("root"."val_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."val_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."val_2" IS NULL)
+                                            THEN
+                                                "root"."val_1"
+                                            ELSE
+                                                ("root"."val_1" - "root"."val_2")
+                                        END
+                                END AS "val_valueDifference"
                             FROM
                                 (
                                     SELECT
@@ -163,7 +177,21 @@ class TestColumnValueDifferenceFunction:
                                 "root"."id" AS "id",
                                 "root"."val_1" AS "val_1",
                                 "root"."val_2" AS "val_2",
-                                ("root"."val_1" - "root"."val_2") AS "val_valueDifference"
+                                CASE
+                                    WHEN
+                                        ("root"."val_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."val_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."val_2" IS NULL)
+                                            THEN
+                                                "root"."val_1"
+                                            ELSE
+                                                ("root"."val_1" - "root"."val_2")
+                                        END
+                                END AS "val_valueDifference"
                             FROM
                                 (
                                     SELECT
@@ -208,38 +236,37 @@ class TestColumnValueDifferenceFunction:
         frame2: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table2'], cols2)
 
         result = frame1.column_value_difference(frame2, ["id"], ["id"], ["val"])
-        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == dedent(
-            '''\
-            #Table(test_schema.test_table1)#
-              ->select(~[id, val])
-              ->rename(~val, ~val_1)
-              ->join(
-                #Table(test_schema.test_table2)#
-                  ->select(~[id, val])
-                  ->rename(~val, ~val_2)
-                  ->rename(~id, ~id_gen_r),
-                JoinKind.LEFT,
-                {l, r | $l.id == $r.id_gen_r}
-              )
-              ->filter({r | $r.val_1->isNotEmpty()})
-              ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
-              ->select(~[id, val_1, val_2, val_valueDifference])
-              ->concatenate(
-                #Table(test_schema.test_table1)#
-                  ->select(~[id, val])
-                  ->rename(~val, ~val_1)
-                  ->join(
-                    #Table(test_schema.test_table2)#
-                      ->select(~[id, val])
-                      ->rename(~val, ~val_2)
-                      ->rename(~id, ~id_gen_r),
-                    JoinKind.RIGHT,
-                    {l, r | $l.id == $r.id_gen_r}
-                  )
-                  ->filter({r | $r.val_1->isEmpty()})
-                  ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
-                  ->select(~[id, val_1, val_2, val_valueDifference])
-              )'''
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == (
+            "#Table(test_schema.test_table1)#\n"
+            "  ->select(~[id, val])\n"
+            "  ->rename(~val, ~val_1)\n"
+            "  ->join(\n"
+            "    #Table(test_schema.test_table2)#\n"
+            "      ->select(~[id, val])\n"
+            "      ->rename(~val, ~val_2)\n"
+            "      ->rename(~id, ~id_gen_r),\n"
+            "    JoinKind.LEFT,\n"
+            "    {l, r | $l.id == $r.id_gen_r}\n"
+            "  )\n"
+            "  ->filter({r | $r.val_1->isNotEmpty()})\n"
+            "  ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "  ->select(~[id, val_1, val_2, val_valueDifference])\n"
+            "  ->concatenate(\n"
+            "    #Table(test_schema.test_table1)#\n"
+            "      ->select(~[id, val])\n"
+            "      ->rename(~val, ~val_1)\n"
+            "      ->join(\n"
+            "        #Table(test_schema.test_table2)#\n"
+            "          ->select(~[id, val])\n"
+            "          ->rename(~val, ~val_2)\n"
+            "          ->rename(~id, ~id_gen_r),\n"
+            "        JoinKind.RIGHT,\n"
+            "        {l, r | $l.id == $r.id_gen_r}\n"
+            "      )\n"
+            "      ->filter({r | $r.val_1->isEmpty()})\n"
+            "      ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "      ->select(~[id, val_1, val_2, val_valueDifference])\n"
+            "  )"
         )
         assert generate_pure_query_and_compile(result, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table1)#'
@@ -248,7 +275,7 @@ class TestColumnValueDifferenceFunction:
             '->rename(~val, ~val_2)->rename(~id, ~id_gen_r), '
             'JoinKind.LEFT, {l, r | $l.id == $r.id_gen_r})'
             '->filter({r | $r.val_1->isNotEmpty()})'
-            '->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})'
+            '->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})'  # noqa: E501
             '->select(~[id, val_1, val_2, val_valueDifference])'
             '->concatenate(#Table(test_schema.test_table1)#'
             '->select(~[id, val])->rename(~val, ~val_1)'
@@ -256,7 +283,7 @@ class TestColumnValueDifferenceFunction:
             '->rename(~val, ~val_2)->rename(~id, ~id_gen_r), '
             'JoinKind.RIGHT, {l, r | $l.id == $r.id_gen_r})'
             '->filter({r | $r.val_1->isEmpty()})'
-            '->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})'
+            '->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})'  # noqa: E501
             '->select(~[id, val_1, val_2, val_valueDifference]))'
         )
 
@@ -296,7 +323,21 @@ class TestColumnValueDifferenceFunction:
                                 "root"."key2" AS "key2",
                                 "root"."val_1" AS "val_1",
                                 "root"."val_2" AS "val_2",
-                                ("root"."val_1" - "root"."val_2") AS "val_valueDifference"
+                                CASE
+                                    WHEN
+                                        ("root"."val_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."val_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."val_2" IS NULL)
+                                            THEN
+                                                "root"."val_1"
+                                            ELSE
+                                                ("root"."val_1" - "root"."val_2")
+                                        END
+                                END AS "val_valueDifference"
                             FROM
                                 (
                                     SELECT
@@ -339,7 +380,21 @@ class TestColumnValueDifferenceFunction:
                                 "root"."key2" AS "key2",
                                 "root"."val_1" AS "val_1",
                                 "root"."val_2" AS "val_2",
-                                ("root"."val_1" - "root"."val_2") AS "val_valueDifference"
+                                CASE
+                                    WHEN
+                                        ("root"."val_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."val_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."val_2" IS NULL)
+                                            THEN
+                                                "root"."val_1"
+                                            ELSE
+                                                ("root"."val_1" - "root"."val_2")
+                                        END
+                                END AS "val_valueDifference"
                             FROM
                                 (
                                     SELECT
@@ -390,41 +445,41 @@ class TestColumnValueDifferenceFunction:
         result_col_names = [c.get_name() for c in result.columns()]
         assert result_col_names == ["key1", "key2", "val_1", "val_2", "val_valueDifference"]
 
-        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == dedent(
-            '''\
-            #Table(test_schema.test_table1)#
-              ->select(~[key1, key2, val])
-              ->rename(~val, ~val_1)
-              ->join(
-                #Table(test_schema.test_table2)#
-                  ->select(~[key1, key2, val])
-                  ->rename(~val, ~val_2)
-                  ->rename(~key1, ~key1_gen_r)
-                  ->rename(~key2, ~key2_gen_r),
-                JoinKind.LEFT,
-                {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}
-              )
-              ->filter({r | $r.val_1->isNotEmpty()})
-              ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
-              ->select(~[key1, key2, val_1, val_2, val_valueDifference])
-              ->concatenate(
-                #Table(test_schema.test_table1)#
-                  ->select(~[key1, key2, val])
-                  ->rename(~val, ~val_1)
-                  ->join(
-                    #Table(test_schema.test_table2)#
-                      ->select(~[key1, key2, val])
-                      ->rename(~val, ~val_2)
-                      ->rename(~key1, ~key1_gen_r)
-                      ->rename(~key2, ~key2_gen_r),
-                    JoinKind.RIGHT,
-                    {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}
-                  )
-                  ->filter({r | $r.val_1->isEmpty()})
-                  ->extend(~val_valueDifference:{r | toOne($r.val_1) - toOne($r.val_2)})
-                  ->select(~[key1, key2, val_1, val_2, val_valueDifference])
-              )'''
+        expected_pure = (
+            "#Table(test_schema.test_table1)#\n"
+            "  ->select(~[key1, key2, val])\n"
+            "  ->rename(~val, ~val_1)\n"
+            "  ->join(\n"
+            "    #Table(test_schema.test_table2)#\n"
+            "      ->select(~[key1, key2, val])\n"
+            "      ->rename(~val, ~val_2)\n"
+            "      ->rename(~key1, ~key1_gen_r)\n"
+            "      ->rename(~key2, ~key2_gen_r),\n"
+            "    JoinKind.LEFT,\n"
+            "    {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}\n"
+            "  )\n"
+            "  ->filter({r | $r.val_1->isNotEmpty()})\n"
+            "  ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "  ->select(~[key1, key2, val_1, val_2, val_valueDifference])\n"
+            "  ->concatenate(\n"
+            "    #Table(test_schema.test_table1)#\n"
+            "      ->select(~[key1, key2, val])\n"
+            "      ->rename(~val, ~val_1)\n"
+            "      ->join(\n"
+            "        #Table(test_schema.test_table2)#\n"
+            "          ->select(~[key1, key2, val])\n"
+            "          ->rename(~val, ~val_2)\n"
+            "          ->rename(~key1, ~key1_gen_r)\n"
+            "          ->rename(~key2, ~key2_gen_r),\n"
+            "        JoinKind.RIGHT,\n"
+            "        {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}\n"
+            "      )\n"
+            "      ->filter({r | $r.val_1->isEmpty()})\n"
+            "      ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "      ->select(~[key1, key2, val_1, val_2, val_valueDifference])\n"
+            "  )"
         )
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_column_value_difference_multiple_check_cols_sql_and_pure_gen(self) -> None:
         cols1 = [
@@ -467,10 +522,38 @@ class TestColumnValueDifferenceFunction:
                                 "root"."id" AS "id",
                                 "root"."valA_1" AS "valA_1",
                                 "root"."valA_2" AS "valA_2",
-                                ("root"."valA_1" - "root"."valA_2") AS "valA_valueDifference",
+                                CASE
+                                    WHEN
+                                        ("root"."valA_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."valA_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."valA_2" IS NULL)
+                                            THEN
+                                                "root"."valA_1"
+                                            ELSE
+                                                ("root"."valA_1" - "root"."valA_2")
+                                        END
+                                END AS "valA_valueDifference",
                                 "root"."valB_1" AS "valB_1",
                                 "root"."valB_2" AS "valB_2",
-                                ("root"."valB_1" - "root"."valB_2") AS "valB_valueDifference"
+                                CASE
+                                    WHEN
+                                        ("root"."valB_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."valB_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."valB_2" IS NULL)
+                                            THEN
+                                                "root"."valB_1"
+                                            ELSE
+                                                ("root"."valB_1" - "root"."valB_2")
+                                        END
+                                END AS "valB_valueDifference"
                             FROM
                                 (
                                     SELECT
@@ -517,10 +600,38 @@ class TestColumnValueDifferenceFunction:
                                 "root"."id" AS "id",
                                 "root"."valA_1" AS "valA_1",
                                 "root"."valA_2" AS "valA_2",
-                                ("root"."valA_1" - "root"."valA_2") AS "valA_valueDifference",
+                                CASE
+                                    WHEN
+                                        ("root"."valA_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."valA_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."valA_2" IS NULL)
+                                            THEN
+                                                "root"."valA_1"
+                                            ELSE
+                                                ("root"."valA_1" - "root"."valA_2")
+                                        END
+                                END AS "valA_valueDifference",
                                 "root"."valB_1" AS "valB_1",
                                 "root"."valB_2" AS "valB_2",
-                                ("root"."valB_1" - "root"."valB_2") AS "valB_valueDifference"
+                                CASE
+                                    WHEN
+                                        ("root"."valB_1" IS NULL)
+                                    THEN
+                                        (0 - "root"."valB_2")
+                                    ELSE
+                                        CASE
+                                            WHEN
+                                                ("root"."valB_2" IS NULL)
+                                            THEN
+                                                "root"."valB_1"
+                                            ELSE
+                                                ("root"."valB_1" - "root"."valB_2")
+                                        END
+                                END AS "valB_valueDifference"
                             FROM
                                 (
                                     SELECT
@@ -555,46 +666,46 @@ class TestColumnValueDifferenceFunction:
                 ) AS "root"'''
         assert result.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
-        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == dedent(
-            '''\
-            #Table(test_schema.test_table1)#
-              ->select(~[id, valA, valB])
-              ->rename(~valA, ~valA_1)
-              ->rename(~valB, ~valB_1)
-              ->join(
-                #Table(test_schema.test_table2)#
-                  ->select(~[id, valA, valB])
-                  ->rename(~valA, ~valA_2)
-                  ->rename(~valB, ~valB_2)
-                  ->rename(~id, ~id_gen_r),
-                JoinKind.LEFT,
-                {l, r | $l.id == $r.id_gen_r}
-              )
-              ->filter({r | $r.valA_1->isNotEmpty() && $r.valB_1->isNotEmpty()})
-              ->extend(~[
-                valA_valueDifference:{r | toOne($r.valA_1) - toOne($r.valA_2)},
-                valB_valueDifference:{r | toOne($r.valB_1) - toOne($r.valB_2)}
-              ])
-              ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])
-              ->concatenate(
-                #Table(test_schema.test_table1)#
-                  ->select(~[id, valA, valB])
-                  ->rename(~valA, ~valA_1)
-                  ->rename(~valB, ~valB_1)
-                  ->join(
-                    #Table(test_schema.test_table2)#
-                      ->select(~[id, valA, valB])
-                      ->rename(~valA, ~valA_2)
-                      ->rename(~valB, ~valB_2)
-                      ->rename(~id, ~id_gen_r),
-                    JoinKind.RIGHT,
-                    {l, r | $l.id == $r.id_gen_r}
-                  )
-                  ->filter({r | $r.valA_1->isEmpty() && $r.valB_1->isEmpty()})
-                  ->extend(~[
-                    valA_valueDifference:{r | toOne($r.valA_1) - toOne($r.valA_2)},
-                    valB_valueDifference:{r | toOne($r.valB_1) - toOne($r.valB_2)}
-                  ])
-                  ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])
-              )'''
+        expected_pure = (
+            "#Table(test_schema.test_table1)#\n"
+            "  ->select(~[id, valA, valB])\n"
+            "  ->rename(~valA, ~valA_1)\n"
+            "  ->rename(~valB, ~valB_1)\n"
+            "  ->join(\n"
+            "    #Table(test_schema.test_table2)#\n"
+            "      ->select(~[id, valA, valB])\n"
+            "      ->rename(~valA, ~valA_2)\n"
+            "      ->rename(~valB, ~valB_2)\n"
+            "      ->rename(~id, ~id_gen_r),\n"
+            "    JoinKind.LEFT,\n"
+            "    {l, r | $l.id == $r.id_gen_r}\n"
+            "  )\n"
+            "  ->filter({r | $r.valA_1->isNotEmpty() && $r.valB_1->isNotEmpty()})\n"
+            "  ->extend(~[\n"
+            "    valA_valueDifference:{r | if($r.valA_1->isEmpty(), toOne($r.valA_2)->minus(), if($r.valA_2->isEmpty(), $r.valA_1, (toOne($r.valA_1) - toOne($r.valA_2))))},\n"  # noqa: E501
+            "    valB_valueDifference:{r | if($r.valB_1->isEmpty(), toOne($r.valB_2)->minus(), if($r.valB_2->isEmpty(), $r.valB_1, (toOne($r.valB_1) - toOne($r.valB_2))))}\n"  # noqa: E501
+            "  ])\n"
+            "  ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])\n"
+            "  ->concatenate(\n"
+            "    #Table(test_schema.test_table1)#\n"
+            "      ->select(~[id, valA, valB])\n"
+            "      ->rename(~valA, ~valA_1)\n"
+            "      ->rename(~valB, ~valB_1)\n"
+            "      ->join(\n"
+            "        #Table(test_schema.test_table2)#\n"
+            "          ->select(~[id, valA, valB])\n"
+            "          ->rename(~valA, ~valA_2)\n"
+            "          ->rename(~valB, ~valB_2)\n"
+            "          ->rename(~id, ~id_gen_r),\n"
+            "        JoinKind.RIGHT,\n"
+            "        {l, r | $l.id == $r.id_gen_r}\n"
+            "      )\n"
+            "      ->filter({r | $r.valA_1->isEmpty() && $r.valB_1->isEmpty()})\n"
+            "      ->extend(~[\n"
+            "        valA_valueDifference:{r | if($r.valA_1->isEmpty(), toOne($r.valA_2)->minus(), if($r.valA_2->isEmpty(), $r.valA_1, (toOne($r.valA_1) - toOne($r.valA_2))))},\n"  # noqa: E501
+            "        valB_valueDifference:{r | if($r.valB_1->isEmpty(), toOne($r.valB_2)->minus(), if($r.valB_2->isEmpty(), $r.valB_1, (toOne($r.valB_1) - toOne($r.valB_2))))}\n"  # noqa: E501
+            "      ])\n"
+            "      ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])\n"
+            "  )"
         )
+        assert generate_pure_query_and_compile(result, FrameToPureConfig(), self.legend_client) == expected_pure

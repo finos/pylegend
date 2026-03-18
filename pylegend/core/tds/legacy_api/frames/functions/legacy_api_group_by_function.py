@@ -26,6 +26,8 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SelectItem,
     SingleColumn,
+    QualifiedNameReference,
+    QualifiedName
 )
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -110,7 +112,9 @@ class LegacyApiGroupByFunction(LegacyApiAppliedFunction):
 
         new_query.select.selectItems = new_select_items
         new_query.groupBy = [
-            (lambda x: x[c])(tds_row).to_sql_expression({"frame": new_query}, config) for c in self.__grouping_columns
+            QualifiedNameReference(QualifiedName([
+                db_extension.quote_identifier("root"), db_extension.quote_identifier(c)
+            ])) for c in self.__grouping_columns
         ]
         return new_query
 

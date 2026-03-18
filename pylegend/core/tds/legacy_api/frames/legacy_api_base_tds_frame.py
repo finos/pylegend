@@ -261,7 +261,13 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         def _make_value_diff_func(
                 col_name: str
         ) -> PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]:
-            return lambda r: r[col_name + '_1'] - r[col_name + '_2']  # type: ignore[operator]
+            return lambda r: r[col_name + '_1'].is_null().case(
+                -r[col_name + '_2'],  # type: ignore[operator]
+                r[col_name + '_2'].is_null().case(
+                    r[col_name + '_1'],
+                    r[col_name + '_1'] - r[col_name + '_2']  # type: ignore[operator]
+                )
+            )
 
         def _build_extend_functions(
         ) -> PyLegendList[PyLegendCallable[[LegacyApiTdsRow], PyLegendPrimitiveOrPythonPrimitive]]:

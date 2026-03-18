@@ -175,7 +175,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -358,7 +358,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -392,7 +392,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -425,7 +425,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -459,7 +459,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -492,7 +492,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -525,7 +525,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -558,7 +558,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -591,7 +591,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -624,7 +624,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -657,7 +657,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -690,7 +690,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -723,7 +723,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -756,7 +756,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -789,7 +789,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -828,7 +828,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -868,7 +868,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -908,7 +908,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -948,7 +948,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -988,7 +988,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1028,7 +1028,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col2'''
+                "root"."col2"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1062,7 +1062,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1095,7 +1095,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1128,7 +1128,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1161,7 +1161,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1194,7 +1194,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1227,7 +1227,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1260,7 +1260,7 @@ class TestGroupByAppliedFunction:
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
-                "root".col1'''
+                "root"."col1"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
