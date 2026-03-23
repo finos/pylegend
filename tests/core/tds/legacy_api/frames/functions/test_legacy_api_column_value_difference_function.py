@@ -275,7 +275,7 @@ class TestColumnValueDifferenceFunction:
             '->rename(~val, ~val_2)->rename(~id, ~id_gen_r), '
             'JoinKind.LEFT, {l, r | $l.id == $r.id_gen_r})'
             '->filter({r | $r.val_1->isNotEmpty()})'
-            '->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})'  # noqa: E501
+            '->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), |toOne($r.val_2)->minus(), |if($r.val_2->isEmpty(), |$r.val_1, |(toOne($r.val_1) - toOne($r.val_2))))})'  # noqa: E501
             '->select(~[id, val_1, val_2, val_valueDifference])'
             '->concatenate(#Table(test_schema.test_table1)#'
             '->select(~[id, val])->rename(~val, ~val_1)'
@@ -283,7 +283,7 @@ class TestColumnValueDifferenceFunction:
             '->rename(~val, ~val_2)->rename(~id, ~id_gen_r), '
             'JoinKind.RIGHT, {l, r | $l.id == $r.id_gen_r})'
             '->filter({r | $r.val_1->isEmpty()})'
-            '->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})'  # noqa: E501
+            '->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), |toOne($r.val_2)->minus(), |if($r.val_2->isEmpty(), |$r.val_1, |(toOne($r.val_1) - toOne($r.val_2))))})'  # noqa: E501
             '->select(~[id, val_1, val_2, val_valueDifference]))'
         )
 
