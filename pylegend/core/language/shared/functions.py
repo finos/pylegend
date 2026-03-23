@@ -26,19 +26,24 @@ from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.language.shared.operations.date_operation_expressions import (
     PyLegendTodayExpression,
     PyLegendNowExpression,
+    PyLegendTodayDateTimeExpression,
     PyLegendMostRecentDayOfWeekExpression,
     PyLegendPreviousDayOfWeekExpression,
 )
 from pylegend.core.language.shared.operations.string_operation_expressions import (
     PyLegendCurrentUserExpression,
 )
+from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.operations.float_operation_expressions import PyLegendFloatPiExpression
 
 
 __all__: PyLegendSequence[str] = [
     "today",
+    "today_datetime",
     "now",
     "current_user",
     "pi",
+    "pi_float",
     "most_recent_day_of_week",
     "previous_day_of_week",
 ]
@@ -46,6 +51,10 @@ __all__: PyLegendSequence[str] = [
 
 def today() -> PyLegendStrictDate:
     return PyLegendStrictDate(PyLegendTodayExpression())
+
+
+def today_datetime() -> PyLegendDateTime:
+    return PyLegendDateTime(PyLegendTodayDateTimeExpression())
 
 
 def now() -> PyLegendDateTime:
@@ -58,6 +67,10 @@ def current_user() -> PyLegendString:
 
 def pi() -> PyLegendNumber:
     return PyLegendNumber(PyLegendNumberPiExpression())
+
+
+def pi_float() -> PyLegendFloat:
+    return PyLegendFloat(PyLegendFloatPiExpression())
 
 
 def _validate_day_of_week(day_of_week: str) -> PyLegendExpressionStringReturn:

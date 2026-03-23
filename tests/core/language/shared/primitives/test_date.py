@@ -23,7 +23,7 @@ from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQ
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import today, now, DurationUnit
+from pylegend.core.language import today, now, DurationUnit, today_datetime
 from pylegend.core.language.shared.functions import (
     most_recent_day_of_week,
     previous_day_of_week
@@ -314,6 +314,18 @@ class TestPyLegendDate:
                'today()'
         assert (self.__generate_pure_string(
             lambda x: today().first_minute_of_hour().day_of_week()) ==
+                'today()->firstMinuteOfHour()->dayOfWeekNumber()')
+
+    def test_today_datetime(self) -> None:
+        assert self.__generate_sql_string(lambda x: today_datetime()) == \
+               'CURRENT_DATE'
+        assert (self.__generate_sql_string(
+            lambda x: today_datetime().first_minute_of_hour().day_of_week()) ==
+                'DATE_PART(\'dow\', DATE_TRUNC(\'hour\', CURRENT_DATE))')
+        assert self.__generate_pure_string(lambda x: today_datetime()) == \
+               'today()'
+        assert (self.__generate_pure_string(
+            lambda x: today_datetime().first_minute_of_hour().day_of_week()) ==
                 'today()->firstMinuteOfHour()->dayOfWeekNumber()')
 
     def test_now(self) -> None:

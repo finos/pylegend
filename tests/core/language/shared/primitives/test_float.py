@@ -27,6 +27,7 @@ from pylegend.core.language import PyLegendPrimitive, PyLegendFloat
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
+from pylegend.core.language.shared.functions import pi_float
 
 
 class TestPyLegendFloat:
@@ -175,6 +176,10 @@ class TestPyLegendFloat:
                'CAST("root".col2 AS TEXT)'
         assert self.__generate_pure_string(lambda x: x.get_float("col2").to_string()) == \
                'toOne($t.col2)->toString()'
+
+    def test_float_pi_expr(self) -> None:
+        assert self.__generate_sql_string(lambda x: pi_float()) == 'PI()'
+        assert self.__generate_pure_string(lambda x: pi_float()) == 'pi()'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)
