@@ -249,7 +249,7 @@ class TestColumnValueDifferenceFunction:
             "    {l, r | $l.id == $r.id_gen_r}\n"
             "  )\n"
             "  ->filter({r | $r.val_1->isNotEmpty()})\n"
-            "  ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "  ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), |toOne($r.val_2)->minus(), |if($r.val_2->isEmpty(), |$r.val_1, |(toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
             "  ->select(~[id, val_1, val_2, val_valueDifference])\n"
             "  ->concatenate(\n"
             "    #Table(test_schema.test_table1)#\n"
@@ -264,7 +264,7 @@ class TestColumnValueDifferenceFunction:
             "        {l, r | $l.id == $r.id_gen_r}\n"
             "      )\n"
             "      ->filter({r | $r.val_1->isEmpty()})\n"
-            "      ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "      ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), |toOne($r.val_2)->minus(), |if($r.val_2->isEmpty(), |$r.val_1, |(toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
             "      ->select(~[id, val_1, val_2, val_valueDifference])\n"
             "  )"
         )
@@ -459,7 +459,7 @@ class TestColumnValueDifferenceFunction:
             "    {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}\n"
             "  )\n"
             "  ->filter({r | $r.val_1->isNotEmpty()})\n"
-            "  ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "  ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), |toOne($r.val_2)->minus(), |if($r.val_2->isEmpty(), |$r.val_1, |(toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
             "  ->select(~[key1, key2, val_1, val_2, val_valueDifference])\n"
             "  ->concatenate(\n"
             "    #Table(test_schema.test_table1)#\n"
@@ -475,7 +475,7 @@ class TestColumnValueDifferenceFunction:
             "        {l, r | ($l.key1 == $r.key1_gen_r) && ($l.key2 == $r.key2_gen_r)}\n"
             "      )\n"
             "      ->filter({r | $r.val_1->isEmpty()})\n"
-            "      ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), toOne($r.val_2)->minus(), if($r.val_2->isEmpty(), $r.val_1, (toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
+            "      ->extend(~val_valueDifference:{r | if($r.val_1->isEmpty(), |toOne($r.val_2)->minus(), |if($r.val_2->isEmpty(), |$r.val_1, |(toOne($r.val_1) - toOne($r.val_2))))})\n"  # noqa: E501
             "      ->select(~[key1, key2, val_1, val_2, val_valueDifference])\n"
             "  )"
         )
@@ -682,8 +682,8 @@ class TestColumnValueDifferenceFunction:
             "  )\n"
             "  ->filter({r | $r.valA_1->isNotEmpty() && $r.valB_1->isNotEmpty()})\n"
             "  ->extend(~[\n"
-            "    valA_valueDifference:{r | if($r.valA_1->isEmpty(), toOne($r.valA_2)->minus(), if($r.valA_2->isEmpty(), $r.valA_1, (toOne($r.valA_1) - toOne($r.valA_2))))},\n"  # noqa: E501
-            "    valB_valueDifference:{r | if($r.valB_1->isEmpty(), toOne($r.valB_2)->minus(), if($r.valB_2->isEmpty(), $r.valB_1, (toOne($r.valB_1) - toOne($r.valB_2))))}\n"  # noqa: E501
+            "    valA_valueDifference:{r | if($r.valA_1->isEmpty(), |toOne($r.valA_2)->minus(), |if($r.valA_2->isEmpty(), |$r.valA_1, |(toOne($r.valA_1) - toOne($r.valA_2))))},\n"  # noqa: E501
+            "    valB_valueDifference:{r | if($r.valB_1->isEmpty(), |toOne($r.valB_2)->minus(), |if($r.valB_2->isEmpty(), |$r.valB_1, |(toOne($r.valB_1) - toOne($r.valB_2))))}\n"  # noqa: E501
             "  ])\n"
             "  ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])\n"
             "  ->concatenate(\n"
@@ -702,8 +702,8 @@ class TestColumnValueDifferenceFunction:
             "      )\n"
             "      ->filter({r | $r.valA_1->isEmpty() && $r.valB_1->isEmpty()})\n"
             "      ->extend(~[\n"
-            "        valA_valueDifference:{r | if($r.valA_1->isEmpty(), toOne($r.valA_2)->minus(), if($r.valA_2->isEmpty(), $r.valA_1, (toOne($r.valA_1) - toOne($r.valA_2))))},\n"  # noqa: E501
-            "        valB_valueDifference:{r | if($r.valB_1->isEmpty(), toOne($r.valB_2)->minus(), if($r.valB_2->isEmpty(), $r.valB_1, (toOne($r.valB_1) - toOne($r.valB_2))))}\n"  # noqa: E501
+            "        valA_valueDifference:{r | if($r.valA_1->isEmpty(), |toOne($r.valA_2)->minus(), |if($r.valA_2->isEmpty(), |$r.valA_1, |(toOne($r.valA_1) - toOne($r.valA_2))))},\n"  # noqa: E501
+            "        valB_valueDifference:{r | if($r.valB_1->isEmpty(), |toOne($r.valB_2)->minus(), |if($r.valB_2->isEmpty(), |$r.valB_1, |(toOne($r.valB_1) - toOne($r.valB_2))))}\n"  # noqa: E501
             "      ])\n"
             "      ->select(~[id, valA_1, valA_2, valA_valueDifference, valB_1, valB_2, valB_valueDifference])\n"
             "  )"
