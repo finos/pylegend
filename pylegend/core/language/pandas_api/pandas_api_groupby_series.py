@@ -453,6 +453,33 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
         super().__init__(base_groupby_frame, applied_function_frame, expr)
         PyLegendNumber.__init__(self, self)
 
+    def corr(
+            self,
+            other: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                                 "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+
+        selected_a = self._base_groupby_frame.get_selected_columns()
+        assert selected_a is not None and len(selected_a) == 1, (
+            "corr() requires exactly one column selected on self"
+        )
+        col_name_a = selected_a[0].get_name()
+
+        selected_b = other._base_groupby_frame.get_selected_columns()
+        assert selected_b is not None and len(selected_b) == 1, (
+            "corr() requires exactly one column selected on other"
+        )
+        col_name_b = selected_b[0].get_name()
+
+        applied_function_frame = PandasApiAppliedFunctionTdsFrame(CorrWindowFunction(
+            base_frame=self._base_groupby_frame,
+            col_name_a=col_name_a,
+            col_name_b=col_name_b,
+            result_col_name=col_name_a,
+        ))
+        return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
 
 @add_primitive_methods
 class IntegerGroupbySeries(NumberGroupbySeries, PyLegendInteger, PyLegendExpressionIntegerReturn):

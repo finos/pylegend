@@ -38,7 +38,7 @@ class TestCorrFunctionQueryGeneration:
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_corr_groupby_aggregate_sql_generation(self) -> None:
+    def test_corr_groupby_single_column_sql_generation(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("grp"),
             PrimitiveTdsColumn.float_column("valA"),
@@ -60,7 +60,7 @@ class TestCorrFunctionQueryGeneration:
                 "root".grp'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
-    def test_corr_groupby_two_column_sql_generation(self) -> None:
+    def test_corr_row_mapper_types(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("grp"),
             PrimitiveTdsColumn.float_column("valA"),
@@ -72,7 +72,7 @@ class TestCorrFunctionQueryGeneration:
         tds_row = PandasApiTdsRow.from_tds_frame("r", frame)
         val_a = tds_row["valA"]
         val_b = tds_row["valB"]
-        pair = row_mapper(val_a, val_b)
+        pair = row_mapper(val_a, val_b)  # type: ignore
         corr_result = pair.corr()
 
         from pylegend.core.language.shared.primitive_collection import PyLegendNumberPairCollection
@@ -114,6 +114,26 @@ class TestCorrFunctionQueryGeneration:
                 ~[valA:{r | $r.valA}:{c | $c->corr($c)}]
               )
               ->sort([~grp->ascending()])'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+            '#Table(test_schema.test_table)#'
+            '->groupBy(~[grp], ~[valA:{r | $r.valA}:{c | $c->corr($c)}])'
+            '->sort([~grp->ascending()])'
+        )
+
+    def test_corr_non_groupby_pure_generation(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.float_column("valA"),
+            PrimitiveTdsColumn.float_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.aggregate(
+            {"valA": lambda c: row_mapper(c, c).corr()}
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#"
+            "->select(~[valA])"
+            "->aggregate(~[valA:{r | $r.valA}:{c | $c->corr($c)}])"
         )
 
     def test_corr_sql_expression_rendering(self) -> None:
@@ -166,11 +186,101 @@ class TestCorrFunctionQueryGeneration:
         pair = row_mapper(col_a, col_b)
         assert isinstance(pair, PyLegendNumberPairCollection)
 
+    def test_corr_window_sql_generation(self) -> None:
+        """Test window corr: frame.groupby('id')['valA'].corr(frame.groupby('id')['valB'])"""
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        result = gb["valA"].corr(gb["valB"])
+        assigned_frame = frame.assign(newCol=lambda r: result)
+        sql = assigned_frame.to_sql_query(FrameToSqlConfig())
+        assert "CORR" in sql
+        assert "OVER" in sql
+        assert "PARTITION BY" in sql
+
+    def test_corr_window_pure_generation(self) -> None:
+        """Test window corr Pure generation."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        result = gb["valA"].corr(gb["valB"])
+        assigned_frame = frame.assign(newCol=lambda r: result)
+        pure = assigned_frame.to_pure_query(FrameToPureConfig(pretty=False))
+        assert "corr" in pure
+        assert "over" in pure
+
+    def test_corr_window_self_correlation_sql(self) -> None:
+        """Test window corr of column with itself."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        result = gb["valA"].corr(gb["valA"])
+        assigned_frame = frame.assign(newCol=lambda r: result)
+        sql = assigned_frame.to_sql_query(FrameToSqlConfig())
+        assert "CORR" in sql
+        assert "PARTITION BY" in sql
+
+    def test_corr_window_validate_missing_col_a(self) -> None:
+        """Test that CorrWindowFunction raises ValueError for missing column A."""
+        from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        with pytest.raises(ValueError) as v:
+            from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+                PandasApiAppliedFunctionTdsFrame
+            )
+            PandasApiAppliedFunctionTdsFrame(CorrWindowFunction(
+                base_frame=gb,
+                col_name_a="missing_col",
+                col_name_b="valA",
+                result_col_name="newCol",
+            ))
+        assert "missing_col" in v.value.args[0]
+        assert "does not exist" in v.value.args[0]
+
+    def test_corr_window_validate_missing_col_b(self) -> None:
+        """Test that CorrWindowFunction raises ValueError for missing column B."""
+        from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        with pytest.raises(ValueError) as v:
+            from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+                PandasApiAppliedFunctionTdsFrame
+            )
+            PandasApiAppliedFunctionTdsFrame(CorrWindowFunction(
+                base_frame=gb,
+                col_name_a="valA",
+                col_name_b="missing_col",
+                result_col_name="newCol",
+            ))
+        assert "missing_col" in v.value.args[0]
+        assert "does not exist" in v.value.args[0]
+
 
 class TestCorrFunctionEndToEnd:
 
     @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the CORR function")
     def test_e2e_corr_self_correlation_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """CORR of a column with itself should be 1.0 for groups with > 1 distinct row."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
             {"Quantity": lambda c: row_mapper(c, c).corr()}
@@ -185,12 +295,12 @@ class TestCorrFunctionEndToEnd:
 
     @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the CORR function")
     def test_e2e_corr_two_columns(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """CORR of Quantity with itself across all rows."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.aggregate(
             {"Quantity": lambda c: row_mapper(c, c).corr()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Quantity"]
-        # CORR of Quantity with itself across all rows = 1.0
         assert res["rows"][0]["values"][0] == 1.0
 
