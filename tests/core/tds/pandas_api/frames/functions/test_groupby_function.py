@@ -1126,3 +1126,226 @@ class TestGroupbyEndtoEnd:
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+
+class TestGroupbyAggregateFunctionAssignment:
+
+    def test_simple_groupby_assignment(self) -> None:
+        """Assign a groupby-aggregated series to a new column."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["val_sum"] = frame.groupby("grp")["val"].sum()
+
+        expected_sql = '''
+            SELECT
+                "root".grp AS "grp",
+                "root".val AS "val",
+                SUM("root".val) AS "val_sum"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[grp], [~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_sum:c|$c.val__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+    def test_multiple_groupby_aggregates(self) -> None:
+        """Multiple groupby aggregate assignments sequentially."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val1"),
+            PrimitiveTdsColumn.float_column("val2"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["val1_sum"] = frame.groupby("grp")["val1"].sum()
+        frame["val2_mean"] = frame.groupby("grp")["val2"].mean()
+
+        expected_sql = '''
+            SELECT
+                "root".grp AS "grp",
+                "root".val1 AS "val1",
+                "root".val2 AS "val2",
+                SUM("root".val1) AS "val1_sum",
+                AVG("root".val2) AS "val2_mean"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[grp], [~val1->ascending()]), ~val1__pylegend_olap_column__:{p,w,r | $r.val1}:{c | $c->sum()})
+              ->project(~[grp:c|$c.grp, val1:c|$c.val1, val2:c|$c.val2, val1_sum:c|$c.val1__pylegend_olap_column__])
+              ->extend(over(~[grp], [~val2->ascending()]), ~val2__pylegend_olap_column__:{p,w,r | $r.val2}:{c | $c->average()})
+              ->project(~[grp:c|$c.grp, val1:c|$c.val1, val2:c|$c.val2, val1_sum:c|$c.val1_sum, val2_mean:c|$c.val2__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+    def test_groupby_assignment_overwrite_existing_column(self) -> None:
+        """Overwrite an existing column with a groupby aggregate."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["val"] = frame.groupby("grp")["val"].max()
+
+        expected_sql = '''
+            SELECT
+                "root".grp AS "grp",
+                MAX("root".val) AS "val"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[grp], [~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->max()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+    def test_groupby_assignment_with_arithmetic(self) -> None:
+        """Groupby aggregate combined with arithmetic."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["val_shifted"] = frame.groupby("grp")["val"].sum() - 10
+
+        expected_sql = '''
+            SELECT
+                "root".grp AS "grp",
+                "root".val AS "val",
+                (SUM("root".val) - 10) AS "val_shifted"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[grp], [~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_shifted:c|(toOne($c.val__pylegend_olap_column__) - 10)])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+    def test_groupby_assignment_multiple_group_keys(self) -> None:
+        """Groupby with multiple grouping columns."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp1"),
+            PrimitiveTdsColumn.string_column("grp2"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["val_count"] = frame.groupby(["grp1", "grp2"])["val"].count()
+
+        expected_sql = '''
+            SELECT
+                "root".grp1 AS "grp1",
+                "root".grp2 AS "grp2",
+                "root".val AS "val",
+                COUNT("root".val) AS "val_count"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[grp1, grp2], [~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->count()})
+              ->project(~[grp1:c|$c.grp1, grp2:c|$c.grp2, val:c|$c.val, val_count:c|$c.val__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+    def test_groupby_multiple_aggregates_same_column(self) -> None:
+        """Different groupby aggregates on the same source column."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["val_min"] = frame.groupby("grp")["val"].min()
+        frame["val_max"] = frame.groupby("grp")["val"].max()
+
+        expected_sql = '''
+            SELECT
+                "root".grp AS "grp",
+                "root".val AS "val",
+                MIN("root".val) AS "val_min",
+                MAX("root".val) AS "val_max"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over(~[grp], [~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->min()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_min:c|$c.val__pylegend_olap_column__])
+              ->extend(over(~[grp], [~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->max()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_min:c|$c.val_min, val_max:c|$c.val__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+    def test_groupby_and_series_aggregates_mixed(self) -> None:
+        """Mix of plain series aggregate and groupby aggregate assignments."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["val_total"] = frame["val"].sum()
+        frame["val_grp_sum"] = frame.groupby("grp")["val"].sum()
+
+        expected_sql = '''
+            SELECT
+                "root".grp AS "grp",
+                "root".val AS "val",
+                SUM("root".val) AS "val_total",
+                SUM("root".val) AS "val_grp_sum"
+            FROM
+                test_schema.test_table AS "root"
+        '''
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(over([~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_total:c|$c.val__pylegend_olap_column__])
+              ->extend(over(~[grp], [~val->ascending()]), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_total:c|$c.val_total, val_grp_sum:c|$c.val__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+
+
