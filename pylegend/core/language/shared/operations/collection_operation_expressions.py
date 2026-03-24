@@ -45,6 +45,7 @@ from pylegend.core.sql.metamodel_extension import (
     StdDevPopulationExpression,
     VarianceSampleExpression,
     VariancePopulationExpression,
+    CorrExpression,
     JoinStringsExpression,
 )
 
@@ -73,6 +74,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDateMinExpression",
     "PyLegendDateMaxExpression",
     "PyLegendDateMinExpression",
+    "PyLegendCorrExpression",
 ]
 
 
@@ -631,3 +633,31 @@ class PyLegendDateMinExpression(PyLegendUnaryExpression, PyLegendExpressionDateR
             PyLegendDateMinExpression.__to_sql_func,
             PyLegendDateMinExpression.__to_pure_func
         )
+
+
+class PyLegendCorrExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CorrExpression(value=expression1, other=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("corr", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendCorrExpression.__to_sql_func,
+            PyLegendCorrExpression.__to_pure_func
+        )
+
+

@@ -87,7 +87,9 @@ from pylegend.core.language.shared.primitive_collection import (
     PyLegendDateCollection,
     PyLegendDateTimeCollection,
     PyLegendStrictDateCollection,
+    PyLegendNumberPairCollection,
     create_primitive_collection,
+    row_mapper,
 )
 from pylegend.core.language.shared.functions import (
     today,
@@ -176,7 +178,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateCollection",
     "PyLegendDateTimeCollection",
     "PyLegendStrictDateCollection",
+    "PyLegendNumberPairCollection",
     "create_primitive_collection",
+    "row_mapper",
 
     "today",
     "now",

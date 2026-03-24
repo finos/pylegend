@@ -56,6 +56,7 @@ from pylegend.core.language.shared.operations.collection_operation_expressions i
     PyLegendStrictDateMinExpression,
     PyLegendDateMaxExpression,
     PyLegendDateMinExpression,
+    PyLegendCorrExpression,
 )
 
 
@@ -70,7 +71,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateCollection",
     "PyLegendDateTimeCollection",
     "PyLegendStrictDateCollection",
-    "create_primitive_collection"
+    "PyLegendNumberPairCollection",
+    "create_primitive_collection",
+    "row_mapper",
 ]
 
 
@@ -350,3 +353,56 @@ def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> P
         return PyLegendDateCollection(nested)
 
     raise RuntimeError(f"Not supported type - {type(nested)}")  # pragma: no cover
+
+
+class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
+    __nested_a: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber]
+    __nested_b: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber]
+
+    def __init__(
+        self,
+        nested_a: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ],
+        nested_b: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ],
+    ) -> None:
+        resolved_a = self._resolve(nested_a)
+        resolved_b = self._resolve(nested_b)
+        super().__init__(resolved_a)
+        self.__nested_a = resolved_a
+        self.__nested_b = resolved_b
+
+    @staticmethod
+    def _resolve(
+        val: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ]
+    ) -> PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber]:
+        if isinstance(val, PyLegendPrimitiveCollection):
+            return val._PyLegendPrimitiveCollection__nested  # type: ignore
+        return val  # type: ignore
+
+    def corr(self) -> "PyLegendFloat":
+        nested_expr_a = (
+            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float))
+            else self.__nested_a.value()
+        )
+        nested_expr_b = (
+            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float))
+            else self.__nested_b.value()
+        )
+        return PyLegendFloat(PyLegendCorrExpression(nested_expr_a, nested_expr_b))  # type: ignore
+
+
+def row_mapper(
+    row_a: PyLegendUnion[
+        int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+    ],
+    row_b: PyLegendUnion[
+        int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+    ],
+) -> PyLegendNumberPairCollection:
+    return PyLegendNumberPairCollection(row_a, row_b)
+

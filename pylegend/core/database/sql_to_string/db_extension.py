@@ -118,6 +118,7 @@ from pylegend.core.sql.metamodel_extension import (
     StdDevPopulationExpression,
     VarianceSampleExpression,
     VariancePopulationExpression,
+    CorrExpression,
     JoinStringsExpression,
     FirstDayOfYearExpression,
     FirstDayOfQuarterExpression,
@@ -423,6 +424,8 @@ def expression_processor(
         return extension.process_variance_sample_expression(expression, config)
     elif isinstance(expression, VariancePopulationExpression):
         return extension.process_variance_population_expression(expression, config)
+    elif isinstance(expression, CorrExpression):
+        return extension.process_corr_expression(expression, config)
     elif isinstance(expression, JoinStringsExpression):
         return extension.process_join_strings_expression(expression, config)
     elif isinstance(expression, FirstDayOfYearExpression):
@@ -1342,6 +1345,9 @@ class SqlToStringDbExtension:
 
     def process_variance_population_expression(self, expr: VariancePopulationExpression, config: SqlToStringConfig) -> str:
         return f"VAR_POP({self.process_expression(expr.value, config)})"
+
+    def process_corr_expression(self, expr: CorrExpression, config: SqlToStringConfig) -> str:
+        return f"CORR({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
 
     def process_join_strings_expression(self, expr: JoinStringsExpression, config: SqlToStringConfig) -> str:
         return f"STRING_AGG({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
