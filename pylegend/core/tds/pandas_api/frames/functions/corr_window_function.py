@@ -73,6 +73,18 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         self.__col_name_b = col_name_b
         self.__result_col_name = result_col_name
 
+        base_columns = {c.get_name() for c in self.__base_frame.base_frame().columns()}
+        if self.__col_name_a not in base_columns:
+            raise ValueError(
+                f"Column '{self.__col_name_a}' does not exist in the current frame. "
+                f"Available columns: {sorted(base_columns)}"
+            )
+        if self.__col_name_b not in base_columns:
+            raise ValueError(
+                f"Column '{self.__col_name_b}' does not exist in the current frame. "
+                f"Available columns: {sorted(base_columns)}"
+            )
+
         partition_by: PyLegendOptional[PyLegendList[str]] = [
             col.get_name() for col in self.__base_frame.get_grouping_columns()
         ]
@@ -173,16 +185,5 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         return [PrimitiveTdsColumn.float_column(self.__result_col_name)]
 
     def validate(self) -> bool:
-        base_columns = {c.get_name() for c in self.__base_frame.base_frame().columns()}
-        if self.__col_name_a not in base_columns:
-            raise ValueError(
-                f"Column '{self.__col_name_a}' does not exist in the current frame. "
-                f"Available columns: {sorted(base_columns)}"
-            )
-        if self.__col_name_b not in base_columns:
-            raise ValueError(
-                f"Column '{self.__col_name_b}' does not exist in the current frame. "
-                f"Available columns: {sorted(base_columns)}"
-            )
         return True
 

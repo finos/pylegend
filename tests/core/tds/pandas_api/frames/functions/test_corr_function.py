@@ -132,7 +132,6 @@ class TestCorrFunctionQueryGeneration:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->select(~[valA])"
             "->aggregate(~[valA:{r | $r.valA}:{c | $c->corr($c)}])"
         )
 
@@ -197,10 +196,23 @@ class TestCorrFunctionQueryGeneration:
         gb = frame.groupby(by="id")
         result = gb["valA"].corr(gb["valB"])
         assigned_frame = frame.assign(newCol=lambda r: result)
-        sql = assigned_frame.to_sql_query(FrameToSqlConfig())
-        assert "CORR" in sql
-        assert "OVER" in sql
-        assert "PARTITION BY" in sql
+        expected_sql = '''\
+            SELECT
+                "root"."id" AS "id",
+                "root"."valA" AS "valA",
+                "root"."valB" AS "valB",
+                "root"."newCol__pylegend_olap_column__" AS "newCol"
+            FROM
+                (
+                    SELECT
+                        "root".id AS "id",
+                        "root".valA AS "valA",
+                        "root".valB AS "valB",
+                        CORR("root".valA, "root".valB) OVER (PARTITION BY "root".id) AS "newCol__pylegend_olap_column__"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
+        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_corr_window_pure_generation(self) -> None:
         """Test window corr Pure generation."""
@@ -213,9 +225,17 @@ class TestCorrFunctionQueryGeneration:
         gb = frame.groupby(by="id")
         result = gb["valA"].corr(gb["valB"])
         assigned_frame = frame.assign(newCol=lambda r: result)
-        pure = assigned_frame.to_pure_query(FrameToPureConfig(pretty=False))
-        assert "corr" in pure
-        assert "over" in pure
+        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | $r.valA->corr($r.valB)})
+              ->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'''
+        )
+        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+            '#Table(test_schema.test_table)#'
+            '->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | $r.valA->corr($r.valB)})'
+            '->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'
+        )
 
     def test_corr_window_self_correlation_sql(self) -> None:
         """Test window corr of column with itself."""
@@ -227,9 +247,21 @@ class TestCorrFunctionQueryGeneration:
         gb = frame.groupby(by="id")
         result = gb["valA"].corr(gb["valA"])
         assigned_frame = frame.assign(newCol=lambda r: result)
-        sql = assigned_frame.to_sql_query(FrameToSqlConfig())
-        assert "CORR" in sql
-        assert "PARTITION BY" in sql
+        expected_sql = '''\
+            SELECT
+                "root"."id" AS "id",
+                "root"."valA" AS "valA",
+                "root"."newCol__pylegend_olap_column__" AS "newCol"
+            FROM
+                (
+                    SELECT
+                        "root".id AS "id",
+                        "root".valA AS "valA",
+                        CORR("root".valA, "root".valA) OVER (PARTITION BY "root".id) AS "newCol__pylegend_olap_column__"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"'''
+        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_corr_window_validate_missing_col_a(self) -> None:
         """Test that CorrWindowFunction raises ValueError for missing column A."""
@@ -241,15 +273,12 @@ class TestCorrFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         with pytest.raises(ValueError) as v:
-            from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
-                PandasApiAppliedFunctionTdsFrame
-            )
-            PandasApiAppliedFunctionTdsFrame(CorrWindowFunction(
+            CorrWindowFunction(
                 base_frame=gb,
                 col_name_a="missing_col",
                 col_name_b="valA",
                 result_col_name="newCol",
-            ))
+            )
         assert "missing_col" in v.value.args[0]
         assert "does not exist" in v.value.args[0]
 
@@ -263,15 +292,12 @@ class TestCorrFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         with pytest.raises(ValueError) as v:
-            from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
-                PandasApiAppliedFunctionTdsFrame
-            )
-            PandasApiAppliedFunctionTdsFrame(CorrWindowFunction(
+            CorrWindowFunction(
                 base_frame=gb,
                 col_name_a="valA",
                 col_name_b="missing_col",
                 result_col_name="newCol",
-            ))
+            )
         assert "missing_col" in v.value.args[0]
         assert "does not exist" in v.value.args[0]
 
