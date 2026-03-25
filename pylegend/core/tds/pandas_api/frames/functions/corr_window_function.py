@@ -184,15 +184,15 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         return self.__corr_expr
 
     def get_mapper_pure_expr(self, config: FrameToPureConfig) -> str:
-        """Returns 'rowMapper($r.valA, $r.valB)' for the mapper part of the 3-part lambda."""
+        """Returns fully qualified rowMapper Pure expression for the mapper part of the 3-part lambda."""
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame.base_frame())
         expr_a_str = tds_row[self.__col_name_a].to_pure_expression(config)
         expr_b_str = tds_row[self.__col_name_b].to_pure_expression(config)
-        return f"rowMapper({expr_a_str}, {expr_b_str})"
+        return f"meta::pure::functions::math::mathUtility::rowMapper({expr_a_str}, {expr_b_str})"
 
     def get_agg_pure_expr(self) -> str:
-        """Returns '$y->corr()' for the aggregation part of the 3-part lambda."""
-        return "$y->corr()"
+        """Returns fully qualified corr aggregation Pure expression."""
+        return "$y->meta::pure::functions::math::corr()"
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []
