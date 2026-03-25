@@ -171,7 +171,7 @@ class AssignFunction(PandasApiAppliedFunction):
                         extend = (
                             f"->extend({window_expr}, "
                             f"~{target_col_name}:{generate_pure_lambda('p,w,r', mapper_expr)}:"
-                            f"{generate_pure_lambda('y', agg_expr)})"
+                            f"{generate_pure_lambda('y', agg_expr, wrap_in_braces=False)})"
                         )
                         extend_exprs.append(extend)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)

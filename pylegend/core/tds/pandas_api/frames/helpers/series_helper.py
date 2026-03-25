@@ -248,7 +248,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
             extend += (
                 f"->extend({window_expr}, "
                 f"~{temp_name}:{generate_pure_lambda('p,w,r', mapper_expr)}:"
-                f"{generate_pure_lambda('y', agg_expr)})"
+                f"{generate_pure_lambda('y', agg_expr, wrap_in_braces=False)})"
             )
         else:
             extend += f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"

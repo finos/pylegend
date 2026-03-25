@@ -155,7 +155,7 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         extend = (
             f"->extend({window_expr}, "
             f"~{target_col_name}:{generate_pure_lambda('p,w,r', mapper_pure)}:"
-            f"{generate_pure_lambda('y', agg_pure)})"
+            f"{generate_pure_lambda('y', agg_pure, wrap_in_braces=False)})"
         )
 
         project_col = (
