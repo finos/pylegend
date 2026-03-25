@@ -47,4 +47,3 @@ class PandasApiCsvNonExecutableInputTdsFrame(
 
     def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
         return PandasApiBaseTdsFrame.to_sql_query_object(self, config)
-

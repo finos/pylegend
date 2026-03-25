@@ -119,6 +119,8 @@ from pylegend.core.sql.metamodel_extension import (
     VarianceSampleExpression,
     VariancePopulationExpression,
     CorrExpression,
+    CovarPopulationExpression,
+    CovarSampleExpression,
     JoinStringsExpression,
     FirstDayOfYearExpression,
     FirstDayOfQuarterExpression,
@@ -426,6 +428,10 @@ def expression_processor(
         return extension.process_variance_population_expression(expression, config)
     elif isinstance(expression, CorrExpression):
         return extension.process_corr_expression(expression, config)
+    elif isinstance(expression, CovarPopulationExpression):
+        return extension.process_covar_population_expression(expression, config)
+    elif isinstance(expression, CovarSampleExpression):
+        return extension.process_covar_sample_expression(expression, config)
     elif isinstance(expression, JoinStringsExpression):
         return extension.process_join_strings_expression(expression, config)
     elif isinstance(expression, FirstDayOfYearExpression):
@@ -1348,6 +1354,12 @@ class SqlToStringDbExtension:
 
     def process_corr_expression(self, expr: CorrExpression, config: SqlToStringConfig) -> str:
         return f"CORR({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_covar_population_expression(self, expr: CovarPopulationExpression, config: SqlToStringConfig) -> str:
+        return f"COVAR_POP({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_covar_sample_expression(self, expr: CovarSampleExpression, config: SqlToStringConfig) -> str:
+        return f"COVAR_SAMP({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
 
     def process_join_strings_expression(self, expr: JoinStringsExpression, config: SqlToStringConfig) -> str:
         return f"STRING_AGG({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"

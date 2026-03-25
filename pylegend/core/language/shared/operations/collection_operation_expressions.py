@@ -46,6 +46,8 @@ from pylegend.core.sql.metamodel_extension import (
     VarianceSampleExpression,
     VariancePopulationExpression,
     CorrExpression,
+    CovarPopulationExpression,
+    CovarSampleExpression,
     JoinStringsExpression,
 )
 
@@ -75,6 +77,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateMaxExpression",
     "PyLegendDateMinExpression",
     "PyLegendCorrExpression",
+    "PyLegendCovarPopulationExpression",
+    "PyLegendCovarSampleExpression",
 ]
 
 
@@ -661,3 +665,53 @@ class PyLegendCorrExpression(PyLegendBinaryExpression, PyLegendExpressionFloatRe
         )
 
 
+class PyLegendCovarPopulationExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CovarPopulationExpression(value=expression1, other=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("covarPopulation", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendCovarPopulationExpression.__to_sql_func,
+            PyLegendCovarPopulationExpression.__to_pure_func
+        )
+
+
+class PyLegendCovarSampleExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CovarSampleExpression(value=expression1, other=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("covarSample", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendCovarSampleExpression.__to_sql_func,
+            PyLegendCovarSampleExpression.__to_pure_func
+        )

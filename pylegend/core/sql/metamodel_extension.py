@@ -62,6 +62,8 @@ __all__: PyLegendSequence[str] = [
     "VariancePopulationExpression",
     "JoinStringsExpression",
     "CorrExpression",
+    "CovarPopulationExpression",
+    "CovarSampleExpression",
     "FirstDayOfYearExpression",
     "FirstDayOfQuarterExpression",
     "FirstDayOfMonthExpression",
@@ -531,6 +533,34 @@ class CorrExpression(Expression):
         other: "Expression",
     ) -> None:
         super().__init__(_type="corrExpression")
+        self.value = value
+        self.other = other
+
+
+class CovarPopulationExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression",
+    ) -> None:
+        super().__init__(_type="covarPopulationExpression")
+        self.value = value
+        self.other = other
+
+
+class CovarSampleExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression",
+    ) -> None:
+        super().__init__(_type="covarSampleExpression")
         self.value = value
         self.other = other
 

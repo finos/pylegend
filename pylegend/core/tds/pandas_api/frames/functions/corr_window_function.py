@@ -23,7 +23,11 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindow,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.shared.operations.collection_operation_expressions import PyLegendCorrExpression
+from pylegend.core.language.shared.operations.collection_operation_expressions import (
+    PyLegendCorrExpression,
+    PyLegendCovarPopulationExpression,
+    PyLegendCovarSampleExpression,
+)
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
@@ -49,11 +53,28 @@ if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
 
+_FUNC_TYPE_CONFIG = {
+    "corr": {
+        "expression_class": PyLegendCorrExpression,
+        "pure_func": "meta::pure::functions::math::corr",
+    },
+    "covar_population": {
+        "expression_class": PyLegendCovarPopulationExpression,
+        "pure_func": "meta::pure::functions::math::covarPopulation",
+    },
+    "covar_sample": {
+        "expression_class": PyLegendCovarSampleExpression,
+        "pure_func": "meta::pure::functions::math::covarSample",
+    },
+}
+
+
 class CorrWindowFunction(PandasApiAppliedFunction):
     __base_frame: "PandasApiGroupbyTdsFrame"
     __col_name_a: str
     __col_name_b: str
     __result_col_name: str
+    __func_type: str
     __window: PandasApiWindow
     __corr_expr: PyLegendPrimitive
 
@@ -67,11 +88,19 @@ class CorrWindowFunction(PandasApiAppliedFunction):
             col_name_a: str,
             col_name_b: str,
             result_col_name: str,
+            func_type: str = "corr",
     ) -> None:
         self.__base_frame = base_frame
         self.__col_name_a = col_name_a
         self.__col_name_b = col_name_b
         self.__result_col_name = result_col_name
+        self.__func_type = func_type
+
+        if func_type not in _FUNC_TYPE_CONFIG:
+            raise ValueError(
+                f"Unsupported func_type '{func_type}'. "
+                f"Supported types: {sorted(_FUNC_TYPE_CONFIG.keys())}"
+            )
 
         base_columns = {c.get_name() for c in self.__base_frame.base_frame().columns()}
         if self.__col_name_a not in base_columns:
@@ -97,7 +126,8 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         expr_a = tds_row[self.__col_name_a]
         expr_b = tds_row[self.__col_name_b]
         from pylegend.core.language import PyLegendFloat
-        return PyLegendFloat(PyLegendCorrExpression(expr_a.value(), expr_b.value()))  # type: ignore
+        expr_class = _FUNC_TYPE_CONFIG[self.__func_type]["expression_class"]
+        return PyLegendFloat(expr_class(expr_a.value(), expr_b.value()))  # type: ignore
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__pylegend_olap_column__"
@@ -191,8 +221,9 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         return f"meta::pure::functions::math::mathUtility::rowMapper({expr_a_str}, {expr_b_str})"
 
     def get_agg_pure_expr(self) -> str:
-        """Returns fully qualified corr aggregation Pure expression with cast to Float."""
-        return "$y->meta::pure::functions::math::corr()->cast(@Float)"
+        """Returns fully qualified aggregation Pure expression with cast to Float."""
+        pure_func = _FUNC_TYPE_CONFIG[self.__func_type]["pure_func"]
+        return f"$y->{pure_func}()->cast(@Float)"
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []
@@ -202,4 +233,3 @@ class CorrWindowFunction(PandasApiAppliedFunction):
 
     def validate(self) -> bool:
         return True
-

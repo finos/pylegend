@@ -453,22 +453,23 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
         super().__init__(base_groupby_frame, applied_function_frame, expr)
         PyLegendNumber.__init__(self, self)
 
-    def corr(
+    def _two_col_window_func(
             self,
             other: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
-                                 "DecimalGroupbySeries"]
+                                 "DecimalGroupbySeries"],
+            func_type: str,
     ) -> "FloatGroupbySeries":
         from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
 
         selected_a = self._base_groupby_frame.get_selected_columns()
         assert selected_a is not None and len(selected_a) == 1, (
-            "corr() requires exactly one column selected on self"
+            f"{func_type}() requires exactly one column selected on self"
         )
         col_name_a = selected_a[0].get_name()
 
         selected_b = other._base_groupby_frame.get_selected_columns()
         assert selected_b is not None and len(selected_b) == 1, (
-            "corr() requires exactly one column selected on other"
+            f"{func_type}() requires exactly one column selected on other"
         )
         col_name_b = selected_b[0].get_name()
 
@@ -477,8 +478,31 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
             col_name_a=col_name_a,
             col_name_b=col_name_b,
             result_col_name=col_name_a,
+            func_type=func_type,
         ))
         return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def corr(
+            self,
+            other: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                                 "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        return self._two_col_window_func(other, "corr")
+
+    def cov(
+            self,
+            other: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                                 "DecimalGroupbySeries"],
+            ddof: int = 1,
+    ) -> "FloatGroupbySeries":
+        if ddof == 1:
+            return self._two_col_window_func(other, "covar_sample")
+        elif ddof == 0:
+            return self._two_col_window_func(other, "covar_population")
+        else:
+            raise NotImplementedError(
+                f"Only ddof=0 (population) and ddof=1 (sample) are supported in cov function, but got: ddof={ddof}"
+            )
 
 
 @add_primitive_methods

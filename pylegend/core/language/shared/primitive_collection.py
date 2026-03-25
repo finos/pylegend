@@ -57,6 +57,8 @@ from pylegend.core.language.shared.operations.collection_operation_expressions i
     PyLegendDateMaxExpression,
     PyLegendDateMinExpression,
     PyLegendCorrExpression,
+    PyLegendCovarPopulationExpression,
+    PyLegendCovarSampleExpression,
 )
 
 
@@ -382,7 +384,7 @@ class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
     ) -> PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber]:
         if isinstance(val, PyLegendPrimitiveCollection):
             return val._PyLegendPrimitiveCollection__nested  # type: ignore
-        return val  # type: ignore
+        return val
 
     def corr(self) -> "PyLegendFloat":
         nested_expr_a = (
@@ -395,6 +397,25 @@ class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
         )
         return PyLegendFloat(PyLegendCorrExpression(nested_expr_a, nested_expr_b))  # type: ignore
 
+    def _get_nested_exprs(self):  # type: ignore
+        nested_expr_a = (
+            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float))
+            else self.__nested_a.value()
+        )
+        nested_expr_b = (
+            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float))
+            else self.__nested_b.value()
+        )
+        return nested_expr_a, nested_expr_b
+
+    def covar_population(self) -> "PyLegendFloat":
+        nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
+        return PyLegendFloat(PyLegendCovarPopulationExpression(nested_expr_a, nested_expr_b))
+
+    def covar_sample(self) -> "PyLegendFloat":
+        nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
+        return PyLegendFloat(PyLegendCovarSampleExpression(nested_expr_a, nested_expr_b))
+
 
 def row_mapper(
     row_a: PyLegendUnion[
@@ -405,4 +426,3 @@ def row_mapper(
     ],
 ) -> PyLegendNumberPairCollection:
     return PyLegendNumberPairCollection(row_a, row_b)
-
