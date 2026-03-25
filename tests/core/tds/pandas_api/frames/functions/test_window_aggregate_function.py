@@ -58,7 +58,9 @@ class TestRollingErrors:
 
         with pytest.raises(NotImplementedError) as v:
             frame.rolling(window=3, min_periods=2)
-        assert "min_periods" in v.value.args[0]
+        assert v.value.args[0] == (
+            "The rolling function is only supported for min_periods=1 or None, but got: min_periods=2"
+        )
 
     def test_invalid_center(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1")]
@@ -66,7 +68,7 @@ class TestRollingErrors:
 
         with pytest.raises(NotImplementedError) as v:
             frame.rolling(window=3, center=True)
-        assert "center" in v.value.args[0]
+        assert v.value.args[0] == "The rolling function does not support center=True, but got: center=True"
 
     def test_invalid_win_type(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1")]
@@ -74,7 +76,9 @@ class TestRollingErrors:
 
         with pytest.raises(NotImplementedError) as v:
             frame.rolling(window=3, win_type="triang")
-        assert "win_type" in v.value.args[0]
+        assert v.value.args[0] == (
+            "The rolling function does not support the 'win_type' parameter, but got: win_type='triang'"
+        )
 
     def test_invalid_on(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1")]
@@ -82,7 +86,7 @@ class TestRollingErrors:
 
         with pytest.raises(NotImplementedError) as v:
             frame.rolling(window=3, on="col1")
-        assert "on" in v.value.args[0]
+        assert v.value.args[0] == "The rolling function does not support the 'on' parameter, but got: on='col1'"
 
     def test_invalid_closed(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1")]
@@ -90,7 +94,9 @@ class TestRollingErrors:
 
         with pytest.raises(NotImplementedError) as v:
             frame.rolling(window=3, closed="left")
-        assert "closed" in v.value.args[0]
+        assert v.value.args[0] == (
+            "The rolling function does not support the 'closed' parameter, but got: closed='left'"
+        )
 
     def test_invalid_step(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1")]
@@ -98,7 +104,7 @@ class TestRollingErrors:
 
         with pytest.raises(NotImplementedError) as v:
             frame.rolling(window=3, step=2)
-        assert "step" in v.value.args[0]
+        assert v.value.args[0] == "The rolling function does not support the 'step' parameter, but got: step=2"
 
     def test_invalid_method(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1")]
@@ -106,7 +112,9 @@ class TestRollingErrors:
 
         with pytest.raises(NotImplementedError) as v:
             frame.rolling(window=3, method="single")
-        assert "method" in v.value.args[0]
+        assert v.value.args[0] == (
+            "The rolling function does not support the 'method' parameter, but got: method='single'"
+        )
 
 
 class TestExpandingOnBaseFrame:
@@ -138,12 +146,12 @@ class TestExpandingOnBaseFrame:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over([ascending(~col1)], rows(unbounded(), 0)), ~[
-                col1__internal_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
-                col2__internal_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
+                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
+                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
               ])
               ->project(~[
-                col1:p|$p.col1__internal_olap_column__,
-                col2:p|$p.col2__internal_olap_column__
+                col1:p|$p.col1__pylegend_olap_column__,
+                col2:p|$p.col2__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()
@@ -181,14 +189,14 @@ class TestExpandingOnBaseFrame:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over([ascending(~col1)], rows(unbounded(), 0)), ~[
-                'sum(col1)__internal_olap_column__':{p,w,r | $r.col1}:{c | $c->sum()},
-                'lambda_1(col1)__internal_olap_column__':{p,w,r | $r.col1}:{c | $c->count()},
-                col2__internal_olap_column__:{p,w,r | $r.col2}:{c | $c->min()}
+                'sum(col1)__pylegend_olap_column__':{p,w,r | $r.col1}:{c | $c->sum()},
+                'lambda_1(col1)__pylegend_olap_column__':{p,w,r | $r.col1}:{c | $c->count()},
+                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->min()}
               ])
               ->project(~[
-                'sum(col1)':p|$p.'sum(col1)__internal_olap_column__',
-                'lambda_1(col1)':p|$p.'lambda_1(col1)__internal_olap_column__',
-                col2:p|$p.col2__internal_olap_column__
+                'sum(col1)':p|$p.'sum(col1)__pylegend_olap_column__',
+                'lambda_1(col1)':p|$p.'lambda_1(col1)__pylegend_olap_column__',
+                col2:p|$p.col2__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()
@@ -222,12 +230,12 @@ class TestExpandingOnBaseFrame:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over([ascending(~col2)], rows(unbounded(), 0)), ~[
-                col1__internal_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
-                col2__internal_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
+                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
+                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
               ])
               ->project(~[
-                col1:p|$p.col1__internal_olap_column__,
-                col2:p|$p.col2__internal_olap_column__
+                col1:p|$p.col1__pylegend_olap_column__,
+                col2:p|$p.col2__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()
@@ -263,12 +271,12 @@ class TestRollingOnBaseFrame:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over([ascending(~col1)], rows(2, 0)), ~[
-                col1__internal_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
-                col2__internal_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
+                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
+                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
               ])
               ->project(~[
-                col1:p|$p.col1__internal_olap_column__,
-                col2:p|$p.col2__internal_olap_column__
+                col1:p|$p.col1__pylegend_olap_column__,
+                col2:p|$p.col2__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()
@@ -306,12 +314,12 @@ class TestExpandingOnGroupbyFrame:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[grp], [ascending(~grp)], rows(unbounded(), 0)), ~[
-                val__internal_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
-                rnd__internal_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
+                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
               ])
               ->project(~[
-                val:p|$p.val__internal_olap_column__,
-                rnd:p|$p.rnd__internal_olap_column__
+                val:p|$p.val__pylegend_olap_column__,
+                rnd:p|$p.rnd__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()
@@ -351,14 +359,14 @@ class TestExpandingOnGroupbyFrame:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[grp], [ascending(~grp)], rows(unbounded(), 0)), ~[
-                'sum(val)__internal_olap_column__':{p,w,r | $r.val}:{c | $c->sum()},
-                'lambda_1(val)__internal_olap_column__':{p,w,r | $r.val}:{c | $c->count()},
-                rnd__internal_olap_column__:{p,w,r | $r.rnd}:{c | $c->min()}
+                'sum(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->sum()},
+                'lambda_1(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->count()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->min()}
               ])
               ->project(~[
-                'sum(val)':p|$p.'sum(val)__internal_olap_column__',
-                'lambda_1(val)':p|$p.'lambda_1(val)__internal_olap_column__',
-                rnd:p|$p.rnd__internal_olap_column__
+                'sum(val)':p|$p.'sum(val)__pylegend_olap_column__',
+                'lambda_1(val)':p|$p.'lambda_1(val)__pylegend_olap_column__',
+                rnd:p|$p.rnd__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()
@@ -396,12 +404,12 @@ class TestRollingOnGroupbyFrame:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(over(~[grp], [ascending(~val)], rows(2, 0)), ~[
-                val__internal_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
-                rnd__internal_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
+                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
               ])
               ->project(~[
-                val:p|$p.val__internal_olap_column__,
-                rnd:p|$p.rnd__internal_olap_column__
+                val:p|$p.val__pylegend_olap_column__,
+                rnd:p|$p.rnd__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()

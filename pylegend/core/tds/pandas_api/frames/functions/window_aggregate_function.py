@@ -140,10 +140,6 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
             f"{generate_pure_lambda('c', agg_expr)}"
         )
 
-    # ──────────────────────────────────────────────────────────────────────
-    # SQL generation
-    # ──────────────────────────────────────────────────────────────────────
-
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
@@ -192,12 +188,8 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
 
         return WindowExpression(nested=agg_sql_expr, window=window_node)
 
-    # ──────────────────────────────────────────────────────────────────────
-    # Pure generation
-    # ──────────────────────────────────────────────────────────────────────
-
     def to_pure(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix = "__internal_olap_column__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
 
         window_expression = self._resolved_window().to_pure_expression(config)
 
@@ -230,7 +222,7 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        temp_column_name_suffix = "__internal_olap_column__"
+        temp_column_name_suffix = "__pylegend_olap_column__"
         aggregates_list = self._build_aggregates()
 
         assert len(aggregates_list) == 1, (
@@ -239,10 +231,6 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
 
         agg = aggregates_list[0]
         return f"$c.{escape_column_name(agg[0] + temp_column_name_suffix)}"
-
-    # ──────────────────────────────────────────────────────────────────────
-    # Frame / column metadata
-    # ──────────────────────────────────────────────────────────────────────
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame.base_frame()
