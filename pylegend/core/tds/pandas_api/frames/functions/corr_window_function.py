@@ -191,8 +191,8 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         return f"meta::pure::functions::math::mathUtility::rowMapper({expr_a_str}, {expr_b_str})"
 
     def get_agg_pure_expr(self) -> str:
-        """Returns fully qualified corr aggregation Pure expression."""
-        return "$y->meta::pure::functions::math::corr()"
+        """Returns fully qualified corr aggregation Pure expression with cast to Float."""
+        return "$y->meta::pure::functions::math::corr()->cast(@Float)"
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []
