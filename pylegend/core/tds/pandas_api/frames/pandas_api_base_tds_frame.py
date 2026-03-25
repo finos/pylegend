@@ -519,6 +519,90 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             dropna=dropna
         )
 
+    def expanding(
+            self,
+            min_periods: int = 1,
+            axis: PyLegendUnion[int, str] = 0,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+    ) -> "PandasApiWindowTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        if min_periods != 1:
+            raise NotImplementedError(
+                f"The expanding function is only supported for min_periods=1, but got: min_periods={min_periods!r}"
+            )
+        if axis not in [0, "index"]:
+            raise NotImplementedError(
+                f'The expanding function is only supported for axis=0 or axis="index", but got: axis={axis!r}'
+            )
+        if method is not None:
+            raise NotImplementedError(
+                f"The expanding function does not support the 'method' parameter, but got: method={method!r}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            preceding_rows=None,
+            following_rows=0,
+        )
+
+    def rolling(
+            self,
+            window: int,
+            min_periods: PyLegendOptional[int] = None,
+            center: bool = False,
+            win_type: PyLegendOptional[str] = None,
+            on: PyLegendOptional[str] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            closed: PyLegendOptional[str] = None,
+            step: PyLegendOptional[int] = None,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+    ) -> "PandasApiWindowTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        if min_periods is not None and min_periods != 1:
+            raise NotImplementedError(
+                f"The rolling function is only supported for min_periods=1 or None, but got: min_periods={min_periods!r}"
+            )
+        if center is not False:
+            raise NotImplementedError(
+                f"The rolling function does not support center=True, but got: center={center!r}"
+            )
+        if win_type is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'win_type' parameter, but got: win_type={win_type!r}"
+            )
+        if on is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'on' parameter, but got: on={on!r}"
+            )
+        if axis not in [0, "index"]:
+            raise NotImplementedError(
+                f'The rolling function is only supported for axis=0 or axis="index", but got: axis={axis!r}'
+            )
+        if closed is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'closed' parameter, but got: closed={closed!r}"
+            )
+        if step is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'step' parameter, but got: step={step!r}"
+            )
+        if method is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'method' parameter, but got: method={method!r}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            preceding_rows=window - 1,
+            following_rows=0,
+        )
+
     def merge(
             self,
             other: "PandasApiTdsFrame",
