@@ -216,6 +216,9 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
     has_window_func = False
     window_expr = ""
     function_expr = ""
+    mapper_expr = ""
+    agg_expr = ""
+    is_corr_window = False
     sub_expressions = series.get_leaf_expressions()
     for expr in sub_expressions:
         if isinstance(expr, (Series, GroupbySeries)):
@@ -229,8 +232,10 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
             elif isinstance(applied_func, CorrWindowFunction):
                 assert has_window_func is False
                 has_window_func = True
+                is_corr_window = True
                 window_expr = applied_func.get_window().to_pure_expression(config)
-                function_expr = applied_func.get_corr_expr().to_pure_expression(config)
+                mapper_expr = applied_func.get_mapper_pure_expr(config)
+                agg_expr = applied_func.get_agg_pure_expr()
 
     extend = ""
     if has_window_func:
@@ -239,7 +244,14 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
         applied_func = get_applied_func(core_series)
         pure_expr = full_expr.to_pure_expression(config)
         temp_name = escape_column_name(col_name + temp_column_name_suffix)
-        extend += f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
+        if is_corr_window:
+            extend += (
+                f"->extend({window_expr}, "
+                f"~{temp_name}:{generate_pure_lambda('p,w,r', mapper_expr)}:"
+                f"{generate_pure_lambda('y', agg_expr)})"
+            )
+        else:
+            extend += f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
         project = f"->project(~[{escape_column_name(col_name)}:c|{pure_expr}])"
     else:
         project = f"->project(~[{escape_column_name(col_name)}:c|{series.to_pure_expression(config)}])"

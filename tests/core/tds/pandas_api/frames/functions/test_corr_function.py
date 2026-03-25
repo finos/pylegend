@@ -228,12 +228,12 @@ class TestCorrFunctionQueryGeneration:
         assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | $r.valA->corr($r.valB)})
+              ->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | rowMapper($r.valA, $r.valB)}:{y | $y->corr()})
               ->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'''
         )
         assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | $r.valA->corr($r.valB)})'
+            '->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | rowMapper($r.valA, $r.valB)}:{y | $y->corr()})'
             '->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'
         )
 

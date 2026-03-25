@@ -149,9 +149,14 @@ class CorrWindowFunction(PandasApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         temp_column_name_suffix = "__pylegend_olap_column__"
         window_expr = self.__window.to_pure_expression(config)
-        corr_pure = self.__corr_expr.to_pure_expression(config)
+        mapper_pure = self.get_mapper_pure_expr(config)
+        agg_pure = self.get_agg_pure_expr()
         target_col_name = self.__result_col_name + temp_column_name_suffix
-        extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', corr_pure)})"
+        extend = (
+            f"->extend({window_expr}, "
+            f"~{target_col_name}:{generate_pure_lambda('p,w,r', mapper_pure)}:"
+            f"{generate_pure_lambda('y', agg_pure)})"
+        )
 
         project_col = (
             f"{escape_column_name(self.__result_col_name)}:"
@@ -177,6 +182,17 @@ class CorrWindowFunction(PandasApiAppliedFunction):
 
     def get_corr_expr(self) -> PyLegendPrimitive:
         return self.__corr_expr
+
+    def get_mapper_pure_expr(self, config: FrameToPureConfig) -> str:
+        """Returns 'rowMapper($r.valA, $r.valB)' for the mapper part of the 3-part lambda."""
+        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame.base_frame())
+        expr_a_str = tds_row[self.__col_name_a].to_pure_expression(config)
+        expr_b_str = tds_row[self.__col_name_b].to_pure_expression(config)
+        return f"rowMapper({expr_a_str}, {expr_b_str})"
+
+    def get_agg_pure_expr(self) -> str:
+        """Returns '$y->corr()' for the aggregation part of the 3-part lambda."""
+        return "$y->corr()"
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []
