@@ -1126,3 +1126,4 @@ class TestGroupbyEndtoEnd:
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
+

@@ -22,6 +22,7 @@ from pylegend._typing import (
 )
 import pytest
 
+from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -782,3 +783,5 @@ class TestAggregateFunctionOnSeries:
         expected = dedent(expected).strip()
         assert frame1.to_pure_query(FrameToPureConfig()) == expected
         assert frame2.to_pure_query(FrameToPureConfig()) == expected
+
+

@@ -220,27 +220,28 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         base_query = self.get_base_frame().base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
 
-        temp_col_name = (
-            db_extension.quote_identifier(col_name + temp_column_name_suffix) if expr_contains_window_func else
-            db_extension.quote_identifier(col_name)
-        )
-
-        new_select_item = SingleColumn(
-            temp_col_name,
-            self.to_sql_expression({'c': base_query}, config)
-        )
-        base_query.select.selectItems = [new_select_item]
+        full_sql_expr = self.to_sql_expression({'c': base_query}, config)
 
         if expr_contains_window_func:
+            from pylegend.core.tds.pandas_api.frames.helpers.series_helper import split_window_from_arithmetic
+            window_expr, make_outer = split_window_from_arithmetic(full_sql_expr)
+
+            temp_col_name = db_extension.quote_identifier(col_name + temp_column_name_suffix)
+            base_query.select.selectItems = [SingleColumn(temp_col_name, window_expr)]
+
             new_query = create_sub_query(base_query, config, "root")
+            col_ref = QualifiedNameReference(QualifiedName([
+                db_extension.quote_identifier("root"), temp_col_name
+            ]))
+            outer_expr = make_outer(col_ref) if make_outer is not None else col_ref
             new_query.select.selectItems = [
-                SingleColumn(
-                    db_extension.quote_identifier(col_name),
-                    QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), temp_col_name]))
-                )
+                SingleColumn(db_extension.quote_identifier(col_name), outer_expr)
             ]
             return new_query
         else:  # pragma: no cover
+            base_query.select.selectItems = [
+                SingleColumn(db_extension.quote_identifier(col_name), full_sql_expr)
+            ]
             return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -416,6 +417,39 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
         else:
             return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def expanding(
+            self,
+            min_periods: int = 1,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+    ) -> "WindowSeries":
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        window_frame = self._base_groupby_frame.expanding(
+            min_periods=min_periods, method=method, order_by=order_by
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
+    def rolling(
+            self,
+            window: int,
+            min_periods: PyLegendOptional[int] = None,
+            center: bool = False,
+            win_type: PyLegendOptional[str] = None,
+            on: PyLegendOptional[str] = None,
+            closed: PyLegendOptional[str] = None,
+            step: PyLegendOptional[int] = None,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+    ) -> "WindowSeries":
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        window_frame = self._base_groupby_frame.rolling(
+            window=window, min_periods=min_periods, center=center, win_type=win_type,
+            on=on, closed=closed, step=step, method=method, order_by=order_by
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 
 
 @add_primitive_methods

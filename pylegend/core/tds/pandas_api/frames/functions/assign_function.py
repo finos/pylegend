@@ -36,15 +36,21 @@ from pylegend.core.language import (
 from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.language.shared.helpers import generate_pure_lambda
+from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
+    Expression,
     QuerySpecification,
     SingleColumn,
 )
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import has_window_function
+from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
+    has_window_function,
+    has_window_aggregate_function,
+    split_window_from_arithmetic,
+)
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
@@ -84,6 +90,29 @@ class AssignFunction(PandasApiAppliedFunction):
         temp_column_name_suffix = "__pylegend_olap_column__"
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.__base_frame.to_sql_query_object(config)
+
+        # Check if any assigned column uses a window aggregate function.
+        # If so, add the zero column to base_query so that PARTITION BY can reference it.
+        from pylegend.core.sql.metamodel import IntegerLiteral
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+        tds_row_check = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
+        needs_zero_column = False
+        for _, func in self.__col_definitions.items():
+            res = func(tds_row_check)
+            if isinstance(res, (Series, GroupbySeries)) and has_window_aggregate_function(res):
+                needs_zero_column = True
+                break
+        if needs_zero_column:
+            base_query.select.selectItems.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                    expression=IntegerLiteral(0),
+                )
+            )
+            # Wrap in a subquery so the zero column becomes a proper column reference
+            # (otherwise PARTITION BY would use the literal 0 instead of the column)
+            base_query = create_sub_query(base_query, config, "root")
+
         should_create_sub_query = (len(base_query.groupBy) > 0) or base_query.select.distinct
 
         new_query = (
@@ -91,8 +120,18 @@ class AssignFunction(PandasApiAppliedFunction):
             copy_query(base_query)
         )
 
+        if needs_zero_column:
+            zero_col_alias = db_extension.quote_identifier(ZERO_COLUMN_NAME)
+            new_query.select.selectItems = [
+                si for si in new_query.select.selectItems
+                if not (isinstance(si, SingleColumn) and si.alias == zero_col_alias)
+            ]
+
         base_cols = {c.get_name() for c in self.__base_frame.columns()}
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
+        # For window-aggregate series with arithmetic, store the make_outer factory
+        # so we can apply arithmetic in the outer query instead of the middle subquery.
+        outer_factories: PyLegendDict[str, PyLegendCallable] = {}
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
@@ -100,6 +139,15 @@ class AssignFunction(PandasApiAppliedFunction):
                 {"c": base_query},
                 config
             )
+
+            # For window-aggregate-containing series with arithmetic on top,
+            # put only the WindowExpression in the middle subquery.
+            # (This does NOT apply to RankFunction — only WindowAggregateFunction.)
+            if isinstance(res, (Series, GroupbySeries)) and has_window_aggregate_function(res):
+                window_only, make_outer = split_window_from_arithmetic(new_col_expr)
+                if make_outer is not None:
+                    outer_factories[col] = make_outer
+                    new_col_expr = window_only
 
             alias = db_extension.quote_identifier(col)
             if col in base_cols:
@@ -124,6 +172,12 @@ class AssignFunction(PandasApiAppliedFunction):
 
         if expr_contains_window_func:
             final_query = create_sub_query(new_query, config, "root")
+            # Strip the zero column from the final output
+            zero_col_alias = db_extension.quote_identifier(ZERO_COLUMN_NAME)
+            final_query.select.selectItems = [
+                si for si in final_query.select.selectItems
+                if not (isinstance(si, SingleColumn) and si.alias == zero_col_alias)
+            ]
             for col, func in self.__col_definitions.items():
                 res = func(tds_row)
                 if isinstance(res, (Series, GroupbySeries)):
@@ -132,7 +186,15 @@ class AssignFunction(PandasApiAppliedFunction):
                         new_alias = db_extension.quote_identifier(col)
                         for i, si in enumerate(final_query.select.selectItems):
                             if isinstance(si, SingleColumn) and si.alias == alias:
-                                final_query.select.selectItems[i] = SingleColumn(alias=new_alias, expression=si.expression)
+                                if col in outer_factories:
+                                    # Arithmetic was separated: apply it in the outer query
+                                    final_query.select.selectItems[i] = SingleColumn(
+                                        alias=new_alias, expression=outer_factories[col](si.expression)
+                                    )
+                                else:
+                                    final_query.select.selectItems[i] = SingleColumn(
+                                        alias=new_alias, expression=si.expression
+                                    )
             return final_query
 
         return new_query
@@ -174,6 +236,18 @@ class AssignFunction(PandasApiAppliedFunction):
                             f"{generate_pure_lambda('y', agg_expr, wrap_in_braces=False)})"
                         )
                         extend_exprs.append(extend)
+                    elif isinstance(applied_func, WindowAggregateFunction):
+                        agg = applied_func._build_aggregates()[0]
+                        source_col = applied_func._get_source_column_name(agg)
+                        window_agg_expr = applied_func._resolved_window(fallback_column=source_col).to_pure_expression(config)
+                        render = applied_func._render_single_column_expression(agg, temp_column_name_suffix, config)
+                        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+                        extend_exprs.append(
+                            f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})"
+                        )
+                        extend_exprs.append(
+                            f"->extend({window_agg_expr}, ~{render})"
+                        )
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
             assigned_exprs[col] = res_expr.to_pure_expression(config)
 
