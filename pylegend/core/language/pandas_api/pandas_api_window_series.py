@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 
 from pylegend._typing import (
     PyLegendUnion,
@@ -99,8 +98,8 @@ class WindowSeries:
                 new_gb_frame = new_gb_frame_or_series
             else:
                 # __getitem__ with a string returns a GroupbySeries; extract its frame
-                new_gb_frame = new_gb_frame_or_series._base_groupby_frame  # type: ignore[union-attr]
-            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore[return-value]
+                new_gb_frame = new_gb_frame_or_series._base_groupby_frame
+            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore
         else:
             series_cls = _resolve_series_class(col_type)
             new_series = series_cls(base_frame_unwrapped, column)

@@ -398,9 +398,9 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
 
-    def transform(
+    def transform(  # type: ignore
             self,
-            func: PyLegendUnion[str, PyLegendCallable[..., object]],  # type: ignore[explicit-any]
+            func: PyLegendUnion[str, PyLegendCallable[..., object]],
     ) -> "GroupbySeries":
         """Apply a partition-only window aggregate (no frame bounds, no order by).
 
@@ -424,7 +424,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             partition_only=True,
         )
         window_series = WindowSeries(window_frame=window_frame, column_name=col_name)
-        return window_series.aggregate(func, 0)  # type: ignore[return-value]
+        return window_series.aggregate(func, 0)  # type: ignore
 
     def rank(
             self,
