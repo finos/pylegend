@@ -69,7 +69,7 @@ class TestStdDevFunctionQueryGeneration:
         frame = frame.groupby(by="id").std()
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->stdDevSample()}])'
+            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->stdDevSample()->cast(@Float)}])'
             '->sort([~id->ascending()])'
         )
 
@@ -103,7 +103,7 @@ class TestStdDevFunctionQueryGeneration:
         frame = frame.groupby(by="id").std(ddof=0)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->stdDevPopulation()}])'
+            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->stdDevPopulation()->cast(@Float)}])'
             '->sort([~id->ascending()])'
         )
 
@@ -143,7 +143,8 @@ class TestStdDevFunctionQueryGeneration:
         assigned = frame.assign(newCol=lambda _r: res)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->extend(over(~[id], []), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->stdDevSample()})'
+            '->extend(over(~[id], []), ~val__pylegend_olap_column__:'
+            '{p,w,r | $r.val}:{c | $c->stdDevSample()->cast(@Float)})'
             '->project(~[id:c|$c.id, val:c|$c.val, newCol:c|$c.val__pylegend_olap_column__])'
         )
 
@@ -183,7 +184,8 @@ class TestStdDevFunctionQueryGeneration:
         assigned = frame.assign(newCol=lambda _r: res)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->extend(over(~[id], []), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->stdDevPopulation()})'
+            '->extend(over(~[id], []), ~val__pylegend_olap_column__:'
+            '{p,w,r | $r.val}:{c | $c->stdDevPopulation()->cast(@Float)})'
             '->project(~[id:c|$c.id, val:c|$c.val, newCol:c|$c.val__pylegend_olap_column__])'
         )
 
@@ -250,7 +252,7 @@ class TestVarianceFunctionQueryGeneration:
         frame = frame.groupby(by="id").var()
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->varianceSample()}])'
+            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->varianceSample()->cast(@Float)}])'
             '->sort([~id->ascending()])'
         )
 
@@ -284,7 +286,7 @@ class TestVarianceFunctionQueryGeneration:
         frame = frame.groupby(by="id").var(ddof=0)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->variancePopulation()}])'
+            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->variancePopulation()->cast(@Float)}])'
             '->sort([~id->ascending()])'
         )
 
@@ -324,7 +326,8 @@ class TestVarianceFunctionQueryGeneration:
         assigned = frame.assign(newCol=lambda _r: res)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->extend(over(~[id], []), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->varianceSample()})'
+            '->extend(over(~[id], []), ~val__pylegend_olap_column__:'
+            '{p,w,r | $r.val}:{c | $c->varianceSample()->cast(@Float)})'
             '->project(~[id:c|$c.id, val:c|$c.val, newCol:c|$c.val__pylegend_olap_column__])'
         )
 
@@ -364,7 +367,8 @@ class TestVarianceFunctionQueryGeneration:
         assigned = frame.assign(newCol=lambda _r: res)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->extend(over(~[id], []), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->variancePopulation()})'
+            '->extend(over(~[id], []), ~val__pylegend_olap_column__:'
+            '{p,w,r | $r.val}:{c | $c->variancePopulation()->cast(@Float)})'
             '->project(~[id:c|$c.id, val:c|$c.val, newCol:c|$c.val__pylegend_olap_column__])'
         )
 

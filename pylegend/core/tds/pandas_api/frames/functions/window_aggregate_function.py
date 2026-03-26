@@ -146,12 +146,6 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         # Fallback: use the alias (output name) which is derived from the source column
         return agg[0]
 
-    # Functions whose Pure return type is abstract Number and need ->cast(@Float)
-    # in window extend expressions (but NOT in groupBy aggregation expressions).
-    _NEEDS_FLOAT_CAST_FUNCTIONS = frozenset([
-        "stdDevSample", "stdDevPopulation", "varianceSample", "variancePopulation",
-    ])
-
     @staticmethod
     def _render_single_column_expression(
         agg: AggregateEntry,
@@ -165,9 +159,6 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
             else convert_literal_to_literal_expression(agg[1]).to_pure_expression(config)
         )
         agg_expr = agg[2].to_pure_expression(config).replace(map_expr, "$c")
-        # Window extend requires concrete types; cast Number -> Float where needed
-        if any(fn in agg_expr for fn in WindowAggregateFunction._NEEDS_FLOAT_CAST_FUNCTIONS):
-            agg_expr = agg_expr + "->cast(@Float)"
         return (
             f"{escaped_col_name}:"
             f"{generate_pure_lambda('p,w,r', map_expr)}:"
