@@ -59,6 +59,10 @@ from pylegend.core.language.shared.operations.collection_operation_expressions i
     PyLegendCorrExpression,
     PyLegendCovarPopulationExpression,
     PyLegendCovarSampleExpression,
+    PyLegendMedianExpression,
+    PyLegendModeExpression,
+    PyLegendPercentileContExpression,
+    PyLegendPercentileDiscExpression,
 )
 
 
@@ -168,6 +172,39 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
             else self.__nested.value()
         )
         return PyLegendNumber(PyLegendVariancePopulationExpression(nested_expr))  # type: ignore
+
+    def median(self) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            else self.__nested.value()
+        )
+        return PyLegendNumber(PyLegendMedianExpression(nested_expr))  # type: ignore
+
+    def mode(self) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            else self.__nested.value()
+        )
+        return PyLegendNumber(PyLegendModeExpression(nested_expr))  # type: ignore
+
+    def percentile(
+            self,
+            percentile: float,
+            ascending: bool = True,
+            continuous: bool = True,
+    ) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            else self.__nested.value()
+        )
+        if continuous:
+            return PyLegendNumber(
+                PyLegendPercentileContExpression(nested_expr, percentile, ascending)  # type: ignore
+            )
+        else:
+            return PyLegendNumber(
+                PyLegendPercentileDiscExpression(nested_expr, percentile, ascending)  # type: ignore
+            )
 
 
 class PyLegendIntegerCollection(PyLegendNumberCollection):

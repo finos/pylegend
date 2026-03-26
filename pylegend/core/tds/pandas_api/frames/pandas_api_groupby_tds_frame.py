@@ -395,6 +395,12 @@ class PandasApiGroupbyTdsFrame:
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
 
+    def median(self) -> "PandasApiTdsFrame":
+        return self.aggregate("median", 0)
+
+    def mode(self) -> "PandasApiTdsFrame":
+        return self.aggregate("mode", 0)
+
     def rank(
             self,
             method: str = 'min',

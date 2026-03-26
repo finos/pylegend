@@ -509,6 +509,56 @@ class VariancePopulationExpression(Expression):
         self.value = value
 
 
+class MedianExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="medianExpression")
+        self.value = value
+
+
+class ModeExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="modeExpression")
+        self.value = value
+
+
+class PercentileContExpression(Expression):
+    value: "Expression"
+    percentile: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        percentile: "Expression",
+    ) -> None:
+        super().__init__(_type="percentileContExpression")
+        self.value = value
+        self.percentile = percentile
+
+
+class PercentileDiscExpression(Expression):
+    value: "Expression"
+    percentile: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        percentile: "Expression",
+    ) -> None:
+        super().__init__(_type="percentileDiscExpression")
+        self.value = value
+        self.percentile = percentile
+
+
 class JoinStringsExpression(Expression):
     value: "Expression"
     other: "Expression"

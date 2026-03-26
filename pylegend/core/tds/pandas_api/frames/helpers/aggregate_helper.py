@@ -244,7 +244,9 @@ _PYTHON_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[str, PyLegendList[str]] = {
     "std_dev_sample": ["std", "std_dev", "nanstd", "std_dev_sample"],
     "std_dev_population": ["std_dev_population"],
     "variance_sample": ["var", "variance", "nanvar", "variance_sample"],
-    "variance_population": ["variance_population"],
+    "variance_population": ["variance_population", "var_population"],
+    "median": ["median"],
+    "mode": ["mode"],
     "count": ["count", "size", "len", "length"],
 }
 
