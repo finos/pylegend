@@ -1,4 +1,4 @@
-# Copyright 2025 Goldman Sachs
+# Copyright 2026 Goldman Sachs
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -403,9 +403,6 @@ class TestStdVarEndToEnd:
         frame = frame[["Firm/Legal Name", "Age"]]  # type: ignore
         frame = frame.groupby(by="Firm/Legal Name").std()
 
-        # Firm X ages: 23, 22, 12, 22 => stddev_samp = 5.188127472091127
-        # Firm A (34), Firm B (32), Firm C (35) => single values => null stddev
-        # Sorted by Firm/Legal Name: Firm A, Firm B, Firm C, Firm X
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
             "rows": [
@@ -446,8 +443,6 @@ class TestStdVarEndToEnd:
         frame = frame[["Firm/Legal Name", "Age"]]  # type: ignore
         frame = frame.groupby(by="Firm/Legal Name").var()
 
-        # Firm X ages: 23, 22, 12, 22 => var_samp = 26.916666666666668
-        # Single-value groups => null
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
             "rows": [
