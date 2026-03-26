@@ -241,8 +241,10 @@ _PYTHON_TO_LEGEND_FUNCTION_MAPPING: PyLegendMapping[str, PyLegendList[str]] = {
     "sum": ["sum", "nansum"],
     "min": ["min", "amin", "minimum", "nanmin"],
     "max": ["max", "amax", "maximum", "nanmax"],
-    "std_dev_sample": ["std", "std_dev", "nanstd"],
-    "variance_sample": ["var", "variance", "nanvar"],
+    "std_dev_sample": ["std", "std_dev", "nanstd", "std_dev_sample"],
+    "std_dev_population": ["std_dev_population"],
+    "variance_sample": ["var", "variance", "nanvar", "variance_sample"],
+    "variance_population": ["variance_population"],
     "count": ["count", "size", "len", "length"],
 }
 

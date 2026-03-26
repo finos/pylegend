@@ -44,6 +44,7 @@ __all__: PyLegendSequence[str] = [
     "assert_and_find_core_series",
     "has_window_function",
     "has_window_aggregate_function",
+    "needs_zero_column_for_window",
     "get_pure_query_from_expr",
     "get_applied_func",
     "find_window_expression",
@@ -222,6 +223,29 @@ def has_window_aggregate_function(series: PyLegendUnion["Series", "GroupbySeries
         core = found
 
     return isinstance(get_applied_func(core), WindowAggregateFunction)
+
+
+def needs_zero_column_for_window(series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
+    """Check if the series uses a WindowAggregateFunction that requires the zero column.
+
+    Partition-only windows (from transform()) do NOT need the zero column.
+    Only expanding/rolling windows need it.
+    """
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+    from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+
+    core: PyLegendUnion[Series, GroupbySeries] = series
+    if series.expr is not None:
+        found = assert_and_find_core_series(series.expr)
+        if found is None:
+            return False  # pragma: no cover
+        core = found
+
+    applied_func = get_applied_func(core)
+    if isinstance(applied_func, WindowAggregateFunction):
+        return not applied_func._is_partition_only()
+    return False
 
 
 def find_window_expression(expr: "Expression") -> "PyLegendOptional[Expression]":

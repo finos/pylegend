@@ -17,6 +17,7 @@ from textwrap import dedent
 import pandas as pd
 from pylegend._typing import (
     TYPE_CHECKING,
+    PyLegendCallable,
     PyLegendDict,
     PyLegendOptional,
     PyLegendSequence,
@@ -363,15 +364,17 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: {ddof}"
+            )
         if engine is not None:
             raise NotImplementedError("engine parameter is not supported in std function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in std function.")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
-        return self.aggregate("std", 0)
+        return self.aggregate("std_dev_sample" if ddof == 1 else "std_dev_population", 0)
 
     def var(
         self,
@@ -380,18 +383,48 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
+            )
         if engine is not None:
             raise NotImplementedError("engine parameter is not supported in var function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in var function.")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
-        return self.aggregate("var", 0)
+        return self.aggregate("variance_sample" if ddof == 1 else "variance_population", 0)
 
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
+
+    def transform(
+            self,
+            func: PyLegendUnion[str, PyLegendCallable[..., object]],  # type: ignore[explicit-any]
+    ) -> "GroupbySeries":
+        """Apply a partition-only window aggregate (no frame bounds, no order by).
+
+        Equivalent to pandas ``groupby['col'].transform('func')``, which computes
+        the aggregate per group and broadcasts the result back to every row.
+
+        Generates SQL like ``FUNC(col) OVER (PARTITION BY ...)`` and
+        Pure like ``extend(over(~[grp]), ~col:{p,w,r | $r.col}:y | $y->func())``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        selected = self._base_groupby_frame.get_selected_columns()
+        assert selected is not None and len(selected) == 1, (
+            "transform() requires exactly one column selected"
+        )
+        col_name = selected[0].get_name()
+
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=self._base_groupby_frame,
+            partition_only=True,
+        )
+        window_series = WindowSeries(window_frame=window_frame, column_name=col_name)
+        return window_series.aggregate(func, 0)  # type: ignore[return-value]
 
     def rank(
             self,

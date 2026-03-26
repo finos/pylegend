@@ -19,6 +19,7 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendSequence,
     PyLegendUnion,
+    TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
@@ -33,6 +34,9 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+
+if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
 ZERO_COLUMN_NAME = "__internal_pylegend_column__"
 
@@ -65,6 +69,7 @@ class PandasApiWindowTdsFrame:
     _order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]]
     _preceding_rows: PyLegendOptional[int]
     _following_rows: PyLegendOptional[int]
+    _partition_only: bool
 
     def __init__(
             self,
@@ -72,11 +77,13 @@ class PandasApiWindowTdsFrame:
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             preceding_rows: PyLegendOptional[int] = None,
             following_rows: PyLegendOptional[int] = 0,
+            partition_only: bool = False,
     ) -> None:
         self._base_frame = base_frame
         self._order_by = order_by
         self._preceding_rows = preceding_rows
         self._following_rows = following_rows
+        self._partition_only = partition_only
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         """Return the unwrapped base frame (unwrapping groupby if needed)."""
@@ -104,7 +111,18 @@ class PandasApiWindowTdsFrame:
         Build a ``PandasApiWindow`` from this window specification.
         Uses the ``order_by`` parameter provided at construction time.
         Always includes the zero column in PARTITION BY unless ``include_zero_column`` is False.
+
+        When ``partition_only`` is True, produces a window with only PARTITION BY
+        (no ORDER BY, no frame bounds, no zero column) — equivalent to pandas ``transform()``.
         """
+        if self._partition_only:
+            partition_cols = self.get_partition_columns()
+            return PandasApiWindow(
+                partition_by=partition_cols or None,
+                order_by=None,
+                frame=None,
+            )
+
         partition_cols = self.get_partition_columns()
         if include_zero_column:
             partition_cols = partition_cols + [ZERO_COLUMN_NAME]
@@ -144,6 +162,10 @@ class PandasApiWindowTdsFrame:
             order_by=order_by,
             frame=window_frame,
         )
+
+    def __getitem__(self, column_name: str) -> "WindowSeries":
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        return WindowSeries(window_frame=self, column_name=column_name)
 
     def aggregate(
             self,

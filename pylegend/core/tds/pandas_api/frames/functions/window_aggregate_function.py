@@ -130,6 +130,8 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         """
         Build a PandasApiWindow with the resolved order_by baked in.
         """
+        if self._is_partition_only():
+            return self.__base_frame.construct_window(include_zero_column=False)
         return self.__base_frame.with_order_by(
             self._resolve_order_by(fallback_column)
         ).construct_window(include_zero_column=include_zero_column)
@@ -163,19 +165,23 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
             f"{generate_pure_lambda('c', agg_expr)}"
         )
 
+    def _is_partition_only(self) -> bool:
+        return self.__base_frame._partition_only
+
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__pylegend_olap_column__"
 
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
 
-        # Add the zero column to the base query
-        base_query.select.selectItems.append(
-            SingleColumn(
-                alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
-                expression=IntegerLiteral(0),
+        if not self._is_partition_only():
+            # Add the zero column to the base query
+            base_query.select.selectItems.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                    expression=IntegerLiteral(0),
+                )
             )
-        )
 
         window = self._resolved_window()
 
@@ -274,7 +280,8 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
 
         return (
             self.base_frame().to_pure(config)
-            + config.separator(1) + f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})"
+            + (config.separator(1) + f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})"
+               if not self._is_partition_only() else "")
             + config.separator(1) + extend_str
             + config.separator(1) + project_str
         )
@@ -298,7 +305,8 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         source_col = self._get_source_column_name(agg)
         window_expr = self._resolved_window(fallback_column=source_col).to_pure_expression(config)
         render = self._render_single_column_expression(agg, temp_column_name_suffix, config)
-        result.append(f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})")
+        if not self._is_partition_only():
+            result.append(f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})")
         result.append(f"->extend({window_expr}, ~{render})")
         return result
 

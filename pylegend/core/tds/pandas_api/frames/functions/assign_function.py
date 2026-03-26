@@ -48,6 +48,7 @@ from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function imp
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     has_window_function,
     has_window_aggregate_function,
+    needs_zero_column_for_window,
     split_window_from_arithmetic,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
@@ -98,7 +99,7 @@ class AssignFunction(PandasApiAppliedFunction):
         needs_zero_column = False
         for _, func in self.__col_definitions.items():
             res = func(tds_row_check)
-            if isinstance(res, (Series, GroupbySeries)) and has_window_aggregate_function(res):
+            if isinstance(res, (Series, GroupbySeries)) and needs_zero_column_for_window(res):
                 needs_zero_column = True
                 break
         if needs_zero_column:

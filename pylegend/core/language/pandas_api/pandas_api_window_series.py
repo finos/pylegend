@@ -93,8 +93,14 @@ class WindowSeries:
 
         if isinstance(base, PandasApiGroupbyTdsFrame):
             gb_series_cls = _resolve_groupby_series_class(col_type)
-            new_gb_frame = copy.copy(base)
-            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore
+            # Use __getitem__ to get a groupby frame with the column selected
+            new_gb_frame_or_series = base[column]
+            if isinstance(new_gb_frame_or_series, PandasApiGroupbyTdsFrame):
+                new_gb_frame = new_gb_frame_or_series
+            else:
+                # __getitem__ with a string returns a GroupbySeries; extract its frame
+                new_gb_frame = new_gb_frame_or_series._base_groupby_frame  # type: ignore[union-attr]
+            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore[return-value]
         else:
             series_cls = _resolve_series_class(col_type)
             new_series = series_cls(base_frame_unwrapped, column)
@@ -148,11 +154,14 @@ class WindowSeries:
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
-        if ddof != 1:
+        if ddof == 1:
+            return self.aggregate("std_dev_sample", 0)
+        elif ddof == 0:
+            return self.aggregate("std_dev_population", 0)
+        else:
             raise NotImplementedError(
-                f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}"
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: {ddof}"
             )
-        return self.aggregate("std", 0)
 
     def var(
         self,
@@ -161,11 +170,14 @@ class WindowSeries:
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
-        if ddof != 1:
+        if ddof == 1:
+            return self.aggregate("variance_sample", 0)
+        elif ddof == 0:
+            return self.aggregate("variance_population", 0)
+        else:
             raise NotImplementedError(
-                f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}"
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
             )
-        return self.aggregate("var", 0)
 
 
 def _resolve_series_class(col_type: str) -> type:

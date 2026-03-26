@@ -361,15 +361,17 @@ class PandasApiGroupbyTdsFrame:
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: {ddof}"
+            )
         if engine is not None:
             raise NotImplementedError("engine parameter is not supported in std function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in std function.")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
-        return self.aggregate("std", 0)
+        return self.aggregate("std_dev_sample" if ddof == 1 else "std_dev_population", 0)
 
     def var(
         self,
@@ -378,15 +380,17 @@ class PandasApiGroupbyTdsFrame:
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
+            )
         if engine is not None:
             raise NotImplementedError("engine parameter is not supported in var function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in var function.")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
-        return self.aggregate("var", 0)
+        return self.aggregate("variance_sample" if ddof == 1 else "variance_population", 0)
 
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
