@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+# flake8: noqa
+
 from textwrap import dedent
 import json
 
@@ -290,12 +293,108 @@ class TestPercentileFunctionQueryGeneration:
             '->sort([~id->ascending()])'
         )
 
+    def test_percentile_cont_window_sql(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        wf = PandasApiWindowTdsFrame(base_frame=frame.groupby(by="id"), partition_only=True)
+        ws = WindowSeries(window_frame=wf, column_name="val")
+        wr = ws.aggregate(lambda c: c.percentile(0.6, ascending=True, continuous=True), 0)
+        assigned = frame.assign(newCol=lambda _r: wr)
+        expected_sql = dedent('''\
+            SELECT
+                "root"."id" AS "id",
+                "root"."val" AS "val",
+                "root"."newCol__pylegend_olap_column__" AS "newCol"
+            FROM
+                (
+                    SELECT
+                        "root".id AS "id",
+                        "root".val AS "val",
+                        PERCENTILE_CONT(0.6) WITHIN GROUP (ORDER BY "root".val) OVER (PARTITION BY "root".id) AS "newCol__pylegend_olap_column__"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"''')  # noqa: E501
+        assert assigned.to_sql_query(FrameToSqlConfig()) == expected_sql
+
+    def test_percentile_cont_window_pure(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        wf = PandasApiWindowTdsFrame(base_frame=frame.groupby(by="id"), partition_only=True)
+        ws = WindowSeries(window_frame=wf, column_name="val")
+        wr = ws.aggregate(lambda c: c.percentile(0.6, ascending=True, continuous=True), 0)
+        assigned = frame.assign(newCol=lambda _r: wr)
+        assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
+            '#Table(test_schema.test_table)#'
+            '->extend(over(~[id], []), ~val__pylegend_olap_column__:'
+            '{p,w,r | $r.val}:{c | $c->percentile(0.6, true, true)->cast(@Float)})'
+            '->project(~[id:c|$c.id, val:c|$c.val, newCol:c|$c.val__pylegend_olap_column__])'
+        )
+
+    def test_percentile_disc_window_sql(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        wf = PandasApiWindowTdsFrame(base_frame=frame.groupby(by="id"), partition_only=True)
+        ws = WindowSeries(window_frame=wf, column_name="val")
+        wr = ws.aggregate(lambda c: c.percentile(0.6, ascending=True, continuous=False), 0)
+        assigned = frame.assign(newCol=lambda _r: wr)
+        expected_sql = dedent('''\
+            SELECT
+                "root"."id" AS "id",
+                "root"."val" AS "val",
+                "root"."newCol__pylegend_olap_column__" AS "newCol"
+            FROM
+                (
+                    SELECT
+                        "root".id AS "id",
+                        "root".val AS "val",
+                        PERCENTILE_DISC(0.6) WITHIN GROUP (ORDER BY "root".val) OVER (PARTITION BY "root".id) AS "newCol__pylegend_olap_column__"
+                    FROM
+                        test_schema.test_table AS "root"
+                ) AS "root"''')  # noqa: E501
+        assert assigned.to_sql_query(FrameToSqlConfig()) == expected_sql
+
+    def test_percentile_disc_window_pure(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        wf = PandasApiWindowTdsFrame(base_frame=frame.groupby(by="id"), partition_only=True)
+        ws = WindowSeries(window_frame=wf, column_name="val")
+        wr = ws.aggregate(lambda c: c.percentile(0.6, ascending=True, continuous=False), 0)
+        assigned = frame.assign(newCol=lambda _r: wr)
+        assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
+            '#Table(test_schema.test_table)#'
+            '->extend(over(~[id], []), ~val__pylegend_olap_column__:'
+            '{p,w,r | $r.val}:{c | $c->percentile(0.6, true, false)->cast(@Float)})'
+            '->project(~[id:c|$c.id, val:c|$c.val, newCol:c|$c.val__pylegend_olap_column__])'
+        )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # End-to-End tests
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestMedianModePercentileEndToEnd:
+
+    # ── median e2e ───────────────────────────────────────────────────────
 
     def test_e2e_median_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """groupby('Firm/Legal Name').median() on Age column."""
@@ -322,7 +421,6 @@ class TestMedianModePercentileEndToEnd:
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame["Age Median"] = frame.groupby("Firm/Legal Name")["Age"].transform("median")
 
-        # Firm X median = 22.0, single-value firms = their own age
         median_x = pytest.approx(22.0, abs=1e-6)
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "Age Median"],
@@ -339,6 +437,8 @@ class TestMedianModePercentileEndToEnd:
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res == expected
 
+    # ── mode e2e (skipped — no SQL handler) ──────────────────────────────
+
     @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the MODE function")
     def test_e2e_mode_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """groupby('Firm/Legal Name').mode() on Age column."""
@@ -346,8 +446,6 @@ class TestMedianModePercentileEndToEnd:
         frame = frame[["Firm/Legal Name", "Age"]]  # type: ignore
         frame = frame.groupby(by="Firm/Legal Name").mode()
 
-        # Firm X ages: 23, 22, 12, 22 => mode = 22
-        # Single-value groups => their single value
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
             "rows": [
@@ -360,8 +458,31 @@ class TestMedianModePercentileEndToEnd:
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res == expected
 
+    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the MODE function")
+    def test_e2e_mode_window_transform(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Broadcast mode per firm back to every row via transform."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["Age Mode"] = frame.groupby("Firm/Legal Name")["Age"].transform("mode")
+
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "Age Mode"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", 22]},
+                {"values": ["John", "Johnson", 22, "Firm X", 22]},
+                {"values": ["John", "Hill", 12, "Firm X", 22]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", 22]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", 34]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", 32]},
+                {"values": ["David", "Harris", 35, "Firm C", 35]},
+            ],
+        }
+        res = json.loads(frame.execute_frame_to_string())["result"]
+        assert res == expected
+
+    # ── percentile_cont e2e ──────────────────────────────────────────────
+
     def test_e2e_percentile_cont_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        """groupby('Firm/Legal Name').agg(percentile(0.75, continuous)) on Age column."""
+        """groupby('Firm/Legal Name').agg(percentile(0.75, continuous)) on Age."""
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame[["Firm/Legal Name", "Age"]]  # type: ignore
         frame = frame.groupby(by="Firm/Legal Name").agg(
@@ -370,7 +491,6 @@ class TestMedianModePercentileEndToEnd:
 
         # Firm X ages sorted: 12, 22, 22, 23
         # PERCENTILE_CONT(0.75): pos = 0.75 * 3 = 2.25 => 22 + 0.25*(23-22) = 22.25
-        # Single-value firms: Firm A => 34.0, Firm B => 32.0, Firm C => 35.0
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
             "rows": [
@@ -382,3 +502,80 @@ class TestMedianModePercentileEndToEnd:
         }
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res == expected
+
+    def test_e2e_percentile_cont_window_transform(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Broadcast PERCENTILE_CONT(0.75) per firm back to every row."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        wf = PandasApiWindowTdsFrame(base_frame=frame.groupby("Firm/Legal Name"), partition_only=True)
+        ws = WindowSeries(window_frame=wf, column_name="Age")
+        wr = ws.aggregate(lambda c: c.percentile(0.75, ascending=True, continuous=True), 0)
+        frame["Age P75"] = wr
+
+        pct_x = pytest.approx(22.25, abs=1e-6)
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "Age P75"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", pct_x]},
+                {"values": ["John", "Johnson", 22, "Firm X", pct_x]},
+                {"values": ["John", "Hill", 12, "Firm X", pct_x]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", pct_x]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", pytest.approx(34.0, abs=1e-6)]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", pytest.approx(32.0, abs=1e-6)]},
+                {"values": ["David", "Harris", 35, "Firm C", pytest.approx(35.0, abs=1e-6)]},
+            ],
+        }
+        res = json.loads(frame.execute_frame_to_string())["result"]
+        assert res == expected
+
+    # ── percentile_disc e2e ──────────────────────────────────────────────
+
+    def test_e2e_percentile_disc_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """groupby('Firm/Legal Name').agg(percentile(0.75, discrete)) on Age."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = frame[["Firm/Legal Name", "Age"]]  # type: ignore
+        frame = frame.groupby(by="Firm/Legal Name").agg(
+            {"Age": lambda c: c.percentile(0.75, ascending=True, continuous=False)}
+        )
+
+        # Firm X ages sorted: 12, 22, 22, 23
+        # PERCENTILE_DISC(0.75): nearest-rank => 22 (the value at the 75th percentile position)
+        expected = {
+            "columns": ["Firm/Legal Name", "Age"],
+            "rows": [
+                {"values": ["Firm A", pytest.approx(34.0, abs=1e-6)]},
+                {"values": ["Firm B", pytest.approx(32.0, abs=1e-6)]},
+                {"values": ["Firm C", pytest.approx(35.0, abs=1e-6)]},
+                {"values": ["Firm X", pytest.approx(22.0, abs=1e-6)]},
+            ],
+        }
+        res = json.loads(frame.execute_frame_to_string())["result"]
+        assert res == expected
+
+    def test_e2e_percentile_disc_window_transform(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Broadcast PERCENTILE_DISC(0.75) per firm back to every row."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        wf = PandasApiWindowTdsFrame(base_frame=frame.groupby("Firm/Legal Name"), partition_only=True)
+        ws = WindowSeries(window_frame=wf, column_name="Age")
+        wr = ws.aggregate(lambda c: c.percentile(0.75, ascending=True, continuous=False), 0)
+        frame["Age P75 Disc"] = wr
+
+        pct_x = pytest.approx(22.0, abs=1e-6)
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "Age P75 Disc"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", pct_x]},
+                {"values": ["John", "Johnson", 22, "Firm X", pct_x]},
+                {"values": ["John", "Hill", 12, "Firm X", pct_x]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", pct_x]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", pytest.approx(34.0, abs=1e-6)]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", pytest.approx(32.0, abs=1e-6)]},
+                {"values": ["David", "Harris", 35, "Firm C", pytest.approx(35.0, abs=1e-6)]},
+            ],
+        }
+        res = json.loads(frame.execute_frame_to_string())["result"]
+        assert res == expected
+
