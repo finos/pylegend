@@ -385,7 +385,7 @@ class PyLegendStdDevSampleExpression(PyLegendUnaryExpression, PyLegendExpression
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("stdDevSample", [op_expr])
+        return generate_pure_functional_call("stdDevSample", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -409,7 +409,7 @@ class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpres
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("stdDevPopulation", [op_expr])
+        return generate_pure_functional_call("stdDevPopulation", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -433,7 +433,7 @@ class PyLegendVarianceSampleExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("varianceSample", [op_expr])
+        return generate_pure_functional_call("varianceSample", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -457,7 +457,7 @@ class PyLegendVariancePopulationExpression(PyLegendUnaryExpression, PyLegendExpr
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("variancePopulation", [op_expr])
+        return generate_pure_functional_call("variancePopulation", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
