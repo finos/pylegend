@@ -221,27 +221,28 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         base_query = self.get_base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
 
-        temp_col_name = (
-            db_extension.quote_identifier(col_name + temp_column_name_suffix) if expr_contains_window_func else
-            db_extension.quote_identifier(col_name)
-        )
-
-        new_select_item = SingleColumn(
-            temp_col_name,
-            self.to_sql_expression({'c': base_query}, config)
-        )
-        base_query.select.selectItems = [new_select_item]
+        full_sql_expr = self.to_sql_expression({'c': base_query}, config)
 
         if expr_contains_window_func:
+            from pylegend.core.tds.pandas_api.frames.helpers.series_helper import split_window_from_arithmetic
+            window_expr, make_outer = split_window_from_arithmetic(full_sql_expr)
+
+            temp_col_name = db_extension.quote_identifier(col_name + temp_column_name_suffix)
+            base_query.select.selectItems = [SingleColumn(temp_col_name, window_expr)]
+
             new_query = create_sub_query(base_query, config, "root")
+            col_ref = QualifiedNameReference(QualifiedName([
+                db_extension.quote_identifier("root"), temp_col_name
+            ]))
+            outer_expr = make_outer(col_ref) if make_outer is not None else col_ref
             new_query.select.selectItems = [
-                SingleColumn(
-                    db_extension.quote_identifier(col_name),
-                    QualifiedNameReference(QualifiedName([db_extension.quote_identifier("root"), temp_col_name]))
-                )
+                SingleColumn(db_extension.quote_identifier(col_name), outer_expr)
             ]
             return new_query
         else:
+            base_query.select.selectItems = [
+                SingleColumn(db_extension.quote_identifier(col_name), full_sql_expr)
+            ]
             return base_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:

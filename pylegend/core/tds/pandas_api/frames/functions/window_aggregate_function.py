@@ -29,6 +29,8 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.sql.metamodel import (
     Expression,
     IntegerLiteral,
+    QualifiedName,
+    QualifiedNameReference,
     QuerySpecification,
     SelectItem,
     SingleColumn,
@@ -153,6 +155,8 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         )
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
+        temp_column_name_suffix = "__pylegend_olap_column__"
+
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
 
@@ -178,12 +182,29 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
             )
             new_select_items.append(
                 SingleColumn(
-                    alias=db_extension.quote_identifier(agg[0]),
+                    alias=db_extension.quote_identifier(agg[0] + temp_column_name_suffix),
                     expression=window_expr,
                 )
             )
 
         new_query.select.selectItems = new_select_items
+
+        # Wrap in an outer query that renames from suffix alias to final alias
+        new_query = create_sub_query(new_query, config, "root")
+        final_select_items: PyLegendList[SelectItem] = []
+        for agg in aggregates_list:
+            col_expr = QualifiedNameReference(QualifiedName([
+                db_extension.quote_identifier("root"),
+                db_extension.quote_identifier(agg[0] + temp_column_name_suffix),
+            ]))
+            final_select_items.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(agg[0]),
+                    expression=col_expr,
+                )
+            )
+        new_query.select.selectItems = final_select_items
+
         return new_query
 
     def to_sql_expression(
@@ -199,7 +220,16 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
 
         agg = aggregates_list[0]
         source_col_name = self._get_source_column_name(agg)
-        window = self._resolved_window(fallback_column=source_col_name)
+
+        # Auto-detect: include zero column in partition only if it exists in the base query
+        base_query = frame_name_to_base_query_map["c"]
+        db_ext = config.sql_to_string_generator().get_db_extension()
+        zero_col_alias = db_ext.quote_identifier(ZERO_COLUMN_NAME)
+        has_zero_col = any(
+            isinstance(si, SingleColumn) and si.alias == zero_col_alias
+            for si in base_query.select.selectItems
+        )
+        window = self._resolved_window(fallback_column=source_col_name, include_zero_column=has_zero_col)
 
         agg_sql_expr = agg[2].to_sql_expression(frame_name_to_base_query_map, config)
         window_node = window.to_sql_node(frame_name_to_base_query_map["c"], config)

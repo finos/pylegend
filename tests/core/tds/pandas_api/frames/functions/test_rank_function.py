@@ -463,11 +463,11 @@ class TestRankFunctionOnBaseFrame:
         series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
-                "root"."height__pylegend_olap_column__" AS "height"
+                ("root"."height__pylegend_olap_column__" + 5) AS "height"
             FROM
                 (
                     SELECT
-                        (rank() OVER (ORDER BY "root".height) + 5) AS "height__pylegend_olap_column__"
+                        rank() OVER (ORDER BY "root".height) AS "height__pylegend_olap_column__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"
@@ -792,11 +792,11 @@ class TestRankFunctionOnGroupbyFrame:
         series += 5  # type: ignore[operator, assignment]
         expected = '''
             SELECT
-                "root"."val_col__pylegend_olap_column__" AS "val_col"
+                ("root"."val_col__pylegend_olap_column__" + 5) AS "val_col"
             FROM
                 (
                     SELECT
-                        (rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) + 5) AS "val_col__pylegend_olap_column__"
+                        rank() OVER (PARTITION BY "root".group_col ORDER BY "root".val_col) AS "val_col__pylegend_olap_column__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"

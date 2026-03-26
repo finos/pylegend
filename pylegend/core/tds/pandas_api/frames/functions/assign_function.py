@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 from datetime import date, datetime
 from decimal import Decimal as PythonDecimal
 
@@ -22,7 +21,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendCallable,
     PyLegendUnion,
-    PyLegendOptional,
 )
 from pylegend.core.language import (
     PyLegendPrimitive,
@@ -45,12 +43,12 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SingleColumn,
 )
-from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
 from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     has_window_function,
-    assert_and_find_core_series,
+    has_window_aggregate_function,
+    split_window_from_arithmetic,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -58,35 +56,6 @@ from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 
-
-def _extract_window_and_outer_expression(
-    full_expr: Expression,
-    replacement: Expression,
-) -> PyLegendOptional[Expression]:
-    """
-    Return a copy of *full_expr* where the first ``WindowExpression`` node
-    has been replaced by *replacement*.  Returns ``None`` if *full_expr* is
-    itself a ``WindowExpression`` (no outer arithmetic to wrap).
-    """
-    if isinstance(full_expr, WindowExpression):
-        return None  # no outer arithmetic
-    clone = copy.deepcopy(full_expr)
-    if _replace_window_expression(clone, replacement):
-        return clone
-    return None  # pragma: no cover
-
-
-def _replace_window_expression(expr: Expression, replacement: Expression) -> bool:
-    """Recursively replace the first WindowExpression child with *replacement*. Returns True if replaced."""
-    for attr_name in vars(expr):
-        child = getattr(expr, attr_name)
-        if isinstance(child, WindowExpression):
-            setattr(expr, attr_name, replacement)
-            return True
-        if isinstance(child, Expression):
-            if _replace_window_expression(child, replacement):
-                return True
-    return False
 
 
 class AssignFunction(PandasApiAppliedFunction):
@@ -117,18 +86,6 @@ class AssignFunction(PandasApiAppliedFunction):
         self.__base_frame = base_frame
         self.__col_definitions = col_definitions
 
-    @staticmethod
-    def _find_window_expression(expr: Expression) -> PyLegendOptional[Expression]:
-        """Recursively find the first WindowExpression in an expression tree. Returns None if not found."""
-        if isinstance(expr, WindowExpression):
-            return expr
-        for attr_name in vars(expr):
-            child = getattr(expr, attr_name)
-            if isinstance(child, Expression):
-                result = AssignFunction._find_window_expression(child)
-                if result is not None:
-                    return result
-        return None
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__pylegend_olap_column__"
@@ -143,7 +100,7 @@ class AssignFunction(PandasApiAppliedFunction):
         needs_zero_column = False
         for _, func in self.__col_definitions.items():
             res = func(tds_row_check)
-            if isinstance(res, (Series, GroupbySeries)) and has_window_function(res):
+            if isinstance(res, (Series, GroupbySeries)) and has_window_aggregate_function(res):
                 needs_zero_column = True
                 break
         if needs_zero_column:
@@ -173,9 +130,9 @@ class AssignFunction(PandasApiAppliedFunction):
 
         base_cols = {c.get_name() for c in self.__base_frame.columns()}
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
-        # Store full SQL expressions keyed by col name for window-containing columns,
+        # For window-aggregate series with arithmetic, store the make_outer factory
         # so we can apply arithmetic in the outer query instead of the middle subquery.
-        full_sql_exprs: PyLegendDict[str, Expression] = {}
+        outer_factories: PyLegendDict[str, PyLegendCallable] = {}
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
@@ -184,14 +141,14 @@ class AssignFunction(PandasApiAppliedFunction):
                 config
             )
 
-            # For window-containing series with arithmetic on top,
+            # For window-aggregate-containing series with arithmetic on top,
             # put only the WindowExpression in the middle subquery.
-            if isinstance(res, (Series, GroupbySeries)) and has_window_function(res):
-                if not isinstance(new_col_expr, WindowExpression):
-                    window_expr_found = self._find_window_expression(new_col_expr)
-                    if window_expr_found is not None:
-                        full_sql_exprs[col] = new_col_expr
-                        new_col_expr = window_expr_found
+            # (This does NOT apply to RankFunction — only WindowAggregateFunction.)
+            if isinstance(res, (Series, GroupbySeries)) and has_window_aggregate_function(res):
+                window_only, make_outer = split_window_from_arithmetic(new_col_expr)
+                if make_outer is not None:
+                    outer_factories[col] = make_outer
+                    new_col_expr = window_only
 
             alias = db_extension.quote_identifier(col)
             if col in base_cols:
@@ -230,14 +187,10 @@ class AssignFunction(PandasApiAppliedFunction):
                         new_alias = db_extension.quote_identifier(col)
                         for i, si in enumerate(final_query.select.selectItems):
                             if isinstance(si, SingleColumn) and si.alias == alias:
-                                if col in full_sql_exprs:
+                                if col in outer_factories:
                                     # Arithmetic was separated: apply it in the outer query
-                                    outer_expr = _extract_window_and_outer_expression(
-                                        full_sql_exprs[col], si.expression
-                                    )
-                                    assert outer_expr is not None
                                     final_query.select.selectItems[i] = SingleColumn(
-                                        alias=new_alias, expression=outer_expr
+                                        alias=new_alias, expression=outer_factories[col](si.expression)
                                     )
                                 else:
                                     final_query.select.selectItems[i] = SingleColumn(
