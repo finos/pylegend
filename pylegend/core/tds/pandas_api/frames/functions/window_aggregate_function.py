@@ -16,6 +16,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendList,
     PyLegendMapping,
+    PyLegendOptional,
     PyLegendSequence,
     PyLegendUnion,
 )
@@ -31,9 +32,6 @@ from pylegend.core.sql.metamodel import (
     QuerySpecification,
     SelectItem,
     SingleColumn,
-    SortItem,
-    SortItemNullOrdering,
-    SortItemOrdering,
 )
 from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.helpers.aggregate_helper import (
@@ -43,7 +41,7 @@ from pylegend.core.tds.pandas_api.frames.helpers.aggregate_helper import (
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame, ZERO_COLUMN_NAME
 from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
@@ -96,16 +94,20 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
             default_broadcast_columns=default_broadcast_columns,
         )
 
-    def _resolve_order_by(self) -> PyLegendList[str]:
+    def _resolve_order_by(self, fallback_column: PyLegendOptional[str] = None) -> PyLegendList[str]:
         """
         Resolve the ORDER BY columns for the window.
         If the window frame has an explicit order_by, use that.
-        Otherwise fall back to the first column of the base frame.
+        Otherwise fall back to ``fallback_column`` if provided,
+        or the first column of the base frame.
         """
         if self.__base_frame._order_by is not None:
             if isinstance(self.__base_frame._order_by, str):
                 return [self.__base_frame._order_by]
             return list(self.__base_frame._order_by)
+
+        if fallback_column is not None:
+            return [fallback_column]
 
         columns = [c.get_name() for c in self.base_frame().columns()]
         assert len(columns) > 0, (
@@ -114,12 +116,22 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         )
         return [columns[0]]
 
-    def _resolved_window(self) -> "PandasApiWindow":
+    def _resolved_window(self, fallback_column: PyLegendOptional[str] = None, include_zero_column: bool = True) -> "PandasApiWindow":
         """
         Build a PandasApiWindow with the resolved order_by baked in.
         """
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiWindow
-        return self.__base_frame.with_order_by(self._resolve_order_by()).construct_window()
+        return self.__base_frame.with_order_by(self._resolve_order_by(fallback_column)).construct_window(include_zero_column=include_zero_column)
+
+    @staticmethod
+    def _get_source_column_name(agg: AggregateEntry) -> str:
+        """Extract the source column name from an aggregate entry's map expression."""
+        from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
+        map_expr = agg[1]
+        if isinstance(map_expr, PyLegendColumnExpression):
+            return map_expr.get_column()
+        # Fallback: use the alias (output name) which is derived from the source column
+        return agg[0]
 
     @staticmethod
     def _render_single_column_expression(
@@ -143,6 +155,14 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         base_query = self.base_frame().to_sql_query_object(config)
         db_extension = config.sql_to_string_generator().get_db_extension()
+
+        # Add the zero column to the base query
+        base_query.select.selectItems.append(
+            SingleColumn(
+                alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                expression=IntegerLiteral(0),
+            )
+        )
 
         window = self._resolved_window()
 
@@ -171,7 +191,6 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
         config: FrameToSqlConfig,
     ) -> Expression:
-        window = self.__base_frame.construct_window()
         aggregates_list = self._build_aggregates(frame_name="c")
 
         assert len(aggregates_list) == 1, (
@@ -179,12 +198,11 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         )
 
         agg = aggregates_list[0]
+        source_col_name = self._get_source_column_name(agg)
+        window = self._resolved_window(fallback_column=source_col_name)
+
         agg_sql_expr = agg[2].to_sql_expression(frame_name_to_base_query_map, config)
         window_node = window.to_sql_node(frame_name_to_base_query_map["c"], config)
-        # Use a constant 0 for ORDER BY so the window has a deterministic sort
-        window_node.orderBy = [
-            SortItem(IntegerLiteral(0), SortItemOrdering.ASCENDING, SortItemNullOrdering.UNDEFINED)
-        ]
 
         return WindowExpression(nested=agg_sql_expr, window=window_node)
 
@@ -217,6 +235,7 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
 
         return (
             self.base_frame().to_pure(config)
+            + config.separator(1) + f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})"
             + config.separator(1) + extend_str
             + config.separator(1) + project_str
         )

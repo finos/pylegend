@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 from datetime import date, datetime
 from decimal import Decimal as PythonDecimal
 
@@ -21,6 +22,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendCallable,
     PyLegendUnion,
+    PyLegendOptional,
 )
 from pylegend.core.language import (
     PyLegendPrimitive,
@@ -36,19 +38,55 @@ from pylegend.core.language import (
 from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.language.shared.helpers import generate_pure_lambda
+from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
+    Expression,
     QuerySpecification,
     SingleColumn,
 )
+from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import has_window_function
+from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
+    has_window_function,
+    assert_and_find_core_series,
+)
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+
+
+def _extract_window_and_outer_expression(
+    full_expr: Expression,
+    replacement: Expression,
+) -> PyLegendOptional[Expression]:
+    """
+    Return a copy of *full_expr* where the first ``WindowExpression`` node
+    has been replaced by *replacement*.  Returns ``None`` if *full_expr* is
+    itself a ``WindowExpression`` (no outer arithmetic to wrap).
+    """
+    if isinstance(full_expr, WindowExpression):
+        return None  # no outer arithmetic
+    clone = copy.deepcopy(full_expr)
+    if _replace_window_expression(clone, replacement):
+        return clone
+    return None  # pragma: no cover
+
+
+def _replace_window_expression(expr: Expression, replacement: Expression) -> bool:
+    """Recursively replace the first WindowExpression child with *replacement*. Returns True if replaced."""
+    for attr_name in vars(expr):
+        child = getattr(expr, attr_name)
+        if isinstance(child, WindowExpression):
+            setattr(expr, attr_name, replacement)
+            return True
+        if isinstance(child, Expression):
+            if _replace_window_expression(child, replacement):
+                return True
+    return False
 
 
 class AssignFunction(PandasApiAppliedFunction):
@@ -79,10 +117,46 @@ class AssignFunction(PandasApiAppliedFunction):
         self.__base_frame = base_frame
         self.__col_definitions = col_definitions
 
+    @staticmethod
+    def _find_window_expression(expr: Expression) -> PyLegendOptional[Expression]:
+        """Recursively find the first WindowExpression in an expression tree. Returns None if not found."""
+        if isinstance(expr, WindowExpression):
+            return expr
+        for attr_name in vars(expr):
+            child = getattr(expr, attr_name)
+            if isinstance(child, Expression):
+                result = AssignFunction._find_window_expression(child)
+                if result is not None:
+                    return result
+        return None
+
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__pylegend_olap_column__"
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.__base_frame.to_sql_query_object(config)
+
+        # Check if any assigned column uses a window aggregate function.
+        # If so, add the zero column to base_query so that PARTITION BY can reference it.
+        from pylegend.core.sql.metamodel import IntegerLiteral
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+        tds_row_check = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
+        needs_zero_column = False
+        for _, func in self.__col_definitions.items():
+            res = func(tds_row_check)
+            if isinstance(res, (Series, GroupbySeries)) and has_window_function(res):
+                needs_zero_column = True
+                break
+        if needs_zero_column:
+            base_query.select.selectItems.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                    expression=IntegerLiteral(0),
+                )
+            )
+            # Wrap in a subquery so the zero column becomes a proper column reference
+            # (otherwise PARTITION BY would use the literal 0 instead of the column)
+            base_query = create_sub_query(base_query, config, "root")
+
         should_create_sub_query = (len(base_query.groupBy) > 0) or base_query.select.distinct
 
         new_query = (
@@ -90,8 +164,18 @@ class AssignFunction(PandasApiAppliedFunction):
             copy_query(base_query)
         )
 
+        if needs_zero_column:
+            zero_col_alias = db_extension.quote_identifier(ZERO_COLUMN_NAME)
+            new_query.select.selectItems = [
+                si for si in new_query.select.selectItems
+                if not (isinstance(si, SingleColumn) and si.alias == zero_col_alias)
+            ]
+
         base_cols = {c.get_name() for c in self.__base_frame.columns()}
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
+        # Store full SQL expressions keyed by col name for window-containing columns,
+        # so we can apply arithmetic in the outer query instead of the middle subquery.
+        full_sql_exprs: PyLegendDict[str, Expression] = {}
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
@@ -99,6 +183,15 @@ class AssignFunction(PandasApiAppliedFunction):
                 {"c": base_query},
                 config
             )
+
+            # For window-containing series with arithmetic on top,
+            # put only the WindowExpression in the middle subquery.
+            if isinstance(res, (Series, GroupbySeries)) and has_window_function(res):
+                if not isinstance(new_col_expr, WindowExpression):
+                    window_expr_found = self._find_window_expression(new_col_expr)
+                    if window_expr_found is not None:
+                        full_sql_exprs[col] = new_col_expr
+                        new_col_expr = window_expr_found
 
             alias = db_extension.quote_identifier(col)
             if col in base_cols:
@@ -123,6 +216,12 @@ class AssignFunction(PandasApiAppliedFunction):
 
         if expr_contains_window_func:
             final_query = create_sub_query(new_query, config, "root")
+            # Strip the zero column from the final output
+            zero_col_alias = db_extension.quote_identifier(ZERO_COLUMN_NAME)
+            final_query.select.selectItems = [
+                si for si in final_query.select.selectItems
+                if not (isinstance(si, SingleColumn) and si.alias == zero_col_alias)
+            ]
             for col, func in self.__col_definitions.items():
                 res = func(tds_row)
                 if isinstance(res, (Series, GroupbySeries)):
@@ -131,7 +230,19 @@ class AssignFunction(PandasApiAppliedFunction):
                         new_alias = db_extension.quote_identifier(col)
                         for i, si in enumerate(final_query.select.selectItems):
                             if isinstance(si, SingleColumn) and si.alias == alias:
-                                final_query.select.selectItems[i] = SingleColumn(alias=new_alias, expression=si.expression)
+                                if col in full_sql_exprs:
+                                    # Arithmetic was separated: apply it in the outer query
+                                    outer_expr = _extract_window_and_outer_expression(
+                                        full_sql_exprs[col], si.expression
+                                    )
+                                    assert outer_expr is not None
+                                    final_query.select.selectItems[i] = SingleColumn(
+                                        alias=new_alias, expression=outer_expr
+                                    )
+                                else:
+                                    final_query.select.selectItems[i] = SingleColumn(
+                                        alias=new_alias, expression=si.expression
+                                    )
             return final_query
 
         return new_query
@@ -162,6 +273,18 @@ class AssignFunction(PandasApiAppliedFunction):
                         target_col_name = c[0] + temp_column_name_suffix
                         extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
                         extend_exprs.append(extend)
+                    elif isinstance(applied_func, WindowAggregateFunction):
+                        agg = applied_func._build_aggregates()[0]
+                        source_col = applied_func._get_source_column_name(agg)
+                        window_agg_expr = applied_func._resolved_window(fallback_column=source_col).to_pure_expression(config)
+                        render = applied_func._render_single_column_expression(agg, temp_column_name_suffix, config)
+                        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+                        extend_exprs.append(
+                            f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})"
+                        )
+                        extend_exprs.append(
+                            f"->extend({window_agg_expr}, ~{render})"
+                        )
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
             assigned_exprs[col] = res_expr.to_pure_expression(config)
 

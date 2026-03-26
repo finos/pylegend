@@ -452,6 +452,43 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         new_series._filtered_frame = applied_function_frame
         return new_series
 
+    def expanding(
+            self,
+            min_periods: int = 1,
+            axis: PyLegendUnion[int, str] = 0,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+    ) -> "WindowSeries":
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        window_frame = self._base_frame.expanding(
+            min_periods=min_periods, axis=axis, method=method, order_by=order_by
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
+    def rolling(
+            self,
+            window: int,
+            min_periods: PyLegendOptional[int] = None,
+            center: bool = False,
+            win_type: PyLegendOptional[str] = None,
+            on: PyLegendOptional[str] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            closed: PyLegendOptional[str] = None,
+            step: PyLegendOptional[int] = None,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+    ) -> "WindowSeries":
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        window_frame = self._base_frame.rolling(
+            window=window, min_periods=min_periods, center=center, win_type=win_type,
+            on=on, axis=axis, closed=closed, step=step, method=method, order_by=order_by
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
 
 @add_primitive_methods
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore

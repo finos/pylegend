@@ -34,6 +34,8 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
+ZERO_COLUMN_NAME = "__internal_pylegend_column__"
+
 
 class PandasApiWindowTdsFrame:
     """
@@ -97,12 +99,16 @@ class PandasApiWindowTdsFrame:
         new._order_by = order_by
         return new
 
-    def construct_window(self) -> PandasApiWindow:
+    def construct_window(self, include_zero_column: bool = True) -> PandasApiWindow:
         """
         Build a ``PandasApiWindow`` from this window specification.
         Uses the ``order_by`` parameter provided at construction time.
+        Always includes the zero column in PARTITION BY unless ``include_zero_column`` is False.
         """
-        partition_by = self.get_partition_columns() or None
+        partition_cols = self.get_partition_columns()
+        if include_zero_column:
+            partition_cols = partition_cols + [ZERO_COLUMN_NAME]
+        partition_by = partition_cols or None
 
         order_by: PyLegendOptional[PyLegendList[PandasApiSortInfo]] = None
         if self._order_by is not None:

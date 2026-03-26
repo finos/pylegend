@@ -181,13 +181,14 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+    from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
 
     if series.expr is not None:
         core_series = assert_and_find_core_series(series.expr)
         assert core_series is not None
         return has_window_function(core_series)
 
-    considered_window_functions = [RankFunction]
+    considered_window_functions = [RankFunction, WindowAggregateFunction]
 
     if isinstance(series, Series):
         applied_func = series.get_filtered_frame().get_applied_function()
@@ -206,6 +207,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+    from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
 
     col_name = series.columns()[0].get_name()
     full_expr = series.expr
@@ -214,6 +216,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
     has_window_func = False
     window_expr = ""
     function_expr = ""
+    extend = ""
     sub_expressions = series.get_leaf_expressions()
     for expr in sub_expressions:
         if isinstance(expr, (Series, GroupbySeries)):
@@ -224,15 +227,30 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
                 c, window = applied_func.construct_column_expression_and_window_tuples("r")[0]
                 window_expr = window.to_pure_expression(config)
                 function_expr = c[1].to_pure_expression(config)
+            elif isinstance(applied_func, WindowAggregateFunction):
+                assert has_window_func is False
+                has_window_func = True
+                agg = applied_func._build_aggregates()[0]
+                source_col = applied_func._get_source_column_name(agg)
+                window_agg_window_expr = applied_func._resolved_window(fallback_column=source_col).to_pure_expression(config)
+                render = applied_func._render_single_column_expression(agg, temp_column_name_suffix, config)
+                from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+                extend = (
+                    f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})"
+                    f"{config.separator(1)}->extend({window_agg_window_expr}, ~{render})"
+                )
 
-    extend = ""
-    if has_window_func:
+    if has_window_func and extend == "":
+        # RankFunction path
         core_series = assert_and_find_core_series(series)
         assert isinstance(core_series, (Series, GroupbySeries))
-        applied_func = get_applied_func(core_series)
         pure_expr = full_expr.to_pure_expression(config)
         temp_name = escape_column_name(col_name + temp_column_name_suffix)
-        extend += f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
+        extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
+        project = f"->project(~[{escape_column_name(col_name)}:c|{pure_expr}])"
+    elif has_window_func:
+        # WindowAggregateFunction path
+        pure_expr = full_expr.to_pure_expression(config)
         project = f"->project(~[{escape_column_name(col_name)}:c|{pure_expr}])"
     else:
         project = f"->project(~[{escape_column_name(col_name)}:c|{series.to_pure_expression(config)}])"
