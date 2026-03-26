@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from pylegend._typing import (
-    PyLegendDict,
     PyLegendSequence,
     PyLegendTuple,
     PyLegendUnion,
@@ -28,7 +27,6 @@ from pylegend.core.language.shared.helpers import escape_column_name, generate_p
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.sql.metamodel import (
-    Expression,
     QuerySpecification,
     SelectItem,
     SingleColumn,

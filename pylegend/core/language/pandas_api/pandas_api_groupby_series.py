@@ -73,6 +73,7 @@ from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasD
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
 __all__: PyLegendSequence[str] = [
     "GroupbySeries",
@@ -493,7 +494,7 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                                  "DecimalGroupbySeries"],
             func_type: str,
     ) -> "FloatGroupbySeries":
-        from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
 
         selected_a = self._base_groupby_frame.get_selected_columns()
         assert selected_a is not None and len(selected_a) == 1, (
@@ -507,7 +508,7 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
         )
         col_name_b = selected_b[0].get_name()
 
-        applied_function_frame = PandasApiAppliedFunctionTdsFrame(CorrWindowFunction(
+        applied_function_frame = PandasApiAppliedFunctionTdsFrame(TwoColumnWindowFunction(
             base_frame=self._base_groupby_frame,
             col_name_a=col_name_a,
             col_name_b=col_name_b,

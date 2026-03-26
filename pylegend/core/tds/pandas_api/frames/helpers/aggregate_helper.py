@@ -138,7 +138,11 @@ def normalize_func_to_dict(
     list, dict) into a canonical ``{column_name: func_or_list}`` dictionary.
     """
     if isinstance(func_input, collections.abc.Mapping):
-        return _normalize_mapping_input(func_input, validation_columns, group_col_names)
+        return _normalize_mapping_input(
+            func_input,  # type: ignore[arg-type]  # keys validated as str inside _normalize_mapping_input
+            validation_columns,
+            group_col_names,
+        )
 
     if isinstance(func_input, collections.abc.Sequence) and not isinstance(func_input, str):
         _validate_list_elements(func_input)
@@ -173,7 +177,10 @@ def normalize_agg_func_to_callable(
     func_name = getattr(func, "__name__", "").lower()
     if func_name in _FLATTENED_FUNCTION_MAPPING and func_name != "<lambda>":
         internal = _FLATTENED_FUNCTION_MAPPING[func_name]
-        return eval(f"lambda x: x.{internal}()")
+        resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = eval(
+            f"lambda x: x.{internal}()"
+        )
+        return resolved
 
     # Custom / anonymous callable — wrap with a type check
     def _validation_wrapper(x: PyLegendPrimitiveCollection) -> PyLegendPrimitive:
@@ -356,7 +363,10 @@ def _resolve_string_func(
             f"Available string functions are: {sorted(_FLATTENED_FUNCTION_MAPPING.keys())}"
         )  # pragma: no cover
     internal = _FLATTENED_FUNCTION_MAPPING[func_lower]
-    return eval(f"lambda x: x.{internal}()")
+    resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = eval(
+        f"lambda x: x.{internal}()"
+    )
+    return resolved
 
 
 def _resolve_numpy_func(
@@ -370,7 +380,10 @@ def _resolve_numpy_func(
             f"Supported aggregate functions are: {sorted(_FLATTENED_FUNCTION_MAPPING.keys())}"
         )  # pragma: no cover
     internal = _FLATTENED_FUNCTION_MAPPING[func_name]
-    return eval(f"lambda x: x.{internal}()")
+    resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = eval(
+        f"lambda x: x.{internal}()"
+    )
+    return resolved
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -419,4 +432,3 @@ def _process_scalar_agg_input(
         alias = column_name
 
     aggregates.append((alias, map_result, agg_result))
-

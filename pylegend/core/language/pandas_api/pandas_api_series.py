@@ -71,6 +71,7 @@ from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasD
 
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
 __all__: PyLegendSequence[str] = [
     "Series",
@@ -461,7 +462,6 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
     ) -> "WindowSeries":
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
         window_frame = self._base_frame.expanding(
             min_periods=min_periods, axis=axis, method=method, order_by=order_by
@@ -482,7 +482,6 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
     ) -> "WindowSeries":
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
         window_frame = self._base_frame.rolling(
             window=window, min_periods=min_periods, center=center, win_type=win_type,

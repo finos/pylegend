@@ -237,7 +237,7 @@ class TestCovarSampleFunctionQueryGeneration:
         assert "ddof=2" in str(exc.value)
 
     def test_corr_window_invalid_func_type(self) -> None:
-        from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
         columns = [
             PrimitiveTdsColumn.integer_column("id"),
             PrimitiveTdsColumn.integer_column("valA"),
@@ -245,7 +245,7 @@ class TestCovarSampleFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         with pytest.raises(ValueError) as exc:
-            CorrWindowFunction(
+            TwoColumnWindowFunction(
                 base_frame=gb,
                 col_name_a="valA",
                 col_name_b="valA",

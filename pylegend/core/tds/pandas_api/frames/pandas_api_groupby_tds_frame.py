@@ -31,6 +31,7 @@ from pylegend.core.tds.tds_column import TdsColumn
 if TYPE_CHECKING:
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+    from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
 
 class PandasApiGroupbyTdsFrame:
@@ -543,4 +544,3 @@ class PandasApiGroupbyTdsFrame:
             preceding_rows=window - 1,
             following_rows=0,
         )
-

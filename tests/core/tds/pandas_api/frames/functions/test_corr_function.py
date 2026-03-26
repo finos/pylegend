@@ -267,8 +267,8 @@ class TestCorrFunctionQueryGeneration:
         assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_corr_window_validate_missing_col_a(self) -> None:
-        """Test that CorrWindowFunction raises ValueError for missing column A."""
-        from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+        """Test that TwoColumnWindowFunction raises ValueError for missing column A."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
         columns = [
             PrimitiveTdsColumn.integer_column("id"),
             PrimitiveTdsColumn.integer_column("valA"),
@@ -276,7 +276,7 @@ class TestCorrFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         with pytest.raises(ValueError) as v:
-            CorrWindowFunction(
+            TwoColumnWindowFunction(
                 base_frame=gb,
                 col_name_a="missing_col",
                 col_name_b="valA",
@@ -286,8 +286,8 @@ class TestCorrFunctionQueryGeneration:
         assert "does not exist" in v.value.args[0]
 
     def test_corr_window_validate_missing_col_b(self) -> None:
-        """Test that CorrWindowFunction raises ValueError for missing column B."""
-        from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+        """Test that TwoColumnWindowFunction raises ValueError for missing column B."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
         columns = [
             PrimitiveTdsColumn.integer_column("id"),
             PrimitiveTdsColumn.integer_column("valA"),
@@ -295,7 +295,7 @@ class TestCorrFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         with pytest.raises(ValueError) as v:
-            CorrWindowFunction(
+            TwoColumnWindowFunction(
                 base_frame=gb,
                 col_name_a="valA",
                 col_name_b="missing_col",

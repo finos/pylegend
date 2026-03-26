@@ -19,6 +19,7 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendSequence,
     PyLegendUnion,
+    TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import (
     PyLegendAggInput,
@@ -47,6 +48,9 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import Pand
 from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+
+if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiWindow
 
 
 class WindowAggregateFunction(PandasApiAppliedFunction):
@@ -118,12 +122,17 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         )
         return [columns[0]]
 
-    def _resolved_window(self, fallback_column: PyLegendOptional[str] = None, include_zero_column: bool = True) -> "PandasApiWindow":
+    def _resolved_window(
+        self,
+        fallback_column: PyLegendOptional[str] = None,
+        include_zero_column: bool = True,
+    ) -> "PandasApiWindow":
         """
         Build a PandasApiWindow with the resolved order_by baked in.
         """
-        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiWindow
-        return self.__base_frame.with_order_by(self._resolve_order_by(fallback_column)).construct_window(include_zero_column=include_zero_column)
+        return self.__base_frame.with_order_by(
+            self._resolve_order_by(fallback_column)
+        ).construct_window(include_zero_column=include_zero_column)
 
     @staticmethod
     def _get_source_column_name(agg: AggregateEntry) -> str:
@@ -280,6 +289,18 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
 
         agg = aggregates_list[0]
         return f"$c.{escape_column_name(agg[0] + temp_column_name_suffix)}"
+
+    def build_pure_extend_strs(self, temp_column_name_suffix: str, config: FrameToPureConfig) -> PyLegendList[str]:
+        """Build the Pure extend expression(s) for this window function.
+        Shared interface with TwoColumnWindowFunction so callers can treat them uniformly."""
+        result: PyLegendList[str] = []
+        agg = self._build_aggregates()[0]
+        source_col = self._get_source_column_name(agg)
+        window_expr = self._resolved_window(fallback_column=source_col).to_pure_expression(config)
+        render = self._render_single_column_expression(agg, temp_column_name_suffix, config)
+        result.append(f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})")
+        result.append(f"->extend({window_expr}, ~{render})")
+        return result
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame.base_frame()

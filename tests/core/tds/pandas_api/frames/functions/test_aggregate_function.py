@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+# flake8: noqa
+
 import json
 from textwrap import dedent
 
@@ -783,5 +786,3 @@ class TestAggregateFunctionOnSeries:
         expected = dedent(expected).strip()
         assert frame1.to_pure_query(FrameToPureConfig()) == expected
         assert frame2.to_pure_query(FrameToPureConfig()) == expected
-
-

@@ -66,8 +66,6 @@ class WindowSeries:
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
-        from pylegend.core.language.pandas_api.pandas_api_series import Series
-        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame,
         )
@@ -96,12 +94,12 @@ class WindowSeries:
         if isinstance(base, PandasApiGroupbyTdsFrame):
             gb_series_cls = _resolve_groupby_series_class(col_type)
             new_gb_frame = copy.copy(base)
-            return gb_series_cls(new_gb_frame, applied_function_frame)
+            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore
         else:
             series_cls = _resolve_series_class(col_type)
             new_series = series_cls(base_frame_unwrapped, column)
             new_series._filtered_frame = applied_function_frame
-            return new_series
+            return new_series  # type: ignore
 
     agg = aggregate
 
@@ -207,5 +205,3 @@ def _resolve_groupby_series_class(col_type: str) -> type:
         "StrictDate": StrictDateGroupbySeries,
     }
     return _map.get(col_type, GroupbySeries)
-
-

@@ -69,18 +69,24 @@ _FUNC_TYPE_CONFIG = {
 }
 
 
-class CorrWindowFunction(PandasApiAppliedFunction):
+class TwoColumnWindowFunction(PandasApiAppliedFunction):
+    """Window function for two-column aggregations: corr, covarPopulation, covarSample.
+
+    Generates SQL like ``CORR(col_a, col_b) OVER (PARTITION BY ...)`` and the
+    corresponding Pure ``extend(over(...), ~col:{p,w,r | rowMapper(...)}:y | $y->corr())``.
+    """
+
     __base_frame: "PandasApiGroupbyTdsFrame"
     __col_name_a: str
     __col_name_b: str
     __result_col_name: str
     __func_type: str
     __window: PandasApiWindow
-    __corr_expr: PyLegendPrimitive
+    __expr: PyLegendPrimitive
 
     @classmethod
     def name(cls) -> str:
-        return "corr_window"
+        return "two_column_window"
 
     def __init__(
             self,
@@ -119,15 +125,59 @@ class CorrWindowFunction(PandasApiAppliedFunction):
         ]
         self.__window = PandasApiWindow(partition_by, [], frame=None)
 
-        self.__corr_expr = self._build_corr_expr("r")
+        self.__expr = self._build_expr("r")
 
-    def _build_corr_expr(self, frame_name: str) -> PyLegendPrimitive:
+    # ──────────────────────────────────────────────────────────────────────
+    # Internal helpers
+    # ───────────────���──────────────────────────────────────────────────────
+
+    def _build_expr(self, frame_name: str) -> PyLegendPrimitive:
         tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.__base_frame.base_frame())
         expr_a = tds_row[self.__col_name_a]
         expr_b = tds_row[self.__col_name_b]
         from pylegend.core.language import PyLegendFloat
         expr_class = _FUNC_TYPE_CONFIG[self.__func_type]["expression_class"]
         return PyLegendFloat(expr_class(expr_a.value(), expr_b.value()))  # type: ignore
+
+    def get_window(self) -> PandasApiWindow:
+        return self.__window
+
+    def get_expr(self) -> PyLegendPrimitive:
+        return self.__expr
+
+    def get_mapper_pure_expr(self, config: FrameToPureConfig) -> str:
+        """Returns fully qualified rowMapper Pure expression for the mapper part of the 3-part lambda."""
+        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame.base_frame())
+        expr_a_str = tds_row[self.__col_name_a].to_pure_expression(config)
+        expr_b_str = tds_row[self.__col_name_b].to_pure_expression(config)
+        return f"meta::pure::functions::math::mathUtility::rowMapper({expr_a_str}, {expr_b_str})"
+
+    def get_agg_pure_expr(self) -> str:
+        """Returns fully qualified aggregation Pure expression with cast to Float."""
+        pure_func = _FUNC_TYPE_CONFIG[self.__func_type]["pure_func"]
+        return f"$y->{pure_func}()->cast(@Float)"
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Uniform interface (shared with WindowAggregateFunction)
+    # ──────────────────────────────────────────────────────────────────────
+
+    def build_pure_extend_strs(self, temp_column_name_suffix: str, config: FrameToPureConfig) -> PyLegendList[str]:
+        """Build the Pure extend expression(s) for this window function.
+        Shared interface with WindowAggregateFunction so callers can treat them uniformly."""
+        window_expr = self.__window.to_pure_expression(config)
+        mapper_pure = self.get_mapper_pure_expr(config)
+        agg_pure = self.get_agg_pure_expr()
+        target_col_name = self.__result_col_name + temp_column_name_suffix
+        extend = (
+            f"->extend({window_expr}, "
+            f"~{target_col_name}:{generate_pure_lambda('p,w,r', mapper_pure)}:"
+            f"{generate_pure_lambda('y', agg_pure, wrap_in_braces=False)})"
+        )
+        return [extend]
+
+    # ──────────────────────────────────────────────────────────────────────
+    # PandasApiAppliedFunction interface
+    # ──────────────────────────────────────────────────────────────────────
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__pylegend_olap_column__"
@@ -136,7 +186,7 @@ class CorrWindowFunction(PandasApiAppliedFunction):
 
         new_query: QuerySpecification = create_sub_query(base_query, config, "root")
 
-        col_sql_expr: Expression = self.__corr_expr.to_sql_expression({"r": new_query}, config)
+        col_sql_expr: Expression = self.__expr.to_sql_expression({"r": new_query}, config)
         window_expr = WindowExpression(
             nested=col_sql_expr,
             window=self.__window.to_sql_node(new_query, config),
@@ -168,8 +218,8 @@ class CorrWindowFunction(PandasApiAppliedFunction):
             config: FrameToSqlConfig
     ) -> Expression:
         frame_name = list(frame_name_to_base_query_map.keys())[0]
-        corr_expr = self._build_corr_expr(frame_name)
-        col_sql_expr: Expression = corr_expr.to_sql_expression(frame_name_to_base_query_map, config)
+        expr = self._build_expr(frame_name)
+        col_sql_expr: Expression = expr.to_sql_expression(frame_name_to_base_query_map, config)
         window_expr = WindowExpression(
             nested=col_sql_expr,
             window=self.__window.to_sql_node(frame_name_to_base_query_map[frame_name], config),
@@ -178,19 +228,12 @@ class CorrWindowFunction(PandasApiAppliedFunction):
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         temp_column_name_suffix = "__pylegend_olap_column__"
-        window_expr = self.__window.to_pure_expression(config)
-        mapper_pure = self.get_mapper_pure_expr(config)
-        agg_pure = self.get_agg_pure_expr()
-        target_col_name = self.__result_col_name + temp_column_name_suffix
-        extend = (
-            f"->extend({window_expr}, "
-            f"~{target_col_name}:{generate_pure_lambda('p,w,r', mapper_pure)}:"
-            f"{generate_pure_lambda('y', agg_pure, wrap_in_braces=False)})"
-        )
+        extend_strs = self.build_pure_extend_strs(temp_column_name_suffix, config)
+        extend = config.separator(1).join(extend_strs)
 
         project_col = (
             f"{escape_column_name(self.__result_col_name)}:"
-            f"p|$p.{escape_column_name(target_col_name)}"
+            f"p|$p.{escape_column_name(self.__result_col_name + temp_column_name_suffix)}"
         )
         project_str = f"->project(~[{project_col}])"
 
@@ -206,24 +249,6 @@ class CorrWindowFunction(PandasApiAppliedFunction):
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         return self.__base_frame.base_frame()
-
-    def get_window(self) -> PandasApiWindow:
-        return self.__window
-
-    def get_corr_expr(self) -> PyLegendPrimitive:
-        return self.__corr_expr
-
-    def get_mapper_pure_expr(self, config: FrameToPureConfig) -> str:
-        """Returns fully qualified rowMapper Pure expression for the mapper part of the 3-part lambda."""
-        tds_row = PandasApiTdsRow.from_tds_frame("r", self.__base_frame.base_frame())
-        expr_a_str = tds_row[self.__col_name_a].to_pure_expression(config)
-        expr_b_str = tds_row[self.__col_name_b].to_pure_expression(config)
-        return f"meta::pure::functions::math::mathUtility::rowMapper({expr_a_str}, {expr_b_str})"
-
-    def get_agg_pure_expr(self) -> str:
-        """Returns fully qualified aggregation Pure expression with cast to Float."""
-        pure_func = _FUNC_TYPE_CONFIG[self.__func_type]["pure_func"]
-        return f"$y->{pure_func}()->cast(@Float)"
 
     def tds_frame_parameters(self) -> PyLegendList["PandasApiBaseTdsFrame"]:
         return []

@@ -72,6 +72,7 @@ from pylegend.extensions.tds.result_handler import (
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+    from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
     from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
     from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
     from pylegend.core.tds.cast_helpers import CastTarget

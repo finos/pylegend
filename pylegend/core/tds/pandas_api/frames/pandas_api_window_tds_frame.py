@@ -163,4 +163,3 @@ class PandasApiWindowTdsFrame:
         )
 
     agg = aggregate
-

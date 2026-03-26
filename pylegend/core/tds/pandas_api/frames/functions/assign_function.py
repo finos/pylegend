@@ -36,15 +36,14 @@ from pylegend.core.language import (
 from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
+from pylegend.core.language.shared.helpers import generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
-    Expression,
     QuerySpecification,
     SingleColumn,
 )
 from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
-from pylegend.core.tds.pandas_api.frames.functions.corr_window_function import CorrWindowFunction
+from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
 from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     has_window_function,
@@ -131,7 +130,7 @@ class AssignFunction(PandasApiAppliedFunction):
         tds_row = PandasApiTdsRow.from_tds_frame("c", self.__base_frame)
         # For window-aggregate series with arithmetic, store the make_outer factory
         # so we can apply arithmetic in the outer query instead of the middle subquery.
-        outer_factories: PyLegendDict[str, PyLegendCallable] = {}
+        outer_factories: PyLegendDict[str, PyLegendCallable[..., object]] = {}  # type: ignore[explicit-any]
         for col, func in self.__col_definitions.items():
             res = func(tds_row)
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
@@ -189,7 +188,7 @@ class AssignFunction(PandasApiAppliedFunction):
                                 if col in outer_factories:
                                     # Arithmetic was separated: apply it in the outer query
                                     final_query.select.selectItems[i] = SingleColumn(
-                                        alias=new_alias, expression=outer_factories[col](si.expression)
+                                        alias=new_alias, expression=outer_factories[col](si.expression)  # type: ignore
                                     )
                                 else:
                                     final_query.select.selectItems[i] = SingleColumn(
@@ -225,28 +224,9 @@ class AssignFunction(PandasApiAppliedFunction):
                         target_col_name = c[0] + temp_column_name_suffix
                         extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
                         extend_exprs.append(extend)
-                    elif isinstance(applied_func, CorrWindowFunction):
-                        window_expr = applied_func.get_window().to_pure_expression(config)
-                        mapper_expr = applied_func.get_mapper_pure_expr(config)
-                        agg_expr = applied_func.get_agg_pure_expr()
-                        target_col_name = applied_func.calculate_columns()[0].get_name() + temp_column_name_suffix
-                        extend = (
-                            f"->extend({window_expr}, "
-                            f"~{target_col_name}:{generate_pure_lambda('p,w,r', mapper_expr)}:"
-                            f"{generate_pure_lambda('y', agg_expr, wrap_in_braces=False)})"
-                        )
-                        extend_exprs.append(extend)
-                    elif isinstance(applied_func, WindowAggregateFunction):
-                        agg = applied_func._build_aggregates()[0]
-                        source_col = applied_func._get_source_column_name(agg)
-                        window_agg_expr = applied_func._resolved_window(fallback_column=source_col).to_pure_expression(config)
-                        render = applied_func._render_single_column_expression(agg, temp_column_name_suffix, config)
-                        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
-                        extend_exprs.append(
-                            f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})"
-                        )
-                        extend_exprs.append(
-                            f"->extend({window_agg_expr}, ~{render})"
+                    elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction)):
+                        extend_exprs.extend(
+                            applied_func.build_pure_extend_strs(temp_column_name_suffix, config)
                         )
             res_expr = res if isinstance(res, PyLegendPrimitive) else convert_literal_to_literal_expression(res)
             assigned_exprs[col] = res_expr.to_pure_expression(config)
