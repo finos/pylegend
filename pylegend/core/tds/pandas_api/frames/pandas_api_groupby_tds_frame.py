@@ -396,10 +396,31 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("count", 0)
 
     def median(self) -> "PandasApiTdsFrame":
-        return self.aggregate("median", 0)
+        numeric_func_map = self._numeric_only_func_map("median")
+        return self.aggregate(numeric_func_map, 0)
 
     def mode(self) -> "PandasApiTdsFrame":
-        return self.aggregate("mode", 0)
+        numeric_func_map = self._numeric_only_func_map("mode")
+        return self.aggregate(numeric_func_map, 0)
+
+    def _numeric_only_func_map(self, func_name: str) -> PyLegendDict[str, str]:
+        """Build a {col: func_name} dict for numeric non-groupby columns only."""
+        from pylegend.core.tds.tds_column import PrimitiveTdsColumn
+        grouping_names = {c.get_name() for c in self.get_grouping_columns()}
+        numeric_types = {
+            "Integer", "Float", "Number", "Decimal",
+            "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+            "Int", "UInt", "BigInt", "UBigInt",
+        }
+        result: PyLegendDict[str, str] = {}
+        selected = self.get_selected_columns()
+        columns = selected if selected is not None else self.base_frame().columns()
+        for col in columns:
+            if col.get_name() in grouping_names:
+                continue
+            if isinstance(col, PrimitiveTdsColumn) and col.get_type() in numeric_types:
+                result[col.get_name()] = func_name
+        return result
 
     def rank(
             self,
