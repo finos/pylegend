@@ -304,7 +304,7 @@ class PandasApiGroupbyTdsFrame:
             raise NotImplementedError("engine parameter is not supported in sum function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in sum function.")
-        return self.aggregate("sum", 0)
+        return self.aggregate(self._numeric_only_func_map("sum"), 0)
 
     def mean(
         self,
@@ -318,7 +318,7 @@ class PandasApiGroupbyTdsFrame:
             raise NotImplementedError("engine parameter is not supported in mean function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in mean function.")
-        return self.aggregate("mean", 0)
+        return self.aggregate(self._numeric_only_func_map("mean"), 0)
 
     def min(
         self,
