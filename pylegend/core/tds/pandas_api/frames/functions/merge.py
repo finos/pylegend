@@ -342,7 +342,7 @@ class PandasApiMergeFunction(PandasApiAppliedFunction):
             expr = None
             for l_key, r_key in key_pairs:
                 l_eff = left_rename_map.get(l_key, l_key)
-                r_eff = right_map.get(r_key, r_key) if right_map else r_key  # type: ignore
+                r_eff = right_map.get(r_key, r_key) if right_map else r_key
                 part = (left_row[l_eff] == right_row[r_eff])
                 expr = part if expr is None else (expr & part)
 
