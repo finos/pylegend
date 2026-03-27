@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 from textwrap import dedent
 import pandas as pd
 from pylegend._typing import (
@@ -87,6 +86,48 @@ __all__: PyLegendSequence[str] = [
 ]
 
 R = PyLegendTypeVar('R')
+
+
+_COL_TYPE_TO_GROUPBY_SERIES_CLASS_NAME: PyLegendDict[str, str] = {
+    "Boolean": "BooleanGroupbySeries",
+    "String": "StringGroupbySeries",
+    "Varchar": "StringGroupbySeries",
+    "Number": "NumberGroupbySeries",
+    "Integer": "IntegerGroupbySeries",
+    "TinyInt": "IntegerGroupbySeries",
+    "UTinyInt": "IntegerGroupbySeries",
+    "SmallInt": "IntegerGroupbySeries",
+    "USmallInt": "IntegerGroupbySeries",
+    "Int": "IntegerGroupbySeries",
+    "UInt": "IntegerGroupbySeries",
+    "BigInt": "IntegerGroupbySeries",
+    "UBigInt": "IntegerGroupbySeries",
+    "Float": "FloatGroupbySeries",
+    "Float4": "FloatGroupbySeries",
+    "Double": "FloatGroupbySeries",
+    "Decimal": "DecimalGroupbySeries",
+    "Numeric": "DecimalGroupbySeries",
+    "Date": "DateGroupbySeries",
+    "DateTime": "DateTimeGroupbySeries",
+    "Timestamp": "DateTimeGroupbySeries",
+    "StrictDate": "StrictDateGroupbySeries",
+}
+
+
+def _get_new_groupby_series_for_column(
+        base_groupby_frame: PandasApiGroupbyTdsFrame,
+        aggregated_frame: PandasApiAppliedFunctionTdsFrame,
+        column: TdsColumn,
+) -> "GroupbySeries":
+    col_type = column.get_type()
+    col_name = column.get_name()
+
+    class_name = _COL_TYPE_TO_GROUPBY_SERIES_CLASS_NAME.get(col_type)
+    if class_name is None:
+        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")
+    cls = globals()[class_name]
+
+    return cls(base_groupby_frame, aggregated_frame)  # type: ignore[no-any-return]
 
 
 class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
@@ -264,7 +305,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if self._expr is not None:  # pragma: no cover
             error_msg = '''
                 Applying aggregate function to a computed series expression is not supported yet.
@@ -275,11 +316,19 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             error_msg = dedent(error_msg).strip()
             raise NotImplementedError(error_msg)
 
-        new_series = copy.copy(self)
-        if new_series.applied_function_frame is None:
-            return new_series.get_base_frame().aggregate(func, axis, *args, **kwargs)
+        if self.applied_function_frame is None:
+            aggregated_frame = self.get_base_frame().aggregate(func, axis, *args, **kwargs)
         else:
-            return new_series.applied_function_frame.aggregate(func, axis, *args, **kwargs)
+            aggregated_frame = self.applied_function_frame.aggregate(func, axis, *args, **kwargs)
+        assert isinstance(aggregated_frame, PandasApiAppliedFunctionTdsFrame)
+
+        potential_num_cols = len(aggregated_frame.columns())
+        if potential_num_cols == 1:
+            return _get_new_groupby_series_for_column(
+                self._base_groupby_frame, aggregated_frame, aggregated_frame.columns()[0]
+            )
+        else:
+            return aggregated_frame
 
     def agg(
             self,
@@ -287,7 +336,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         return self.aggregate(func, axis, *args, **kwargs)
 
     def sum(
@@ -296,7 +345,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         min_count: int = 0,
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in sum function.")
         if min_count != 0:
@@ -312,7 +361,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         numeric_only: bool = False,
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in mean function.")
         if engine is not None:
@@ -327,7 +376,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         min_count: int = -1,
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in min function.")
         if min_count != -1:
@@ -344,7 +393,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         min_count: int = -1,
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in max function.")
         if min_count != -1:
@@ -361,7 +410,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if ddof != 1:
             raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
         if engine is not None:
@@ -378,7 +427,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if ddof != 1:
             raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
         if engine is not None:
@@ -389,7 +438,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
         return self.aggregate("var", 0)
 
-    def count(self) -> "PandasApiTdsFrame":
+    def count(self) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         return self.aggregate("count", 0)
 
     def rank(
