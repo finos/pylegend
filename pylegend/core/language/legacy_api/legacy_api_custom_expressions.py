@@ -84,10 +84,10 @@ class LegacyApiOLAPAggregation(LegacyApiOLAPGroupByOperation):
 class LegacyApiOLAPRank(LegacyApiOLAPGroupByOperation):
     def __init__(self, rank: PyLegendCallable[["LegacyApiPartialFrame"], PyLegendPrimitiveOrPythonPrimitive]) -> None:
         if not callable(rank):
-            raise TypeError('Rank function should be a lambda which takes in a mapped list as a parameter')
+            raise TypeError('Rank function should be a lambda which takes a LegacyApiPartialFrame as its single parameter')
         param_check_fail = rank.__code__.co_argcount != 1
         if param_check_fail:
-            raise TypeError('Rank function should be a lambda which takes in a mapped list as a parameter')
+            raise TypeError('Rank function should be a lambda which takes a LegacyApiPartialFrame as its single parameter')
         self.rank = rank
 
         super().__init__(_type='tdsOlapRank', name=None)

@@ -33,6 +33,22 @@ class TestColumnValueDifferenceFunction:
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
+    def test_column_value_difference_empty_columns_to_check_raises(self) -> None:
+        cols1 = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame1: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table1'], cols1)
+
+        cols2 = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame2: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table2'], cols2)
+
+        with pytest.raises(ValueError, match="columns_to_check parameter should be a non-empty list"):
+            frame1.column_value_difference(frame2, ["id"], ["id"], [])
+
     def test_column_value_difference_result_columns(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("id"),

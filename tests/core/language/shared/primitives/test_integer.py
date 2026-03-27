@@ -259,19 +259,19 @@ class TestPyLegendInteger:
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string_no_integer_assert(lambda x: x.get_integer("col2").in_list([]))
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of integer values."
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string_no_integer_assert(
                 lambda x: x.get_integer("col2").in_list("not_a_list")  # type: ignore[arg-type]
             )
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of integer values."
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
 
         with pytest.raises(TypeError) as t:
             self.__generate_sql_string_no_integer_assert(
                 lambda x: x.get_integer("col2").in_list(["a", "b"])  # type: ignore[list-item]
             )
-        assert t.value.args[0].startswith("in_list list element should be a int or an integer expression")
+        assert t.value.args[0].startswith("in_list list element should be a int/float/decimal.Decimal")
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

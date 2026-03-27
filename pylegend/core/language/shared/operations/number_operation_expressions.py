@@ -15,13 +15,16 @@
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
+    PyLegendList,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionBooleanReturn,
+    PyLegendExpression,
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
+from pylegend.core.language.shared.operations.nary_expression import PyLegendNaryExpression
 from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
@@ -36,7 +39,9 @@ from pylegend.core.sql.metamodel import (
     ComparisonExpression,
     NegativeExpression,
     FunctionCall,
-    QualifiedName
+    QualifiedName,
+    InPredicate,
+    InListExpression,
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,
@@ -95,7 +100,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberHyperbolicSinExpression",
     "PyLegendNumberHyperbolicCosExpression",
     "PyLegendNumberHyperbolicTanExpression",
-    "PyLegendNumberPiExpression"
+    "PyLegendNumberPiExpression",
+    "PyLegendNumberInListExpression"
 ]
 
 
@@ -1084,4 +1090,31 @@ class PyLegendNumberPiExpression(PyLegendNullaryExpression, PyLegendExpressionNu
             PyLegendNumberPiExpression.__to_sql_func,
             PyLegendNumberPiExpression.__to_pure_func,
             non_nullable=True
+        )
+
+
+class PyLegendNumberInListExpression(PyLegendNaryExpression, PyLegendExpressionBooleanReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expressions: list[Expression],
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return InPredicate(
+            value=expressions[0],
+            valueList=InListExpression(values=expressions[1:])
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("in", [op_expr[0], '[' + ', '.join(op_expr[1:]) + ']'])
+
+    def __init__(self, operands: PyLegendList[PyLegendExpression]) -> None:
+        PyLegendExpressionBooleanReturn.__init__(self)
+        PyLegendNaryExpression.__init__(
+            self,
+            operands,
+            PyLegendNumberInListExpression.__to_sql_func,
+            PyLegendNumberInListExpression.__to_pure_func,
         )

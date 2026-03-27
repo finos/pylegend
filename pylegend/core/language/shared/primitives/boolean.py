@@ -18,7 +18,17 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
-from pylegend.core.language.shared.expression import PyLegendExpressionBooleanReturn
+from pylegend.core.language.shared.expression import (
+    PyLegendExpression,
+    PyLegendExpressionBooleanReturn,
+    PyLegendExpressionStringReturn,
+    PyLegendExpressionIntegerReturn,
+    PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
+    PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionStrictDateReturn,
+)
+from decimal import Decimal
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendBooleanLiteralExpression,
     convert_literal_to_literal_expression,
@@ -35,6 +45,7 @@ from pylegend.core.language.shared.operations.boolean_operation_expressions impo
     PyLegendBooleanCaseExpression,
     PyLegendIntegerCaseExpression,
     PyLegendFloatCaseExpression,
+    PyLegendDecimalCaseExpression,
     PyLegendStringCaseExpression,
     PyLegendDateTimeCaseExpression,
     PyLegendStrictDateCaseExpression
@@ -79,46 +90,70 @@ class PyLegendBoolean(PyLegendPrimitive):
     @grammar_method
     def case(
             self,
-            if_true: PyLegendUnion[bool, int, float, str, date, datetime, PyLegendPrimitive],
-            if_false: PyLegendUnion[bool, int, float, str, date, datetime, PyLegendPrimitive],
+            if_true: PyLegendUnion[bool, int, float, str, date, datetime, "Decimal", PyLegendPrimitive],
+            if_false: PyLegendUnion[bool, int, float, str, date, datetime, "Decimal", PyLegendPrimitive],
     ) -> PyLegendPrimitive:
         from pylegend.core.language.shared.primitives import (
-            PyLegendString, PyLegendInteger, PyLegendFloat, PyLegendDateTime, PyLegendStrictDate
+            PyLegendString, PyLegendInteger, PyLegendFloat, PyLegendDecimal,
+            PyLegendDateTime, PyLegendStrictDate
         )
+        from decimal import Decimal
 
-        params = {"if_true": if_true, "if_false": if_false}
-        resolved = {}
-        for name, param in params.items():
-            if isinstance(param, (bool, int, float, str, date, datetime)):
-                resolved[name] = convert_literal_to_literal_expression(param)
+        def resolve_param(param: PyLegendUnion[bool, int, float, str, date, datetime, Decimal, PyLegendPrimitive],
+                          name: str) -> "PyLegendExpression":
+            if isinstance(param, (bool, int, float, str, date, datetime, Decimal)):
+                return convert_literal_to_literal_expression(param)
             elif isinstance(param, PyLegendPrimitive):
-                resolved[name] = param.value()
+                return param.value()
             else:
                 raise TypeError(
                     f"case {name} parameter should be a primitive value or PyLegendPrimitive expression."
                     f" Got value {param} of type: {type(param)}"
                 )
 
-        true_expr = resolved["if_true"]
-        false_expr = resolved["if_false"]
-        case_args = (self.__value, true_expr, false_expr)
+        true_expr = resolve_param(if_true, "if_true")
+        false_expr = resolve_param(if_false, "if_false")
 
-        if isinstance(if_true, (bool, PyLegendBoolean)):
-            return PyLegendBoolean(PyLegendBooleanCaseExpression(*case_args))
-        elif isinstance(if_true, (str, PyLegendString)):
-            return PyLegendString(PyLegendStringCaseExpression(*case_args))
-        elif isinstance(if_true, (datetime, PyLegendDateTime)):
-            return PyLegendDateTime(PyLegendDateTimeCaseExpression(*case_args))
-        elif isinstance(if_true, (date, PyLegendStrictDate)):
-            return PyLegendStrictDate(PyLegendStrictDateCaseExpression(*case_args))
-        elif isinstance(if_true, (float, PyLegendFloat)):
-            return PyLegendFloat(PyLegendFloatCaseExpression(*case_args))
-        elif isinstance(if_true, (int, PyLegendInteger)):
-            return PyLegendInteger(PyLegendIntegerCaseExpression(*case_args))
+        if isinstance(true_expr, PyLegendExpressionBooleanReturn) \
+                and isinstance(false_expr, PyLegendExpressionBooleanReturn):
+            return PyLegendBoolean(PyLegendBooleanCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
+        elif isinstance(true_expr, PyLegendExpressionStringReturn) \
+                and isinstance(false_expr, PyLegendExpressionStringReturn):
+            return PyLegendString(PyLegendStringCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
+        elif isinstance(true_expr, PyLegendExpressionDateTimeReturn) \
+                and isinstance(false_expr, PyLegendExpressionDateTimeReturn):
+            return PyLegendDateTime(PyLegendDateTimeCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
+        elif isinstance(true_expr, PyLegendExpressionStrictDateReturn) \
+                and isinstance(false_expr, PyLegendExpressionStrictDateReturn):
+            return PyLegendStrictDate(PyLegendStrictDateCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
+        elif isinstance(true_expr, PyLegendExpressionDecimalReturn) \
+                and isinstance(false_expr, PyLegendExpressionDecimalReturn):
+            return PyLegendDecimal(PyLegendDecimalCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
+        elif isinstance(true_expr, PyLegendExpressionFloatReturn) \
+                and isinstance(false_expr, PyLegendExpressionFloatReturn):
+            return PyLegendFloat(PyLegendFloatCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
+        elif isinstance(true_expr, PyLegendExpressionIntegerReturn) \
+                and isinstance(false_expr, PyLegendExpressionIntegerReturn):
+            return PyLegendInteger(PyLegendIntegerCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
         else:
             raise TypeError(
-                f"Unsupported type for case if_true parameter."
-                f" Got value {if_true} of type: {type(if_true)}"
+                f"case if_true and if_false parameters must be of the same type."
+                f" Got if_true of type: {type(if_true)} and if_false of type: {type(if_false)}."
+                f" Supported types are: bool, int, float, Decimal, str, date, datetime, PyLegendPrimitive"
             )
 
     @grammar_method

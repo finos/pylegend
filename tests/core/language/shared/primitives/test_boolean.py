@@ -15,6 +15,7 @@
 import typing
 import pytest
 from datetime import date, datetime
+from decimal import Decimal
 from pylegend._typing import PyLegendCallable
 from pylegend.core.database.sql_to_string import (
     SqlToStringFormat,
@@ -185,6 +186,14 @@ class TestPyLegendBoolean:
         assert self.__generate_pure_string(lambda x: x.get_boolean("col1").case(1.5, 2.5)) == \
                'if(toOne($t.col1), |1.5, |2.5)'
 
+        assert self.__generate_sql_string(
+            lambda x: x.get_boolean("col1").case(Decimal("1.5"), Decimal("2.5"))
+        ) == ("CASE\n    WHEN\n        \"root\".col1\n    THEN\n        "
+              "CAST('1.5' AS DECIMAL)\n    ELSE\n        CAST('2.5' AS DECIMAL)\nEND")
+        assert self.__generate_pure_string(
+            lambda x: x.get_boolean("col1").case(Decimal("1.5"), Decimal("2.5"))
+        ) == 'if(toOne($t.col1), |1.5D, |2.5D)'
+
         assert self.__generate_sql_string(lambda x: x.get_boolean("col1").case("yes", "no")) == \
                "CASE\n    WHEN\n        \"root\".col1\n    THEN\n        'yes'\n    ELSE\n        'no'\nEND"
         assert self.__generate_pure_string(lambda x: x.get_boolean("col1").case("yes", "no")) == \
@@ -211,14 +220,26 @@ class TestPyLegendBoolean:
         ) == 'if(toOne($t.col1), |%2025-01-01T10:30:00, |%2025-12-31T23:59:59)'
 
         with pytest.raises(TypeError) as t:
-            self.tds_row.get_boolean("col1").case([1, 2], "no")  # type: ignore
+            self.tds_row.get_boolean("col1").case([1, 2], "no")  # type: ignore[arg-type]
         assert "case if_true parameter should be a primitive value or PyLegendPrimitive expression" in \
                t.value.args[0]
 
         with pytest.raises(TypeError) as t:
-            self.tds_row.get_boolean("col1").case("yes", [1, 2])  # type: ignore
+            self.tds_row.get_boolean("col1").case("yes", [1, 2])  # type: ignore[arg-type]
         assert "case if_false parameter should be a primitive value or PyLegendPrimitive expression" in \
                t.value.args[0]
+
+        with pytest.raises(TypeError) as t:
+            self.tds_row.get_boolean("col1").case(1, "no")
+        assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
+
+        with pytest.raises(TypeError) as t:
+            self.tds_row.get_boolean("col1").case(True, 1.5)
+        assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
+
+        with pytest.raises(TypeError) as t:
+            self.tds_row.get_boolean("col1").case(date(2025, 1, 1), datetime(2025, 1, 1, 10, 30, 0))
+        assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
 
         number_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
             PrimitiveTdsColumn.number_column("num_col"),
@@ -228,7 +249,7 @@ class TestPyLegendBoolean:
         number_expr = number_row.get_number("num_col")
         with pytest.raises(TypeError) as t:
             number_row.get_boolean("bool_col").case(number_expr, 0)
-        assert "Unsupported type for case if_true parameter." in t.value.args[0]
+        assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(

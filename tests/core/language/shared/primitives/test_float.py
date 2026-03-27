@@ -27,7 +27,6 @@ from pylegend.core.language import PyLegendPrimitive, PyLegendFloat
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
-from pylegend.core.language.shared.functions import pi_float
 
 
 class TestPyLegendFloat:
@@ -177,9 +176,36 @@ class TestPyLegendFloat:
         assert self.__generate_pure_string(lambda x: x.get_float("col2").to_string()) == \
                'toOne($t.col2)->toString()'
 
-    def test_float_pi_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: pi_float()) == 'PI()'
-        assert self.__generate_pure_string(lambda x: pi_float()) == 'pi()'
+    def test_float_in_list_expr(self) -> None:
+        assert self.__generate_sql_string_no_float_assert(
+            lambda x: x.get_float("col2").in_list([1.1, 2.2, 3.3])) == \
+            '"root".col2 IN (1.1, 2.2, 3.3)'
+        assert self.__generate_sql_string_no_float_assert(
+            lambda x: x.get_float("col2").in_list([4.2])) == \
+            '"root".col2 IN (4.2)'
+        assert self.__generate_sql_string_no_float_assert(
+            lambda x: x.get_float("col2").in_list([1.5, x.get_float("col1")])) == \
+            '"root".col2 IN (1.5, "root".col1)'
+        assert self.__generate_pure_string(lambda x: x.get_float("col2").in_list([1.1, 2.2, 3.3])) == \
+               '$t.col2->in([1.1, 2.2, 3.3])'
+        assert self.__generate_pure_string(lambda x: x.get_float("col2").in_list([4.2])) == \
+               '$t.col2->in([4.2])'
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string_no_float_assert(lambda x: x.get_float("col2").in_list([]))
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string_no_float_assert(
+                lambda x: x.get_float("col2").in_list("not_a_list")  # type: ignore[arg-type]
+            )
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string_no_float_assert(
+                lambda x: x.get_float("col2").in_list(["a", "b"])  # type: ignore[list-item]
+            )
+        assert t.value.args[0].startswith("in_list list element should be a int/float/decimal.Decimal")
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

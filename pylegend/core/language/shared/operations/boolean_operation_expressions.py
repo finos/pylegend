@@ -22,6 +22,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStringReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
 )
@@ -57,6 +58,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringCaseExpression",
     "PyLegendIntegerCaseExpression",
     "PyLegendFloatCaseExpression",
+    "PyLegendDecimalCaseExpression",
     "PyLegendDateTimeCaseExpression",
     "PyLegendStrictDateCaseExpression",
 ]
@@ -318,41 +320,48 @@ class PyLegendCaseExpressionBase(PyLegendNaryExpression):
 
 class PyLegendBooleanCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionBooleanReturn):
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
-                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+                 if_true: PyLegendExpressionBooleanReturn, if_false: PyLegendExpressionBooleanReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
 
 
 class PyLegendStringCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionStringReturn):
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
-                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+                 if_true: PyLegendExpressionStringReturn, if_false: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
 
 
 class PyLegendIntegerCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionIntegerReturn):
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
-                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+                 if_true: PyLegendExpressionIntegerReturn, if_false: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
 
 
 class PyLegendFloatCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionFloatReturn):
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
-                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+                 if_true: PyLegendExpressionFloatReturn, if_false: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
+class PyLegendDecimalCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionDecimalReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpressionDecimalReturn, if_false: PyLegendExpressionDecimalReturn) -> None:
+        PyLegendExpressionDecimalReturn.__init__(self)
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
 
 
 class PyLegendDateTimeCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionDateTimeReturn):
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
-                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+                 if_true: PyLegendExpressionDateTimeReturn, if_false: PyLegendExpressionDateTimeReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
 
 
 class PyLegendStrictDateCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionStrictDateReturn):
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
-                 if_true: PyLegendExpression, if_false: PyLegendExpression) -> None:
+                 if_true: PyLegendExpressionStrictDateReturn, if_false: PyLegendExpressionStrictDateReturn) -> None:
         PyLegendExpressionStrictDateReturn.__init__(self)
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)

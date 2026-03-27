@@ -51,9 +51,9 @@ def tds_column_for_primitive(name: str, result: PyLegendPrimitiveOrPythonPrimiti
         return PrimitiveTdsColumn.number_column(name)
     elif isinstance(result, (datetime, PyLegendDateTime)):
         return PrimitiveTdsColumn.datetime_column(name)
-    elif isinstance(result, PyLegendStrictDate):
+    elif isinstance(result, (date, PyLegendStrictDate)):
         return PrimitiveTdsColumn.strictdate_column(name)
-    elif isinstance(result, (date, PyLegendDate)):
+    elif isinstance(result, PyLegendDate):
         return PrimitiveTdsColumn.date_column(name)
     else:
         raise RuntimeError("Unhandled type: " + str(type(result)))  # pragma: no cover

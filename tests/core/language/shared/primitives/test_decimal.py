@@ -316,6 +316,39 @@ class TestPyLegendDecimal:
         assert self.__generate_pure_string(lambda x: x["col2"] == PythonDecimal("-1.5")) == \
                '($t.col2 == minus(1.5D))'
 
+    def test_decimal_in_list_expr(self) -> None:
+        assert self.__generate_sql_string_no_decimal_assert(
+            lambda x: x.get_decimal("col2").in_list([PythonDecimal("1.1"), PythonDecimal("2.2")])) == \
+            '"root".col2 IN (CAST(\'1.1\' AS DECIMAL), CAST(\'2.2\' AS DECIMAL))'
+        assert self.__generate_sql_string_no_decimal_assert(
+            lambda x: x.get_decimal("col2").in_list([PythonDecimal("4.2")])) == \
+            '"root".col2 IN (CAST(\'4.2\' AS DECIMAL))'
+        assert self.__generate_sql_string_no_decimal_assert(
+            lambda x: x.get_decimal("col2").in_list([PythonDecimal("1.5"), x.get_decimal("col1")])) == \
+            '"root".col2 IN (CAST(\'1.5\' AS DECIMAL), "root".col1)'
+        assert (self.__generate_pure_string(
+            lambda x: x.get_decimal("col2").in_list([PythonDecimal("1.1"), PythonDecimal("2.2")])) ==
+                '$t.col2->in([1.1D, 2.2D])')
+        assert (self.__generate_pure_string(
+            lambda x: x.get_decimal("col2").in_list([PythonDecimal("4.2")])) ==
+                '$t.col2->in([4.2D])')
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2").in_list([]))
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
+
+        with pytest.raises(ValueError) as v:
+            self.__generate_sql_string_no_decimal_assert(
+                lambda x: x.get_decimal("col2").in_list("not_a_list")  # type: ignore[arg-type]
+            )
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
+
+        with pytest.raises(TypeError) as t:
+            self.__generate_sql_string_no_decimal_assert(
+                lambda x: x.get_decimal("col2").in_list(["a", "b"])  # type: ignore[list-item]
+            )
+        assert t.value.args[0].startswith("in_list list element should be a int/float/decimal.Decimal")
+
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)
         assert isinstance(ret, PyLegendDecimal)

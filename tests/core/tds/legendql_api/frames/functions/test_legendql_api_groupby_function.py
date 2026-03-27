@@ -895,6 +895,52 @@ class TestGroupByAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
+    def test_query_gen_group_by_decimal_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.decimal_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [
+                ("Maximum", lambda r: r.col1, lambda c: c.max()),  # type: ignore
+                ("Minimum", lambda r: r.col1, lambda c: c.min()),  # type: ignore
+                ("Sum", lambda r: r.col1, lambda c: c.sum()),  # type: ignore
+                ("DistVal", lambda r: r.col1, lambda c: c.distinct_value()),  # type: ignore
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Decimal), "
+            "TdsColumn(Name: Minimum, Type: Decimal), TdsColumn(Name: Sum, Type: Decimal), "
+            "TdsColumn(Name: DistVal, Type: Decimal)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                MAX("root".col1) AS "Maximum",
+                MIN("root".col1) AS "Minimum",
+                SUM("root".col1) AS "Sum",
+                core_unique_value_only("root".col1) AS "DistVal"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Maximum:{r | $r.col1}:{c | $c->max()}, Minimum:{r | $r.col1}:{c | $c->min()}, \
+Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnly()}]
+              )'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], '
+                '~[Maximum:{r | $r.col1}:{c | $c->max()}, Minimum:{r | $r.col1}:{c | $c->min()}, '
+                'Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnly()}])')
+
     def test_query_gen_group_by_std_dev_sample_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -1369,13 +1415,14 @@ class TestGroupByAppliedFunction:
             (PrimitiveTdsColumn.integer_column, "Integer"),
             (PrimitiveTdsColumn.float_column, "Float"),
             (PrimitiveTdsColumn.number_column, "Number"),
+            (PrimitiveTdsColumn.decimal_column, "Decimal"),
             (PrimitiveTdsColumn.string_column, "String"),
             (PrimitiveTdsColumn.boolean_column, "Boolean"),
             (PrimitiveTdsColumn.strictdate_column, "StrictDate"),
             (PrimitiveTdsColumn.date_column, "Date"),
             (PrimitiveTdsColumn.datetime_column, "DateTime"),
         ],
-        ids=["integer", "float", "number", "string", "boolean", "strictdate", "date", "datetime"],
+        ids=["integer", "float", "number", "decimal", "string", "boolean", "strictdate", "date", "datetime"],
     )
     def test_query_gen_group_by_distinct_value_agg(self, col_factory, col_type_name) -> None:  # type: ignore
         columns = [

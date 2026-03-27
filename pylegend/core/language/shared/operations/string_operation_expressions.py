@@ -100,7 +100,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStringMatchExpression",
     "PyLegendStringCoalesceExpression",
     "PyLegendStringParseDecimalExpression",
-    "PyLegendStringCoalesceExpression",
     "PyLegendStringInListExpression",
 ]
 

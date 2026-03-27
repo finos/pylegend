@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from abc import ABCMeta
-from functools import reduce
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
@@ -245,6 +244,8 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             other_join_columns: PyLegendList[str],
             columns_to_check: PyLegendList[str]
     ) -> "LegacyApiTdsFrame":
+        if not columns_to_check:
+            raise ValueError("columns_to_check parameter should be a non-empty list.")
         tds1 = self
         tds2 = other
 
@@ -276,6 +277,18 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 funcs.append(_make_value_diff_func(vc))
             return funcs
 
+        def _all_not_null(r: LegacyApiTdsRow) -> PyLegendUnion[bool, PyLegendBoolean]:
+            result: PyLegendUnion[bool, PyLegendBoolean] = r[cols_1[0]].is_not_null()
+            for c in cols_1[1:]:
+                result = result & r[c].is_not_null()
+            return result
+
+        def _all_null(r: LegacyApiTdsRow) -> PyLegendUnion[bool, PyLegendBoolean]:
+            result: PyLegendUnion[bool, PyLegendBoolean] = r[cols_1[0]].is_null()
+            for c in cols_1[1:]:
+                result = result & r[c].is_null()
+            return result
+
         all_join_cols = list(dict.fromkeys(self_join_columns + other_join_columns))
         check_col_triples: PyLegendList[str] = []
         for vc in columns_to_check:
@@ -285,12 +298,7 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         left_part = (
             tds1_renamed
             .join_by_columns(tds2_renamed, self_join_columns, other_join_columns, 'LEFT_OUTER')
-            .filter(
-                lambda r: reduce(
-                    lambda a, b: a & b,
-                    [r[c].is_not_null() for c in cols_1]
-                )
-            )
+            .filter(_all_not_null)
             .extend(_build_extend_functions(), diff_col_names)
             .restrict(final_cols)
         )
@@ -298,12 +306,7 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         right_part = (
             tds1_renamed
             .join_by_columns(tds2_renamed, self_join_columns, other_join_columns, 'RIGHT_OUTER')
-            .filter(
-                lambda r: reduce(
-                    lambda a, b: a & b,
-                    [r[c].is_null() for c in cols_1]
-                )
-            )
+            .filter(_all_null)
             .extend(_build_extend_functions(), diff_col_names)
             .restrict(final_cols)
         )

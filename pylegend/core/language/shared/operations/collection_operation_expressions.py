@@ -21,6 +21,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
     PyLegendExpressionNumberReturn,
+    PyLegendExpressionDecimalReturn,
     PyLegendExpressionStringReturn,
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionDateReturn,
@@ -84,7 +85,11 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDateUniqueValueOnlyExpression",
     "PyLegendDateUniqueValueOnlyExpression",
     "PyLegendDateTimeUniqueValueOnlyExpression",
-    "PyLegendBooleanUniqueValueOnlyExpression"
+    "PyLegendBooleanUniqueValueOnlyExpression",
+    "PyLegendDecimalMaxExpression",
+    "PyLegendDecimalMinExpression",
+    "PyLegendDecimalSumExpression",
+    "PyLegendDecimalUniqueValueOnlyExpression",
 ]
 
 
@@ -726,4 +731,83 @@ class PyLegendDateTimeUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressio
 
     def __init__(self, operand: PyLegendExpressionDateTimeReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
+        PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendDecimalMaxExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MaxExpression(value=expression)
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("max", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionDecimalReturn) -> None:
+        PyLegendExpressionDecimalReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDecimalMaxExpression.__to_sql_func,
+            PyLegendDecimalMaxExpression.__to_pure_func
+        )
+
+
+class PyLegendDecimalMinExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MinExpression(value=expression)
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("min", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionDecimalReturn) -> None:
+        PyLegendExpressionDecimalReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDecimalMinExpression.__to_sql_func,
+            PyLegendDecimalMinExpression.__to_pure_func
+        )
+
+
+class PyLegendDecimalSumExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return SumExpression(value=expression)
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("sum", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionDecimalReturn) -> None:
+        PyLegendExpressionDecimalReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendDecimalSumExpression.__to_sql_func,
+            PyLegendDecimalSumExpression.__to_pure_func
+        )
+
+
+class PyLegendDecimalUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionDecimalReturn):
+
+    def __init__(self, operand: PyLegendExpressionDecimalReturn) -> None:
+        PyLegendExpressionDecimalReturn.__init__(self)
         PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)

@@ -109,7 +109,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateInListExpression",
     "PyLegendPreviousDayOfWeekExpression",
     "PyLegendMostRecentDayOfWeekExpression",
-    "PyLegendStrictDateAdjustExpression",
     "DurationUnit"
 ]
 
@@ -865,32 +864,6 @@ class PyLegendDateAdjustExpression(PyLegendNaryExpression, PyLegendExpressionDat
             operands,
             PyLegendDateAdjustExpression.__to_sql_func,
             PyLegendDateAdjustExpression.__to_pure_func,
-            non_nullable=True,
-            operands_non_nullable_flags=[True, True, True]
-        )
-
-
-class PyLegendStrictDateAdjustExpression(PyLegendNaryExpression, PyLegendExpressionStrictDateReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expressions: list[Expression],
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return DateAdjustExpression(expressions[0], expressions[1], expressions[2])  # type:ignore
-
-    @staticmethod
-    def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("adjust", [op_expr[0], op_expr[1], f"DurationUnit.{op_expr[2]}"])
-
-    def __init__(self, operands: list[PyLegendExpression]) -> None:
-        PyLegendExpressionStrictDateReturn.__init__(self)
-        PyLegendNaryExpression.__init__(
-            self,
-            operands,
-            PyLegendStrictDateAdjustExpression.__to_sql_func,
-            PyLegendStrictDateAdjustExpression.__to_pure_func,
             non_nullable=True,
             operands_non_nullable_flags=[True, True, True]
         )

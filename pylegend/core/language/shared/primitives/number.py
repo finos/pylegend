@@ -17,6 +17,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
     PyLegendOptional,
+    PyLegendList,
     TYPE_CHECKING,
 )
 from decimal import Decimal as PythonDecimal
@@ -63,7 +64,8 @@ from pylegend.core.language.shared.operations.number_operation_expressions impor
     PyLegendNumberSignExpression,
     PyLegendNumberHyperbolicSinExpression,
     PyLegendNumberHyperbolicCosExpression,
-    PyLegendNumberHyperbolicTanExpression
+    PyLegendNumberHyperbolicTanExpression,
+    PyLegendNumberInListExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -362,6 +364,22 @@ class PyLegendNumber(PyLegendPrimitive):
     @grammar_method
     def tanh(self) -> "PyLegendNumber":
         return PyLegendNumber(PyLegendNumberHyperbolicTanExpression(self.__value))
+
+    @grammar_method
+    def in_list(
+            self,
+            lst: PyLegendList[
+                PyLegendUnion[int, float, PythonDecimal, "PyLegendInteger", "PyLegendFloat", "PyLegendDecimal",
+                              "PyLegendNumber"]
+            ]
+    ) -> "PyLegendBoolean":
+        if not isinstance(lst, list) or len(lst) == 0:
+            raise ValueError("in_list parameter should be a non-empty list of number values.")
+        operands = [self.__value]
+        for item in lst:
+            PyLegendNumber.validate_param_to_be_number(item, "in_list list element")
+            operands.append(PyLegendNumber.__convert_to_number_expr(item))
+        return PyLegendBoolean(PyLegendNumberInListExpression(operands))  # type: ignore
 
     @grammar_method
     def __round__(self, n: PyLegendOptional[int] = None) -> "PyLegendNumber":

@@ -14,7 +14,7 @@
 
 from abc import ABCMeta, abstractmethod
 import pandas as pd
-from pylegend import LegendClient
+from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,
