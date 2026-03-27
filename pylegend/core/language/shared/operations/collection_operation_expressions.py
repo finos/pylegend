@@ -513,7 +513,7 @@ class PyLegendModeExpression(PyLegendUnaryExpression, PyLegendExpressionNumberRe
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("mode", [op_expr]) + "->cast(@Float)"
+        return generate_pure_functional_call("mode", [op_expr])
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)

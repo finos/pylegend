@@ -152,7 +152,7 @@ class TestModeFunctionQueryGeneration:
         frame = frame.groupby(by="id").mode()
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
-            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->mode()->cast(@Float)}])'
+            '->groupBy(~[id], ~[val:{r | $r.val}:{c | $c->mode()}])'
             '->sort([~id->ascending()])'
         )
 
@@ -191,7 +191,7 @@ class TestModeFunctionQueryGeneration:
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~val__pylegend_olap_column__:'
-            '{p,w,r | $r.val}:{c | $c->mode()->cast(@Float)})'
+            '{p,w,r | $r.val}:{c | $c->mode()})'
             '->project(~[id:c|$c.id, val:c|$c.val, newCol:c|$c.val__pylegend_olap_column__])'
         )
 
