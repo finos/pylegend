@@ -1317,4 +1317,58 @@ class TestAggregateFunctionAssignment:
         ''').strip()  # noqa: E501
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
+    def test_e2e_assign_aggregate_with_arithmetic(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["age_sum_plus_10"] = frame["Age"].sum() + 10
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "age_sum_plus_10"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", 190]},
+                {"values": ["John", "Johnson", 22, "Firm X", 190]},
+                {"values": ["John", "Hill", 12, "Firm X", 190]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", 190]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", 190]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", 190]},
+                {"values": ["David", "Harris", 35, "Firm C", 190]},
+            ],
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+    def test_e2e_assign_multiple_aggregates(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["age_sum"] = frame["Age"].sum()
+        frame["age_min"] = frame["Age"].min()
+        frame["age_max"] = frame["Age"].max()
+        frame["name_count"] = frame["First Name"].count()
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "age_sum", "age_min", "age_max", "name_count"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", 180, 12, 35, 7]},
+                {"values": ["John", "Johnson", 22, "Firm X", 180, 12, 35, 7]},
+                {"values": ["John", "Hill", 12, "Firm X", 180, 12, 35, 7]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", 180, 12, 35, 7]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", 180, 12, 35, 7]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", 180, 12, 35, 7]},
+                {"values": ["David", "Harris", 35, "Firm C", 180, 12, 35, 7]},
+            ],
+        }
+        assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+    def test_e2e_assign_then_filter(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["age_sum"] = frame["Age"].sum()
+        filtered = frame.filter(items=["First Name", "Age", "age_sum"])
+        expected = {
+            "columns": ["First Name", "Age", "age_sum"],
+            "rows": [
+                {"values": ["Peter", 23, 180]},
+                {"values": ["John", 22, 180]},
+                {"values": ["John", 12, 180]},
+                {"values": ["Anthony", 22, 180]},
+                {"values": ["Fabrice", 34, 180]},
+                {"values": ["Oliver", 32, 180]},
+                {"values": ["David", 35, 180]},
+            ],
+        }
+        assert json.loads(filtered.execute_frame_to_string())["result"] == expected
 
