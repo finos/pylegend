@@ -40,7 +40,7 @@ from pylegend.core.language.shared.operations.integer_operation_expressions impo
     PyLegendIntegerBitXorExpression,
     PyLegendIntegerBitShiftLeftExpression,
     PyLegendIntegerBitShiftRightExpression,
-    PyLegendIntegerBitNotExpression,
+    PyLegendIntegerBitNotExpression
 )
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives import PyLegendFloat

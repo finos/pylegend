@@ -33,9 +33,7 @@ from pylegend.core.sql.metamodel import (
 )
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
-from pylegend.core.language.shared.operations.date_operation_expressions import (
-    PyLegendDateTimeBucketExpression,
-)
+from pylegend.core.language.shared.operations.date_operation_expressions import PyLegendDateTimeBucketExpression
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 
 __all__: PyLegendSequence[str] = [

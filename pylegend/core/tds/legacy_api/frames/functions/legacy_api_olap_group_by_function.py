@@ -101,7 +101,17 @@ class LegacyApiOlapGroupByFunction(LegacyApiAppliedFunction):
         # Build sort info list
         order_by: PyLegendOptional[PyLegendList[LegacyApiSortInfo]] = None
         if sort_column_list is not None and len(sort_column_list) > 0:
-            directions = sort_direction_list if sort_direction_list else ["ASC"] * len(sort_column_list)
+            if sort_direction_list is not None:
+                if len(sort_direction_list) != len(sort_column_list):
+                    raise ValueError(
+                        "Length of sort_direction_list ({}) must match length of sort_column_list ({})".format(
+                            len(sort_direction_list),
+                            len(sort_column_list),
+                        )
+                    )
+                directions = sort_direction_list
+            else:
+                directions = ["ASC"] * len(sort_column_list)
             order_by = [
                 LegacyApiSortInfo(column=col, direction=d)
                 for col, d in zip(sort_column_list, directions)

@@ -122,6 +122,18 @@ class TestOlapGroupByAppliedFunction:
             "in the current frame. Current frame columns: ['col1', 'col2']"
         )
 
+        # sort_direction_list length mismatch with sort_column_list
+        with pytest.raises(ValueError) as r:
+            frame.olap_group_by(
+                [],
+                [olap_agg("col1", lambda c: c.count())],
+                ["col1", "col2"],
+                ["ASC"]
+            )
+        assert r.value.args[0] == (
+            "Length of sort_direction_list (1) must match length of sort_column_list (2)"
+        )
+
         # Duplicate new column names
         with pytest.raises(ValueError) as r:
             frame.olap_group_by(

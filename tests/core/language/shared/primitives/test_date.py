@@ -337,7 +337,7 @@ class TestPyLegendDate:
         with pytest.raises(ValueError) as v:
             most_recent_day_of_week("notaday")
         assert "Invalid day of week: 'notaday'" in v.value.args[0]
-        assert "Must be one of: monday, tuesday, wednesday, thursday, friday, saturday, sunday" in v.value.args[0]
+        assert "Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday" in v.value.args[0]
 
         with pytest.raises(TypeError) as t:
             most_recent_day_of_week(123)  # type: ignore

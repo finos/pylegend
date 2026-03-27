@@ -34,7 +34,7 @@ from pylegend.core.sql.metamodel import (
     BitwiseBinaryExpression,
     BitwiseBinaryOperator,
     BitwiseShiftExpression,
-    BitwiseShiftDirection,
+    BitwiseShiftDirection
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,

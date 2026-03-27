@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendTypeVar,

@@ -122,7 +122,7 @@ class LegacyApiSortInfo:
     def get_direction(self) -> str:
         return self.__direction
 
-    def to_sql_sort_item(
+    def to_sql_node(
             self,
             query: QuerySpecification,
             config: FrameToSqlConfig
@@ -182,7 +182,7 @@ class LegacyApiWindow:
             ),
             orderBy=(
                 [] if self.__order_by is None else
-                [sort_info.to_sql_sort_item(query, config) for sort_info in self.__order_by]
+                [sort_info.to_sql_node(query, config) for sort_info in self.__order_by]
             ),
             windowFrame=None,
         )

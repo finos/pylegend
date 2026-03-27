@@ -17,7 +17,7 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
     PyLegendExpressionBooleanReturn,
@@ -90,15 +90,15 @@ class PyLegendBoolean(PyLegendPrimitive):
     @grammar_method
     def case(
             self,
-            if_true: PyLegendUnion[bool, int, float, str, date, datetime, "Decimal", PyLegendPrimitive],
-            if_false: PyLegendUnion[bool, int, float, str, date, datetime, "Decimal", PyLegendPrimitive],
+            if_true: "PyLegendPrimitiveOrPythonPrimitive",
+            if_false: "PyLegendPrimitiveOrPythonPrimitive",
     ) -> PyLegendPrimitive:
         from pylegend.core.language.shared.primitives import (
             PyLegendString, PyLegendInteger, PyLegendFloat, PyLegendDecimal,
             PyLegendDateTime, PyLegendStrictDate
         )
 
-        def resolve_param(param: PyLegendUnion[bool, int, float, str, date, datetime, Decimal, PyLegendPrimitive],
+        def resolve_param(param: PyLegendPrimitiveOrPythonPrimitive,
                           name: str) -> "PyLegendExpression":
             if isinstance(param, (bool, int, float, str, date, datetime, Decimal)):
                 return convert_literal_to_literal_expression(param)
