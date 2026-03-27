@@ -97,7 +97,6 @@ class PyLegendBoolean(PyLegendPrimitive):
             PyLegendString, PyLegendInteger, PyLegendFloat, PyLegendDecimal,
             PyLegendDateTime, PyLegendStrictDate
         )
-        from decimal import Decimal
 
         def resolve_param(param: PyLegendUnion[bool, int, float, str, date, datetime, Decimal, PyLegendPrimitive],
                           name: str) -> "PyLegendExpression":

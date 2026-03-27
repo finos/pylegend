@@ -1117,4 +1117,5 @@ class PyLegendNumberInListExpression(PyLegendNaryExpression, PyLegendExpressionB
             operands,
             PyLegendNumberInListExpression.__to_sql_func,
             PyLegendNumberInListExpression.__to_pure_func,
+            non_nullable=True
         )

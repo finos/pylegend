@@ -96,7 +96,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendSecondExpression",
     "PyLegendEpochExpression",
     "PyLegendTodayExpression",
-    "PyLegendTodayDateTimeExpression",
     "PyLegendNowExpression",
     "PyLegendDatePartExpression",
     "PyLegendDateLessThanExpression",
@@ -639,29 +638,6 @@ class PyLegendTodayExpression(PyLegendNullaryExpression, PyLegendExpressionStric
             self,
             PyLegendTodayExpression.__to_sql_func,
             PyLegendTodayExpression.__to_pure_func,
-            non_nullable=True
-        )
-
-
-class PyLegendTodayDateTimeExpression(PyLegendNullaryExpression, PyLegendExpressionDateTimeReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CurrentTime(type_=CurrentTimeType.DATE, precision=None)
-
-    @staticmethod
-    def __to_pure_func(config: FrameToPureConfig) -> str:
-        return "today()"
-
-    def __init__(self) -> None:
-        PyLegendExpressionDateTimeReturn.__init__(self)
-        PyLegendNullaryExpression.__init__(
-            self,
-            PyLegendTodayDateTimeExpression.__to_sql_func,
-            PyLegendTodayDateTimeExpression.__to_pure_func,
             non_nullable=True
         )
 

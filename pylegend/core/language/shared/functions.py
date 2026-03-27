@@ -24,7 +24,6 @@ from pylegend.core.language.shared.primitives.string import PyLegendString
 from pylegend.core.language.shared.operations.date_operation_expressions import (
     PyLegendTodayExpression,
     PyLegendNowExpression,
-    PyLegendTodayDateTimeExpression,
     PyLegendMostRecentDayOfWeekExpression,
     PyLegendPreviousDayOfWeekExpression,
 )
@@ -37,7 +36,6 @@ from pylegend.core.language.shared.operations.float_operation_expressions import
 
 __all__: PyLegendSequence[str] = [
     "today",
-    "today_datetime",
     "now",
     "current_user",
     "pi",
@@ -48,10 +46,6 @@ __all__: PyLegendSequence[str] = [
 
 def today() -> PyLegendStrictDate:
     return PyLegendStrictDate(PyLegendTodayExpression())
-
-
-def today_datetime() -> PyLegendDateTime:
-    return PyLegendDateTime(PyLegendTodayDateTimeExpression())
 
 
 def now() -> PyLegendDateTime:
@@ -70,10 +64,10 @@ def _validate_day_of_week(day_of_week: str) -> PyLegendExpressionStringReturn:
     if not isinstance(day_of_week, str):
         raise TypeError(f"day_of_week must be a string, got {type(day_of_week).__name__}")
     normalized = day_of_week.strip().capitalize()
-    if normalized.lower() not in ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"):
+    if normalized not in ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"):
         raise ValueError(
             f"Invalid day of week: '{day_of_week}'. "
-            f"Must be one of: monday, tuesday, wednesday, thursday, friday, saturday, sunday"
+            f"Must be one of: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday"
         )
     return PyLegendStringLiteralExpression(normalized)
 
