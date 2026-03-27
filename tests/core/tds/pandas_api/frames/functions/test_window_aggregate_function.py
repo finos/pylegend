@@ -147,14 +147,14 @@ class TestExpandingOnBaseFrame:
             FROM
                 (
                     SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
-                        SUM("root"."col2") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
+                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -165,8 +165,8 @@ class TestExpandingOnBaseFrame:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~[
                 col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
                 col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
               ])
@@ -199,15 +199,15 @@ class TestExpandingOnBaseFrame:
             FROM
                 (
                     SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum(col1)__pylegend_olap_column__",
-                        COUNT("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lambda_1(col1)__pylegend_olap_column__",
-                        MIN("root"."col2") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum(col1)__pylegend_olap_column__",
+                        COUNT("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lambda_1(col1)__pylegend_olap_column__",
+                        MIN("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -218,8 +218,8 @@ class TestExpandingOnBaseFrame:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~[
                 'sum(col1)__pylegend_olap_column__':{p,w,r | $r.col1}:{c | $c->sum()},
                 'lambda_1(col1)__pylegend_olap_column__':{p,w,r | $r.col1}:{c | $c->count()},
                 col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->min()}
@@ -250,14 +250,14 @@ class TestExpandingOnBaseFrame:
             FROM
                 (
                     SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col2" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
-                        SUM("root"."col2") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col2" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
+                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -268,8 +268,8 @@ class TestExpandingOnBaseFrame:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col2)], rows(unbounded(), 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)], rows(unbounded(), 0)), ~[
                 col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
                 col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
               ])
@@ -304,14 +304,14 @@ class TestRollingOnBaseFrame:
             FROM
                 (
                     SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
-                        SUM("root"."col2") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
+                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -322,8 +322,8 @@ class TestRollingOnBaseFrame:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(2, 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(2, 0)), ~[
                 col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
                 col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
               ])
@@ -359,15 +359,15 @@ class TestExpandingOnGroupbyFrame:
             FROM
                 (
                     SELECT
-                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__internal_pylegend_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__",
-                        SUM("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__internal_pylegend_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__",
+                        SUM("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".grp AS "grp",
                                 "root".val AS "val",
                                 "root".rnd AS "rnd",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -378,8 +378,8 @@ class TestExpandingOnGroupbyFrame:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[grp, __internal_pylegend_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
                 val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
                 rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
               ])
@@ -413,16 +413,16 @@ class TestExpandingOnGroupbyFrame:
             FROM
                 (
                     SELECT
-                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__internal_pylegend_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum(val)__pylegend_olap_column__",
-                        COUNT("root"."val") OVER (PARTITION BY "root"."grp", "root"."__internal_pylegend_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lambda_1(val)__pylegend_olap_column__",
-                        MIN("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__internal_pylegend_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum(val)__pylegend_olap_column__",
+                        COUNT("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lambda_1(val)__pylegend_olap_column__",
+                        MIN("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".grp AS "grp",
                                 "root".val AS "val",
                                 "root".rnd AS "rnd",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -433,8 +433,8 @@ class TestExpandingOnGroupbyFrame:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[grp, __internal_pylegend_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
                 'sum(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->sum()},
                 'lambda_1(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->count()},
                 rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->min()}
@@ -524,13 +524,13 @@ class TestWindowSeries:
             FROM
                 (
                     SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -541,8 +541,8 @@ class TestWindowSeries:
 
         expected_series_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~[
                 col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()}
               ])
               ->project(~[
@@ -565,13 +565,13 @@ class TestWindowSeries:
                     SELECT
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1_cumsum__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1_cumsum__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -582,8 +582,8 @@ class TestWindowSeries:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_cumsum:c|$c.col1__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -608,14 +608,14 @@ class TestWindowSeries:
             FROM
                 (
                     SELECT
-                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__internal_pylegend_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__"
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".grp AS "grp",
                                 "root".val AS "val",
                                 "root".rnd AS "rnd",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -626,8 +626,8 @@ class TestWindowSeries:
 
         expected_series_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[grp, __internal_pylegend_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
                 val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()}
               ])
               ->project(~[
@@ -652,14 +652,14 @@ class TestWindowSeries:
                         "root"."grp" AS "grp",
                         "root"."val" AS "val",
                         "root"."rnd" AS "rnd",
-                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__internal_pylegend_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val_cumsum__pylegend_olap_column__"
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val_cumsum__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".grp AS "grp",
                                 "root".val AS "val",
                                 "root".rnd AS "rnd",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -670,8 +670,8 @@ class TestWindowSeries:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[grp, __internal_pylegend_column__], [ascending(~val)], rows(unbounded(), 0)), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), 0)), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
               ->project(~[grp:c|$c.grp, val:c|$c.val, rnd:c|$c.rnd, val_cumsum:c|$c.val__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -705,8 +705,8 @@ class TestWindowSeries:
 
         expected_series_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|(toOne($c.col1__pylegend_olap_column__) - 100)])
         '''  # noqa: E501
         expected_series_pure = dedent(expected_series_pure).strip()
@@ -725,13 +725,13 @@ class TestWindowSeries:
                     SELECT
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "shifted__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "shifted__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -742,8 +742,8 @@ class TestWindowSeries:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, shifted:c|(toOne($c.col1__pylegend_olap_column__) - 100)])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -771,26 +771,26 @@ class TestWindowSeries:
                     SELECT
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
-                        AVG("root"."col2") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "combined__pylegend_olap_column__"
+                        AVG("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "combined__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root"."col1" AS "col1",
                                 "root"."col2" AS "col2",
                                 (("root"."combined__pylegend_olap_column__" + 2) + 5) AS "combined",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 (
                                     SELECT
                                         "root"."col1" AS "col1",
                                         "root"."col2" AS "col2",
-                                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "combined__pylegend_olap_column__"
+                                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "combined__pylegend_olap_column__"
                                     FROM
                                         (
                                             SELECT
                                                 "root".col1 AS "col1",
                                                 "root".col2 AS "col2",
-                                                0 AS "__internal_pylegend_column__"
+                                                0 AS "__pylegend_zero_column__"
                                             FROM
                                                 test_schema.test_table AS "root"
                                         ) AS "root"
@@ -803,11 +803,11 @@ class TestWindowSeries:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, combined:c|((toOne($c.col1__pylegend_olap_column__) + 2) + 5)])
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(2, 0)), ~col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->average()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(2, 0)), ~col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->average()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, combined:c|(toOne($c.combined) / toOne($c.col2__pylegend_olap_column__))])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -831,13 +831,13 @@ class TestWindowSeries:
             FROM
                 (
                     SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -848,8 +848,8 @@ class TestWindowSeries:
 
         expected_series_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(2, 0)), ~[
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(2, 0)), ~[
                 col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()}
               ])
               ->project(~[
@@ -872,13 +872,13 @@ class TestWindowSeries:
                     SELECT
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1_roll3__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1_roll3__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -889,8 +889,8 @@ class TestWindowSeries:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(2, 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(2, 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_roll3:c|$c.col1__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -914,14 +914,14 @@ class TestWindowSeries:
             FROM
                 (
                     SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
                         "root"."col2" AS "col2"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                         ) AS "root"
@@ -932,8 +932,8 @@ class TestWindowSeries:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1__pylegend_olap_column__, col2:c|$c.col2])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -966,13 +966,13 @@ class TestEdgeCases:
                     SELECT
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cumsum__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cumsum__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                             WHERE
@@ -986,8 +986,8 @@ class TestEdgeCases:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->filter(c|($c.col1 > 10))
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, cumsum:c|$c.col1__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -1014,13 +1014,13 @@ class TestEdgeCases:
                     SELECT
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cumsum__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cumsum__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root".col1 AS "col1",
                                 "root".col2 AS "col2",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 test_schema.test_table AS "root"
                             ORDER BY
@@ -1034,8 +1034,8 @@ class TestEdgeCases:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->sort([~col1->ascending()])
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, cumsum:c|$c.col1__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -1064,26 +1064,26 @@ class TestEdgeCases:
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
                         "root"."cumsum" AS "cumsum",
-                        AVG("root"."col2") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col2" ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS "roll_mean__pylegend_olap_column__"
+                        AVG("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2" ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS "roll_mean__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
                                 "root"."col1" AS "col1",
                                 "root"."col2" AS "col2",
                                 "root"."cumsum__pylegend_olap_column__" AS "cumsum",
-                                0 AS "__internal_pylegend_column__"
+                                0 AS "__pylegend_zero_column__"
                             FROM
                                 (
                                     SELECT
                                         "root"."col1" AS "col1",
                                         "root"."col2" AS "col2",
-                                        SUM("root"."col1") OVER (PARTITION BY "root"."__internal_pylegend_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cumsum__pylegend_olap_column__"
+                                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "cumsum__pylegend_olap_column__"
                                     FROM
                                         (
                                             SELECT
                                                 "root".col1 AS "col1",
                                                 "root".col2 AS "col2",
-                                                0 AS "__internal_pylegend_column__"
+                                                0 AS "__pylegend_zero_column__"
                                             FROM
                                                 test_schema.test_table AS "root"
                                         ) AS "root"
@@ -1096,11 +1096,11 @@ class TestEdgeCases:
 
         expected_pure = '''
             #Table(test_schema.test_table)#
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), 0)), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, cumsum:c|$c.col1__pylegend_olap_column__])
-              ->extend(~__internal_pylegend_column__:{r|0})
-              ->extend(over(~[__internal_pylegend_column__], [ascending(~col2)], rows(4, 0)), ~col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->average()})
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)], rows(4, 0)), ~col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->average()})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, cumsum:c|$c.cumsum, roll_mean:c|$c.col2__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()

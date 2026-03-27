@@ -71,6 +71,10 @@ class AggregateFunction(PandasApiAppliedFunction):
         self.__args = args
         self.__kwargs = kwargs
 
+    @property
+    def func(self) -> PyLegendAggInput:
+        return self.__func
+
     def get_aggregates(self, frame_name: str = "r") -> PyLegendList[AggregateEntry]:
         group_col_names: PyLegendList[str] = []
         validation_columns: PyLegendList[str]

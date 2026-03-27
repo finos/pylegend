@@ -117,6 +117,7 @@ _COL_TYPE_TO_SERIES_CLASS_NAME: PyLegendDict[str, str] = {
 def _get_new_series_for_column(
         base_frame: "PandasApiBaseTdsFrame",
         column: TdsColumn,
+        applied_function_frame: PyLegendOptional[PandasApiAppliedFunctionTdsFrame] = None,
 ) -> "Series":
     col_type = column.get_type()
     col_name = column.get_name()
@@ -127,8 +128,8 @@ def _get_new_series_for_column(
     cls = globals()[class_name]
 
     new_series: Series = cls(base_frame, col_name)  # type: ignore[no-any-return]
-    if isinstance(base_frame, PandasApiAppliedFunctionTdsFrame):
-        new_series._filtered_frame = base_frame
+    if applied_function_frame is not None:
+        new_series._filtered_frame = applied_function_frame
     return new_series
 
 
@@ -325,7 +326,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         potential_num_cols = len(aggregated_frame.columns())
         if potential_num_cols == 1:
-            return _get_new_series_for_column(aggregated_frame, aggregated_frame.columns()[0])
+            return _get_new_series_for_column(self._base_frame, aggregated_frame.columns()[0], aggregated_frame)
         else:
             return aggregated_frame
 
