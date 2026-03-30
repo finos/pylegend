@@ -1605,3 +1605,56 @@ class TestPylegendExtensionWindowFrame:
             range_between(duration_start=-1, duration_start_unit="LIGHTYEARS", duration_end="unbounded")
         assert "Invalid duration unit" in str(v.value)
 
+    def test_range_between_float_offsets(self) -> None:
+        """Float offsets (e.g. 2.5) should work in range_between."""
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.window_frame_legend_ext(
+            range_between(-2.5, 1.5), order_by="col1"
+        ).agg("sum")
+
+        sql = result.to_sql_query()
+        assert "RANGE BETWEEN 2.5 PRECEDING AND 1.5 FOLLOWING" in sql
+
+        pure = result.to_pure_query()
+        assert "_range(minus(2.5), 1.5)" in pure
+
+    def test_range_between_decimal_offsets(self) -> None:
+        """Decimal offsets should work in range_between, producing CAST and D suffix."""
+        from decimal import Decimal
+
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.window_frame_legend_ext(
+            range_between(Decimal("-0.5"), Decimal("2.1")), order_by="col1"
+        ).agg("sum")
+
+        sql = result.to_sql_query()
+        assert "CAST('0.5' AS DECIMAL) PRECEDING" in sql
+        assert "CAST('2.1' AS DECIMAL) FOLLOWING" in sql
+
+        pure = result.to_pure_query()
+        assert "_range(minus(0.5D), 2.1D)" in pure
+
+    def test_range_between_duration_with_float_offset(self) -> None:
+        """Float offsets with duration units (e.g. 0.5 DAYS)."""
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.window_frame_legend_ext(
+            range_between(
+                duration_start=-0.5, duration_start_unit="DAYS",
+                duration_end=1.5, duration_end_unit="HOURS",
+            ),
+            order_by="col1",
+        ).agg("sum")
+
+        sql = result.to_sql_query()
+        assert "INTERVAL '0.5 DAY' PRECEDING" in sql
+        assert "INTERVAL '1.5 HOUR' FOLLOWING" in sql
+
+        pure = result.to_pure_query()
+        assert "_range(minus(0.5), DurationUnit.DAYS, 1.5, DurationUnit.HOURS)" in pure
+

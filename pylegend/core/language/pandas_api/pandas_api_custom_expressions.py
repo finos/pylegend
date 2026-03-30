@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+from decimal import Decimal as PythonDecimal
 from enum import Enum
 from pylegend.core.language import (
     PyLegendPrimitive,
@@ -253,13 +254,13 @@ class PandasApiFrameBoundType(Enum):
 
 class PandasApiFrameBound:
     type_: PandasApiFrameBoundType
-    value: PyLegendOptional[PyLegendUnion[int, float]]
+    value: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]]
     duration_unit: PyLegendOptional[PandasApiDurationUnit]
 
     def __init__(
         self,
         type_: PandasApiFrameBoundType,
-        value: PyLegendOptional[PyLegendUnion[int, float]] = None,
+        value: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
         duration_unit: PyLegendOptional[PandasApiDurationUnit] = None,
     ) -> None:
         self.type_ = type_

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal as PythonDecimal
+
 from pylegend._typing import (
     PyLegendOptional,
     PyLegendUnion,
@@ -52,7 +54,7 @@ class FrameSpec:
 
     @staticmethod
     def _build_frame_bound(
-            value: PyLegendOptional[PyLegendUnion[int, float]],
+            value: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]],
             is_start: bool,
             duration_unit: PyLegendOptional[PandasApiDurationUnit] = None,
     ) -> PandasApiFrameBound:
@@ -121,19 +123,19 @@ class RangeBetween(FrameSpec):
     accepted only when using the duration kwargs).
     """
 
-    _start: PyLegendOptional[PyLegendUnion[int, float]]
-    _end: PyLegendOptional[PyLegendUnion[int, float]]
+    _start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]]
+    _end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]]
     _start_duration_unit: PyLegendOptional[PandasApiDurationUnit]
     _end_duration_unit: PyLegendOptional[PandasApiDurationUnit]
 
     def __init__(
             self,
-            start: PyLegendOptional[PyLegendUnion[int, float]] = None,
-            end: PyLegendOptional[PyLegendUnion[int, float]] = None,
+            start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
             *,
-            duration_start: PyLegendOptional[PyLegendUnion[int, float, str]] = None,
+            duration_start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
             duration_start_unit: PyLegendOptional[str] = None,
-            duration_end: PyLegendOptional[PyLegendUnion[int, float, str]] = None,
+            duration_end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
             duration_end_unit: PyLegendOptional[str] = None,
     ) -> None:
         super().__init__(PandasApiWindowFrameMode.RANGE)
@@ -164,10 +166,10 @@ class RangeBetween(FrameSpec):
 
     @staticmethod
     def _parse_duration_bound(
-            value: PyLegendOptional[PyLegendUnion[int, float, str]],
+            value: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]],
             unit: PyLegendOptional[str],
             param_name: str,
-    ) -> "tuple[PyLegendOptional[PyLegendUnion[int, float]], PyLegendOptional[PandasApiDurationUnit]]":
+    ) -> "tuple[PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]], PyLegendOptional[PandasApiDurationUnit]]":
         if value is None:
             return None, None
         if isinstance(value, str):
@@ -192,12 +194,12 @@ def rows_between(start: PyLegendOptional[int] = None, end: PyLegendOptional[int]
 
 
 def range_between(
-        start: PyLegendOptional[PyLegendUnion[int, float]] = None,
-        end: PyLegendOptional[PyLegendUnion[int, float]] = None,
+        start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+        end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
         *,
-        duration_start: PyLegendOptional[PyLegendUnion[int, float, str]] = None,
+        duration_start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
         duration_start_unit: PyLegendOptional[str] = None,
-        duration_end: PyLegendOptional[PyLegendUnion[int, float, str]] = None,
+        duration_end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
         duration_end_unit: PyLegendOptional[str] = None,
 ) -> RangeBetween:
     """Create a RANGE BETWEEN frame specification."""
