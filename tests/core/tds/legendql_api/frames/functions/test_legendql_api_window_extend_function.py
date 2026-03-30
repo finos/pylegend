@@ -234,7 +234,7 @@ class TestWindowExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.window_extend(
-            frame.window(order_by="col3"),
+            frame.window(partition_by="col2", order_by="col3"),
             [
                 ("col4", lambda p, w, r: r.get_integer('col1') + 1),
                 ("col5", lambda p, w, r: r.get_integer('col1') + 2),
