@@ -32,7 +32,8 @@ from pylegend.core.sql.metamodel import (
     IsNullPredicate,
     IsNotNullPredicate,
     Cast,
-    ColumnType
+    ColumnType,
+    StringLiteral
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -43,7 +44,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendPrimitiveNotEqualsExpression",
     "PyLegendIsEmptyExpression",
     "PyLegendIsNotEmptyExpression",
-    "PyLegendPrimitiveToStringExpression"
+    "PyLegendPrimitiveToStringExpression",
+    "PyLegendPrimitiveCastExpression"
 ]
 
 
@@ -174,4 +176,62 @@ class PyLegendPrimitiveToStringExpression(PyLegendUnaryExpression, PyLegendExpre
             PyLegendPrimitiveToStringExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
+        )
+
+
+_PRIMITIVE_TYPE_TO_SQL_TYPE: PyLegendDict[str, str] = {
+    "Boolean": "BOOLEAN",
+    "String": "TEXT",
+    "Number": "DOUBLE PRECISION",
+    "Integer": "INTEGER",
+    "Float": "DOUBLE PRECISION",
+    "Decimal": "DECIMAL",
+    "Date": "DATE",
+    "DateTime": "TIMESTAMP",
+    "StrictDate": "DATE",
+    "LatestDate": "DATE",
+    "TinyInt": "SMALLINT",
+    "UTinyInt": "SMALLINT",
+    "SmallInt": "SMALLINT",
+    "USmallInt": "INTEGER",
+    "Int": "INTEGER",
+    "UInt": "BIGINT",
+    "BigInt": "BIGINT",
+    "UBigInt": "NUMERIC",
+    "Varchar": "VARCHAR",
+    "Timestamp": "TIMESTAMP",
+    "Float4": "REAL",
+    "Double": "DOUBLE PRECISION",
+    "Numeric": "NUMERIC",
+}
+
+
+class PyLegendPrimitiveCastExpression(PyLegendBinaryExpression, PyLegendExpression):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        assert isinstance(expression2, StringLiteral)
+        type_name = expression2.value
+        sql_type = _PRIMITIVE_TYPE_TO_SQL_TYPE.get(type_name, type_name.upper())
+        return Cast(expression1, ColumnType(name=sql_type, parameters=[]))
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        type_name = op2_expr[1:-1] if op2_expr.startswith("'") and op2_expr.endswith("'") else op2_expr
+        return generate_pure_functional_call("cast", [op1_expr, f"@{type_name}"])
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpression) -> None:
+        PyLegendExpression.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendPrimitiveCastExpression.__to_sql_func,
+            PyLegendPrimitiveCastExpression.__to_pure_func,
+            non_nullable=True,
         )

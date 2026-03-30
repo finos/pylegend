@@ -22,7 +22,7 @@ from pylegend.core.database.sql_to_string import (
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn, PrimitiveType
 from pylegend.core.language import today, now
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
@@ -401,6 +401,12 @@ class TestPyLegendDate:
             self.__generate_sql_string(lambda x: x.get_date("col2").diff(x.get_date("col1"), "invalid"))
         assert t.value.args[0] == ("Unknown duration unit - invalid. Supported values are - YEARS, MONTHS, WEEKS, "
                                    "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
+
+    def test_date_cast(self) -> None:
+        assert self.__generate_sql_string(lambda x: x.get_date("col1").cast(PrimitiveType.String)) == \
+               'CAST("root".col1 AS TEXT)'
+        assert self.__generate_pure_string(lambda x: x.get_date("col1").cast(PrimitiveType.String)) == \
+               '$t.col1->cast(@String)'
 
     def test_e2e_date_adjust_expr(
             self,

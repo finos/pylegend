@@ -25,6 +25,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
+from pylegend.core.tds.tds_column import PrimitiveType
 from pylegend.core.language.shared.primitives.precise_primitives import (
     PyLegendTinyInt,
     PyLegendUTinyInt,
@@ -148,6 +149,48 @@ class TestPreciseIntegerTypes:
         assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_integer("col1") < 10) == \
                '($t.col1 < 10)'
 
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.tinyint_column, "TinyInt"),
+        (PrimitiveTdsColumn.utinyint_column, "UTinyInt"),
+        (PrimitiveTdsColumn.smallint_column, "SmallInt"),
+        (PrimitiveTdsColumn.usmallint_column, "USmallInt"),
+        (PrimitiveTdsColumn.int_column, "Int"),
+        (PrimitiveTdsColumn.uint_column, "UInt"),
+        (PrimitiveTdsColumn.bigint_column, "BigInt"),
+        (PrimitiveTdsColumn.ubigint_column, "UBigInt"),
+    ], ids=["TinyInt", "UTinyInt", "SmallInt", "USmallInt", "Int", "UInt", "BigInt", "UBigInt"])
+    @pytest.mark.parametrize("target_type,expected_sql_type", [
+        (PrimitiveType.TinyInt, "SMALLINT"),
+        (PrimitiveType.UTinyInt, "SMALLINT"),
+        (PrimitiveType.SmallInt, "SMALLINT"),
+        (PrimitiveType.USmallInt, "INTEGER"),
+        (PrimitiveType.Int, "INTEGER"),
+        (PrimitiveType.UInt, "BIGINT"),
+        (PrimitiveType.BigInt, "BIGINT"),
+        (PrimitiveType.UBigInt, "NUMERIC"),
+        (PrimitiveType.Integer, "INTEGER"),
+    ], ids=[
+        "to_TinyInt", "to_UTinyInt", "to_SmallInt", "to_USmallInt",
+        "to_Int", "to_UInt", "to_BigInt", "to_UBigInt", "to_Integer",
+    ])
+    def test_cast_sql(self, col_factory, type_name, target_type, expected_sql_type) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        result = self.__sql(frame, row, base_query,
+                            lambda x: x.get_integer("col1").cast(target_type))
+        assert result == f'CAST("root".col1 AS {expected_sql_type})'
+
+    def test_cast_returns_precise_type(self) -> None:
+        frame, row, base_query = self.__make_frame(PrimitiveTdsColumn.tinyint_column)
+        assert isinstance(row.get_integer("col1").cast(PrimitiveType.BigInt), PyLegendBigInt)
+        assert isinstance(row.get_integer("col1").cast(PrimitiveType.SmallInt), PyLegendSmallInt)
+        assert isinstance(row.get_integer("col1").cast(PrimitiveType.Int), PyLegendInt)
+        assert isinstance(row.get_integer("col1").cast(PrimitiveType.UInt), PyLegendUInt)
+
+    def test_cast_invalid_target_raises(self) -> None:
+        frame, row, base_query = self.__make_frame(PrimitiveTdsColumn.tinyint_column)
+        with pytest.raises(TypeError, match="cast target must be a PrimitiveType"):
+            row.get_integer("col1").cast("BigInt")  # type: ignore
+
     def __make_frame(self, col_factory):
         frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
             col_factory("col1"), col_factory("col2")
@@ -240,6 +283,26 @@ class TestPreciseFloatTypes:
         assert self.__pure(frame, row, base_query, type_name, lambda x: x.get_float("col1") > 3.14) == \
                '($t.col1 > 3.14)'
 
+    @pytest.mark.parametrize("col_factory,type_name", [
+        (PrimitiveTdsColumn.float4_column, "Float4"),
+        (PrimitiveTdsColumn.double_column, "Double"),
+    ], ids=["Float4", "Double"])
+    @pytest.mark.parametrize("target_type,expected_sql_type", [
+        (PrimitiveType.Float4, "REAL"),
+        (PrimitiveType.Double, "DOUBLE PRECISION"),
+        (PrimitiveType.Float, "DOUBLE PRECISION"),
+    ], ids=["to_Float4", "to_Double", "to_Float"])
+    def test_cast_sql(self, col_factory, type_name, target_type, expected_sql_type) -> None:
+        frame, row, base_query = self.__make_frame(col_factory)
+        result = self.__sql(frame, row, base_query,
+                            lambda x: x.get_float("col1").cast(target_type))
+        assert result == f'CAST("root".col1 AS {expected_sql_type})'
+
+    def test_cast_returns_precise_type(self) -> None:
+        frame, row, base_query = self.__make_frame(PrimitiveTdsColumn.float4_column)
+        assert isinstance(row.get_float("col1").cast(PrimitiveType.Double), PyLegendDouble)
+        assert isinstance(row.get_float("col1").cast(PrimitiveType.Float4), PyLegendFloat4)
+
     def __make_frame(self, col_factory):
         frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
             col_factory("col1"), col_factory("col2")
@@ -317,6 +380,18 @@ class TestPreciseNumericType:
         assert self.__generate_pure_string(lambda x: x.get_decimal("col1") < 100) == \
                '($t.col1 < 100)'
 
+    @pytest.mark.parametrize("target_type,expected_sql_type", [
+        (PrimitiveType.Decimal, "DECIMAL"),
+        (PrimitiveType.Integer, "INTEGER"),
+    ], ids=["to_Decimal", "to_Integer"])
+    def test_cast_sql(self, target_type, expected_sql_type) -> None:
+        result = self.db_extension.process_expression(
+            self.tds_row.get_decimal("col1").cast(target_type).to_sql_expression(
+                {"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert result == f'CAST("root".col1 AS {expected_sql_type})'
+
     def __generate_sql_string(self, f) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
@@ -386,6 +461,14 @@ class TestPreciseVarcharType:
         assert self.__generate_pure_string(lambda x: x.get_string("col1") < x.get_string("col2")) == \
                '($t.col1 < $t.col2)'
 
+    def test_cast_to_string_sql(self) -> None:
+        result = self.db_extension.process_expression(
+            self.tds_row.get_string("col1").cast(PrimitiveType.String).to_sql_expression(
+                {"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert result == 'CAST("root".col1 AS TEXT)'
+
     def __generate_sql_string(self, f) -> str:
         return self.db_extension.process_expression(
             f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
@@ -432,6 +515,22 @@ class TestPreciseTimestampType:
                '("root".col1 < "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_datetime("col1") < x.get_datetime("col2")) == \
                '($t.col1 < $t.col2)'
+
+    @pytest.mark.parametrize("target_type,expected_sql_type", [
+        (PrimitiveType.Timestamp, "TIMESTAMP"),
+        (PrimitiveType.DateTime, "TIMESTAMP"),
+        (PrimitiveType.Date, "DATE"),
+    ], ids=["to_Timestamp", "to_DateTime", "to_Date"])
+    def test_cast_sql(self, target_type, expected_sql_type) -> None:
+        result = self.db_extension.process_expression(
+            self.tds_row.get_datetime("col1").cast(target_type).to_sql_expression(
+                {"t": self.base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        )
+        assert result == f'CAST("root".col1 AS {expected_sql_type})'
+
+    def test_cast_returns_timestamp_type(self) -> None:
+        assert isinstance(self.tds_row.get_datetime("col1").cast(PrimitiveType.Timestamp), PyLegendTimestamp)
 
     def __generate_sql_string(self, f) -> str:
         return self.db_extension.process_expression(

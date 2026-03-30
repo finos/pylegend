@@ -234,7 +234,7 @@ class TestWindowExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.window_extend(
-            frame.window(partition_by="col2", order_by="col3"),
+            frame.window(order_by="col3"),
             [
                 ("col4", lambda p, w, r: r.get_integer('col1') + 1),
                 ("col5", lambda p, w, r: r.get_integer('col1') + 2),
@@ -245,8 +245,8 @@ class TestWindowExtendAppliedFunction:
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
                         "root"."col3" AS "col3",
-                        ("root"."col1" + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
-                        ("root"."col1" + 2) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5"
+                        ("root"."col1" + 1) OVER (ORDER BY "root"."col3") AS "col4",
+                        ("root"."col1" + 2) OVER (ORDER BY "root"."col3") AS "col5"
                     FROM
                         (
                             SELECT
@@ -260,13 +260,13 @@ class TestWindowExtendAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
-              ->extend(over(~[col2], [ascending(~col3)]), ~[
+              ->extend(over([ascending(~col3)]), ~[
                 col4:{p,w,r | toOne($r.col1) + 1},
                 col5:{p,w,r | toOne($r.col1) + 2}
               ])'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
-               ('#Table(test_schema.test_table)#->extend(over(~[col2], [ascending(~col3)]), '
+               ('#Table(test_schema.test_table)#->extend(over([ascending(~col3)]), '
                 '~[col4:{p,w,r | toOne($r.col1) + 1}, col5:{p,w,r | toOne($r.col1) + 2}])')
 
     def test_query_gen_window_extend_function_complex_window(self) -> None:
