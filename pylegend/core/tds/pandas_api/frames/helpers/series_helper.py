@@ -410,6 +410,7 @@ def _convert_core_aggregate_series_to_window_aggregate_seroes(
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+    from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import RowsBetween
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
     applied_func_frame = get_applied_func(core_series)
@@ -421,8 +422,7 @@ def _convert_core_aggregate_series_to_window_aggregate_seroes(
     window_frame = PandasApiWindowTdsFrame(
         base_frame=core_series.get_base_frame(),
         order_by=None,
-        lower_bound=None,
-        upper_bound=None,
+        frame_spec=RowsBetween(None, None),
     )
 
     column_name = core_series.columns()[0].get_name()

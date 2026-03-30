@@ -30,6 +30,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.abstract.csv_tds_frame import CsvInputFrameAbstract
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import rows_between, range_between
 from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
@@ -1249,7 +1250,7 @@ class TestPylegendExtensionWindowFrame:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.window_frame_legend_ext(order_by="col1").agg("sum")
+        frame = frame.window_frame_legend_ext(rows_between(), order_by="col1").agg("sum")
 
         expected_sql = '''
             SELECT
@@ -1299,7 +1300,7 @@ class TestPylegendExtensionWindowFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         frame = frame.window_frame_legend_ext(
-            order_by="col1", lower_bound=-2, upper_bound=3
+            rows_between(-2, 3), order_by="col1"
         ).agg("sum")
 
         expected_sql = '''
@@ -1350,7 +1351,7 @@ class TestPylegendExtensionWindowFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         series = frame["col1"].window_frame_legend_ext(
-            order_by="col1", lower_bound=-1, upper_bound=1
+            rows_between(-1, 1), order_by="col1"
         ).sum()
 
         expected_sql = '''
@@ -1383,7 +1384,7 @@ class TestPylegendExtensionWindowFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         frame = frame.groupby("grp").window_frame_legend_ext(
-            order_by="val", lower_bound=None, upper_bound=0
+            rows_between(None, 0), order_by="val"
         ).agg("sum")
 
         expected_sql = '''
@@ -1430,7 +1431,7 @@ class TestPylegendExtensionWindowFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         frame["col1_window_sum"] = frame["col1"].window_frame_legend_ext(
-            order_by="col1", lower_bound=None, upper_bound=None
+            rows_between(), order_by="col1"
         ).sum()
 
         expected_pure = '''
@@ -1443,7 +1444,7 @@ class TestPylegendExtensionWindowFrame:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
     @pytest.mark.parametrize(
-        "lower_bound, upper_bound, expected_sql_rows_clause, expected_pure_rows_expr",
+        "start, end, expected_sql_rows_clause, expected_pure_rows_expr",
         [
             (None, None, "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING", "rows(unbounded(), unbounded())"),
             (-1, None, "ROWS BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING", "rows(minus(1), unbounded())"),
@@ -1455,19 +1456,19 @@ class TestPylegendExtensionWindowFrame:
             (0, 0, "ROWS BETWEEN CURRENT ROW AND CURRENT ROW", "rows(0, 0)"),
         ],
     )
-    def test_sign_convention_parametrized(
+    def test_rows_between_sign_convention_parametrized(
             self,
-            lower_bound: PyLegendOptional[int],
-            upper_bound: PyLegendOptional[int],
+            start: PyLegendOptional[int],
+            end: PyLegendOptional[int],
             expected_sql_rows_clause: str,
             expected_pure_rows_expr: str,
     ) -> None:
-        """Verify that each (lower_bound, upper_bound) pair produces the correct SQL and Pure rows clause."""
+        """Verify that each rows_between(start, end) pair produces the correct SQL and Pure rows clause."""
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame.window_frame_legend_ext(
-            order_by="col1", lower_bound=lower_bound, upper_bound=upper_bound
+            rows_between(start, end), order_by="col1"
         ).agg("sum")
 
         sql = result.to_sql_query()
@@ -1476,23 +1477,54 @@ class TestPylegendExtensionWindowFrame:
         pure = result.to_pure_query()
         assert expected_pure_rows_expr in pure
 
-    def test_error_preceding_greater_than_following(self) -> None:
-        """lower_bound > upper_bound should raise ValueError."""
+    @pytest.mark.parametrize(
+        "start, end, expected_sql_range_clause, expected_pure_range_expr",
+        [
+            (None, None, "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING", "_range(unbounded(), unbounded())"),
+            (-1, 0, "RANGE BETWEEN 1 PRECEDING AND CURRENT ROW", "_range(minus(1), 0)"),
+            (0, 1, "RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING", "_range(0, 1)"),
+            (-100, 0, "RANGE BETWEEN 100 PRECEDING AND CURRENT ROW", "_range(minus(100), 0)"),
+            (-1, 1, "RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING", "_range(minus(1), 1)"),
+        ],
+    )
+    def test_range_between_parametrized(
+            self,
+            start: PyLegendOptional[int],
+            end: PyLegendOptional[int],
+            expected_sql_range_clause: str,
+            expected_pure_range_expr: str,
+    ) -> None:
+        """Verify that each range_between(start, end) pair produces the correct SQL and Pure clause."""
         columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        with pytest.raises(ValueError) as v:
-            frame.window_frame_legend_ext(order_by="col1", lower_bound=2, upper_bound=-1)
-        assert "lower_bound (2) must be <= upper_bound (-1)" in str(v.value)
+        result = frame.window_frame_legend_ext(
+            range_between(start, end), order_by="col1"
+        ).agg("sum")
 
-    def test_error_preceding_greater_than_following_on_groupby(self) -> None:
-        """lower_bound > upper_bound should raise ValueError on groupby frame too."""
-        columns = [
-            PrimitiveTdsColumn.string_column("grp"),
-            PrimitiveTdsColumn.integer_column("val"),
-        ]
+        sql = result.to_sql_query()
+        assert expected_sql_range_clause in sql
+
+        pure = result.to_pure_query()
+        assert expected_pure_range_expr in pure
+
+    def test_error_start_greater_than_end(self) -> None:
+        """start > end should raise ValueError."""
+        with pytest.raises(ValueError) as v:
+            rows_between(2, -1)
+        assert "start (2) must be <= end (-1)" in str(v.value)
+
+    def test_error_start_greater_than_end_range(self) -> None:
+        """start > end should raise ValueError for range_between too."""
+        with pytest.raises(ValueError) as v:
+            range_between(0, -2)
+        assert "start (0) must be <= end (-2)" in str(v.value)
+
+    def test_error_invalid_frame_spec_type(self) -> None:
+        """Passing a non-FrameSpec object should raise TypeError."""
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        with pytest.raises(ValueError) as v:
-            frame.groupby("grp").window_frame_legend_ext(order_by="val", lower_bound=0, upper_bound=-2)
-        assert "lower_bound (0) must be <= upper_bound (-2)" in str(v.value)
+        with pytest.raises(TypeError) as v:
+            frame.window_frame_legend_ext("not_a_frame_spec", order_by="col1")  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween" in str(v.value)
