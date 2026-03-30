@@ -544,8 +544,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         return PandasApiWindowTdsFrame(
             base_frame=self,
             order_by=order_by,
-            preceding_rows=None,
-            following_rows=0,
+            lower_bound=None,
+            upper_bound=0,
         )
 
     def rolling(
@@ -599,8 +599,51 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         return PandasApiWindowTdsFrame(
             base_frame=self,
             order_by=order_by,
-            preceding_rows=window - 1,
-            following_rows=0,
+            lower_bound=-(window - 1),
+            upper_bound=0,
+        )
+
+    def window_frame_legend_ext(
+            self,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            lower_bound: PyLegendOptional[int] = None,
+            upper_bound: PyLegendOptional[int] = None,
+    ) -> "PandasApiWindowTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Create a custom window specification with explicit control over the
+        ROWS BETWEEN clause.
+
+        Sign convention (same as legendQL):
+          * ``None``  → UNBOUNDED (PRECEDING for start, FOLLOWING for end)
+          * Negative  → PRECEDING (e.g. ``-3`` → ``3 PRECEDING``)
+          * ``0``     → CURRENT ROW
+          * Positive  → FOLLOWING (e.g. ``2`` → ``2 FOLLOWING``)
+
+        Parameters
+        ----------
+        order_by:
+            Column name(s) to use for ORDER BY within the window.
+            ``None`` means no explicit ordering (a fallback will be chosen automatically).
+        lower_bound:
+            Start bound of the window frame.
+        upper_bound:
+            End bound of the window frame.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        if (lower_bound is not None and upper_bound is not None
+                and lower_bound > upper_bound):
+            raise ValueError(
+                f"lower_bound ({lower_bound}) must be <= upper_bound ({upper_bound})"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
         )
 
     def merge(

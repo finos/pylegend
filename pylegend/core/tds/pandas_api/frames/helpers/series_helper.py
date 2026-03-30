@@ -421,8 +421,8 @@ def _convert_core_aggregate_series_to_window_aggregate_seroes(
     window_frame = PandasApiWindowTdsFrame(
         base_frame=core_series.get_base_frame(),
         order_by=None,
-        preceding_rows=None,
-        following_rows=None,
+        lower_bound=None,
+        upper_bound=None,
     )
 
     column_name = core_series.columns()[0].get_name()

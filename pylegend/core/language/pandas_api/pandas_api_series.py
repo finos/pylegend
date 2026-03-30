@@ -542,6 +542,25 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 
+    def window_frame_legend_ext(
+            self,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            lower_bound: PyLegendOptional[int] = None,
+            upper_bound: PyLegendOptional[int] = None,
+    ) -> "WindowSeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Create a custom window specification with explicit control over the
+        ROWS BETWEEN clause on a single column.
+        """
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        window_frame = self._base_frame.window_frame_legend_ext(
+            order_by=order_by, lower_bound=lower_bound, upper_bound=upper_bound
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
 
 @add_primitive_methods
 class BooleanSeries(Series, PyLegendBoolean, PyLegendExpressionBooleanReturn):  # type: ignore

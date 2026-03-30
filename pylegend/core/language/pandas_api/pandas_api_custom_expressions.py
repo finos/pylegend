@@ -233,7 +233,10 @@ class PandasApiFrameBound:
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         if self._should_use_value():
-            return convert_literal_to_literal_expression(self.value).to_pure_expression(config)
+            value_expr = convert_literal_to_literal_expression(self.value).to_pure_expression(config)
+            if self.type_ == PandasApiFrameBoundType.PRECEDING:
+                return f"minus({value_expr})"
+            return value_expr
         return self.type_.to_pure_expression()
 
     def _should_use_value(self) -> bool:

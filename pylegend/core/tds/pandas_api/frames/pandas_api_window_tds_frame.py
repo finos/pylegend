@@ -41,9 +41,16 @@ class PandasApiWindowTdsFrame:
     """
     Represents a window specification over a base frame.
 
-    Created by ``expanding()`` or ``rolling()`` on a frame or groupby frame.
+    Created by ``expanding()``, ``rolling()``, or ``window_frame_legend_ext()``
+    on a frame or groupby frame.
     Calling an aggregate (e.g. ``.sum()``, ``.mean()``) on this object will
     produce a windowed aggregate that can be assigned back to a frame column.
+
+    Sign convention for ``lower_bound`` and ``upper_bound`` (same as legendQL):
+      * ``None``  → UNBOUNDED (PRECEDING for start, FOLLOWING for end)
+      * Negative  → PRECEDING (e.g. ``-3`` → ``3 PRECEDING``)
+      * ``0``     → CURRENT ROW
+      * Positive  → FOLLOWING (e.g. ``2`` → ``2 FOLLOWING``)
 
     Parameters
     ----------
@@ -52,31 +59,29 @@ class PandasApiWindowTdsFrame:
     order_by:
         Column name(s) to use for ORDER BY within the window.
         ``None`` means no explicit ordering (caller must provide a fallback).
-    preceding_rows:
-        Number of rows preceding the current row to include.
-        ``None`` means unbounded preceding.
-    following_rows:
-        Number of rows following the current row to include.
-        ``None`` means unbounded following.
-        ``0`` means current row (the default for expanding/rolling).
+    lower_bound:
+        Start bound of the window frame. Must be ``<= upper_bound``
+        when both are not ``None``.
+    upper_bound:
+        End bound of the window frame.
     """
 
     _base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
     _order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]]
-    _preceding_rows: PyLegendOptional[int]
-    _following_rows: PyLegendOptional[int]
+    _start: PyLegendOptional[int]
+    _end: PyLegendOptional[int]
 
     def __init__(
             self,
             base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            preceding_rows: PyLegendOptional[int] = None,
-            following_rows: PyLegendOptional[int] = 0,
+            lower_bound: PyLegendOptional[int] = None,
+            upper_bound: PyLegendOptional[int] = None,
     ) -> None:
         self._base_frame = base_frame
         self._order_by = order_by
-        self._preceding_rows = preceding_rows
-        self._following_rows = following_rows
+        self._start = lower_bound
+        self._end = upper_bound
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         """Return the unwrapped base frame (unwrapping groupby if needed)."""
@@ -122,20 +127,10 @@ class PandasApiWindowTdsFrame:
             ]
 
         # Build start bound
-        if self._preceding_rows is None:
-            start = PandasApiFrameBound(PandasApiFrameBoundType.UNBOUNDED_PRECEDING)
-        elif self._preceding_rows == 0:
-            start = PandasApiFrameBound(PandasApiFrameBoundType.CURRENT_ROW)
-        else:
-            start = PandasApiFrameBound(PandasApiFrameBoundType.PRECEDING, self._preceding_rows)
+        start = self._build_frame_bound(self._start, is_start=True)
 
         # Build end bound
-        if self._following_rows is None:
-            end = PandasApiFrameBound(PandasApiFrameBoundType.UNBOUNDED_FOLLOWING)
-        elif self._following_rows == 0:
-            end = PandasApiFrameBound(PandasApiFrameBoundType.CURRENT_ROW)
-        else:
-            end = PandasApiFrameBound(PandasApiFrameBoundType.FOLLOWING, self._following_rows)
+        end = self._build_frame_bound(self._end, is_start=False)
 
         window_frame = PandasApiWindowFrame(PandasApiWindowFrameMode.ROWS, start, end)
 
@@ -144,6 +139,29 @@ class PandasApiWindowTdsFrame:
             order_by=order_by,
             frame=window_frame,
         )
+
+    @staticmethod
+    def _build_frame_bound(value: PyLegendOptional[int], is_start: bool) -> PandasApiFrameBound:
+        """
+        Convert a signed integer (or None) into a ``PandasApiFrameBound``.
+
+        Sign convention:
+          * ``None``  → UNBOUNDED PRECEDING (if is_start) / UNBOUNDED FOLLOWING (if not is_start)
+          * ``0``     → CURRENT ROW
+          * negative  → PRECEDING with ``abs(value)``
+          * positive  → FOLLOWING with ``value``
+        """
+        if value is None:
+            if is_start:
+                return PandasApiFrameBound(PandasApiFrameBoundType.UNBOUNDED_PRECEDING)
+            else:
+                return PandasApiFrameBound(PandasApiFrameBoundType.UNBOUNDED_FOLLOWING)
+        elif value == 0:
+            return PandasApiFrameBound(PandasApiFrameBoundType.CURRENT_ROW)
+        elif value < 0:
+            return PandasApiFrameBound(PandasApiFrameBoundType.PRECEDING, abs(value))
+        else:
+            return PandasApiFrameBound(PandasApiFrameBoundType.FOLLOWING, value)
 
     def aggregate(
             self,
