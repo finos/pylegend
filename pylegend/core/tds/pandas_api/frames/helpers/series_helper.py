@@ -189,13 +189,14 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
     from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
     from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+    from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
 
     if series.expr is not None:
         core_series = assert_and_find_core_series(series.expr)
         assert core_series is not None
         return has_window_function(core_series)
 
-    considered_window_functions = [RankFunction, WindowAggregateFunction, TwoColumnWindowFunction]
+    considered_window_functions = [RankFunction, WindowAggregateFunction, TwoColumnWindowFunction, ZScoreWindowFunction]
 
     if isinstance(series, Series):
         applied_func = series.get_filtered_frame().get_applied_function()
@@ -318,6 +319,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
     from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
     from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
     from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+    from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
 
     col_name = series.columns()[0].get_name()
     full_expr = series.expr
@@ -337,7 +339,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
                 function_expr = c[1].to_pure_expression(config)
                 temp_name = escape_column_name(col_name + temp_column_name_suffix)
                 extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
-            elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction)):
+            elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction)):
                 assert has_window_func is False
                 has_window_func = True
                 extend_strs = applied_func.build_pure_extend_strs(temp_column_name_suffix, config)

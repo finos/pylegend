@@ -578,6 +578,29 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                 f"Only ddof=0 (population) and ddof=1 (sample) are supported in cov function, but got: ddof={ddof}"
             )
 
+    def zscore(self) -> "FloatGroupbySeries":
+        """Compute the z-score within each group: (x - mean) / stddev_pop.
+
+        Equivalent to Pure ``zScore($p, $w, $r, ~col)`` which computes
+        ``(eval(col, row) - average(partition, window, row, col)) / stdDevPopulation(partition, window, row, col)``.
+
+        Returns a ``FloatGroupbySeries`` suitable for assignment via ``frame.assign()``.
+        """
+        from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+
+        selected = self._base_groupby_frame.get_selected_columns()
+        assert selected is not None and len(selected) == 1, (
+            "zscore() requires exactly one column selected"
+        )
+        col_name = selected[0].get_name()
+
+        applied_function_frame = PandasApiAppliedFunctionTdsFrame(ZScoreWindowFunction(
+            base_frame=self._base_groupby_frame,
+            col_name=col_name,
+            result_col_name=col_name,
+        ))
+        return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
 
 @add_primitive_methods
 class IntegerGroupbySeries(NumberGroupbySeries, PyLegendInteger, PyLegendExpressionIntegerReturn):
