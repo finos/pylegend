@@ -32,7 +32,7 @@ from pylegend.core.sql.metamodel import (
     IsNullPredicate,
     IsNotNullPredicate,
     Cast,
-    ColumnType,
+    ColumnType
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -43,7 +43,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendPrimitiveNotEqualsExpression",
     "PyLegendIsEmptyExpression",
     "PyLegendIsNotEmptyExpression",
-    "PyLegendPrimitiveToStringExpression",
+    "PyLegendPrimitiveToStringExpression"
 ]
 
 
