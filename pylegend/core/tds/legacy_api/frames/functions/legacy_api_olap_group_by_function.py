@@ -48,20 +48,79 @@ from pylegend.core.language import (
 )
 from pylegend.core.language.shared.helpers import generate_pure_lambda, escape_column_name
 from pylegend.core.tds.abstract.function_helpers import tds_column_for_primitive
+from pylegend.core.language.shared.operations.collection_operation_expressions import (
+    PyLegendCountExpression,
+    PyLegendDistinctCountExpression,
+    PyLegendAverageExpression,
+    PyLegendIntegerMaxExpression,
+    PyLegendIntegerMinExpression,
+    PyLegendIntegerSumExpression,
+    PyLegendFloatMaxExpression,
+    PyLegendFloatMinExpression,
+    PyLegendFloatSumExpression,
+    PyLegendNumberMaxExpression,
+    PyLegendNumberMinExpression,
+    PyLegendNumberSumExpression,
+    PyLegendDecimalMaxExpression,
+    PyLegendDecimalMinExpression,
+    PyLegendDecimalSumExpression,
+    PyLegendStdDevSampleExpression,
+    PyLegendStdDevPopulationExpression,
+    PyLegendVarianceSampleExpression,
+    PyLegendVariancePopulationExpression,
+    PyLegendStringMaxExpression,
+    PyLegendStringMinExpression,
+    PyLegendJoinStringsExpression,
+    PyLegendStrictDateMaxExpression,
+    PyLegendStrictDateMinExpression,
+    PyLegendDateMaxExpression,
+    PyLegendDateMinExpression,
+    PyLegendUniqueValueOnlyExpressionBase,
+)
 
 __all__: PyLegendSequence[str] = [
     "LegacyApiOlapGroupByFunction"
 ]
 
 
+_AGG_SUFFIX_MAP = {
+    PyLegendCountExpression: "Count",
+    PyLegendDistinctCountExpression: "DistinctCount",
+    PyLegendAverageExpression: "Average",
+    PyLegendIntegerMaxExpression: "Max",
+    PyLegendFloatMaxExpression: "Max",
+    PyLegendNumberMaxExpression: "Max",
+    PyLegendDecimalMaxExpression: "Max",
+    PyLegendStringMaxExpression: "Max",
+    PyLegendStrictDateMaxExpression: "Max",
+    PyLegendDateMaxExpression: "Max",
+    PyLegendIntegerMinExpression: "Min",
+    PyLegendFloatMinExpression: "Min",
+    PyLegendNumberMinExpression: "Min",
+    PyLegendDecimalMinExpression: "Min",
+    PyLegendStringMinExpression: "Min",
+    PyLegendStrictDateMinExpression: "Min",
+    PyLegendDateMinExpression: "Min",
+    PyLegendIntegerSumExpression: "Sum",
+    PyLegendFloatSumExpression: "Sum",
+    PyLegendNumberSumExpression: "Sum",
+    PyLegendDecimalSumExpression: "Sum",
+    PyLegendStdDevSampleExpression: "StdDevSample",
+    PyLegendStdDevPopulationExpression: "StdDevPopulation",
+    PyLegendVarianceSampleExpression: "VarianceSample",
+    PyLegendVariancePopulationExpression: "VariancePopulation",
+    PyLegendJoinStringsExpression: "JoinStrings",
+}
+
+
 def _infer_agg_suffix(agg_result: PyLegendPrimitive) -> str:
-    import re
-    class_name = type(agg_result.value()).__name__
-    m = re.match(
-        r"^PyLegend(?:Integer|Float|Number|String|StrictDate|Date|DateTime)?(.+?)Expression$",
-        class_name
-    )
-    return m.group(1) if m is not None else ""
+    expr = agg_result.value()
+    suffix = _AGG_SUFFIX_MAP.get(type(expr))
+    if suffix is not None:
+        return suffix
+    if isinstance(expr, PyLegendUniqueValueOnlyExpressionBase):
+        return "UniqueValueOnly"
+    return ""
 
 
 def _infer_rank_column_name(result: PyLegendPrimitive) -> str:
