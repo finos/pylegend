@@ -1528,3 +1528,80 @@ class TestPylegendExtensionWindowFrame:
         with pytest.raises(TypeError) as v:
             frame.window_frame_legend_ext("not_a_frame_spec", order_by="col1")  # type: ignore
         assert "frame_spec must be a RowsBetween or RangeBetween" in str(v.value)
+
+    @pytest.mark.parametrize(
+        "kwargs, expected_sql_clause, expected_pure_expr",
+        [
+            (
+                dict(duration_start="unbounded", duration_end="unbounded"),
+                "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
+                "_range(unbounded(), unbounded())",
+            ),
+            (
+                dict(duration_start=-1, duration_start_unit="DAYS", duration_end="unbounded"),
+                "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND UNBOUNDED FOLLOWING",
+                "_range(minus(1), DurationUnit.DAYS, unbounded())",
+            ),
+            (
+                dict(duration_start=-1, duration_start_unit="DAYS", duration_end=0, duration_end_unit="HOURS"),
+                "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND CURRENT ROW",
+                "_range(minus(1), DurationUnit.DAYS, 0, DurationUnit.HOURS)",
+            ),
+            (
+                dict(duration_start=0, duration_start_unit="DAYS", duration_end=1, duration_end_unit="HOURS"),
+                "RANGE BETWEEN CURRENT ROW AND INTERVAL '1 HOUR' FOLLOWING",
+                "_range(0, DurationUnit.DAYS, 1, DurationUnit.HOURS)",
+            ),
+            (
+                dict(
+                    duration_start=-1, duration_start_unit="DAYS",
+                    duration_end=1, duration_end_unit="MONTHS",
+                ),
+                "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND INTERVAL '1 MONTH' FOLLOWING",
+                "_range(minus(1), DurationUnit.DAYS, 1, DurationUnit.MONTHS)",
+            ),
+            (
+                dict(duration_start="unbounded", duration_end=-1, duration_end_unit="DAYS"),
+                "RANGE BETWEEN UNBOUNDED PRECEDING AND INTERVAL '1 DAY' PRECEDING",
+                "_range(unbounded(), minus(1), DurationUnit.DAYS)",
+            ),
+        ],
+    )
+    def test_range_between_duration_parametrized(
+            self,
+            kwargs: dict,
+            expected_sql_clause: str,
+            expected_pure_expr: str,
+    ) -> None:
+        """Verify duration-based range_between produces correct SQL and Pure."""
+        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.window_frame_legend_ext(
+            range_between(**kwargs), order_by="col1"
+        ).agg("sum")
+
+        sql = result.to_sql_query()
+        assert expected_sql_clause in sql
+
+        pure = result.to_pure_query()
+        assert expected_pure_expr in pure
+
+    def test_error_mix_simple_and_duration(self) -> None:
+        """Cannot mix positional start/end with duration kwargs."""
+        with pytest.raises(ValueError) as v:
+            range_between(start=-1, duration_end=1, duration_end_unit="DAYS")
+        assert "Cannot mix" in str(v.value)
+
+    def test_error_invalid_duration_string(self) -> None:
+        """Duration bound string must be 'unbounded'."""
+        with pytest.raises(ValueError) as v:
+            range_between(duration_start="invalid", duration_end="unbounded")
+        assert "must be 'unbounded'" in str(v.value)
+
+    def test_error_invalid_duration_unit_string(self) -> None:
+        """Invalid duration unit string should raise ValueError."""
+        with pytest.raises(ValueError) as v:
+            range_between(duration_start=-1, duration_start_unit="LIGHTYEARS", duration_end="unbounded")
+        assert "Invalid duration unit" in str(v.value)
+

@@ -30,6 +30,7 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendList,
     PyLegendDict,
+    PyLegendUnion,
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.expression import (
@@ -49,6 +50,7 @@ from pylegend.core.sql.metamodel import (
     SortItem,
     SortItemNullOrdering,
     SortItemOrdering,
+    StringLiteral,
     Window,
     WindowFrame,
     WindowFrameMode,
@@ -176,6 +178,51 @@ class PandasApiSortInfo:
         return f"{func}(~{escape_column_name(self.__column)})"
 
 
+class PandasApiDurationUnit(Enum):
+    YEARS = 1
+    MONTHS = 2
+    WEEKS = 3
+    DAYS = 4
+    HOURS = 5
+    MINUTES = 6
+    SECONDS = 7
+    MILLISECONDS = 8
+    MICROSECONDS = 9
+    NANOSECONDS = 10
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return self.name
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig,
+    ) -> StringLiteral:
+        mapping = {
+            PandasApiDurationUnit.YEARS: "YEAR",
+            PandasApiDurationUnit.MONTHS: "MONTH",
+            PandasApiDurationUnit.WEEKS: "WEEK",
+            PandasApiDurationUnit.DAYS: "DAY",
+            PandasApiDurationUnit.HOURS: "HOUR",
+            PandasApiDurationUnit.MINUTES: "MINUTE",
+            PandasApiDurationUnit.SECONDS: "SECOND",
+            PandasApiDurationUnit.MILLISECONDS: "MILLISECOND",
+            PandasApiDurationUnit.MICROSECONDS: "MICROSECOND",
+            PandasApiDurationUnit.NANOSECONDS: "NANOSECOND",
+        }
+        return StringLiteral(mapping[self], quoted=False)
+
+    @classmethod
+    def from_string(cls, value: str) -> "PandasApiDurationUnit":
+        try:
+            return cls[value.upper()]
+        except KeyError:
+            raise ValueError(
+                f"Invalid duration unit '{value}'. "
+                f"Supported values: {[u.name.lower() for u in cls]}"
+            )
+
+
 class PandasApiFrameBoundType(Enum):
     UNBOUNDED_PRECEDING = 1
     PRECEDING = 2
@@ -206,15 +253,18 @@ class PandasApiFrameBoundType(Enum):
 
 class PandasApiFrameBound:
     type_: PandasApiFrameBoundType
-    value: PyLegendOptional[int]
+    value: PyLegendOptional[PyLegendUnion[int, float]]
+    duration_unit: PyLegendOptional[PandasApiDurationUnit]
 
     def __init__(
         self,
         type_: PandasApiFrameBoundType,
-        value: PyLegendOptional[int] = None,
+        value: PyLegendOptional[PyLegendUnion[int, float]] = None,
+        duration_unit: PyLegendOptional[PandasApiDurationUnit] = None,
     ) -> None:
         self.type_ = type_
         self.value = value
+        self.duration_unit = duration_unit
 
     def to_sql_node(
         self,
@@ -222,22 +272,40 @@ class PandasApiFrameBound:
         config: FrameToSqlConfig,
     ) -> FrameBound:
         value_expression = (
-            convert_literal_to_literal_expression(self.value)
+            convert_literal_to_literal_expression(abs(self.value))
             .to_sql_expression({"w": query}, config)
             if self.value is not None else None
+        )
+        duration_unit_node = (
+            self.duration_unit.to_sql_node(query, config)
+            if self.duration_unit is not None else None
         )
         return FrameBound(
             type_=self.type_.to_sql_node(),
             value=value_expression,
+            duration_unit=duration_unit_node,
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        if self._should_use_value():
+        if self.type_ in (PandasApiFrameBoundType.UNBOUNDED_PRECEDING,
+                          PandasApiFrameBoundType.UNBOUNDED_FOLLOWING):
+            return "unbounded()"
+
+        if self.type_ == PandasApiFrameBoundType.CURRENT_ROW:
+            expr = "0"
+        elif self._should_use_value():
             value_expr = convert_literal_to_literal_expression(self.value).to_pure_expression(config)
             if self.type_ == PandasApiFrameBoundType.PRECEDING:
-                return f"minus({value_expr})"
-            return value_expr
-        return self.type_.to_pure_expression()
+                expr = f"minus({value_expr})"
+            else:
+                expr = value_expr
+        else:
+            expr = self.type_.to_pure_expression()
+
+        if self.duration_unit is not None:
+            expr += f", DurationUnit.{self.duration_unit.to_pure_expression(config)}"
+
+        return expr
 
     def _should_use_value(self) -> bool:
         if self.type_ in (PandasApiFrameBoundType.UNBOUNDED_PRECEDING, PandasApiFrameBoundType.UNBOUNDED_FOLLOWING):
