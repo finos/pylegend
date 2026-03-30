@@ -511,12 +511,13 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
         window_frame = self._base_frame.expanding(
-            min_periods=min_periods, axis=axis, method=method, order_by=order_by
+            min_periods=min_periods, axis=axis, method=method, order_by=order_by, ascending=ascending
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 
@@ -532,13 +533,15 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             step: PyLegendOptional[int] = None,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
         window_frame = self._base_frame.rolling(
             window=window, min_periods=min_periods, center=center, win_type=win_type,
-            on=on, axis=axis, closed=closed, step=step, method=method, order_by=order_by
+            on=on, axis=axis, closed=closed, step=step, method=method, order_by=order_by,
+            ascending=ascending
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 
@@ -546,6 +549,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             self,
             frame_spec: "FrameSpec",
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
         """
         PyLegend extension (not present in pandas).
@@ -556,7 +560,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
         window_frame = self._base_frame.window_frame_legend_ext(
-            frame_spec=frame_spec, order_by=order_by
+            frame_spec=frame_spec, order_by=order_by, ascending=ascending
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 

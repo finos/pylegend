@@ -54,10 +54,16 @@ class PandasApiWindowTdsFrame:
     frame_spec:
         A ``FrameSpec`` (``RowsBetween`` or ``RangeBetween``) describing the
         window frame bounds.
+    ascending:
+        Sort direction(s) for the ORDER BY columns.  ``True`` (default) means
+        ascending.  Can be a single ``bool`` (applied to all columns) or a
+        ``list[bool]`` whose length must match the number of ``order_by``
+        columns.
     """
 
     _base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
-    _order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]]
+    _order_by: PyLegendOptional[PyLegendList[str]]
+    _ascending: PyLegendList[bool]
     _frame_spec: FrameSpec
 
     def __init__(
@@ -65,10 +71,32 @@ class PandasApiWindowTdsFrame:
             base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             frame_spec: PyLegendOptional[FrameSpec] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> None:
         self._base_frame = base_frame
-        self._order_by = order_by
         self._frame_spec = frame_spec if frame_spec is not None else RowsBetween(None, None)
+
+        # Normalize order_by to Optional[List[str]]
+        if order_by is None:
+            order_by_list: PyLegendOptional[PyLegendList[str]] = None
+        elif isinstance(order_by, str):
+            order_by_list = [order_by]
+        else:
+            order_by_list = list(order_by)
+        self._order_by = order_by_list
+
+        # Normalize ascending to List[bool] matching order_by length
+        if isinstance(ascending, bool):
+            num_cols = len(order_by_list) if order_by_list is not None else 0
+            self._ascending = [ascending] * num_cols
+        else:
+            ascending_list = list(ascending)
+            if order_by_list is not None and len(ascending_list) != len(order_by_list):
+                raise ValueError(
+                    f"Length of ascending ({len(ascending_list)}) must match "
+                    f"length of order_by ({len(order_by_list)})"
+                )
+            self._ascending = ascending_list
 
     def base_frame(self) -> PandasApiBaseTdsFrame:
         """Return the unwrapped base frame (unwrapping groupby if needed)."""
@@ -85,10 +113,25 @@ class PandasApiWindowTdsFrame:
     def with_order_by(
         self,
         order_by: PyLegendUnion[str, PyLegendSequence[str]],
+        ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
         """Return a shallow copy of this window frame with a different order_by."""
         new = copy.copy(self)
-        new._order_by = order_by
+        if isinstance(order_by, str):
+            new._order_by = [order_by]
+        else:
+            new._order_by = list(order_by)
+
+        if isinstance(ascending, bool):
+            new._ascending = [ascending] * len(new._order_by)
+        else:
+            asc_list = list(ascending)
+            if len(asc_list) != len(new._order_by):
+                raise ValueError(
+                    f"Length of ascending ({len(asc_list)}) must match "
+                    f"length of order_by ({len(new._order_by)})"
+                )
+            new._ascending = asc_list
         return new
 
     def construct_window(self, include_zero_column: bool = True) -> PandasApiWindow:
@@ -104,13 +147,12 @@ class PandasApiWindowTdsFrame:
 
         order_by: PyLegendOptional[PyLegendList[PandasApiSortInfo]] = None
         if self._order_by is not None:
-            order_by_list = (
-                [self._order_by] if isinstance(self._order_by, str)
-                else list(self._order_by)
-            )
             order_by = [
-                PandasApiSortInfo(col, PandasApiSortDirection.ASC)
-                for col in order_by_list
+                PandasApiSortInfo(
+                    col,
+                    PandasApiSortDirection.ASC if asc else PandasApiSortDirection.DESC,
+                )
+                for col, asc in zip(self._order_by, self._ascending)
             ]
 
         start = self._frame_spec.build_start_bound()
