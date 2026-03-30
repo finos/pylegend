@@ -20,7 +20,7 @@ from pylegend.core.database.sql_to_string import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn, PrimitiveType
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.language.shared.functions import current_user
 from pylegend._typing import PyLegendDict, PyLegendUnion
@@ -416,16 +416,6 @@ class TestPyLegendString:
         assert (t.value.args[0] ==
                 "coalesce parameter should be a str or a string expression (PyLegendString). "
                 "Got value 2 of type: <class 'int'>")
-
-    def test_string_cast(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_string("col1").cast(PrimitiveType.Integer)) == \
-               'CAST("root".col1 AS INTEGER)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col1").cast(PrimitiveType.Integer)) == \
-               '$t.col1->cast(@Integer)'
-        assert self.__generate_sql_string(lambda x: x.get_string("col1").cast(PrimitiveType.Boolean)) == \
-               'CAST("root".col1 AS BOOLEAN)'
-        assert self.__generate_pure_string(lambda x: x.get_string("col1").cast(PrimitiveType.Boolean)) == \
-               '$t.col1->cast(@Boolean)'
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

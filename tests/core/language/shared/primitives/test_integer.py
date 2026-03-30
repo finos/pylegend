@@ -22,7 +22,7 @@ from pylegend.core.database.sql_to_string import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn, PrimitiveType
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import PyLegendPrimitive, PyLegendInteger
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
@@ -237,17 +237,6 @@ class TestPyLegendInteger:
         assert self.__generate_pure_string(
             lambda x: eval(f'10 {py_op} x.get_integer("col2")')
         ) == f'10->{pure_fn}(toOne($t.col2))'
-
-    def test_integer_cast(self) -> None:
-        assert self.__generate_sql_string_no_integer_assert(
-            lambda x: x.get_integer("col1").cast(PrimitiveType.Float)) == \
-               'CAST("root".col1 AS DOUBLE PRECISION)'
-        assert self.__generate_pure_string(lambda x: x.get_integer("col1").cast(PrimitiveType.Float)) == \
-               '$t.col1->cast(@Float)'
-        assert self.__generate_sql_string_no_integer_assert(
-            lambda x: x.get_integer("col1").cast(PrimitiveType.String)) == 'CAST("root".col1 AS TEXT)'
-        assert (self.__generate_pure_string(lambda x: x.get_integer("col1").cast(PrimitiveType.String)) ==
-                '$t.col1->cast(@String)')
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

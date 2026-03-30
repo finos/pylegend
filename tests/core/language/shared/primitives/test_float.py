@@ -22,7 +22,7 @@ from pylegend.core.database.sql_to_string import (
 )
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn, PrimitiveType
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import PyLegendPrimitive, PyLegendFloat
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
@@ -175,16 +175,6 @@ class TestPyLegendFloat:
                'CAST("root".col2 AS TEXT)'
         assert self.__generate_pure_string(lambda x: x.get_float("col2").to_string()) == \
                'toOne($t.col2)->toString()'
-
-    def test_float_cast(self) -> None:
-        assert self.__generate_sql_string_no_float_assert(lambda x: x.get_float("col1").cast(PrimitiveType.Integer)) == \
-               'CAST("root".col1 AS INTEGER)'
-        assert self.__generate_pure_string(lambda x: x.get_float("col1").cast(PrimitiveType.Integer)) == \
-               '$t.col1->cast(@Integer)'
-        assert self.__generate_sql_string_no_float_assert(lambda x: x.get_float("col1").cast(PrimitiveType.String)) == \
-               'CAST("root".col1 AS TEXT)'
-        assert self.__generate_pure_string(lambda x: x.get_float("col1").cast(PrimitiveType.String)) == \
-               '$t.col1->cast(@String)'
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

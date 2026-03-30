@@ -34,12 +34,10 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
     PyLegendIsEmptyExpression,
     PyLegendIsNotEmptyExpression,
     PyLegendPrimitiveToStringExpression,
-    PyLegendPrimitiveCastExpression
 )
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_column import PrimitiveType
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
     from pylegend.core.language.shared.primitives.string import PyLegendString
@@ -116,18 +114,6 @@ class PyLegendPrimitive(metaclass=ABCMeta):
     def to_string(self) -> "PyLegendString":
         from pylegend.core.language.shared.primitives.string import PyLegendString
         return PyLegendString(PyLegendPrimitiveToStringExpression(self.value()))
-
-    @grammar_method
-    def cast(self, target: "PrimitiveType") -> "PyLegendPrimitive":
-        from pylegend.core.tds.cast_helpers import PRIMITIVE_TYPE_TO_PYLEGEND_CLASS
-        if not isinstance(target, PrimitiveType):
-            raise TypeError(f"cast target must be a PrimitiveType, got {type(target).__name__}")
-        target_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(target)
-
-        return target_cls(
-            PyLegendPrimitiveCastExpression(
-                self.value(),
-                convert_literal_to_literal_expression(target.name)))  # type: ignore
 
     @staticmethod
     def __validate_param_to_be_primitive(
