@@ -58,7 +58,7 @@ class LegacyApiOLAPGroupByOperation:
     def __init__(self, _type: str, name: PyLegendOptional[str]) -> None:
         self._type = _type
 
-        if name and not isinstance(name, str):
+        if name is not None and not isinstance(name, str):
             raise TypeError('"name" should be a string')
         self.name = name
 
@@ -71,25 +71,20 @@ class LegacyApiOLAPAggregation(LegacyApiOLAPGroupByOperation):
     ) -> None:
         self.column_name = column_name
 
-        if not callable(function):
+        if not isinstance(function, type(lambda x: 0)) or function.__code__.co_argcount != 1:
             raise TypeError('Function should be a lambda which takes in a mapped list as a parameter')
-        param_check_fail = function.__code__.co_argcount != 1
-        if param_check_fail:
-            raise TypeError('Function should be a lambda which takes in a mapped list as a parameter')
-        self.function = function
 
+        self.function = function
         super().__init__(_type='tdsOlapAggregation', name=None)
 
 
 class LegacyApiOLAPRank(LegacyApiOLAPGroupByOperation):
     def __init__(self, rank: PyLegendCallable[["LegacyApiPartialFrame"], PyLegendPrimitiveOrPythonPrimitive]) -> None:
-        if not callable(rank):
-            raise TypeError('Rank function should be a lambda which takes a LegacyApiPartialFrame as its single parameter')
-        param_check_fail = rank.__code__.co_argcount != 1
-        if param_check_fail:
-            raise TypeError('Rank function should be a lambda which takes a LegacyApiPartialFrame as its single parameter')
-        self.rank = rank
 
+        if not isinstance(rank, type(lambda x: 0)) or rank.__code__.co_argcount != 1:
+            raise TypeError('Rank function should be a lambda which takes a LegacyApiPartialFrame as its single parameter')
+
+        self.rank = rank
         super().__init__(_type='tdsOlapRank', name=None)
 
 
@@ -129,7 +124,7 @@ class LegacyApiSortInfo:
     ) -> SortItem:
         return SortItem(
             sortKey=self.__find_column_expression(query, config),
-            ordering=(SortItemOrdering.ASCENDING if self.__direction == "ASC"
+            ordering=(SortItemOrdering.ASCENDING if self.get_direction() == "ASC"
                       else SortItemOrdering.DESCENDING),
             nullOrdering=SortItemNullOrdering.UNDEFINED
         )
@@ -177,8 +172,7 @@ class LegacyApiWindow:
             windowRef=None,
             partitions=(
                 [] if self.__partition_by is None else
-                [LegacyApiWindow.__find_column_expression(query, col, config)
-                 for col in self.__partition_by]
+                [LegacyApiWindow.__find_column_expression(query, col, config) for col in self.__partition_by]
             ),
             orderBy=(
                 [] if self.__order_by is None else
@@ -214,7 +208,6 @@ class LegacyApiWindow:
 class LegacyApiPartialFrame:
     if TYPE_CHECKING:
         from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
-        from pylegend.core.language.legacy_api.legacy_api_tds_row import LegacyApiTdsRow
 
     __base_frame: "LegacyApiBaseTdsFrame"
     __var_name: str

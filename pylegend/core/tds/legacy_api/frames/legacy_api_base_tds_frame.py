@@ -238,6 +238,13 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             )
         )
 
+    @staticmethod
+    def __validate_list_of_strings(param: object, param_name: str) -> None:
+        if not isinstance(param, list) or not all(isinstance(x, str) for x in param):
+            raise TypeError(
+                f"{param_name} parameter must be a list of strings. Got {type(param).__name__}."
+            )
+
     def column_value_difference(
             self,
             other: "LegacyApiTdsFrame",
@@ -247,6 +254,11 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     ) -> "LegacyApiTdsFrame":
         if not columns_to_check:
             raise ValueError("columns_to_check parameter should be a non-empty list.")
+
+        self.__validate_list_of_strings(columns_to_check, "columns_to_check")
+        self.__validate_list_of_strings(self_join_columns, "self_join_columns")
+        self.__validate_list_of_strings(other_join_columns, "other_join_columns")
+
         tds1 = self
         tds2 = other
 

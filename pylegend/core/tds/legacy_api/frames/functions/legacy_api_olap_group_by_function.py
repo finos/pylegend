@@ -27,6 +27,7 @@ from pylegend.core.language.legacy_api.legacy_api_custom_expressions import (
     LegacyApiWindow,
     LegacyApiPartialFrame,
     LegacyApiRankExpression,
+    LegacyApiDenseRankExpression
 )
 from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import LegacyApiAppliedFunction
@@ -208,6 +209,14 @@ class LegacyApiOlapGroupByFunction(LegacyApiAppliedFunction):
                         f"Rank lambda at index {i} (0-indexed) returns non-primitive - {str(type(result))}"
                     )
 
+                rank_expr = result.value()
+                if not isinstance(rank_expr, (LegacyApiRankExpression, LegacyApiDenseRankExpression)):
+                    raise TypeError(
+                        "'olap_group_by' function operations_list argument incompatible. "
+                        f"Rank lambda at index {i} (0-indexed) must return a rank() or denseRank() "
+                        f"expression, but got: {type(rank_expr).__name__}"
+                    )
+
                 # Derive column name from the rank function type
                 col_name = op.name if op.name else _infer_rank_column_name(result)
                 col_expressions.append((col_name, result))
@@ -241,7 +250,7 @@ class LegacyApiOlapGroupByFunction(LegacyApiAppliedFunction):
                         f"returns non-primitive - {str(type(agg_result))}"
                     )
 
-                col_name = f"{op.column_name} {_infer_agg_suffix(agg_result)}"
+                col_name = f"{op.column_name} {_infer_agg_suffix(agg_result)}".rstrip()
                 col_expressions.append((col_name, map_result, agg_result))
             else:
                 raise TypeError(

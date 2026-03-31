@@ -201,6 +201,11 @@ class TestOlapGroupByAppliedFunction:
             frame.olap_group_by([], [olap_rank(lambda p: 1)], [])
         assert "'olap_group_by' function operations_list argument incompatible" in t.value.args[0]
 
+        # Rank function returns a primitive whose underlying expression is not rank/denseRank
+        with pytest.raises(TypeError) as t:
+            frame.olap_group_by([], [olap_rank(lambda p: p.rank() + 1)], [])
+        assert "must return a rank() or denseRank() expression" in t.value.args[0]
+
     def test_olap_group_by_result_columns(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),

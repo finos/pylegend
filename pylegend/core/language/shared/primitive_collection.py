@@ -184,7 +184,7 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
             convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float, PythonDecimal))
             else self.__nested.value()
         )
-        return PyLegendNumber(PyLegendNumberUniqueValueOnlyExpression(nested_expr))  # type: ignore[arg-type]
+        return PyLegendNumber(PyLegendNumberUniqueValueOnlyExpression(nested_expr))  # type: ignore
 
 
 class PyLegendIntegerCollection(PyLegendNumberCollection):

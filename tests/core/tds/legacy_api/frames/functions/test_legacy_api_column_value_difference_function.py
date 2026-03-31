@@ -49,6 +49,9 @@ class TestColumnValueDifferenceFunction:
         with pytest.raises(ValueError, match="columns_to_check parameter should be a non-empty list"):
             frame1.column_value_difference(frame2, ["id"], ["id"], [])
 
+        with pytest.raises(TypeError, match="columns_to_check parameter must be a list of strings."):
+            frame1.column_value_difference(frame2, ["id"], ["id"], 'val')  # type: ignore
+
     def test_column_value_difference_result_columns(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("id"),
