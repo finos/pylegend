@@ -121,7 +121,7 @@ def _infer_agg_suffix(agg_result: PyLegendPrimitive) -> str:
         return suffix
     if isinstance(expr, PyLegendUniqueValueOnlyExpressionBase):
         return "UniqueValueOnly"
-    return ""
+    return ""  # pragma: no cover
 
 
 def _infer_rank_column_name(result: PyLegendPrimitive) -> str:

@@ -242,12 +242,14 @@ class TestOlapGroupByAppliedFunction:
         frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         # Count with partition
-        count_frame = frame.olap_group_by(["col2"], [olap_agg("col1", lambda c: c.count())], [])
+        count_frame = frame.olap_group_by(["col2"], [olap_agg("col1", lambda c: c.count()),
+                                                     olap_agg("col1", lambda c: c.distinct_value())], [])  # type: ignore
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
                 "root"."col2" AS "col2",
-                COUNT("root"."col1") OVER (PARTITION BY "root"."col2") AS "col1 Count"
+                COUNT("root"."col1") OVER (PARTITION BY "root"."col2") AS "col1 Count",
+                core_unique_value_only("root"."col1") OVER (PARTITION BY "root"."col2") AS "col1 UniqueValueOnly"
             FROM
                 (
                     SELECT
