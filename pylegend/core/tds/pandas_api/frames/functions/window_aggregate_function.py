@@ -128,6 +128,8 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         """
         Build a PandasApiWindow with the resolved order_by baked in.
         """
+        if self._is_partition_only():
+            return self.__base_frame.construct_window(include_zero_column=False)
         resolved_cols = self._resolve_order_by(fallback_column)
         # Preserve the user's ascending directions when using explicit order_by;
         # fall back to all-ascending when order_by was auto-resolved.
@@ -135,11 +137,8 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
             ascending = self.__base_frame._ascending
         else:
             ascending = [True] * len(resolved_cols)
-        return self.__base_frame.with_order_by(resolved_cols, ascending).construct_window(include_zero_column=include_zero_column)
-        if self._is_partition_only():
-            return self.__base_frame.construct_window(include_zero_column=False)
         return self.__base_frame.with_order_by(
-            self._resolve_order_by(fallback_column)
+            resolved_cols, ascending
         ).construct_window(include_zero_column=include_zero_column)
 
     @staticmethod
