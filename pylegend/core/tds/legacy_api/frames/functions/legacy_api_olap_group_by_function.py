@@ -195,7 +195,7 @@ class LegacyApiOlapGroupByFunction(LegacyApiAppliedFunction):
         for (i, op) in enumerate(operations_list):
             if isinstance(op, LegacyApiOLAPRank):
                 try:
-                    result = op.rank(partial_frame)
+                    result = op.rank(partial_frame)  # type: ignore
                 except Exception as e:
                     raise RuntimeError(
                         "'olap_group_by' function operations_list argument incompatible. "
@@ -235,7 +235,7 @@ class LegacyApiOlapGroupByFunction(LegacyApiAppliedFunction):
 
                 collection = create_primitive_collection(map_result)
                 try:
-                    agg_result = op.function(collection)
+                    agg_result = op.function(collection)  # type: ignore
                 except Exception as e:
                     raise RuntimeError(
                         "'olap_group_by' function operations_list argument incompatible. "
