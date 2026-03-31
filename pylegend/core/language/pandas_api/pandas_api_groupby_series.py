@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 from textwrap import dedent
 import pandas as pd
 from pylegend._typing import (
@@ -73,6 +72,7 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
 
 if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
@@ -414,7 +414,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if ddof not in (0, 1):
             raise NotImplementedError(
                 f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: {ddof}"
@@ -433,7 +433,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         engine: PyLegendOptional[str] = None,
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         if ddof not in (0, 1):
             raise NotImplementedError(
                 f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
@@ -449,10 +449,10 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
     def count(self) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         return self.aggregate("count", 0)
 
-    def median(self) -> "PandasApiTdsFrame":
+    def median(self) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         return self.aggregate("median", 0)
 
-    def mode(self) -> "PandasApiTdsFrame":
+    def mode(self) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         return self.aggregate("mode", 0)
 
     def transform(  # type: ignore

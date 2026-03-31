@@ -36,7 +36,7 @@ from pylegend.core.language import (
 from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
+from pylegend.core.language.shared.helpers import generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
@@ -292,8 +292,8 @@ class AssignFunction(PandasApiAppliedFunction):
         for col, f in list(self.__col_definitions.items()):
             res = f(tds_row)
             if isinstance(res, (Series, GroupbySeries)) and has_aggregate_function(res):
-                converted = convert_aggregate_series_to_window_aggregate_series(res)
-                self.__col_definitions[col] = lambda row, _value=converted: _value
+                converted: PyLegendUnion[Series, GroupbySeries] = convert_aggregate_series_to_window_aggregate_series(res)
+                self.__col_definitions[col] = lambda row, _value=converted: _value  # type: ignore[misc]
 
     def validate(self) -> bool:
         self._update_col_definitions()

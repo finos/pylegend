@@ -70,6 +70,7 @@ from pylegend.extensions.tds.result_handler import (
 )
 
 if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame

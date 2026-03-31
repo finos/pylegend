@@ -69,6 +69,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
 
 if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
@@ -128,7 +129,7 @@ def _get_new_series_for_column(
         raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")
     cls = globals()[class_name]
 
-    new_series: Series = cls(base_frame, col_name)  # type: ignore[no-any-return]
+    new_series: Series = cls(base_frame, col_name)
     if applied_function_frame is not None:
         new_series._filtered_frame = applied_function_frame
     return new_series

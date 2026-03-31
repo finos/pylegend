@@ -476,7 +476,7 @@ def _recursively_replace_leaf_when_meets_condition(
         new_leaf: PyLegendUnion["Series", "GroupbySeries"],
         visited: set[int],
         condition_for_replacement: PyLegendCallable[[PyLegendUnion["Series", "GroupbySeries"]], bool],
-) -> None:  # type: ignore[explicit-any]
+) -> None:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 

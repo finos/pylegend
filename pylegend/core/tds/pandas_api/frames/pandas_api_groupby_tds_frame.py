@@ -29,6 +29,7 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import Pandas
 from pylegend.core.tds.tds_column import TdsColumn
 
 if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -403,7 +404,7 @@ class PandasApiGroupbyTdsFrame:
         numeric_func_map = self._numeric_only_func_map("mode")
         return self.aggregate(numeric_func_map, 0)
 
-    def _numeric_only_func_map(self, func_name: str) -> PyLegendDict[str, str]:
+    def _numeric_only_func_map(self, func_name: str) -> PyLegendAggInput:
         """Build a {col: func_name} dict for numeric non-groupby columns only."""
         from pylegend.core.tds.tds_column import PrimitiveTdsColumn
         grouping_names = {c.get_name() for c in self.get_grouping_columns()}
@@ -412,7 +413,7 @@ class PandasApiGroupbyTdsFrame:
             "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
             "Int", "UInt", "BigInt", "UBigInt",
         }
-        result: PyLegendDict[str, str] = {}
+        result: PyLegendDict[PyLegendHashable, str] = {}
         selected = self.get_selected_columns()
         columns = selected if selected is not None else self.base_frame().columns()
         for col in columns:

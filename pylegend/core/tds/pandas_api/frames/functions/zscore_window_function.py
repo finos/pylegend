@@ -50,6 +50,7 @@ from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 
 if TYPE_CHECKING:
+    from pylegend.core.language import PyLegendFloat, PyLegendNumber
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
 
@@ -100,7 +101,7 @@ class ZScoreWindowFunction(PandasApiAppliedFunction):
     # Internal helpers
     # ──────────────────────────────────────────────────────────────────────
 
-    def _build_avg_expr(self, frame_name: str) -> Expression:
+    def _build_avg_expr(self, frame_name: str) -> "PyLegendFloat":
         """Build the AVG(col) expression (pre-window)."""
         tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.__base_frame.base_frame())
         col_primitive = tds_row[self.__col_name]
@@ -108,7 +109,7 @@ class ZScoreWindowFunction(PandasApiAppliedFunction):
         avg = PyLegendFloat(PyLegendAverageExpression(col_primitive.value()))  # type: ignore
         return avg
 
-    def _build_stddev_pop_expr(self, frame_name: str) -> Expression:
+    def _build_stddev_pop_expr(self, frame_name: str) -> "PyLegendNumber":
         """Build the STDDEV_POP(col) expression (pre-window)."""
         tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.__base_frame.base_frame())
         col_primitive = tds_row[self.__col_name]
@@ -128,7 +129,7 @@ class ZScoreWindowFunction(PandasApiAppliedFunction):
         col_sql = col_primitive.to_sql_expression(frame_name_to_base_query_map, config)
 
         avg_primitive = self._build_avg_expr(frame_name)
-        avg_sql = avg_primitive.to_sql_expression(frame_name_to_base_query_map, config)  # type: ignore
+        avg_sql = avg_primitive.to_sql_expression(frame_name_to_base_query_map, config)
         query = frame_name_to_base_query_map[frame_name]
         avg_window = WindowExpression(
             nested=avg_sql,
@@ -136,7 +137,7 @@ class ZScoreWindowFunction(PandasApiAppliedFunction):
         )
 
         stddev_primitive = self._build_stddev_pop_expr(frame_name)
-        stddev_sql = stddev_primitive.to_sql_expression(frame_name_to_base_query_map, config)  # type: ignore
+        stddev_sql = stddev_primitive.to_sql_expression(frame_name_to_base_query_map, config)
         stddev_window = WindowExpression(
             nested=stddev_sql,
             window=self.__window.to_sql_node(query, config),
@@ -251,4 +252,3 @@ class ZScoreWindowFunction(PandasApiAppliedFunction):
 
     def validate(self) -> bool:
         return True
-

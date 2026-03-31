@@ -75,7 +75,8 @@ class FrameSpec:
         elif value == 0:
             return PandasApiFrameBound(PandasApiFrameBoundType.CURRENT_ROW, duration_unit=duration_unit)
         elif value < 0:
-            return PandasApiFrameBound(PandasApiFrameBoundType.PRECEDING, abs(value), duration_unit=duration_unit)
+            abs_val: PyLegendUnion[int, float, PythonDecimal] = abs(value)  # type: ignore
+            return PandasApiFrameBound(PandasApiFrameBoundType.PRECEDING, abs_val, duration_unit=duration_unit)
         else:
             return PandasApiFrameBound(PandasApiFrameBoundType.FOLLOWING, value, duration_unit=duration_unit)
 
@@ -89,7 +90,10 @@ class RowsBetween(FrameSpec):
     def __init__(self, start: PyLegendOptional[int] = None, end: PyLegendOptional[int] = None) -> None:
         super().__init__(PandasApiWindowFrameMode.ROWS)
         if start is not None and end is not None and start > end:
-            raise ValueError(f"Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!")
+            raise ValueError(
+                "Invalid window frame boundary - lower bound of window"
+                " frame cannot be greater than the upper bound!"
+            )
         self._start = start
         self._end = end
 
@@ -158,7 +162,10 @@ class RangeBetween(FrameSpec):
             )
         else:
             if start is not None and end is not None and start > end:
-                raise ValueError(f"Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!")
+                raise ValueError(
+                    "Invalid window frame boundary - lower bound of window"
+                    " frame cannot be greater than the upper bound!"
+                )
             self._start = start
             self._end = end
             self._start_duration_unit = None

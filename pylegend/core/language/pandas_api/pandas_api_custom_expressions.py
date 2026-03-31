@@ -272,11 +272,13 @@ class PandasApiFrameBound:
         query: QuerySpecification,
         config: FrameToSqlConfig,
     ) -> FrameBound:
-        value_expression = (
-            convert_literal_to_literal_expression(abs(self.value))
-            .to_sql_expression({"w": query}, config)
-            if self.value is not None else None
-        )
+        value_expression: PyLegendOptional[Expression] = None
+        if self.value is not None:
+            abs_val: PyLegendUnion[int, float, PythonDecimal] = abs(self.value)  # type: ignore
+            value_expression = (
+                convert_literal_to_literal_expression(abs_val)
+                .to_sql_expression({"w": query}, config)
+            )
         duration_unit_node = (
             self.duration_unit.to_sql_node(query, config)
             if self.duration_unit is not None else None
