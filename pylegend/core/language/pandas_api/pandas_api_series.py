@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
@@ -88,6 +87,51 @@ __all__: PyLegendSequence[str] = [
 ]
 
 R = PyLegendTypeVar('R')
+
+
+_COL_TYPE_TO_SERIES_CLASS_NAME: PyLegendDict[str, str] = {
+    "Boolean": "BooleanSeries",
+    "String": "StringSeries",
+    "Varchar": "StringSeries",
+    "Number": "NumberSeries",
+    "Integer": "IntegerSeries",
+    "TinyInt": "IntegerSeries",
+    "UTinyInt": "IntegerSeries",
+    "SmallInt": "IntegerSeries",
+    "USmallInt": "IntegerSeries",
+    "Int": "IntegerSeries",
+    "UInt": "IntegerSeries",
+    "BigInt": "IntegerSeries",
+    "UBigInt": "IntegerSeries",
+    "Float": "FloatSeries",
+    "Float4": "FloatSeries",
+    "Double": "FloatSeries",
+    "Decimal": "DecimalSeries",
+    "Numeric": "DecimalSeries",
+    "Date": "DateSeries",
+    "DateTime": "DateTimeSeries",
+    "Timestamp": "DateTimeSeries",
+    "StrictDate": "StrictDateSeries",
+}
+
+
+def _get_new_series_for_column(
+        base_frame: "PandasApiBaseTdsFrame",
+        column: TdsColumn,
+        applied_function_frame: PyLegendOptional[PandasApiAppliedFunctionTdsFrame] = None,
+) -> "Series":
+    col_type = column.get_type()
+    col_name = column.get_name()
+
+    class_name = _COL_TYPE_TO_SERIES_CLASS_NAME.get(col_type)
+    if class_name is None:
+        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")
+    cls = globals()[class_name]
+
+    new_series: Series = cls(base_frame, col_name)  # type: ignore[no-any-return]
+    if applied_function_frame is not None:
+        new_series._filtered_frame = applied_function_frame
+    return new_series
 
 
 @runtime_checkable
@@ -266,7 +310,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if self._expr is not None:  # pragma: no cover
             error_msg = '''
                 Applying aggregate function to a computed series expression is not supported yet.
@@ -277,7 +321,15 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             '''
             error_msg = dedent(error_msg).strip()
             raise NotImplementedError(error_msg)
-        return self._filtered_frame.aggregate(func, axis, *args, **kwargs)
+
+        aggregated_frame = self._filtered_frame.aggregate(func, axis, *args, **kwargs)
+        assert isinstance(aggregated_frame, PandasApiAppliedFunctionTdsFrame)
+
+        potential_num_cols = len(aggregated_frame.columns())
+        if potential_num_cols == 1:
+            return _get_new_series_for_column(self._base_frame, aggregated_frame.columns()[0], aggregated_frame)
+        else:
+            return aggregated_frame
 
     def agg(
             self,
@@ -285,7 +337,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         return self.aggregate(func, axis, *args, **kwargs)
 
     def sum(
@@ -295,7 +347,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             numeric_only: bool = False,
             min_count: int = 0,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in sum function, but got: {axis}")
         if skipna is not True:
@@ -316,7 +368,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             skipna: bool = True,
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in mean function, but got: {axis}")
         if skipna is not True:
@@ -334,7 +386,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             skipna: bool = True,
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in min function, but got: {axis}")
         if skipna is not True:
@@ -352,7 +404,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             skipna: bool = True,
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in max function, but got: {axis}")
         if skipna is not True:
@@ -371,7 +423,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ddof: int = 1,
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in std function, but got: {axis}")
         if skipna is not True:
@@ -393,7 +445,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ddof: int = 1,
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in var function, but got: {axis}")
         if skipna is not True:
@@ -412,7 +464,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
-    ) -> "PandasApiTdsFrame":
+    ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in count function, but got: {axis}")
         if numeric_only is not False:
@@ -460,11 +512,12 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
         window_frame = self._base_frame.expanding(
-            min_periods=min_periods, axis=axis, method=method, order_by=order_by
+            min_periods=min_periods, axis=axis, method=method, order_by=order_by, ascending=ascending
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 
@@ -480,12 +533,33 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             step: PyLegendOptional[int] = None,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
         window_frame = self._base_frame.rolling(
             window=window, min_periods=min_periods, center=center, win_type=win_type,
-            on=on, axis=axis, closed=closed, step=step, method=method, order_by=order_by
+            on=on, axis=axis, closed=closed, step=step, method=method, order_by=order_by,
+            ascending=ascending
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
+    def window_frame_legend_ext(
+            self,
+            frame_spec: "FrameSpec",
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "WindowSeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Create a custom window specification with explicit control over the
+        window frame on a single column.
+        """
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        window_frame = self._base_frame.window_frame_legend_ext(
+            frame_spec=frame_spec, order_by=order_by, ascending=ascending
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import copy
 import importlib
 from textwrap import dedent
 from typing import (
@@ -44,11 +45,13 @@ __all__: PyLegendSequence[str] = [
     "assert_and_find_core_series",
     "has_window_function",
     "has_window_aggregate_function",
+    "has_aggregate_function",
     "needs_zero_column_for_window",
     "get_pure_query_from_expr",
     "get_applied_func",
     "find_window_expression",
     "split_window_from_arithmetic",
+    "convert_aggregate_series_to_window_aggregate_series",
 ]
 
 T = TypeVar("T")
@@ -226,6 +229,22 @@ def has_window_aggregate_function(series: PyLegendUnion["Series", "GroupbySeries
     return isinstance(get_applied_func(core), WindowAggregateFunction)
 
 
+def has_aggregate_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
+    """Check if the series (or its core) uses an AggregateFunction (not window)."""
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+    from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
+
+    core: PyLegendUnion[Series, GroupbySeries] = series
+    if series.expr is not None:
+        found = assert_and_find_core_series(series.expr)
+        if found is None:
+            return False  # pragma: no cover
+        core = found
+
+    return isinstance(get_applied_func(core), AggregateFunction)
+
+
 def needs_zero_column_for_window(series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
     """Check if the series uses a WindowAggregateFunction that requires the zero column.
 
@@ -366,3 +385,110 @@ def get_applied_func(series: PyLegendUnion["Series", "GroupbySeries"]) -> "Panda
         return series.raise_exception_if_no_function_applied().get_applied_function()
     else:
         return series.get_filtered_frame().get_applied_function()
+
+
+def convert_aggregate_series_to_window_aggregate_series(
+        series: PyLegendUnion["Series", "GroupbySeries"]
+) -> PyLegendUnion["Series", "GroupbySeries"]:
+    """
+    Convert a Series backed by an AggregateFunction into one backed by a
+    WindowAggregateFunction with UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING.
+
+    If the series has arithmetic on top (``series.expr is not None``), the
+    arithmetic wrapper is preserved — only the leaf AggregateFunction core
+    is swapped out for a WindowAggregateFunction equivalent.
+    """
+    from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
+
+    core_series = series if series.expr is None else assert_and_find_core_series(series.expr)
+    assert core_series is not None
+    applied_func_frame = get_applied_func(core_series)
+    if not isinstance(applied_func_frame, AggregateFunction):
+        return series
+
+    core_series_with_window = _convert_core_aggregate_series_to_window_aggregate_seroes(core_series)
+    if series.expr is None:
+        return core_series_with_window
+
+    series_with_new_expr = copy.copy(series)
+    series_with_new_expr._expr = _replace_core_series_in_expr(series.expr, core_series_with_window)
+    return series_with_new_expr
+
+
+def _convert_core_aggregate_series_to_window_aggregate_seroes(
+        core_series: PyLegendUnion["Series", "GroupbySeries"]
+) -> PyLegendUnion["Series", "GroupbySeries"]:
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+    from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
+    from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+    applied_func_frame = get_applied_func(core_series)
+    assert (
+        core_series.expr is None
+        and isinstance(applied_func_frame, AggregateFunction)
+    )
+
+    window_frame = PandasApiWindowTdsFrame(
+        base_frame=core_series.get_base_frame(),
+        order_by=None,
+        frame_spec=RowsBetween(None, None),
+    )
+
+    column_name: str
+    if isinstance(core_series, GroupbySeries):
+        num_grouping_cols = len(core_series.get_base_frame().get_grouping_columns())
+        column_name = core_series.columns()[num_grouping_cols].get_name()
+    else:
+        column_name = core_series.columns()[0].get_name()
+    window_series = WindowSeries(window_frame=window_frame, column_name=column_name)
+    core_series_with_window = window_series.aggregate(func=applied_func_frame.func)
+    assert isinstance(core_series_with_window, (Series, GroupbySeries))
+    return core_series_with_window
+
+
+def _replace_core_series_in_expr(
+        expr: PyLegendExpression,
+        core_series_with_window: PyLegendUnion["Series", "GroupbySeries"]
+) -> PyLegendExpression:
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+    from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
+
+    cloned = copy.deepcopy(expr)
+    visited: set[int] = set()
+
+    def condition_for_replacement(leaf_series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
+        assert isinstance(leaf_series, (Series, GroupbySeries)) and leaf_series.expr is None
+        applied_func = get_applied_func(leaf_series)
+        if isinstance(applied_func, AggregateFunction):
+            return True
+        return False
+
+    _recursively_replace_leaf_when_meets_condition(cloned, core_series_with_window, visited, condition_for_replacement)
+    return cloned
+
+
+def _recursively_replace_leaf_when_meets_condition(
+        expr: PyLegendExpression,
+        new_leaf: PyLegendUnion["Series", "GroupbySeries"],
+        visited: set[int],
+        condition_for_replacement: PyLegendCallable[[PyLegendUnion["Series", "GroupbySeries"]], bool],
+) -> None:  # type: ignore[explicit-any]
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+
+    obj_id = id(expr)
+    if obj_id in visited:
+        return
+    visited.add(obj_id)
+
+    for attr_name in list(vars(expr)):
+        child = getattr(expr, attr_name)
+        if isinstance(child, (Series, GroupbySeries)) and child.expr is None:
+            if condition_for_replacement(child):
+                setattr(expr, attr_name, new_leaf)
+        elif isinstance(child, PyLegendExpression):
+            _recursively_replace_leaf_when_meets_condition(child, new_leaf, visited, condition_for_replacement)

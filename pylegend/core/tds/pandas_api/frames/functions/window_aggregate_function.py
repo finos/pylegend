@@ -108,8 +108,6 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         or the first column of the base frame.
         """
         if self.__base_frame._order_by is not None:
-            if isinstance(self.__base_frame._order_by, str):
-                return [self.__base_frame._order_by]
             return list(self.__base_frame._order_by)
 
         if fallback_column is not None:
@@ -130,6 +128,14 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         """
         Build a PandasApiWindow with the resolved order_by baked in.
         """
+        resolved_cols = self._resolve_order_by(fallback_column)
+        # Preserve the user's ascending directions when using explicit order_by;
+        # fall back to all-ascending when order_by was auto-resolved.
+        if self.__base_frame._order_by is not None:
+            ascending = self.__base_frame._ascending
+        else:
+            ascending = [True] * len(resolved_cols)
+        return self.__base_frame.with_order_by(resolved_cols, ascending).construct_window(include_zero_column=include_zero_column)
         if self._is_partition_only():
             return self.__base_frame.construct_window(include_zero_column=False)
         return self.__base_frame.with_order_by(

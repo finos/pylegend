@@ -36,7 +36,7 @@ from pylegend.core.language import (
 from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.language.shared.helpers import generate_pure_lambda
+from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     QuerySpecification,
@@ -50,7 +50,9 @@ from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     has_window_function,
     has_window_aggregate_function,
     needs_zero_column_for_window,
+    has_aggregate_function,
     split_window_from_arithmetic,
+    convert_aggregate_series_to_window_aggregate_series,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
@@ -285,7 +287,16 @@ class AssignFunction(PandasApiAppliedFunction):
                 raise RuntimeError("Type not supported")
         return new_cols
 
+    def _update_col_definitions(self) -> None:
+        tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
+        for col, f in list(self.__col_definitions.items()):
+            res = f(tds_row)
+            if isinstance(res, (Series, GroupbySeries)) and has_aggregate_function(res):
+                converted = convert_aggregate_series_to_window_aggregate_series(res)
+                self.__col_definitions[col] = lambda row, _value=converted: _value
+
     def validate(self) -> bool:
+        self._update_col_definitions()
         tds_row = PandasApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for col, f in self.__col_definitions.items():
             f(tds_row)

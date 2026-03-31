@@ -507,8 +507,10 @@ class PandasApiGroupbyTdsFrame:
             min_periods: int = 1,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
 
         if min_periods != 1:
             raise NotImplementedError(
@@ -522,8 +524,8 @@ class PandasApiGroupbyTdsFrame:
         return PandasApiWindowTdsFrame(
             base_frame=self,
             order_by=order_by,
-            preceding_rows=None,
-            following_rows=0,
+            frame_spec=RowsBetween(None, 0),
+            ascending=ascending,
         )
 
     def rolling(
@@ -537,8 +539,10 @@ class PandasApiGroupbyTdsFrame:
             step: PyLegendOptional[int] = None,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
 
         if min_periods is not None and min_periods != 1:
             raise NotImplementedError(
@@ -572,6 +576,43 @@ class PandasApiGroupbyTdsFrame:
         return PandasApiWindowTdsFrame(
             base_frame=self,
             order_by=order_by,
-            preceding_rows=window - 1,
-            following_rows=0,
+            frame_spec=RowsBetween(-(window - 1), 0),
+            ascending=ascending,
+        )
+
+    def window_frame_legend_ext(
+            self,
+            frame_spec: "FrameSpec",
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Create a custom window specification with explicit control over the
+        window frame.  When called on a groupby frame the grouping columns
+        are automatically used as PARTITION BY columns.
+
+        Parameters
+        ----------
+        frame_spec:
+            A ``RowsBetween`` or ``RangeBetween`` specification object.
+        order_by:
+            Column name(s) to use for ORDER BY within the window.
+        ascending:
+            Sort direction(s) for the ORDER BY columns.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
+
+        if not isinstance(frame_spec, FrameSpecCls):
+            raise TypeError(
+                f"frame_spec must be a RowsBetween or RangeBetween, got {type(frame_spec).__name__}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            frame_spec=frame_spec,
+            ascending=ascending,
         )

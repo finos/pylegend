@@ -223,6 +223,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             axis: PyLegendUnion[int, str] = 0,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
         pass  # pragma: no cover
 
@@ -239,6 +240,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             step: PyLegendOptional[int] = None,
             method: PyLegendOptional[str] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
         pass  # pragma: no cover
 
