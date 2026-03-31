@@ -1045,6 +1045,57 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             pct=pct
         ))
 
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution of each column, equivalent to
+        SQL ``CUME_DIST() OVER (ORDER BY col)`` and Pure
+        ``cumulativeDistribution``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='cume_dist',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+        ))
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket of each column, equivalent to
+        SQL ``NTILE(n) OVER (ORDER BY col)`` and Pure ``ntile``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='ntile',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+            num_buckets=num_buckets,
+        ))
+
     def shift(
             self,
             order_by: PyLegendUnion[str, PyLegendSequence[str]],

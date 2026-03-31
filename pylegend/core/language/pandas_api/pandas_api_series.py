@@ -507,6 +507,45 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         new_series._filtered_frame = applied_function_frame
         return new_series
 
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "Series":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution of this column.
+        """
+        new_series: Series = FloatSeries(self._filtered_frame, self.columns()[0].get_name())
+        new_series._base_frame = self._base_frame
+
+        applied_function_frame = self._filtered_frame.cume_dist_legend_ext(ascending=ascending)
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+
+        new_series._filtered_frame = applied_function_frame
+        return new_series
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "Series":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket of this column.
+        """
+        new_series: Series = IntegerSeries(self._filtered_frame, self.columns()[0].get_name())
+        new_series._base_frame = self._base_frame
+
+        applied_function_frame = self._filtered_frame.ntile_legend_ext(
+            num_buckets=num_buckets, ascending=ascending,
+        )
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+
+        new_series._filtered_frame = applied_function_frame
+        return new_series
+
     def expanding(
             self,
             min_periods: int = 1,

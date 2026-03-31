@@ -509,6 +509,35 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         else:
             return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
 
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "GroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution within each group.
+        """
+        applied_function_frame = self._base_groupby_frame.cume_dist_legend_ext(ascending=ascending)
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+        return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "GroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket within each group.
+        """
+        applied_function_frame = self._base_groupby_frame.ntile_legend_ext(
+            num_buckets=num_buckets, ascending=ascending,
+        )
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+        return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
     def expanding(
             self,
             min_periods: int = 1,
