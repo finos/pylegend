@@ -89,7 +89,7 @@ class RowsBetween(FrameSpec):
     def __init__(self, start: PyLegendOptional[int] = None, end: PyLegendOptional[int] = None) -> None:
         super().__init__(PandasApiWindowFrameMode.ROWS)
         if start is not None and end is not None and start > end:
-            raise ValueError(f"start ({start}) must be <= end ({end})")
+            raise ValueError(f"Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!")
         self._start = start
         self._end = end
 
@@ -158,7 +158,7 @@ class RangeBetween(FrameSpec):
             )
         else:
             if start is not None and end is not None and start > end:
-                raise ValueError(f"start ({start}) must be <= end ({end})")
+                raise ValueError(f"Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!")
             self._start = start
             self._end = end
             self._start_duration_unit = None

@@ -28,9 +28,8 @@ from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.extensions.tds.abstract.csv_tds_frame import CsvInputFrameAbstract
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
-from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import rows_between, range_between
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import rows_between, range_between
 from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
@@ -1242,6 +1241,32 @@ class TestPylegendExtensionWindowFrame:
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
+
+    # def test_temp(self):
+    #     from pylegend.extensions.tds.pandas_api.frames.pandas_api_csv_input_frame import (
+    #         PandasApiCsvNonExecutableInputTdsFrame as csv_frame,
+    #     )
+    #     frame = csv_frame("\np,o,i\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-29T00:32:34.0000000000000,10\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-30T00:32:34.0000000000000,20\n200,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-31T00:32:34.0000000000000,30\n300,2024-01-29T00:32:34.0000000000000,10\n300,2024-01-30T00:32:34.0000000000000,20")
+    #
+    #     new_frame = (
+    #         (lambda frame:
+    #             frame.__setitem__("newCol", frame.groupby("p")["i"].window_frame_legend_ext(range_between(duration_start=0, duration_start_unit="DAYS", duration_end=0, duration_end_unit="DAYS"), order_by="o").sum())
+    #             or frame
+    #         )(csv_frame("\np,o,i\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-29T00:32:34.0000000000000,10\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-30T00:32:34.0000000000000,20\n200,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-31T00:32:34.0000000000000,30\n300,2024-01-29T00:32:34.0000000000000,10\n300,2024-01-30T00:32:34.0000000000000,20"))
+    #     )
+    #
+    #     new_frame
+    #
+    #     query = eval(
+    #         '(lambda frame:' +
+    #            '  frame.__setitem__("newCol", frame.groupby("p")["i"].window_frame_legend_ext(range_between(duration_start=0, duration_start_unit="DAYS", duration_end=0, duration_end_unit="DAYS"), order_by="o").sum())' +
+    #            '  or frame' +
+    #            ')(csv_frame("\\np,o,i\\n0,2024-01-29T00:32:34.0000000000000+0000,10\\n0,2024-01-29T00:32:34.0000000000000+0000,10\\n0,2024-01-31T00:32:34.0000000000000+0000,30\\n100,2024-01-29T00:32:34.0000000000000+0000,10\\n100,2024-01-30T00:32:34.0000000000000+0000,20\\n100,2024-01-30T00:32:34.0000000000000+0000,20\\n100,2024-01-31T00:32:34.0000000000000+0000,30\\n100,2024-01-31T00:32:34.0000000000000+0000,30\\n200,2024-01-29T00:32:34.0000000000000+0000,10\\n200,2024-01-29T00:32:34.0000000000000+0000,10\\n200,2024-01-29T00:32:34.0000000000000+0000,10\\n200,2024-01-30T00:32:34.0000000000000+0000,20\\n200,2024-01-31T00:32:34.0000000000000+0000,30\\n200,2024-01-31T00:32:34.0000000000000+0000,30\\n300,2024-01-29T00:32:34.0000000000000+0000,10\\n300,2024-01-30T00:32:34.0000000000000+0000,20"))')
+    #
+    #     print(query.columns()[1])
+    #
+    #     print(query.to_pure_query())
+
     def test_unbounded_both_sides(self) -> None:
         """ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING — not achievable via expanding or rolling."""
         columns = [
@@ -1512,13 +1537,13 @@ class TestPylegendExtensionWindowFrame:
         """start > end should raise ValueError."""
         with pytest.raises(ValueError) as v:
             rows_between(2, -1)
-        assert "start (2) must be <= end (-1)" in str(v.value)
+        assert "Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!" in str(v.value)
 
     def test_error_start_greater_than_end_range(self) -> None:
         """start > end should raise ValueError for range_between too."""
         with pytest.raises(ValueError) as v:
             range_between(0, -2)
-        assert "start (0) must be <= end (-2)" in str(v.value)
+        assert "Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!" in str(v.value)
 
     def test_error_invalid_frame_spec_type(self) -> None:
         """Passing a non-FrameSpec object should raise TypeError."""

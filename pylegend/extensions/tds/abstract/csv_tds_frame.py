@@ -129,6 +129,12 @@ def is_strict_date_or_datetime(col: pd.Series) -> bool:  # type: ignore[explicit
         pass
 
     try:
+        pd.to_datetime(col, format="%Y-%m-%dT%H:%M:%S.%f%z", exact=True, errors="raise")
+        return True
+    except (ValueError, TypeError):
+        pass
+
+    try:
         pd.to_datetime(col, format="%Y-%m-%d", exact=True, errors="raise")
         return True
     except (ValueError, TypeError):

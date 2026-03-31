@@ -29,7 +29,7 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import FrameSpec, RowsBetween
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
 ZERO_COLUMN_NAME = "__pylegend_zero_column__"

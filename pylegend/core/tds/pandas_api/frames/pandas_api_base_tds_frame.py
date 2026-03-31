@@ -528,7 +528,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
-        from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import RowsBetween
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
 
         if min_periods != 1:
             raise NotImplementedError(
@@ -565,7 +565,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
-        from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import RowsBetween
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
 
         if min_periods is not None and min_periods != 1:
             raise NotImplementedError(
@@ -632,7 +632,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             whose length matches the number of ``order_by`` columns.
         """
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
-        from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import FrameSpec as FrameSpecCls
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
 
         if not isinstance(frame_spec, FrameSpecCls):
             raise TypeError(

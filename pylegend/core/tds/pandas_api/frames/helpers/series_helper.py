@@ -273,7 +273,6 @@ def split_window_from_arithmetic(
     """
     import copy
     from pylegend.core.sql.metamodel_extension import WindowExpression
-    from pylegend.core.sql.metamodel import Expression as SqlExpression
 
     if isinstance(full_expr, WindowExpression):
         return full_expr, None
@@ -390,6 +389,7 @@ def convert_aggregate_series_to_window_aggregate_series(
     from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
     core_series = series if series.expr is None else assert_and_find_core_series(series.expr)
+    assert core_series is not None
     applied_func_frame = get_applied_func(core_series)
     if not isinstance(applied_func_frame, AggregateFunction):
         return series
@@ -410,7 +410,7 @@ def _convert_core_aggregate_series_to_window_aggregate_seroes(
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
-    from pylegend.core.tds.pandas_api.frames.pandas_api_frame_spec import RowsBetween
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
     applied_func_frame = get_applied_func(core_series)
@@ -426,8 +426,8 @@ def _convert_core_aggregate_series_to_window_aggregate_seroes(
     )
 
     column_name = core_series.columns()[0].get_name()
-    core_series_with_window = WindowSeries(window_frame=window_frame, column_name=column_name)
-    core_series_with_window = core_series_with_window.aggregate(func=applied_func_frame.func)
+    window_series = WindowSeries(window_frame=window_frame, column_name=column_name)
+    core_series_with_window = window_series.aggregate(func=applied_func_frame.func)
     assert isinstance(core_series_with_window, (Series, GroupbySeries))
     return core_series_with_window
 
@@ -441,7 +441,7 @@ def _replace_core_series_in_expr(
     from pylegend.core.tds.pandas_api.frames.functions.aggregate_function import AggregateFunction
 
     cloned = copy.deepcopy(expr)
-    visited: set = set()
+    visited: set[int] = set()
 
     def condition_for_replacement(leaf_series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
         assert isinstance(leaf_series, (Series, GroupbySeries)) and leaf_series.expr is None
@@ -457,7 +457,7 @@ def _replace_core_series_in_expr(
 def _recursively_replace_leaf_when_meets_condition(
         expr: PyLegendExpression,
         new_leaf: PyLegendUnion["Series", "GroupbySeries"],
-        visited: set,
+        visited: set[int],
         condition_for_replacement: PyLegendCallable[[PyLegendUnion["Series", "GroupbySeries"]], bool],
 ) -> None:  # type: ignore[explicit-any]
     from pylegend.core.language.pandas_api.pandas_api_series import Series
