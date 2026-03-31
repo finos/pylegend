@@ -425,7 +425,12 @@ def _convert_core_aggregate_series_to_window_aggregate_seroes(
         frame_spec=RowsBetween(None, None),
     )
 
-    column_name = core_series.columns()[0].get_name()
+    column_name: str
+    if isinstance(core_series, GroupbySeries):
+        num_grouping_cols = len(core_series.get_base_frame().get_grouping_columns())
+        column_name = core_series.columns()[num_grouping_cols].get_name()
+    else:
+        column_name = core_series.columns()[0].get_name()
     window_series = WindowSeries(window_frame=window_frame, column_name=column_name)
     core_series_with_window = window_series.aggregate(func=applied_func_frame.func)
     assert isinstance(core_series_with_window, (Series, GroupbySeries))

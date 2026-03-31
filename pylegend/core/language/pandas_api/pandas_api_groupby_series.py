@@ -322,10 +322,11 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             aggregated_frame = self.applied_function_frame.aggregate(func, axis, *args, **kwargs)
         assert isinstance(aggregated_frame, PandasApiAppliedFunctionTdsFrame)
 
-        potential_num_cols = len(aggregated_frame.columns())
-        if potential_num_cols == 1:
+        num_grouping_cols = len(self._base_groupby_frame.get_grouping_columns())
+        num_value_cols = len(aggregated_frame.columns()) - num_grouping_cols
+        if num_value_cols == 1:
             return _get_new_groupby_series_for_column(
-                self._base_groupby_frame, aggregated_frame, aggregated_frame.columns()[0]
+                self._base_groupby_frame, aggregated_frame, aggregated_frame.columns()[num_grouping_cols]
             )
         else:
             return aggregated_frame
