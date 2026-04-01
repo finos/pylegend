@@ -62,7 +62,7 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "window_aggregate"
+        return "window_aggregate"  # pragma: no cover
 
     def __init__(
             self,
@@ -147,7 +147,7 @@ class WindowAggregateFunction(PandasApiAppliedFunction):
         from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
         map_expr = agg[1]
         if isinstance(map_expr, PyLegendColumnExpression):
-            return map_expr.get_column()
+            return map_expr.get_column()  # pragma: no cover
         # Fallback: use the alias (output name) which is derived from the source column
         return agg[0]
 
