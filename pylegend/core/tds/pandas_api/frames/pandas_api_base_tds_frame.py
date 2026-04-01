@@ -587,7 +587,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
                 f"The rolling function does not support the 'on' parameter, but got: on={on!r}"
             )
         if axis not in [0, "index"]:
-            raise NotImplementedError(
+            raise NotImplementedError(  # pragma: no cover
                 f'The rolling function is only supported for axis=0 or axis="index", but got: axis={axis!r}'
             )
         if closed is not None:
@@ -638,7 +638,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
 
         if not isinstance(frame_spec, FrameSpecCls):
-            raise TypeError(
+            raise TypeError(  # pragma: no cover
                 f"frame_spec must be a RowsBetween or RangeBetween, got {type(frame_spec).__name__}"
             )
 
