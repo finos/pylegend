@@ -2213,3 +2213,666 @@ class TestWindowAggregateFunctionValidation:
         assert func.validate() is True
 
 
+class TestWindowSeriesShortcutMethods:
+    """Tests for WindowSeries shortcut methods (sum, mean, min, max, count, std, var)."""
+
+    def test_window_series_sum_basic(self) -> None:
+        """WindowSeries.sum() calls aggregate with 'sum'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.sum()
+        sql = result.to_sql_query()
+        assert "SUM" in sql
+
+    def test_window_series_sum_numeric_only_error(self) -> None:
+        """WindowSeries.sum(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.sum(numeric_only=True)
+        assert "numeric_only=True is not currently supported in sum function" in str(exc.value)
+
+    def test_window_series_sum_min_count_error(self) -> None:
+        """WindowSeries.sum(min_count=1) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.sum(min_count=1)
+        assert "min_count must be 0 in sum function, but got: 1" in str(exc.value)
+
+    def test_window_series_mean_basic(self) -> None:
+        """WindowSeries.mean() calls aggregate with 'mean'."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.mean()
+        sql = result.to_sql_query()
+        assert "AVG" in sql
+
+    def test_window_series_mean_numeric_only_error(self) -> None:
+        """WindowSeries.mean(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.mean(numeric_only=True)
+        assert "numeric_only=True is not currently supported in mean function" in str(exc.value)
+
+    def test_window_series_min_basic(self) -> None:
+        """WindowSeries.min() calls aggregate with 'min'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.min()
+        sql = result.to_sql_query()
+        assert "MIN" in sql
+
+    def test_window_series_min_numeric_only_error(self) -> None:
+        """WindowSeries.min(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.min(numeric_only=True)
+        assert "numeric_only=True is not currently supported in min function" in str(exc.value)
+
+    def test_window_series_max_basic(self) -> None:
+        """WindowSeries.max() calls aggregate with 'max'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.max()
+        sql = result.to_sql_query()
+        assert "MAX" in sql
+
+    def test_window_series_max_numeric_only_error(self) -> None:
+        """WindowSeries.max(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.max(numeric_only=True)
+        assert "numeric_only=True is not currently supported in max function" in str(exc.value)
+
+    def test_window_series_count_basic(self) -> None:
+        """WindowSeries.count() calls aggregate with 'count'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.count()
+        sql = result.to_sql_query()
+        assert "COUNT" in sql
+
+    def test_window_series_std_ddof_1_default(self) -> None:
+        """WindowSeries.std() with default ddof=1 uses std_dev_sample."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.std()
+        sql = result.to_sql_query()
+        assert "STDDEV_SAMP" in sql
+
+    def test_window_series_std_ddof_0(self) -> None:
+        """WindowSeries.std(ddof=0) uses std_dev_population."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.std(ddof=0)
+        sql = result.to_sql_query()
+        assert "STDDEV_POP" in sql
+
+    def test_window_series_std_invalid_ddof_error(self) -> None:
+        """WindowSeries.std(ddof=2) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.std(ddof=2)
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: 2" in str(exc.value)
+
+    def test_window_series_std_numeric_only_error(self) -> None:
+        """WindowSeries.std(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.std(numeric_only=True)
+        assert "numeric_only=True is not currently supported in std function" in str(exc.value)
+
+    def test_window_series_var_ddof_1_default(self) -> None:
+        """WindowSeries.var() with default ddof=1 uses variance_sample."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.var()
+        sql = result.to_sql_query()
+        assert "VAR_SAMP" in sql
+
+    def test_window_series_var_ddof_0(self) -> None:
+        """WindowSeries.var(ddof=0) uses variance_population."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.var(ddof=0)
+        sql = result.to_sql_query()
+        assert "VAR_POP" in sql
+
+    def test_window_series_var_invalid_ddof_error(self) -> None:
+        """WindowSeries.var(ddof=3) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.var(ddof=3)
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: 3" in str(exc.value)
+
+    def test_window_series_var_numeric_only_error(self) -> None:
+        """WindowSeries.var(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.var(numeric_only=True)
+        assert "numeric_only=True is not currently supported in var function" in str(exc.value)
+
+
+class TestWindowFrameLegendExtOnBaseFrame:
+    """Tests for frame.window_frame_legend_ext() method on base TDS frame."""
+
+    def test_window_frame_legend_ext_with_rows_between(self) -> None:
+        """window_frame_legend_ext() on base frame with rows_between returns PandasApiWindowTdsFrame."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by="col1"
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+    def test_window_frame_legend_ext_with_range_between(self) -> None:
+        """window_frame_legend_ext() on base frame with range_between returns PandasApiWindowTdsFrame."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=range_between(start=-5, end=5),
+            order_by="col1",
+            ascending=False
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+    def test_window_frame_legend_ext_generates_sql(self) -> None:
+        """window_frame_legend_ext() on base frame generates correct SQL with sum()."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.window_frame_legend_ext(
+            frame_spec=rows_between(-3, 3),
+            order_by="col1"
+        ).agg("sum")
+
+        sql = result.to_sql_query()
+        assert "SUM" in sql
+        assert "OVER" in sql
+        assert "ROWS BETWEEN" in sql
+
+    def test_window_frame_legend_ext_generates_pure(self) -> None:
+        """window_frame_legend_ext() on base frame generates correct Pure with sum()."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.window_frame_legend_ext(
+            frame_spec=rows_between(-2, 2),
+            order_by="col1"
+        ).agg("sum")
+
+        pure = result.to_pure_query()
+        assert "rows" in pure
+        assert "sum" in pure
+
+    def test_window_frame_legend_ext_with_multiple_order_by(self) -> None:
+        """window_frame_legend_ext() works with multiple order_by columns."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=["col1", "col2"],
+            ascending=[True, False]
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+    def test_window_frame_legend_ext_with_no_order_by(self) -> None:
+        """window_frame_legend_ext() works with order_by=None."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=None
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+
+class TestWindowFrameLegendExtErrors:
+    """Tests for error handling in frame.window_frame_legend_ext() method."""
+
+    def test_base_frame_window_frame_legend_ext_invalid_frame_spec(self) -> None:
+        """window_frame_legend_ext() on base frame raises TypeError for invalid frame_spec."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(TypeError) as v:
+            frame.window_frame_legend_ext(frame_spec="invalid")  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got str" in str(v.value)
+
+    def test_base_frame_window_frame_legend_ext_with_none(self) -> None:
+        """window_frame_legend_ext() on base frame raises TypeError for frame_spec=None."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(TypeError) as v:
+            frame.window_frame_legend_ext(frame_spec=None)  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got NoneType" in str(v.value)
+
+    def test_base_frame_window_frame_legend_ext_with_integer(self) -> None:
+        """window_frame_legend_ext() on base frame raises TypeError for integer frame_spec."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(TypeError) as v:
+            frame.window_frame_legend_ext(frame_spec=123)  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got int" in str(v.value)
+
+
+class TestSeriesWindowFrameLegendExt:
+    """Tests for frame['col'].window_frame_legend_ext() method on Series."""
+
+    def test_series_window_frame_legend_ext_basic(self) -> None:
+        """window_frame_legend_ext() on Series returns a WindowSeries."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by="col1"
+        )
+
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "col1"
+
+    def test_series_window_frame_legend_ext_with_range_between(self) -> None:
+        """window_frame_legend_ext() on Series works with range_between frame spec."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.float_column("val"),
+            PrimitiveTdsColumn.string_column("name"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["val"].window_frame_legend_ext(
+            frame_spec=range_between(start=-10, end=10),
+            order_by="val",
+            ascending=False
+        )
+
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "val"
+
+    def test_series_window_frame_legend_ext_generates_sql(self) -> None:
+        """window_frame_legend_ext() on Series generates correct SQL with sum()."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-2, 2),
+            order_by="col1"
+        ).sum()
+
+        sql = result.to_sql_query()
+        assert "SUM" in sql
+        assert "OVER" in sql
+        assert "ROWS BETWEEN" in sql
+
+    def test_series_window_frame_legend_ext_generates_pure(self) -> None:
+        """window_frame_legend_ext() on Series generates correct Pure with sum()."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-2, 2),
+            order_by="col1"
+        ).sum()
+
+        pure = result.to_pure_query()
+        assert "rows" in pure
+        assert "sum" in pure
+
+    def test_series_window_frame_legend_ext_with_multiple_order_by(self) -> None:
+        """window_frame_legend_ext() on Series works with multiple order_by columns."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=["col1", "col2"],
+            ascending=[True, False]
+        )
+
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "col1"
+
+    def test_series_window_frame_legend_ext_with_no_order_by(self) -> None:
+        """window_frame_legend_ext() on Series works with order_by=None."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=None
+        )
+
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "col1"
+
+    def test_series_window_frame_legend_ext_with_ascending_bool(self) -> None:
+        """window_frame_legend_ext() on Series works with ascending as single bool."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-5, 5),
+            order_by="col1",
+            ascending=True
+        )
+
+        assert isinstance(ws, WindowSeries)
+
+        ws2 = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-5, 5),
+            order_by="col1",
+            ascending=False
+        )
+
+        assert isinstance(ws2, WindowSeries)
+
+
+class TestPandasApiWindowTdsFrameInit:
+    """Tests for PandasApiWindowTdsFrame.__init__() edge cases."""
+
+    def test_window_tds_frame_order_by_as_list(self) -> None:
+        """PandasApiWindowTdsFrame handles order_by as a list (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass order_by as a list (not a string) to cover the list(order_by) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=["col1", "col2"],  # list, not string
+            frame_spec=rows_between(None, 0),
+            ascending=True
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [True, True]
+
+    def test_window_tds_frame_order_by_as_tuple(self) -> None:
+        """PandasApiWindowTdsFrame handles order_by as a tuple (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass order_by as a tuple to cover the list(order_by) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=("col1", "col2"),  # tuple, not string
+            frame_spec=rows_between(None, 0),
+            ascending=False
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [False, False]
+
+    def test_window_tds_frame_ascending_as_list(self) -> None:
+        """PandasApiWindowTdsFrame handles ascending as a list (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass ascending as a list to cover the list(ascending) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=["col1", "col2"],
+            frame_spec=rows_between(None, 0),
+            ascending=[True, False]  # list, not single bool
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [True, False]
+
+    def test_window_tds_frame_ascending_as_tuple(self) -> None:
+        """PandasApiWindowTdsFrame handles ascending as a tuple (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass ascending as a tuple to cover the list(ascending) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=("col1", "col2"),
+            frame_spec=rows_between(None, 0),
+            ascending=(False, True)  # tuple, not single bool
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [False, True]
+
+    def test_window_tds_frame_ascending_length_mismatch_error(self) -> None:
+        """PandasApiWindowTdsFrame raises ValueError when ascending length doesn't match order_by."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as exc:
+            PandasApiWindowTdsFrame(
+                base_frame=frame,
+                order_by=["col1", "col2", "col3"],  # 3 columns
+                frame_spec=rows_between(None, 0),
+                ascending=[True, False]  # only 2 bools - mismatch!
+            )
+
+        assert "Length of ascending (2) must match length of order_by (3)" in str(exc.value)
+
+    def test_window_tds_frame_ascending_length_mismatch_error_more_ascending(self) -> None:
+        """PandasApiWindowTdsFrame raises ValueError when ascending has more elements than order_by."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as exc:
+            PandasApiWindowTdsFrame(
+                base_frame=frame,
+                order_by=["col1"],  # 1 column
+                frame_spec=rows_between(None, 0),
+                ascending=[True, False, True]  # 3 bools - mismatch!
+            )
+
+        assert "Length of ascending (3) must match length of order_by (1)" in str(exc.value)
+
+    def test_window_tds_frame_with_order_by_list_ascending_list_generates_sql(self) -> None:
+        """PandasApiWindowTdsFrame with list order_by and list ascending generates correct SQL."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=["col1", "col2"],  # list
+            frame_spec=rows_between(-2, 2),
+            ascending=[True, False]  # list
+        )
+
+        result = window_frame.agg("sum")
+        sql = result.to_sql_query()
+
+        assert "SUM" in sql
+        assert "OVER" in sql
+        assert "ORDER BY" in sql
+
+    def test_window_tds_frame_with_empty_ascending_list_when_no_order_by(self) -> None:
+        """PandasApiWindowTdsFrame with ascending list and no order_by is handled correctly."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # When order_by is None, passing an empty ascending list should work
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=None,
+            frame_spec=rows_between(None, 0),
+            ascending=[]  # empty list when no order_by
+        )
+
+        assert window_frame._order_by is None
+        assert window_frame._ascending == []
