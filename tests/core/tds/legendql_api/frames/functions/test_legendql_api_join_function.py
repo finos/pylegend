@@ -101,7 +101,7 @@ class TestJoinAppliedFunction:
         frame2: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table2'], cols2)
         with pytest.raises(ValueError) as r:
             frame1.join(frame2, lambda x, y: x['col1'] == y['col3'], "i")
-        assert r.value.args[0] == "Unknown join type - i. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER"
+        assert r.value.args[0] == "Unknown join type - i. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER, FULL"
 
     def test_query_gen_join(self) -> None:
         cols1 = [
@@ -290,6 +290,68 @@ class TestJoinAppliedFunction:
                ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#, '
                 'JoinKind.RIGHT, {l, r | $l.col2 == $r.col4})')
 
+    def test_query_gen_join_full(self) -> None:
+        cols1 = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame1: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table1'], cols1)
+        cols2 = [
+            PrimitiveTdsColumn.integer_column("col3"),
+            PrimitiveTdsColumn.string_column("col4")
+        ]
+        frame2: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table2'], cols2)
+        frame = frame1.join(frame2, lambda x, y: x['col2'] == y['col4'], 'FULL')
+
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
+            "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
+        )
+        expected = '''\
+                    SELECT
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        "root"."col3" AS "col3",
+                        "root"."col4" AS "col4"
+                    FROM
+                        (
+                            SELECT
+                                "left"."col1" AS "col1",
+                                "left"."col2" AS "col2",
+                                "right"."col3" AS "col3",
+                                "right"."col4" AS "col4"
+                            FROM
+                                (
+                                    SELECT
+                                        "root".col1 AS "col1",
+                                        "root".col2 AS "col2"
+                                    FROM
+                                        test_schema.test_table1 AS "root"
+                                ) AS "left"
+                                FULL OUTER JOIN
+                                    (
+                                        SELECT
+                                            "root".col3 AS "col3",
+                                            "root".col4 AS "col4"
+                                        FROM
+                                            test_schema.test_table2 AS "root"
+                                    ) AS "right"
+                                    ON ("left"."col2" = "right"."col4")
+                        ) AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table1)#
+              ->join(
+                #Table(test_schema.test_table2)#,
+                JoinKind.FULL,
+                {l, r | $l.col2 == $r.col4}
+              )'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table1)#->join(#Table(test_schema.test_table2)#, '
+                'JoinKind.FULL, {l, r | $l.col2 == $r.col4})')
+
     def test_query_gen_join_complex_condition(self) -> None:
         cols1 = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -432,6 +494,29 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
         assert json.loads(
             frame1.right_join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2']).execute_frame_to_string()
+        )["result"] == expected
+
+    def test_e2e_join_full(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1 = frame1.filter(lambda x: x['First Name'] == 'John')
+        frame1 = frame1.select(['Last Name', 'First Name'])
+        frame1 = frame1.rename(('Last Name', 'Last Name 1'))
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2 = frame2.filter(lambda x: x['First Name'] == 'Peter')
+        frame2 = frame2.select(['Age', 'Last Name'])
+        frame2 = frame2.rename(('Last Name', 'Last Name 2'))
+        frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'], 'FULL')
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
+               ("[TdsColumn(Name: Last Name 1, Type: String), TdsColumn(Name: First Name, Type: String), "
+                "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Last Name 2, Type: String)]")
+        expected = {'columns': ['Last Name 1', 'First Name', 'Age', 'Last Name 2'],
+                    'rows': [{'values': ['Johnson', 'John', None, None]},
+                             {'values': ['Hill', 'John', None, None]},
+                             {'values': [None, None, 23, 'Smith']}]}
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+        assert json.loads(
+            frame1.full_join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2']).execute_frame_to_string()
         )["result"] == expected
 
     def test_e2e_join_true_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
