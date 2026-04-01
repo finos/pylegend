@@ -215,33 +215,81 @@ class TestGroupbyErrors:
             gb_series.max(min_count=5)
         assert "min_count must be -1 (default) in max function, but got: 5" in v_max.value.args[0]
 
-    def test_groupby_std_error_ddof_not_one(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+    def test_groupby_std_with_ddof(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
-        gb_series = frame.groupby("col1")["col1"]
+        gb_series = frame.groupby("col1")["col2"]
 
-        with pytest.raises(NotImplementedError) as v:
-            gb.std(ddof=0)
-        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+        # ddof=0 should use population std dev
+        res_pop = gb.std(ddof=0)
+        res_series_pop = gb_series.std(ddof=0)
+        expected_sql_pop = """\
+            SELECT
+                "root".col1 AS "col1",
+                STDDEV_POP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
+        assert res_series_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
 
-        with pytest.raises(NotImplementedError) as v:
-            gb_series.std(ddof=0)
-        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+        # ddof=1 should use sample std dev (default)
+        res_sample = gb.std(ddof=1)
+        res_series_sample = gb_series.std(ddof=1)
+        expected_sql_sample = """\
+            SELECT
+                "root".col1 AS "col1",
+                STDDEV_SAMP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
+        assert res_series_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
 
-    def test_groupby_var_error_ddof_not_one(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+    def test_groupby_var_with_ddof(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
-        gb_series = frame.groupby("col1")["col1"]
+        gb_series = frame.groupby("col1")["col2"]
 
-        with pytest.raises(NotImplementedError) as v:
-            gb.var(ddof=2)
-        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+        # ddof=0 should use population variance
+        res_pop = gb.var(ddof=0)
+        res_series_pop = gb_series.var(ddof=0)
+        expected_sql_pop = """\
+            SELECT
+                "root".col1 AS "col1",
+                VAR_POP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
+        assert res_series_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
 
-        with pytest.raises(NotImplementedError) as v:
-            gb_series.var(ddof=2)
-        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+        # ddof=1 should use sample variance (default)
+        res_sample = gb.var(ddof=1)
+        res_series_sample = gb_series.var(ddof=1)
+        expected_sql_sample = """\
+            SELECT
+                "root".col1 AS "col1",
+                VAR_SAMP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
+        assert res_series_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
 
     def test_groupby_invalid_column_selection_from_series(self) -> None:
         columns = [
@@ -784,7 +832,7 @@ class TestGroupbyFunctionality:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()->cast(@Float)}])"
         ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.var()
@@ -800,7 +848,7 @@ class TestGroupbyFunctionality:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()->cast(@Float)}])"
         ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.count()
