@@ -307,7 +307,7 @@ class TestCorrFunctionQueryGeneration:
 
 class TestCorrFunctionEndToEnd:
 
-    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the CORR function")
+    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the CORR function")  # pragma: no cover
     def test_e2e_corr_self_correlation_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """CORR of a column with itself should be 1.0 for groups with > 1 distinct row."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
@@ -322,7 +322,7 @@ class TestCorrFunctionEndToEnd:
             if val is not None:
                 assert val == 1.0
 
-    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the CORR function")
+    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the CORR function")  # pragma: no cover
     def test_e2e_corr_two_columns(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """CORR of Quantity with itself across all rows."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
