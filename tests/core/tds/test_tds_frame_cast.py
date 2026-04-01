@@ -565,9 +565,8 @@ class TestTdsFrameCastE2E:
         frame = frame.cast({"Age": tf.number()})
         frame = frame.cast({"Age": tf.decimal()})
         frame['Age'] = frame['Age'] + PythonDecimal("1")
-        grouped = frame.groupby("Firm/Legal Name")
-        decimal_series = grouped["Age"]
-        result = decimal_series.aggregate("sum")
+        grouped = frame.groupby("Firm/Legal Name", sort=False)
+        result = grouped.aggregate({"Age": "sum"})
         result['Age'] = result['Age'] + PythonDecimal("1")
         expected = {
             "columns": ["Firm/Legal Name", "Age"],
@@ -575,7 +574,7 @@ class TestTdsFrameCastE2E:
                 {"values": ["Firm A", 37]},
                 {"values": ["Firm B", 35]},
                 {"values": ["Firm C", 38]},
-                {"values": ["Firm X", 85]},
+                {"values": ["Firm X", 85]}
             ],
         }
         assert json.loads(result.execute_frame_to_string())["result"] == expected
