@@ -417,7 +417,9 @@ class PandasApiGroupbyTdsFrame:
         selected = self.get_selected_columns()
         columns = selected if selected is not None else self.base_frame().columns()
         for col in columns:
-            if col.get_name() in grouping_names:
+            # Skip groupby columns only when no explicit column selection was made
+            # If user explicitly selected a groupby column, allow aggregation on it
+            if selected is None and col.get_name() in grouping_names:
                 continue
             if isinstance(col, PrimitiveTdsColumn) and col.get_type() in numeric_types:
                 result[col.get_name()] = func_name
