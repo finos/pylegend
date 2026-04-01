@@ -220,8 +220,8 @@ class PandasApiGroupbyTdsFrame:
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries
                 return FloatGroupbySeries(new_frame)
             elif col_type in ("Decimal", "Numeric"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DecimalGroupbySeries
-                return DecimalGroupbySeries(new_frame)
+                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DecimalGroupbySeries  # noqa: E501  # pragma: no cover
+                return DecimalGroupbySeries(new_frame)  # pragma: no cover
             elif col_type == "Date":
                 from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateGroupbySeries
                 return DateGroupbySeries(new_frame)
