@@ -266,6 +266,15 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
     ) -> "LegendQLApiTdsFrame":
         return self.join(other, join_condition, "RIGHT_OUTER")
 
+    def full_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        return self.join(other, join_condition, "FULL")
+
     def as_of_join(
             self,
             other: "LegendQLApiTdsFrame",
@@ -519,6 +528,33 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             LegendQLApiCastFunction
         )
         return LegendQLApiAppliedFunctionTdsFrame(LegendQLApiCastFunction(self, column_type_map))
+
+    def aggregate(
+            self,
+            aggregate_specifications: PyLegendUnion[
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                ],
+                PyLegendList[
+                    PyLegendTuple[
+                        str,
+                        PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                    ]
+                ]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (
+            LegendQLApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legendql_api.frames.functions.legendql_api_aggregate_function import (
+            LegendQLApiAggregateFunction
+        )
+        return LegendQLApiAppliedFunctionTdsFrame(
+            LegendQLApiAggregateFunction(self, aggregate_specifications)
+        )
 
 
 def _infer_window_frame_bound(
