@@ -104,7 +104,7 @@ class LegendQLApiAggregateFunction(LegendQLApiAppliedFunction):
                         f"index {i} (0-indexed). Message: " + str(e)
                     ) from e
 
-                if not isinstance(map_result, (int, float, bool, str, date, datetime, PyLegendPrimitive)):
+                if not isinstance(map_result, (int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive)):
                     raise TypeError(
                         "'aggregate' function aggregate specifications incompatible. "
                         f"Mapper lambda in the aggregate specification at index {i} (0-indexed) "
