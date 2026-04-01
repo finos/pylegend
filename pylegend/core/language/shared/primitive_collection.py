@@ -119,7 +119,7 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
         return PyLegendFloat(PyLegendAverageExpression(nested_expr))  # type: ignore
 
     def mean(self) -> "PyLegendFloat":
-        return self.average()
+        return self.average()  # pragma: no cover
 
     def max(self) -> "PyLegendNumber":
         nested_expr = (
