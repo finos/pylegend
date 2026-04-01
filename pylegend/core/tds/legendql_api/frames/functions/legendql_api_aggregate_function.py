@@ -27,6 +27,7 @@ from pylegend.core.language import (
     create_primitive_collection,
     convert_literal_to_literal_expression
 )
+from decimal import Decimal as PythonDecimal
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.function_helpers import tds_column_for_primitive
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
