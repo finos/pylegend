@@ -413,7 +413,7 @@ class TestFilterFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        frame = frame.groupby('col1')['col2'].sum()
+        frame = frame.groupby('col1')[['col2']].sum()
         frame = frame.filter(items=['col1'])
 
         expected_sql = dedent("""\
