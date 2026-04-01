@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from abc import ABCMeta
+import re
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
@@ -30,6 +31,40 @@ __all__: PyLegendSequence[str] = [
     "CsvInputFrameAbstract",
     "tds_columns_from_csv_string"
 ]
+
+# Matches a Pure decimal literal: digits with optional decimal point, ending in 'd' or 'D'
+# e.g. "21d", "31.0d", "101.0D", "3.14d"
+_PURE_DECIMAL_SUFFIX_RE = re.compile(r'^(\d+(?:\.\d+)?)[dD]$')
+
+
+def _strip_decimal_suffix(csv_string: str) -> tuple[str, set[str]]:
+    """Strip Pure decimal suffix (d/D) from values and track which columns had it."""
+    lines = csv_string.strip().split('\n')
+    if len(lines) < 2:
+        return csv_string, set()
+
+    header_line = lines[0].strip()
+    headers = [h.strip() for h in header_line.split(',')]
+    decimal_columns: set[str] = set()
+    new_lines = [header_line]
+
+    for line in lines[1:]:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        values = [v.strip() for v in stripped.split(',')]
+        new_values = []
+        for i, val in enumerate(values):
+            m = _PURE_DECIMAL_SUFFIX_RE.match(val)
+            if m:
+                new_values.append(m.group(1))
+                if i < len(headers):
+                    decimal_columns.add(headers[i])
+            else:
+                new_values.append(val)
+        new_lines.append(','.join(new_values))
+
+    return '\n'.join(new_lines) + '\n', decimal_columns
 
 
 class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
@@ -52,14 +87,19 @@ class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
 def tds_columns_from_csv_string(
         csv_string: str
 ) -> PyLegendList[PrimitiveTdsColumn]:
-    df = pd.read_csv(StringIO(csv_string))
+    cleaned_csv, decimal_columns = _strip_decimal_suffix(csv_string)
+    df = pd.read_csv(StringIO(cleaned_csv))
     tds_columns = []
     dt = pd.api.types
 
     for col in df.columns:
+        col_name = str(col).strip()
         dtype = df[col].dtype
 
-        if dt.is_bool_dtype(dtype):
+        if col_name in decimal_columns:
+            primitive_type = PrimitiveType.Decimal
+
+        elif dt.is_bool_dtype(dtype):
             primitive_type = PrimitiveType.Boolean
 
         elif dt.is_integer_dtype(dtype):
@@ -75,7 +115,7 @@ def tds_columns_from_csv_string(
             primitive_type = PrimitiveType.String
 
         tds_columns.append(
-            PrimitiveTdsColumn(name=col, _type=primitive_type)
+            PrimitiveTdsColumn(name=col_name, _type=primitive_type)
         )
 
     return tds_columns
@@ -84,6 +124,12 @@ def tds_columns_from_csv_string(
 def is_strict_date_or_datetime(col: pd.Series) -> bool:  # type: ignore[explicit-any]
     try:
         pd.to_datetime(col, format="%Y-%m-%d %H:%M:%S", exact=True, errors="raise")
+        return True
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        pd.to_datetime(col, format="%Y-%m-%dT%H:%M:%S.%f%z", exact=True, errors="raise")
         return True
     except (ValueError, TypeError):
         pass

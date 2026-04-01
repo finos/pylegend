@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+from decimal import Decimal as PythonDecimal
 from enum import Enum
 from pylegend.core.language import (
     PyLegendPrimitive,
@@ -30,6 +31,7 @@ from pylegend._typing import (
     PyLegendOptional,
     PyLegendList,
     PyLegendDict,
+    PyLegendUnion,
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.expression import (
@@ -37,8 +39,11 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionIntegerReturn,
 )
 from pylegend.core.language.shared.helpers import escape_column_name
+from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
 from pylegend.core.sql.metamodel import (
     Expression,
+    FrameBound,
+    FrameBoundType,
     FunctionCall,
     QualifiedName,
     QuerySpecification,
@@ -46,7 +51,10 @@ from pylegend.core.sql.metamodel import (
     SortItem,
     SortItemNullOrdering,
     SortItemOrdering,
-    Window
+    StringLiteral,
+    Window,
+    WindowFrame,
+    WindowFrameMode,
 )
 from pylegend.core.tds.tds_frame import (
     FrameToPureConfig,
@@ -68,6 +76,9 @@ __all__: PyLegendSequence[str] = [
     "PandasApiWindow",
     "PandasApiWindowReference",
     "PandasApiWindowFrame",
+    "PandasApiFrameBoundType",
+    "PandasApiFrameBound",
+    "PandasApiWindowFrameMode",
     "PandasApiRankExpression",
     "PandasApiDenseRankExpression",
     "PandasApiRowNumberExpression",
@@ -168,8 +179,199 @@ class PandasApiSortInfo:
         return f"{func}(~{escape_column_name(self.__column)})"
 
 
-class PandasApiWindowFrame(metaclass=ABCMeta):
-    pass
+class PandasApiDurationUnit(Enum):
+    YEARS = 1
+    MONTHS = 2
+    WEEKS = 3
+    DAYS = 4
+    HOURS = 5
+    MINUTES = 6
+    SECONDS = 7
+    MILLISECONDS = 8
+    MICROSECONDS = 9
+    NANOSECONDS = 10
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        return self.name
+
+    def to_sql_node(
+            self,
+            query: QuerySpecification,
+            config: FrameToSqlConfig,
+    ) -> StringLiteral:
+        mapping = {
+            PandasApiDurationUnit.YEARS: "YEAR",
+            PandasApiDurationUnit.MONTHS: "MONTH",
+            PandasApiDurationUnit.WEEKS: "WEEK",
+            PandasApiDurationUnit.DAYS: "DAY",
+            PandasApiDurationUnit.HOURS: "HOUR",
+            PandasApiDurationUnit.MINUTES: "MINUTE",
+            PandasApiDurationUnit.SECONDS: "SECOND",
+            PandasApiDurationUnit.MILLISECONDS: "MILLISECOND",
+            PandasApiDurationUnit.MICROSECONDS: "MICROSECOND",
+            PandasApiDurationUnit.NANOSECONDS: "NANOSECOND",
+        }
+        return StringLiteral(mapping[self], quoted=False)
+
+    @classmethod
+    def from_string(cls, value: str) -> "PandasApiDurationUnit":
+        try:
+            return cls[value.upper()]
+        except KeyError:
+            raise ValueError(
+                f"Invalid duration unit '{value}'. "
+                f"Supported values: {[u.name.lower() for u in cls]}"
+            )
+
+
+class PandasApiFrameBoundType(Enum):
+    UNBOUNDED_PRECEDING = 1
+    PRECEDING = 2
+    CURRENT_ROW = 3
+    FOLLOWING = 4
+    UNBOUNDED_FOLLOWING = 5
+
+    def to_sql_node(self) -> FrameBoundType:
+        _map = {
+            PandasApiFrameBoundType.UNBOUNDED_PRECEDING: FrameBoundType.UNBOUNDED_PRECEDING,
+            PandasApiFrameBoundType.PRECEDING: FrameBoundType.PRECEDING,
+            PandasApiFrameBoundType.CURRENT_ROW: FrameBoundType.CURRENT_ROW,
+            PandasApiFrameBoundType.FOLLOWING: FrameBoundType.FOLLOWING,
+            PandasApiFrameBoundType.UNBOUNDED_FOLLOWING: FrameBoundType.UNBOUNDED_FOLLOWING,
+        }
+        return _map[self]
+
+    def to_pure_expression(self) -> str:
+        _map = {
+            PandasApiFrameBoundType.UNBOUNDED_PRECEDING: "unbounded()",
+            PandasApiFrameBoundType.PRECEDING: "0",
+            PandasApiFrameBoundType.CURRENT_ROW: "0",
+            PandasApiFrameBoundType.FOLLOWING: "0",
+            PandasApiFrameBoundType.UNBOUNDED_FOLLOWING: "unbounded()",
+        }
+        return _map[self]
+
+
+class PandasApiFrameBound:
+    type_: PandasApiFrameBoundType
+    value: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]]
+    duration_unit: PyLegendOptional[PandasApiDurationUnit]
+
+    def __init__(
+        self,
+        type_: PandasApiFrameBoundType,
+        value: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+        duration_unit: PyLegendOptional[PandasApiDurationUnit] = None,
+    ) -> None:
+        self.type_ = type_
+        self.value = value
+        self.duration_unit = duration_unit
+
+    def to_sql_node(
+        self,
+        query: QuerySpecification,
+        config: FrameToSqlConfig,
+    ) -> FrameBound:
+        value_expression: PyLegendOptional[Expression] = None
+        if self.value is not None:
+            abs_val: PyLegendUnion[int, float, PythonDecimal] = abs(self.value)  # type: ignore
+            value_expression = (
+                convert_literal_to_literal_expression(abs_val)
+                .to_sql_expression({"w": query}, config)
+            )
+        duration_unit_node = (
+            self.duration_unit.to_sql_node(query, config)
+            if self.duration_unit is not None else None
+        )
+        return FrameBound(
+            type_=self.type_.to_sql_node(),
+            value=value_expression,
+            duration_unit=duration_unit_node,
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        if self.type_ in (PandasApiFrameBoundType.UNBOUNDED_PRECEDING,
+                          PandasApiFrameBoundType.UNBOUNDED_FOLLOWING):
+            return "unbounded()"
+
+        if self.type_ == PandasApiFrameBoundType.CURRENT_ROW:
+            expr = "0"
+        elif self._should_use_value():
+            value_expr = convert_literal_to_literal_expression(self.value).to_pure_expression(config)
+            if self.type_ == PandasApiFrameBoundType.PRECEDING:
+                expr = f"minus({value_expr})"
+            else:
+                expr = value_expr
+        else:
+            expr = self.type_.to_pure_expression()
+
+        if self.duration_unit is not None:
+            expr += f", DurationUnit.{self.duration_unit.to_pure_expression(config)}"
+
+        return expr
+
+    def _should_use_value(self) -> bool:
+        if self.type_ in (PandasApiFrameBoundType.UNBOUNDED_PRECEDING, PandasApiFrameBoundType.UNBOUNDED_FOLLOWING):
+            return False
+        return self.value is not None
+
+
+class PandasApiWindowFrameMode(Enum):
+    RANGE = 1
+    ROWS = 2
+
+    def to_sql_node(self) -> WindowFrameMode:
+        _map = {
+            PandasApiWindowFrameMode.RANGE: WindowFrameMode.RANGE,
+            PandasApiWindowFrameMode.ROWS: WindowFrameMode.ROWS,
+        }
+        return _map[self]
+
+    def to_pure_expression(self) -> str:
+        _map = {
+            PandasApiWindowFrameMode.RANGE: "_range",
+            PandasApiWindowFrameMode.ROWS: "rows",
+        }
+        return _map[self]
+
+
+class PandasApiWindowFrame:
+    mode: PandasApiWindowFrameMode
+    start: PandasApiFrameBound
+    end: PyLegendOptional[PandasApiFrameBound]
+
+    def __init__(
+        self,
+        mode: PandasApiWindowFrameMode,
+        start: PandasApiFrameBound,
+        end: PyLegendOptional[PandasApiFrameBound] = None,
+    ) -> None:
+        self.mode = mode
+        self.start = start
+        self.end = end
+
+    def to_sql_node(
+        self,
+        query: QuerySpecification,
+        config: FrameToSqlConfig,
+    ) -> WindowFrame:
+        return WindowFrame(
+            mode=self.mode.to_sql_node(),
+            start=self.start.to_sql_node(query, config),
+            end=(
+                None if self.end is None
+                else self.end.to_sql_node(query, config)
+            ),
+        )
+
+    def to_pure_expression(self, config: FrameToPureConfig) -> str:
+        mode_expr = self.mode.to_pure_expression()
+        start_expr = self.start.to_pure_expression(config)
+        end_expr = (
+            "" if self.end is None
+            else ", " + self.end.to_pure_expression(config)
+        )
+        return f"{mode_expr}({start_expr}{end_expr})"
 
 
 class PandasApiWindow:
@@ -202,7 +404,10 @@ class PandasApiWindow:
                 [] if self.__order_by is None else
                 [sort_info.to_sql_node(query, config) for sort_info in self.__order_by]
             ),
-            windowFrame=None
+            windowFrame=(
+                None if self.__frame is None
+                else self.__frame.to_sql_node(query, config)
+            ),
         )
 
     @staticmethod
@@ -226,7 +431,11 @@ class PandasApiWindow:
             "[]" if self.__order_by is None or len(self.__order_by) == 0
             else "[" + (', '.join([s.to_pure_expression(config) for s in self.__order_by])) + "]"
         )
-        return f"over({partitions_str}{sorts_str})"
+        frame_str = (
+            "" if self.__frame is None
+            else ", " + self.__frame.to_pure_expression(config)
+        )
+        return f"over({partitions_str}{sorts_str}{frame_str})"
 
 
 class PandasApiPartialFrame:
