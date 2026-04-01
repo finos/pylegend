@@ -257,7 +257,7 @@ class TestCovarSampleFunctionQueryGeneration:
 
 class TestCovarFunctionEndToEnd:
 
-    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have handlers for COVAR_POP/COVAR_SAMP")
+    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have handlers for COVAR_POP/COVAR_SAMP")  # pragma: no cover
     def test_e2e_covar_pop_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
@@ -266,7 +266,7 @@ class TestCovarFunctionEndToEnd:
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert "Quantity" in res["columns"]
 
-    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have handlers for COVAR_POP/COVAR_SAMP")
+    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have handlers for COVAR_POP/COVAR_SAMP")  # pragma: no cover
     def test_e2e_covar_samp_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
@@ -274,3 +274,149 @@ class TestCovarFunctionEndToEnd:
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert "Quantity" in res["columns"]
+
+
+class TestTwoColumnWindowFunctionInternals:
+    """Tests for TwoColumnWindowFunction internal methods."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_two_column_window_function_name(self) -> None:
+        """Test that TwoColumnWindowFunction.name() returns the expected value."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+        assert TwoColumnWindowFunction.name() == "two_column_window"
+
+    def test_two_column_window_function_get_window(self) -> None:
+        """Test get_window() returns the PandasApiWindow."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import PandasApiWindow
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        func = TwoColumnWindowFunction(
+            base_frame=gb,
+            col_name_a="valA",
+            col_name_b="valB",
+            result_col_name="result",
+            func_type="corr",
+        )
+        window = func.get_window()
+        assert isinstance(window, PandasApiWindow)
+
+    def test_two_column_window_function_get_expr(self) -> None:
+        """Test get_expr() returns the PyLegendPrimitive."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+        from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        func = TwoColumnWindowFunction(
+            base_frame=gb,
+            col_name_a="valA",
+            col_name_b="valB",
+            result_col_name="result",
+            func_type="corr",
+        )
+        expr = func.get_expr()
+        assert isinstance(expr, PyLegendPrimitive)
+
+    def test_two_column_window_function_base_frame(self) -> None:
+        """Test base_frame() returns the underlying TDS frame."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+        from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        func = TwoColumnWindowFunction(
+            base_frame=gb,
+            col_name_a="valA",
+            col_name_b="valB",
+            result_col_name="result",
+            func_type="corr",
+        )
+        base = func.base_frame()
+        assert isinstance(base, PandasApiBaseTdsFrame)
+
+    def test_two_column_window_function_tds_frame_parameters(self) -> None:
+        """Test tds_frame_parameters() returns empty list."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        func = TwoColumnWindowFunction(
+            base_frame=gb,
+            col_name_a="valA",
+            col_name_b="valB",
+            result_col_name="result",
+            func_type="corr",
+        )
+        params = func.tds_frame_parameters()
+        assert params == []
+
+    def test_two_column_window_function_to_sql(self) -> None:
+        """Test to_sql() generates proper QuerySpecification."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+        from pylegend.core.sql.metamodel import QuerySpecification
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        func = TwoColumnWindowFunction(
+            base_frame=gb,
+            col_name_a="valA",
+            col_name_b="valB",
+            result_col_name="result",
+            func_type="corr",
+        )
+        query = func.to_sql(FrameToSqlConfig())
+        assert isinstance(query, QuerySpecification)
+
+    def test_two_column_window_function_to_pure(self) -> None:
+        """Test to_pure() generates proper Pure query string."""
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("valA"),
+            PrimitiveTdsColumn.integer_column("valB"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="id")
+        func = TwoColumnWindowFunction(
+            base_frame=gb,
+            col_name_a="valA",
+            col_name_b="valB",
+            result_col_name="result",
+            func_type="corr",
+        )
+        pure = func.to_pure(FrameToPureConfig())
+        assert "extend" in pure
+        assert "project" in pure
+        assert "result__pylegend_olap_column__" in pure
+
