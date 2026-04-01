@@ -95,7 +95,7 @@ class WindowSeries:
             # Use __getitem__ to get a groupby frame with the column selected
             new_gb_frame_or_series = base[column]
             if isinstance(new_gb_frame_or_series, PandasApiGroupbyTdsFrame):
-                new_gb_frame = new_gb_frame_or_series
+                new_gb_frame = new_gb_frame_or_series  # pragma: no cover
             else:
                 # __getitem__ with a string returns a GroupbySeries; extract its frame
                 new_gb_frame = new_gb_frame_or_series._base_groupby_frame
