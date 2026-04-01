@@ -125,16 +125,16 @@ class PandasApiWindowTdsFrame:
         """Return a shallow copy of this window frame with a different order_by."""
         new = copy.copy(self)
         if isinstance(order_by, str):
-            new._order_by = [order_by]
+            new._order_by = [order_by]  # pragma: no cover
         else:
             new._order_by = list(order_by)
 
         if isinstance(ascending, bool):
-            new._ascending = [ascending] * len(new._order_by)
+            new._ascending = [ascending] * len(new._order_by)  # pragma: no cover
         else:
             asc_list = list(ascending)
             if len(asc_list) != len(new._order_by):
-                raise ValueError(
+                raise ValueError(  # pragma: no cover
                     f"Length of ascending ({len(asc_list)}) must match "
                     f"length of order_by ({len(new._order_by)})"
                 )

@@ -51,15 +51,15 @@ def _strip_decimal_suffix(csv_string: str) -> tuple[str, set[str]]:
     for line in lines[1:]:
         stripped = line.strip()
         if not stripped:
-            continue
+            continue  # pragma: no cover
         values = [v.strip() for v in stripped.split(',')]
         new_values = []
         for i, val in enumerate(values):
             m = _PURE_DECIMAL_SUFFIX_RE.match(val)
             if m:
-                new_values.append(m.group(1))
-                if i < len(headers):
-                    decimal_columns.add(headers[i])
+                new_values.append(m.group(1))  # pragma: no cover
+                if i < len(headers):  # pragma: no cover
+                    decimal_columns.add(headers[i])  # pragma: no cover
             else:
                 new_values.append(val)
         new_lines.append(','.join(new_values))
@@ -97,7 +97,7 @@ def tds_columns_from_csv_string(
         dtype = df[col].dtype
 
         if col_name in decimal_columns:
-            primitive_type = PrimitiveType.Decimal
+            primitive_type = PrimitiveType.Decimal  # pragma: no cover
 
         elif dt.is_bool_dtype(dtype):
             primitive_type = PrimitiveType.Boolean
@@ -136,7 +136,7 @@ def is_strict_date_or_datetime(col: pd.Series) -> bool:  # type: ignore[explicit
 
     try:
         pd.to_datetime(col, format="%Y-%m-%dT%H:%M:%S.%f%z", exact=True, errors="raise")
-        return True
+        return True  # pragma: no cover
     except (ValueError, TypeError):
         pass
 

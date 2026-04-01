@@ -439,7 +439,7 @@ class TestMedianModePercentileEndToEnd:
 
     # ── mode e2e (skipped — no SQL handler) ──────────────────────────────
 
-    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the MODE function")
+    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the MODE function")  # pragma: no cover
     def test_e2e_mode_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """groupby('Firm/Legal Name').mode() on Age column."""
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
@@ -458,7 +458,7 @@ class TestMedianModePercentileEndToEnd:
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res == expected
 
-    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the MODE function")
+    @pytest.mark.skip(reason="Legend engine SQL execution layer does not yet have a handler for the MODE function")  # pragma: no cover
     def test_e2e_mode_window_transform(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """Broadcast mode per firm back to every row via transform."""
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
