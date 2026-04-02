@@ -35,7 +35,7 @@ from pylegend.core.sql.metamodel import (
     ComparisonExpression,
     NegativeExpression,
     FunctionCall,
-    QualifiedName,
+    QualifiedName
 )
 from pylegend.core.sql.metamodel_extension import (
     AbsoluteExpression,

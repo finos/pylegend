@@ -16,7 +16,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
-    PyLegendOptional,
+    PyLegendOptional
 )
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendIntegerLiteralExpression,
@@ -74,7 +74,7 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringFullMatchExpression,
     PyLegendStringRepeatStringExpression,
     PyLegendStringMatchExpression,
-    PyLegendStringCoalesceExpression,
+    PyLegendStringCoalesceExpression
 )
 
 __all__: PyLegendSequence[str] = [

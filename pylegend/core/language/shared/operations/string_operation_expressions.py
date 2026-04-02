@@ -41,7 +41,7 @@ from pylegend.core.sql.metamodel import (
     StringLiteral,
     FunctionCall,
     QualifiedName,
-    IntegerLiteral,
+    IntegerLiteral
 )
 from pylegend.core.sql.metamodel_extension import (
     StringLengthExpression,

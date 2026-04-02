@@ -63,7 +63,7 @@ from pylegend.core.language.shared.operations.number_operation_expressions impor
     PyLegendNumberSignExpression,
     PyLegendNumberHyperbolicSinExpression,
     PyLegendNumberHyperbolicCosExpression,
-    PyLegendNumberHyperbolicTanExpression,
+    PyLegendNumberHyperbolicTanExpression
 )
 from pylegend.core.sql.metamodel import (
     Expression,
