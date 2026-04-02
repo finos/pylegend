@@ -230,7 +230,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
-        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+        # Normalize non-callable values (e.g. direct Series/GroupbySeries) into lambdas,
+        # matching pandas DataFrame.assign() behavior which accepts both callables and values.
+        normalized = {}
+        for key, value in kwargs.items():
+            if callable(value):
+                normalized[key] = value
+            else:
+                normalized[key] = lambda row, _v=value: _v
+        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=normalized))
 
     def filter(
             self,
