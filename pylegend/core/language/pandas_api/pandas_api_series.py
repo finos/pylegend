@@ -546,6 +546,23 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         new_series._filtered_frame = applied_function_frame
         return new_series
 
+    def concat_legend_ext(
+            self,
+            other: "Series",
+    ) -> "Series":
+        """
+        PyLegend extension (not present in pandas).
+
+        Concatenate this series with another series vertically (UNION ALL).
+        Both series must have compatible schemas (same column name and type).
+        """
+        concat_frame = self._filtered_frame.concat_legend_ext(other._filtered_frame)
+        assert isinstance(concat_frame, PandasApiAppliedFunctionTdsFrame)
+
+        col = concat_frame.columns()[0]
+        new_series = _get_new_series_for_column(self._base_frame, col, concat_frame)
+        return new_series
+
     def expanding(
             self,
             min_periods: int = 1,
