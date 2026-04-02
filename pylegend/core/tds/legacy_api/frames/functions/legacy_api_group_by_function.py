@@ -90,11 +90,7 @@ class LegacyApiGroupByFunction(LegacyApiAppliedFunction):
             if col.alias in columns_to_retain:
                 new_cols_with_index.append((columns_to_retain.index(col.alias), col))
 
-        sorted_grouping_cols = sorted(new_cols_with_index, key=lambda x: x[0])
-        new_select_items: PyLegendList['SelectItem'] = [y[1] for y in sorted_grouping_cols]
-        group_by_aliases = [
-            col.alias for _, col in sorted_grouping_cols if isinstance(col, SingleColumn) and col.alias is not None
-        ]
+        new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
 
         tds_row = LegacyApiTdsRow.from_tds_frame("frame", self.__base_frame)
         for agg in self.__aggregations:
@@ -116,7 +112,7 @@ class LegacyApiGroupByFunction(LegacyApiAppliedFunction):
 
         new_query.select.selectItems = new_select_items
         new_query.groupBy = [
-            QualifiedNameReference(QualifiedName([alias])) for alias in group_by_aliases
+            QualifiedNameReference(QualifiedName([c])) for c in columns_to_retain
         ]
         return create_sub_query(new_query, config, "root")
 
