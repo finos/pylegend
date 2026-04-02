@@ -237,19 +237,41 @@ class TestPyLegendBoolean:
             self.tds_row.get_boolean("col1").case(True, 1.5)
         assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
 
-        with pytest.raises(TypeError) as t:
-            self.tds_row.get_boolean("col1").case(date(2025, 1, 1), datetime(2025, 1, 1, 10, 30, 0))
-        assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
+        # date literal with datetime literal -> Date case (mixed date subtypes)
+        assert self.__generate_sql_string(
+            lambda x: x.get_boolean("col1").case(date(2025, 1, 1), datetime(2025, 1, 1, 10, 30, 0))
+        ) == ("CASE\n    WHEN\n        \"root\".col1\n    THEN\n        "
+              "CAST('2025-01-01' AS DATE)\n    ELSE\n        CAST('2025-01-01T10:30:00' AS TIMESTAMP)\nEND")
 
+        # Number col with integer literal (mixed numeric types -> Number case)
         number_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
             PrimitiveTdsColumn.number_column("num_col"),
             PrimitiveTdsColumn.boolean_column("bool_col")
         ])
         number_row = TestTdsRow.from_tds_frame("t", number_frame)
-        number_expr = number_row.get_number("num_col")
-        with pytest.raises(TypeError) as t:
-            number_row.get_boolean("bool_col").case(number_expr, 0)
-        assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
+        number_base_query = number_frame.to_sql_query_object(self.frame_to_sql_config)
+        result = number_row.get_boolean("bool_col").case(number_row.get_number("num_col"), 0)
+        assert self.db_extension.process_expression(
+            result.to_sql_expression({"t": number_base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == 'CASE\n    WHEN\n        "root".bool_col\n    THEN\n        "root".num_col\n    ELSE\n        0\nEND'
+
+        # DateTime col with StrictDate col (mixed date subtypes -> Date case)
+        date_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
+            PrimitiveTdsColumn.datetime_column("dt_col"),
+            PrimitiveTdsColumn.strictdate_column("sd_col"),
+            PrimitiveTdsColumn.boolean_column("bool_col")
+        ])
+        date_row = TestTdsRow.from_tds_frame("t", date_frame)
+        date_base_query = date_frame.to_sql_query_object(self.frame_to_sql_config)
+        result = date_row.get_boolean("bool_col").case(
+            date_row.get_datetime("dt_col"), date_row.get_strictdate("sd_col")
+        )
+        assert self.db_extension.process_expression(
+            result.to_sql_expression({"t": date_base_query}, self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == ('CASE\n    WHEN\n        "root".bool_col\n    THEN\n'
+              '        "root".dt_col\n    ELSE\n        "root".sd_col\nEND')
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         return self.db_extension.process_expression(

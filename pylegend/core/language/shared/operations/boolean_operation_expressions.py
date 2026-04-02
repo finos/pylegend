@@ -20,9 +20,11 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpression,
     PyLegendExpressionBooleanReturn,
     PyLegendExpressionStringReturn,
+    PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
     PyLegendExpressionDecimalReturn,
+    PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
 )
@@ -56,9 +58,11 @@ __all__: PyLegendSequence[str] = [
     "PyLegendBooleanXorExpression",
     "PyLegendBooleanCaseExpression",
     "PyLegendStringCaseExpression",
+    "PyLegendNumberCaseExpression",
     "PyLegendIntegerCaseExpression",
     "PyLegendFloatCaseExpression",
     "PyLegendDecimalCaseExpression",
+    "PyLegendDateCaseExpression",
     "PyLegendDateTimeCaseExpression",
     "PyLegendStrictDateCaseExpression",
 ]
@@ -332,6 +336,13 @@ class PyLegendStringCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressio
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
 
 
+class PyLegendNumberCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionNumberReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpressionNumberReturn, if_false: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
 class PyLegendIntegerCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionIntegerReturn):
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
                  if_true: PyLegendExpressionIntegerReturn, if_false: PyLegendExpressionIntegerReturn) -> None:
@@ -350,6 +361,13 @@ class PyLegendDecimalCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressi
     def __init__(self, condition: PyLegendExpressionBooleanReturn,
                  if_true: PyLegendExpressionDecimalReturn, if_false: PyLegendExpressionDecimalReturn) -> None:
         PyLegendExpressionDecimalReturn.__init__(self)
+        PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
+
+
+class PyLegendDateCaseExpression(PyLegendCaseExpressionBase, PyLegendExpressionDateReturn):
+    def __init__(self, condition: PyLegendExpressionBooleanReturn,
+                 if_true: PyLegendExpressionDateReturn, if_false: PyLegendExpressionDateReturn) -> None:
+        PyLegendExpressionDateReturn.__init__(self)
         PyLegendCaseExpressionBase.__init__(self, condition, if_true, if_false)
 
 

@@ -22,9 +22,11 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpression,
     PyLegendExpressionBooleanReturn,
     PyLegendExpressionStringReturn,
+    PyLegendExpressionNumberReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionFloatReturn,
     PyLegendExpressionDecimalReturn,
+    PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
 )
@@ -43,10 +45,12 @@ from pylegend.core.language.shared.operations.boolean_operation_expressions impo
     PyLegendBooleanGreaterThanEqualExpression,
     PyLegendBooleanXorExpression,
     PyLegendBooleanCaseExpression,
+    PyLegendNumberCaseExpression,
     PyLegendIntegerCaseExpression,
     PyLegendFloatCaseExpression,
     PyLegendDecimalCaseExpression,
     PyLegendStringCaseExpression,
+    PyLegendDateCaseExpression,
     PyLegendDateTimeCaseExpression,
     PyLegendStrictDateCaseExpression
 )
@@ -94,8 +98,8 @@ class PyLegendBoolean(PyLegendPrimitive):
             if_false: "PyLegendPrimitiveOrPythonPrimitive",
     ) -> PyLegendPrimitive:
         from pylegend.core.language.shared.primitives import (
-            PyLegendString, PyLegendInteger, PyLegendFloat, PyLegendDecimal,
-            PyLegendDateTime, PyLegendStrictDate
+            PyLegendString, PyLegendNumber, PyLegendInteger, PyLegendFloat, PyLegendDecimal,
+            PyLegendDate, PyLegendDateTime, PyLegendStrictDate
         )
 
         def resolve_param(param: PyLegendPrimitiveOrPythonPrimitive,
@@ -133,6 +137,11 @@ class PyLegendBoolean(PyLegendPrimitive):
             return PyLegendStrictDate(PyLegendStrictDateCaseExpression(
                 self.__value, true_expr, false_expr
             ))
+        elif isinstance(true_expr, PyLegendExpressionDateReturn) \
+                and isinstance(false_expr, PyLegendExpressionDateReturn):
+            return PyLegendDate(PyLegendDateCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
         elif isinstance(true_expr, PyLegendExpressionDecimalReturn) \
                 and isinstance(false_expr, PyLegendExpressionDecimalReturn):
             return PyLegendDecimal(PyLegendDecimalCaseExpression(
@@ -146,6 +155,11 @@ class PyLegendBoolean(PyLegendPrimitive):
         elif isinstance(true_expr, PyLegendExpressionIntegerReturn) \
                 and isinstance(false_expr, PyLegendExpressionIntegerReturn):
             return PyLegendInteger(PyLegendIntegerCaseExpression(
+                self.__value, true_expr, false_expr
+            ))
+        elif isinstance(true_expr, PyLegendExpressionNumberReturn) \
+                and isinstance(false_expr, PyLegendExpressionNumberReturn):
+            return PyLegendNumber(PyLegendNumberCaseExpression(
                 self.__value, true_expr, false_expr
             ))
         else:

@@ -335,19 +335,13 @@ class TestPyLegendDecimal:
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string_no_decimal_assert(lambda x: x.get_decimal("col2").in_list([]))
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of primitive values."
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string_no_decimal_assert(
                 lambda x: x.get_decimal("col2").in_list("not_a_list")  # type: ignore[arg-type]
             )
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of number values."
-
-        with pytest.raises(TypeError) as t:
-            self.__generate_sql_string_no_decimal_assert(
-                lambda x: x.get_decimal("col2").in_list(["a", "b"])  # type: ignore[list-item]
-            )
-        assert t.value.args[0].startswith("in_list list element should be a int/float/decimal.Decimal")
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of primitive values."
 
     def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
         ret = f(self.tds_row)

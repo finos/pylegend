@@ -440,15 +440,11 @@ class TestPyLegendString:
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string(lambda x: x.get_string("col2").in_list([]))
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of string values."
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of primitive values."
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string(lambda x: x.get_string("col2").in_list("not_a_list"))
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of string values."
-
-        with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_string("col2").in_list([1, 2]))
-        assert t.value.args[0].startswith("in_list list element should be a str or a string expression")
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of primitive values."
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

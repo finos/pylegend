@@ -17,7 +17,6 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
-    PyLegendList,
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
@@ -59,7 +58,6 @@ from pylegend.core.language.shared.operations.date_operation_expressions import 
     PyLegendDateGreaterThanEqualExpression,
     PyLegendDateAdjustExpression,
     PyLegendDateDiffExpression,
-    PyLegendDateInListExpression,
     DurationUnit,
 )
 from pylegend.core.sql.metamodel import (
@@ -259,19 +257,6 @@ class PyLegendDate(PyLegendPrimitive):
     @grammar_method
     def firstDayOfWeek(self) -> "PyLegendDate":
         return self.first_day_of_week()
-
-    @grammar_method
-    def in_list(
-            self,
-            lst: PyLegendList[PyLegendUnion[date, datetime, "PyLegendStrictDate", "PyLegendDateTime", "PyLegendDate"]]
-    ) -> "PyLegendBoolean":
-        if not isinstance(lst, list) or len(lst) == 0:
-            raise ValueError("in_list parameter should be a non-empty list of date values.")
-        operands = [self.__value]
-        for item in lst:
-            PyLegendDate.validate_param_to_be_date(item, "in_list list element")
-            operands.append(PyLegendDate.__convert_to_date_expr(item))
-        return PyLegendBoolean(PyLegendDateInListExpression(operands))  # type: ignore
 
     @grammar_method
     def __lt__(

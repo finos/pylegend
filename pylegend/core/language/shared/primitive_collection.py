@@ -324,8 +324,8 @@ class PyLegendStringCollection(PyLegendPrimitiveCollection):
         separator_expr = convert_literal_to_literal_expression(separator)
         return PyLegendString(PyLegendJoinStringsExpression(nested_expr, separator_expr))  # type: ignore
 
-    def join_strings(self) -> "PyLegendString":
-        return self.join(separator=";")
+    def join_strings(self, separator: str = ";") -> "PyLegendString":
+        return self.join(separator=separator)
 
     def distinct_value(self) -> "PyLegendString":
         nested_expr = (

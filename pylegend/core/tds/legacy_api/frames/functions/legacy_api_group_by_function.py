@@ -113,10 +113,10 @@ class LegacyApiGroupByFunction(LegacyApiAppliedFunction):
         new_query.select.selectItems = new_select_items
         new_query.groupBy = [
             QualifiedNameReference(QualifiedName([
-                db_extension.quote_identifier("root"), db_extension.quote_identifier(c)
-            ])) for c in self.__grouping_columns
+                c
+            ])) for c in columns_to_retain
         ]
-        return new_query
+        return create_sub_query(new_query, config, "root")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         group_strings = []

@@ -536,15 +536,11 @@ class TestPyLegendDate:
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string(lambda x: x.get_date("col2").in_list([]))
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of date values."
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of primitive values."
 
         with pytest.raises(ValueError) as v:
             self.__generate_sql_string(lambda x: x.get_date("col2").in_list("not_a_list"))
-        assert v.value.args[0] == "in_list parameter should be a non-empty list of date values."
-
-        with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_date("col2").in_list([1, 2]))
-        assert t.value.args[0].startswith("in_list list element should be a datetime.date/datetime.datetime")
+        assert v.value.args[0] == "in_list parameter should be a non-empty list of primitive values."
 
     def test_e2e_date_adjust_expr(
             self,
@@ -690,6 +686,45 @@ class TestPyLegendDate:
                 ]
             }]
         }
+
+    def test_e2e_most_recent_and_previous_day_of_week(
+            self,
+            legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
+    ) -> None:
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
+            legend_test_server["engine_port"]
+        )
+
+        frame = frame.select([
+            "Settlement Date Time"
+        ]).sort(lambda r: r["Settlement Date Time"].descending()).limit(1)
+
+        frame = frame.extend([
+            ("most_recent_monday", lambda r: most_recent_day_of_week("Monday")),
+            ("most_recent_friday", lambda r: most_recent_day_of_week("Friday")),
+            ("most_recent_friday_first_day_of_month",
+             lambda r: most_recent_day_of_week("Friday").first_day_of_month()),
+            ("previous_monday", lambda r: previous_day_of_week("Monday")),
+            ("previous_saturday", lambda r: previous_day_of_week("Saturday")),
+            ("previous_saturday_first_day_of_month",
+             lambda r: previous_day_of_week("Saturday").first_day_of_month()),
+        ])
+
+        res = frame.execute_frame_to_string()
+        result = json.loads(res)["result"]
+        assert result["columns"] == [
+            "Settlement Date Time",
+            "most_recent_monday",
+            "most_recent_friday",
+            "most_recent_friday_first_day_of_month",
+            "previous_monday",
+            "previous_saturday",
+            "previous_saturday_first_day_of_month",
+        ]
+        assert len(result["rows"]) == 1
+        values = result["rows"][0]["values"]
+        assert values[0] == "2014-12-05T21:00:00.000000000+0000"
+        assert all(v is not None for v in values)
 
     def __generate_sql_string(self, f) -> str:  # type: ignore
         return self.db_extension.process_expression(

@@ -17,7 +17,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
     PyLegendOptional,
-    PyLegendList
 )
 from pylegend.core.language.shared.literal_expressions import (
     PyLegendIntegerLiteralExpression,
@@ -76,7 +75,6 @@ from pylegend.core.language.shared.operations.string_operation_expressions impor
     PyLegendStringRepeatStringExpression,
     PyLegendStringMatchExpression,
     PyLegendStringCoalesceExpression,
-    PyLegendStringInListExpression
 )
 
 __all__: PyLegendSequence[str] = [
@@ -322,16 +320,6 @@ class PyLegendString(PyLegendPrimitive):
                 convert_literal_to_literal_expression(op) if not isinstance(op, PyLegendString) else op.__value)
 
         return PyLegendString(PyLegendStringCoalesceExpression([self.__value, *other_op]))
-
-    @grammar_method
-    def in_list(self, lst: PyLegendList[PyLegendUnion[str, "PyLegendString"]]) -> "PyLegendBoolean":
-        if not isinstance(lst, list) or len(lst) == 0:
-            raise ValueError("in_list parameter should be a non-empty list of string values.")
-        operands = [self.__value]
-        for item in lst:
-            PyLegendString.__validate_param_to_be_str_or_str_expr(item, "in_list list element")
-            operands.append(PyLegendStringLiteralExpression(item) if isinstance(item, str) else item.__value)
-        return PyLegendBoolean(PyLegendStringInListExpression(operands))  # type: ignore
 
     @grammar_method
     def __add__(self, other: PyLegendUnion[str, "PyLegendString"]) -> "PyLegendString":
