@@ -14,7 +14,8 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
-from typing import TYPE_CHECKING
+from io import StringIO
+from typing import IO, TYPE_CHECKING
 
 from typing_extensions import Concatenate
 
@@ -2404,5 +2405,27 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             periods: PyLegendUnion[int, PyLegendSequence[int]] = 1,
             freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
+    ) -> "PandasApiTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def info(
+            self,
+            verbose: PyLegendOptional[bool] = None,
+            buf: PyLegendOptional[PyLegendUnion["IO[str]", "StringIO"]] = None,
+            max_cols: PyLegendOptional[int] = None,
+            memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
+            show_counts: PyLegendOptional[bool] = None
+    ) -> None:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def drop_duplicates(
+            self,
+            subset: PyLegendOptional[PyLegendUnion[str, PyLegendList[str]]] = None,
+            *,
+            keep: str = 'first',
+            inplace: bool = False,
+            ignore_index: bool = False
     ) -> "PandasApiTdsFrame":
         pass  # pragma: no cover

@@ -642,6 +642,7 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
             - ``'INNER'`` : Only matching rows from both frames.
             - ``'LEFT_OUTER'`` : All rows from left, matching from right.
             - ``'RIGHT_OUTER'`` : All rows from right, matching from left.
+            - ``'FULL'`` : All rows from both frames.
 
         Returns
         -------
@@ -653,6 +654,7 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         inner_join : Convenience method for inner join.
         left_join : Convenience method for left outer join.
         right_join : Convenience method for right outer join.
+        full_join : Convenience method for full outer join.
         as_of_join : Join based on temporal proximity.
         concatenate : Combine frames vertically.
 
@@ -838,6 +840,63 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                 lambda r: r["Order Id"] > 10300
             ).select(cols).rename(renames).head(10)
             orders.head(5).right_join(
+                filtered_info,
+                lambda l, r: l["Order Id"] == r["Right Order Id"]
+            ).to_pandas()
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def full_join(
+            self,
+            other: "LegendQLApiTdsFrame",
+            join_condition: PyLegendCallable[
+                [LegendQLApiTdsRow, LegendQLApiTdsRow], PyLegendUnion[bool, PyLegendBoolean]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        """
+        Perform a full outer join with another TDS frame.
+
+        Return all rows from both frames, with matching rows joined together.
+        Non-matching rows will have null values for the columns from the
+        other frame.
+
+        Parameters
+        ----------
+        other : LegendQLApiTdsFrame
+            The right TDS frame to join with.
+        join_condition : callable
+            A function that takes two TDS rows (left, right) and returns
+            a boolean indicating whether the rows should be joined.
+
+        Returns
+        -------
+        LegendQLApiTdsFrame
+            A new TDS frame with all rows from both frames.
+
+        See Also
+        --------
+        join : General join method with configurable join type.
+        inner_join : Inner join.
+        left_join : Left outer join.
+        right_join : Right outer join.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            orders = pylegend.samples.legendql_api.northwind_orders_frame()
+
+            # Full join example
+            # Rename duplicate columns to avoid conflicts
+            cols = ["Order Id", "Ship Name"]
+            renames = [("Order Id", "Right Order Id"), ("Ship Name", "Filtered Ship Name")]
+            filtered_info = orders.filter(
+                lambda r: r["Order Id"] > 10300
+            ).select(cols).rename(renames).head(10)
+            orders.head(5).full_join(
                 filtered_info,
                 lambda l, r: l["Order Id"] == r["Right Order Id"]
             ).to_pandas()
@@ -1365,6 +1424,86 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                 "Discount": tf.numeric(10, 2),
             })
             print(cast_frame_2.to_pure_query())
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def aggregate(
+            self,
+            aggregate_specifications: PyLegendUnion[
+                PyLegendTuple[
+                    str,
+                    PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                    PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                ],
+                PyLegendList[
+                    PyLegendTuple[
+                        str,
+                        PyLegendCallable[[LegendQLApiTdsRow], PyLegendPrimitiveOrPythonPrimitive],
+                        PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive]
+                    ]
+                ]
+            ]
+    ) -> "LegendQLApiTdsFrame":
+        """
+        Aggregate the entire TDS frame without grouping.
+
+        Apply aggregate functions across all rows of the frame, producing
+        a single-row result. Unlike :meth:`group_by`, this does not partition
+        the data into groups.
+
+        Parameters
+        ----------
+        aggregate_specifications : tuple or list of tuples
+            Aggregation specification as tuple(s) of:
+            ``(result_column_name, column_selector, aggregate_function)``
+
+            - ``result_column_name`` : Name of the output column.
+            - ``column_selector`` : A lambda that takes a TDS row and returns
+              the column (or expression) to aggregate.
+            - ``aggregate_function`` : A lambda that takes a collection and
+              returns an aggregate result (e.g., ``lambda c: c.count()``).
+
+            Common aggregate functions:
+
+            - ``count()`` : Count of values.
+            - ``sum()`` : Sum of values.
+            - ``average()`` : Average of values.
+            - ``min()`` : Minimum value.
+            - ``max()`` : Maximum value.
+            - ``distinct_count()`` : Count of distinct values.
+            - ``std_dev_sample()`` : Sample standard deviation.
+            - ``variance_sample()`` : Sample variance.
+
+        Returns
+        -------
+        LegendQLApiTdsFrame
+            A new single-row TDS frame with the aggregated values.
+
+        See Also
+        --------
+        group_by : Group rows and aggregate per group.
+        extend : Add computed columns.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.legendql_api.northwind_orders_frame()
+
+            # Single aggregation
+            frame.aggregate(
+                ("Total Orders", lambda r: r["Order Id"], lambda c: c.count())
+            ).to_pandas()
+
+            # Multiple aggregations
+            frame.aggregate([
+                ("Total Orders", lambda r: r["Order Id"], lambda c: c.count()),
+                ("Min Order Id", lambda r: r["Order Id"], lambda c: c.min()),
+                ("Max Order Id", lambda r: r["Order Id"], lambda c: c.max())
+            ]).to_pandas()
 
         """
         pass  # pragma: no cover

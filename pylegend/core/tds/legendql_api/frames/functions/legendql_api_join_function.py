@@ -85,8 +85,10 @@ class LegendQLApiJoinFunction(LegendQLApiAppliedFunction):
 
         join_type = (
             JoinType.INNER if self.__join_type.lower() == 'inner' else (
-                JoinType.LEFT if self.__join_type.lower() in ('left_outer', 'leftouter') else
-                JoinType.RIGHT
+                JoinType.LEFT if self.__join_type.lower() in ('left_outer', 'leftouter') else (
+                    JoinType.RIGHT if self.__join_type.lower() in ('right_outer', 'rightouter') else
+                    JoinType.FULL
+                )
             )
         )
 
@@ -206,9 +208,9 @@ class LegendQLApiJoinFunction(LegendQLApiAppliedFunction):
                 f"in joined frames. Columns - Left Frame: {left_cols}, Right Frame: {right_cols}"
             )
 
-        if self.__join_type.lower() not in ('inner', 'left_outer', 'right_outer', 'leftouter', 'rightouter'):
+        if self.__join_type.lower() not in ('inner', 'left_outer', 'right_outer', 'leftouter', 'rightouter', 'full'):
             raise ValueError(
-                f"Unknown join type - {self.__join_type}. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER"
+                f"Unknown join type - {self.__join_type}. Supported types are - INNER, LEFT_OUTER, RIGHT_OUTER, FULL"
             )
 
         return True
