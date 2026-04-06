@@ -41,6 +41,8 @@ from pylegend.core.language import (
     now,
     today,
     current_user,
+    olap_rank,
+    olap_agg,
 )
 from pylegend import samples
 from pylegend.core.language import type_factory
@@ -70,6 +72,8 @@ __all__: PyLegendSequence[str] = [
     "now",
     "today",
     "current_user",
+    "olap_rank",
+    "olap_agg",
 
     "samples",
     "type_factory",

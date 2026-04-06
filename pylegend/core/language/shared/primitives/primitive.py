@@ -20,6 +20,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendUnion,
+    PyLegendList,
     TYPE_CHECKING,
 )
 from pylegend.core.sql.metamodel import (
@@ -33,7 +34,8 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
     PyLegendPrimitiveNotEqualsExpression,
     PyLegendIsEmptyExpression,
     PyLegendIsNotEmptyExpression,
-    PyLegendPrimitiveToStringExpression
+    PyLegendPrimitiveToStringExpression,
+    PyLegendInListExpression,
 )
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -114,6 +116,27 @@ class PyLegendPrimitive(metaclass=ABCMeta):
     def to_string(self) -> "PyLegendString":
         from pylegend.core.language.shared.primitives.string import PyLegendString
         return PyLegendString(PyLegendPrimitiveToStringExpression(self.value()))
+
+    @grammar_method
+    def toString(self) -> "PyLegendString":
+        return self.to_string()
+
+    @grammar_method
+    def in_list(
+            self,
+            lst: "PyLegendList[PyLegendUnion[int, float, bool, str, date, datetime, PythonDecimal, PyLegendPrimitive]]"
+    ) -> "PyLegendBoolean":
+        if not isinstance(lst, list) or len(lst) == 0:
+            raise ValueError("in_list parameter should be a non-empty list of primitive values.")
+        operands: PyLegendList[PyLegendExpression] = [self.value()]
+        for item in lst:
+            PyLegendPrimitive.__validate_param_to_be_primitive(item, "in_list list element")
+            if isinstance(item, (int, float, bool, str, date, datetime, PythonDecimal)):
+                operands.append(convert_literal_to_literal_expression(item))
+            else:
+                operands.append(item.value())
+        from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+        return PyLegendBoolean(PyLegendInListExpression(operands))
 
     @staticmethod
     def __validate_param_to_be_primitive(
