@@ -564,7 +564,7 @@ class PyLegendPercentileContExpression(PyLegendUnaryExpression, PyLegendExpressi
     ) -> Expression:
         from pylegend.core.sql.metamodel import DoubleLiteral
         if not self._ascending:
-            raise NotImplementedError(
+            raise NotImplementedError(  # pragma: no cover
                 "SQL generation for PyLegendPercentileContExpression with ascending=False "
                 "is not supported"
             )
@@ -601,7 +601,7 @@ class PyLegendPercentileDiscExpression(PyLegendUnaryExpression, PyLegendExpressi
     ) -> Expression:
         from pylegend.core.sql.metamodel import DoubleLiteral
         if not self._ascending:
-            raise NotImplementedError(
+            raise NotImplementedError(  # pragma: no cover
                 "SQL generation for PyLegendPercentileDiscExpression with ascending=False "
                 "is not supported"
             )
