@@ -76,6 +76,7 @@ if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives.integer import PyLegendInteger
     from pylegend.core.language.shared.primitives.float import PyLegendFloat
     from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
+    from pylegend.core.language.shared.primitive_collection import PyLegendNumberPairCollection
 
 
 __all__: PyLegendSequence[str] = [
@@ -382,6 +383,13 @@ class PyLegendNumber(PyLegendPrimitive):
             PyLegendNumberToFloatExpression,
         )
         return PyLegendFloat(PyLegendNumberToFloatExpression(self.__value))
+
+    def row_mapper(
+        self,
+        other: PyLegendUnion[int, float, "PyLegendInteger", "PyLegendFloat", "PyLegendNumber"],
+    ) -> "PyLegendNumberPairCollection":
+        from pylegend.core.language.shared.primitive_collection import PyLegendNumberPairCollection
+        return PyLegendNumberPairCollection(self, other)
 
     @staticmethod
     def __convert_to_number_expr(
