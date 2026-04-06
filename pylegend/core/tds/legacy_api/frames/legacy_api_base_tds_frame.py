@@ -28,6 +28,7 @@ from pylegend.core.language import (
     PyLegendBoolean,
     PyLegendPrimitiveOrPythonPrimitive,
     LegacyApiAggregateSpecification,
+    LegacyApiOLAPGroupByOperation,
 )
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.cast_helpers import CastTarget
@@ -216,4 +217,42 @@ class LegacyApiBaseTdsFrame(LegacyApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         )
         return LegacyApiAppliedFunctionTdsFrame(
             LegacyApiGroupByFunction(self, grouping_columns, aggregations)
+        )
+
+    def olap_group_by(
+            self,
+            column_name_list: PyLegendList[str],
+            operations_list: PyLegendList[LegacyApiOLAPGroupByOperation],
+            sort_column_list: PyLegendList[str],
+            sort_direction_list: PyLegendOptional[PyLegendList[str]] = None
+    ) -> "LegacyApiTdsFrame":
+        from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
+            LegacyApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_olap_group_by_function import (
+            LegacyApiOlapGroupByFunction
+        )
+        return LegacyApiAppliedFunctionTdsFrame(
+            LegacyApiOlapGroupByFunction(
+                self, column_name_list, sort_column_list, sort_direction_list, operations_list
+            )
+        )
+
+    def column_value_difference(
+            self,
+            other: "LegacyApiTdsFrame",
+            self_join_columns: PyLegendList[str],
+            other_join_columns: PyLegendList[str],
+            columns_to_check: PyLegendList[str]
+    ) -> "LegacyApiTdsFrame":
+        from pylegend.core.tds.legacy_api.frames.legacy_api_applied_function_tds_frame import (
+            LegacyApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.legacy_api.frames.functions.legacy_api_column_value_difference_function import (
+            LegacyApiColumnValueDifferenceFunction
+        )
+        return LegacyApiAppliedFunctionTdsFrame(
+            LegacyApiColumnValueDifferenceFunction(
+                self, other, self_join_columns, other_join_columns, columns_to_check
+            )
         )

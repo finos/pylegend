@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.tds.tds_column import PrimitiveTdsColumn
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn, EnumTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
 from pylegend.core.language import PyLegendString
@@ -49,3 +49,12 @@ class TestLegendQLApiTdsRow(AbstractTestTdsRow):
             config=self.sql_to_string_config
         ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
+
+    def test_enum_get_col_access_with_enum_tds_column(self) -> None:
+        columns = [
+            EnumTdsColumn('col2', 'my::EnumType', ['A', 'B'])
+        ]
+        frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        tds_row = LegendQLApiTdsRow.from_tds_frame("t", frame)
+        col_expr = tds_row.col2
+        assert isinstance(col_expr, PyLegendString)

@@ -22,7 +22,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionBooleanReturn,
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
-from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
@@ -95,7 +94,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendNumberHyperbolicSinExpression",
     "PyLegendNumberHyperbolicCosExpression",
     "PyLegendNumberHyperbolicTanExpression",
-    "PyLegendNumberPiExpression"
 ]
 
 
@@ -1055,33 +1053,4 @@ class PyLegendNumberHyperbolicTanExpression(PyLegendUnaryExpression, PyLegendExp
             PyLegendNumberHyperbolicTanExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
-        )
-
-
-class PyLegendNumberPiExpression(PyLegendNullaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["PI"]),
-            distinct=False,
-            arguments=[],
-            filter_=None,
-            window=None
-        )
-
-    @staticmethod
-    def __to_pure_func(config: FrameToPureConfig) -> str:
-        return "pi()"
-
-    def __init__(self) -> None:
-        PyLegendExpressionNumberReturn.__init__(self)
-        PyLegendNullaryExpression.__init__(
-            self,
-            PyLegendNumberPiExpression.__to_sql_func,
-            PyLegendNumberPiExpression.__to_pure_func,
-            non_nullable=True
         )
