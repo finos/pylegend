@@ -20,20 +20,25 @@ The ``PandasApiGroupbyTdsFrame`` class is returned by
 and provides methods for applying aggregation and window operations within each group.
 The groupby columns also serve as the ``PARTITION BY`` clause for OLAP window functions such as ``rank``.
 
-aggregate
-~~~~~~~~~
-
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.aggregate
-
 agg
 ~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.agg
 
-sum
+aggregate
+~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.aggregate
+
+count
+~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.count
+
+max
 ~~~
 
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.sum
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.max
 
 mean
 ~~~~
@@ -45,26 +50,6 @@ min
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.min
 
-max
-~~~
-
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.max
-
-std
-~~~
-
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.std
-
-var
-~~~
-
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.var
-
-count
-~~~~~
-
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.count
-
 rank
 ~~~~
 
@@ -74,3 +59,18 @@ shift
 ~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.shift
+
+std
+~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.std
+
+sum
+~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.sum
+
+var
+~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.var

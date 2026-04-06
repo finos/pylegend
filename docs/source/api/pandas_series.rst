@@ -17,20 +17,25 @@ Pandas Series
 
 .. autoclass:: pylegend.core.language.pandas_api.pandas_api_series.Series
 
-aggregate
-~~~~~~~~~
-
-.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.aggregate
-
 agg
 ~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.agg
 
-sum
+aggregate
+~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.aggregate
+
+count
+~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.count
+
+max
 ~~~
 
-.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.sum
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.max
 
 mean
 ~~~~
@@ -42,27 +47,22 @@ min
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.min
 
-max
-~~~
+rank
+~~~~
 
-.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.max
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.rank
 
 std
 ~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.std
 
+sum
+~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.sum
+
 var
 ~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.var
-
-count
-~~~~~
-
-.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.count
-
-rank
-~~~~
-
-.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.rank
