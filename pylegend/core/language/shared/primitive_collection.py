@@ -91,7 +91,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDateCollection",
     "PyLegendNumberPairCollection",
     "create_primitive_collection",
-    "row_mapper",
 ]
 
 
@@ -230,6 +229,14 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
             return PyLegendNumber(
                 PyLegendPercentileDiscExpression(nested_expr, percentile, ascending)  # type: ignore
             )
+
+    def row_mapper(
+        self,
+        other: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ],
+    ) -> "PyLegendNumberPairCollection":
+        return PyLegendNumberPairCollection(self, other)
 
 
 class PyLegendIntegerCollection(PyLegendNumberCollection):
@@ -530,22 +537,22 @@ class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
 
     def corr(self) -> "PyLegendFloat":
         nested_expr_a = (
-            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float))
+            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float, PythonDecimal))
             else self.__nested_a.value()
         )
         nested_expr_b = (
-            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float))
+            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float, PythonDecimal))
             else self.__nested_b.value()
         )
         return PyLegendFloat(PyLegendCorrExpression(nested_expr_a, nested_expr_b))  # type: ignore
 
     def _get_nested_exprs(self):  # type: ignore
         nested_expr_a = (
-            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float))
+            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float, PythonDecimal))
             else self.__nested_a.value()
         )
         nested_expr_b = (
-            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float))
+            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float, PythonDecimal))
             else self.__nested_b.value()
         )
         return nested_expr_a, nested_expr_b
@@ -557,14 +564,3 @@ class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
     def covar_sample(self) -> "PyLegendFloat":
         nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
         return PyLegendFloat(PyLegendCovarSampleExpression(nested_expr_a, nested_expr_b))
-
-
-def row_mapper(
-    row_a: PyLegendUnion[
-        int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
-    ],
-    row_b: PyLegendUnion[
-        int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
-    ],
-) -> PyLegendNumberPairCollection:
-    return PyLegendNumberPairCollection(row_a, row_b)

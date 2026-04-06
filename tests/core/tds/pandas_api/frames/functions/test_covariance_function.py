@@ -23,7 +23,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language import row_mapper
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -49,7 +48,7 @@ class TestCovarPopulationFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"valA": lambda c: row_mapper(c, c).covar_population()}
+            {"valA": lambda c: c.row_mapper(c).covar_population()}
         )
         expected_sql = '''\
             SELECT
@@ -71,7 +70,7 @@ class TestCovarPopulationFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"valA": lambda c: row_mapper(c, c).covar_population()}
+            {"valA": lambda c: c.row_mapper(c).covar_population()}
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -124,9 +123,11 @@ class TestCovarPopulationFunctionQueryGeneration:
         )
 
     def test_covar_pop_collection_method(self) -> None:
-        pair = row_mapper(1.0, 2.0)
-        result = pair.covar_population()
         from pylegend.core.language import PyLegendFloat
+        from pylegend.core.language.shared.literal_expressions import PyLegendFloatLiteralExpression
+        val = PyLegendFloat(PyLegendFloatLiteralExpression(1.0))
+        pair = val.row_mapper(2.0)
+        result = pair.covar_population()
         assert isinstance(result, PyLegendFloat)
 
 
@@ -144,7 +145,7 @@ class TestCovarSampleFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"valA": lambda c: row_mapper(c, c).covar_sample()}
+            {"valA": lambda c: c.row_mapper(c).covar_sample()}
         )
         expected_sql = '''\
             SELECT
@@ -166,7 +167,7 @@ class TestCovarSampleFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"valA": lambda c: row_mapper(c, c).covar_sample()}
+            {"valA": lambda c: c.row_mapper(c).covar_sample()}
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -219,9 +220,11 @@ class TestCovarSampleFunctionQueryGeneration:
         )
 
     def test_covar_samp_collection_method(self) -> None:
-        pair = row_mapper(1.0, 2.0)
-        result = pair.covar_sample()
         from pylegend.core.language import PyLegendFloat
+        from pylegend.core.language.shared.literal_expressions import PyLegendFloatLiteralExpression
+        val = PyLegendFloat(PyLegendFloatLiteralExpression(1.0))
+        pair = val.row_mapper(2.0)
+        result = pair.covar_sample()
         assert isinstance(result, PyLegendFloat)
 
     def test_cov_invalid_ddof(self) -> None:
@@ -261,7 +264,7 @@ class TestCovarFunctionEndToEnd:
     def test_e2e_covar_pop_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
-            {"Quantity": lambda c: row_mapper(c, c).covar_population()}
+            {"Quantity": lambda c: c.row_mapper(c).covar_population()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert "Quantity" in res["columns"]
@@ -270,7 +273,7 @@ class TestCovarFunctionEndToEnd:
     def test_e2e_covar_samp_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
-            {"Quantity": lambda c: row_mapper(c, c).covar_sample()}
+            {"Quantity": lambda c: c.row_mapper(c).covar_sample()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert "Quantity" in res["columns"]

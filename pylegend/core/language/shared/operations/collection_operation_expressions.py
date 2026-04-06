@@ -563,6 +563,11 @@ class PyLegendPercentileContExpression(PyLegendUnaryExpression, PyLegendExpressi
             config: FrameToSqlConfig
     ) -> Expression:
         from pylegend.core.sql.metamodel import DoubleLiteral
+        if not self._ascending:
+            raise NotImplementedError(
+                "SQL generation for PyLegendPercentileContExpression with ascending=False "
+                "is not supported"
+            )
         return PercentileContExpression(value=expression, percentile=DoubleLiteral(value=self._percentile))
 
     def _to_pure_func(self, op_expr: str, config: FrameToPureConfig) -> str:
@@ -595,6 +600,11 @@ class PyLegendPercentileDiscExpression(PyLegendUnaryExpression, PyLegendExpressi
             config: FrameToSqlConfig
     ) -> Expression:
         from pylegend.core.sql.metamodel import DoubleLiteral
+        if not self._ascending:
+            raise NotImplementedError(
+                "SQL generation for PyLegendPercentileDiscExpression with ascending=False "
+                "is not supported"
+            )
         return PercentileDiscExpression(value=expression, percentile=DoubleLiteral(value=self._percentile))
 
     def _to_pure_func(self, op_expr: str, config: FrameToPureConfig) -> str:

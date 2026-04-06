@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from abc import ABCMeta
+import csv
 import re
 from pylegend._typing import (
     PyLegendSequence,
@@ -38,23 +39,27 @@ _PURE_DECIMAL_SUFFIX_RE = re.compile(r'^(\d+(?:\.\d+)?)[dD]$')
 
 
 def _strip_decimal_suffix(csv_string: str) -> tuple[str, set[str]]:
-    """Strip Pure decimal suffix (d/D) from values and track which columns had it."""
-    lines = csv_string.strip().split('\n')
-    if len(lines) < 2:
+    """Strip Pure decimal suffix (d/D) from values and track which columns had it.
+
+    Uses Python's csv module to correctly handle quoted fields containing
+    commas, escaped quotes, and other edge-cases that naive split(',')
+    would break on.
+    """
+    reader = csv.reader(StringIO(csv_string.strip()))
+    rows = list(reader)
+    if len(rows) < 2:
         return csv_string, set()
 
-    header_line = lines[0].strip()
-    headers = [h.strip() for h in header_line.split(',')]
+    headers = [h.strip() for h in rows[0]]
     decimal_columns: set[str] = set()
-    new_lines = [header_line]
+    new_rows = [headers]
 
-    for line in lines[1:]:
-        stripped = line.strip()
-        if not stripped:
-            continue  # pragma: no cover
-        values = [v.strip() for v in stripped.split(',')]
+    for row in rows[1:]:
+        if not any(cell.strip() for cell in row):
+            continue  # skip blank rows  # pragma: no cover
         new_values = []
-        for i, val in enumerate(values):
+        for i, val in enumerate(row):
+            val = val.strip()
             m = _PURE_DECIMAL_SUFFIX_RE.match(val)
             if m:
                 new_values.append(m.group(1))  # pragma: no cover
@@ -62,9 +67,12 @@ def _strip_decimal_suffix(csv_string: str) -> tuple[str, set[str]]:
                     decimal_columns.add(headers[i])  # pragma: no cover
             else:
                 new_values.append(val)
-        new_lines.append(','.join(new_values))
+        new_rows.append(new_values)
 
-    return '\n'.join(new_lines) + '\n', decimal_columns
+    out = StringIO()
+    writer = csv.writer(out, lineterminator='\n')
+    writer.writerows(new_rows)
+    return out.getvalue(), decimal_columns
 
 
 class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
