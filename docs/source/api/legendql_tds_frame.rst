@@ -18,9 +18,6 @@ LegendQL TDS Frame
 The ``LegendQLApiTdsFrame`` class provides a Python-like interface for working with TDS (Tabular Data Store) frames.
 It offers methods for data manipulation, filtering, aggregation, joins, and window functions.
 
-Row Selection Methods
----------------------
-
 head
 ~~~~
 
@@ -41,9 +38,6 @@ slice
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.slice
 
-Column Selection Methods
-------------------------
-
 select
 ~~~~~~
 
@@ -54,9 +48,6 @@ distinct
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.distinct
 
-Sorting and Filtering
----------------------
-
 sort
 ~~~~
 
@@ -66,9 +57,6 @@ filter
 ~~~~~~
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.filter
-
-Column Transformation Methods
------------------------------
 
 rename
 ~~~~~~
@@ -89,9 +77,6 @@ cast
 ~~~~
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.cast
-
-Combining Frames
-----------------
 
 concatenate
 ~~~~~~~~~~~
@@ -118,16 +103,10 @@ right_join
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.right_join
 
-Aggregation
------------
-
 group_by
 ~~~~~~~~
 
 .. automethod:: pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame.LegendQLApiTdsFrame.group_by
-
-Window Functions
-----------------
 
 rows
 ~~~~

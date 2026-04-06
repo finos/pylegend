@@ -20,9 +20,6 @@ The ``PandasApiGroupbyTdsFrame`` class is returned by
 and provides methods for applying aggregation and window operations within each group.
 The groupby columns also serve as the ``PARTITION BY`` clause for OLAP window functions such as ``rank``.
 
-Aggregation Methods
--------------------
-
 aggregate
 ~~~~~~~~~
 
@@ -67,9 +64,6 @@ count
 ~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.count
-
-Window Functions
-----------------
 
 rank
 ~~~~

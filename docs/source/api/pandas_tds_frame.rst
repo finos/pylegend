@@ -18,9 +18,6 @@ Pandas TDS Frame
 The ``PandasApiTdsFrame`` class provides a Pandas-like interface for working with TDS (Tabular Data Store) frames.
 It offers methods for data manipulation, filtering, aggregation, joins, and window functions.
 
-Row Selection Methods
----------------------
-
 head
 ~~~~
 
@@ -31,16 +28,10 @@ truncate
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.truncate
 
-Sorting
--------
-
 sort_values
 ~~~~~~~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.sort_values
-
-Column Selection and Filtering
-------------------------------
 
 filter
 ~~~~~~
@@ -52,9 +43,6 @@ drop
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.drop
 
-Column Transformation Methods
------------------------------
-
 assign
 ~~~~~~
 
@@ -64,9 +52,6 @@ apply
 ~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.apply
-
-Indexing
---------
 
 iloc
 ~~~~
@@ -78,9 +63,6 @@ loc
 
 .. autoproperty:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.loc
 
-Joining
--------
-
 merge
 ~~~~~
 
@@ -91,16 +73,10 @@ join
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.join
 
-Column Renaming
----------------
-
 rename
 ~~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rename
-
-Aggregation Methods
--------------------
 
 aggregate
 ~~~~~~~~~
@@ -147,9 +123,6 @@ count
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.count
 
-Grouping
---------
-
 groupby
 ~~~~~~~
 
@@ -162,9 +135,6 @@ groupby
    may differ from the frame-level equivalents. See :doc:`pandas_groupby_tds_frame`
    for the full API reference.
 
-Missing Data
-------------
-
 dropna
 ~~~~~~
 
@@ -175,9 +145,6 @@ fillna
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.fillna
 
-Window Functions
-----------------
-
 rank
 ~~~~
 
@@ -187,9 +154,6 @@ shift
 ~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.shift
-
-Frame Properties
-----------------
 
 shape
 ~~~~~

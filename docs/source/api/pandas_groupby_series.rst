@@ -17,29 +17,6 @@ Pandas Groupby Series
 
 .. autoclass:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries
 
-Aggregation Methods
--------------------
-
-All ``GroupbySeries`` aggregation methods return a
-:class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`
-with one row per group (not a scalar, unlike pandas). The grouping
-columns are always included in the result alongside the aggregated
-values. Use ``.to_pandas()`` on the result to obtain a
-``pandas.DataFrame``.
-
-.. note::
-
-    Aggregation on a **computed** GroupbySeries expression is not
-    supported. Call the aggregation directly:
-
-    .. code-block:: python
-
-        # NOT supported
-        (frame.groupby("grp")["col"] + 5).sum()
-
-        # Supported
-        frame.groupby("grp")["col"].sum()
-
 aggregate
 ~~~~~~~~~
 
@@ -84,9 +61,6 @@ count
 ~~~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.count
-
-Window Functions
-----------------
 
 rank
 ~~~~

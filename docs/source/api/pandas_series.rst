@@ -17,28 +17,6 @@ Pandas Series
 
 .. autoclass:: pylegend.core.language.pandas_api.pandas_api_series.Series
 
-Aggregation Methods
--------------------
-
-All Series aggregation methods return a **single-row**
-:class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`
-(not a scalar, unlike pandas). Use ``.to_pandas()`` on the result to
-obtain a ``pandas.DataFrame`` with the aggregated value.
-
-.. note::
-
-    Aggregation on a **computed** Series expression is not supported.
-    Assign the expression to the frame first, then aggregate:
-
-    .. code-block:: python
-
-        # NOT supported
-        (frame["col"] + 5).sum()
-
-        # Supported
-        frame["new_col"] = frame["col"] + 5
-        frame["new_col"].sum()
-
 aggregate
 ~~~~~~~~~
 
@@ -83,9 +61,6 @@ count
 ~~~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.count
-
-Window Functions
-----------------
 
 rank
 ~~~~
