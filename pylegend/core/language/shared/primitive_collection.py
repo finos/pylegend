@@ -200,14 +200,14 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
 
     def median(self) -> "PyLegendNumber":
         nested_expr = (
-            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float, PythonDecimal))
             else self.__nested.value()
         )
         return PyLegendNumber(PyLegendMedianExpression(nested_expr))  # type: ignore
 
     def mode(self) -> "PyLegendNumber":
         nested_expr = (
-            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float, PythonDecimal))
             else self.__nested.value()
         )
         return PyLegendNumber(PyLegendModeExpression(nested_expr))  # type: ignore
@@ -219,7 +219,7 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
             continuous: bool = True,
     ) -> "PyLegendNumber":
         nested_expr = (
-            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float))
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float, PythonDecimal))
             else self.__nested.value()
         )
         if continuous:
