@@ -131,6 +131,20 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
+    def test_get_enum_col(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        tds_row = self.get_tds_row(columns)
+        col_expr: PyLegendPrimitive = tds_row.get_enum("col2")
+
+        assert isinstance(col_expr, PyLegendString)
+        assert self.db_extension.process_expression(
+            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
+            config=self.sql_to_string_config
+        ) == '"root".col2'
+        assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
+
     def test_get_number_col(self) -> None:
         columns = [
             PrimitiveTdsColumn.number_column("col1"),
@@ -346,3 +360,33 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
             config=self.sql_to_string_config
         ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
+
+    def test_is_null(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        tds_row = self.get_tds_row(columns)
+
+        for result in [tds_row.is_null("col1"), tds_row.isNull("col1")]:
+            assert isinstance(result, PyLegendBoolean)
+            assert self.db_extension.process_expression(
+                result.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
+                config=self.sql_to_string_config
+            ) == '("root".col1 IS NULL)'
+            assert result.to_pure_expression(self.frame_to_pure_config) == '$t.col1->isEmpty()'
+
+    def test_is_not_null(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        tds_row = self.get_tds_row(columns)
+
+        for result in [tds_row.is_not_null("col1"), tds_row.isNotNull("col1")]:
+            assert isinstance(result, PyLegendBoolean)
+            assert self.db_extension.process_expression(
+                result.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
+                config=self.sql_to_string_config
+            ) == '("root".col1 IS NOT NULL)'
+            assert result.to_pure_expression(self.frame_to_pure_config) == '$t.col1->isNotEmpty()'

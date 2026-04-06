@@ -29,6 +29,7 @@ from pylegend.core.language import (
     PyLegendDateTime,
     PyLegendStrictDate,
 )
+from datetime import date, datetime
 
 __all__: PyLegendSequence[str] = [
     "tds_column_for_primitive",
@@ -48,9 +49,9 @@ def tds_column_for_primitive(name: str, result: PyLegendPrimitiveOrPythonPrimiti
         return PrimitiveTdsColumn.decimal_column(name)
     elif isinstance(result, PyLegendNumber):
         return PrimitiveTdsColumn.number_column(name)
-    elif isinstance(result, PyLegendDateTime):
+    elif isinstance(result, (datetime, PyLegendDateTime)):
         return PrimitiveTdsColumn.datetime_column(name)
-    elif isinstance(result, PyLegendStrictDate):
+    elif isinstance(result, (date, PyLegendStrictDate)):
         return PrimitiveTdsColumn.strictdate_column(name)
     elif isinstance(result, PyLegendDate):
         return PrimitiveTdsColumn.date_column(name)

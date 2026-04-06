@@ -27,7 +27,7 @@ from pylegend.core.tds.tds_frame import (
     FrameToPureConfig,
     FrameToSqlConfig,
 )
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, EnumTdsColumn
 from pylegend.core.language import (
     PyLegendColumnExpression,
     PyLegendBooleanColumnExpression,
@@ -81,6 +81,9 @@ class AbstractTdsRow(metaclass=ABCMeta):
                 "get_string method is not valid on this column."
             )
         return PyLegendString(col_expr)
+
+    def get_enum(self, column: str) -> PyLegendString:
+        return self.get_string(column)
 
     def get_number(self, column: str) -> PyLegendNumber:
         col_expr = self.__get_col(column)
@@ -149,6 +152,20 @@ class AbstractTdsRow(metaclass=ABCMeta):
             )
         return PyLegendStrictDate(col_expr)
 
+    def is_null(self, column: str) -> PyLegendBoolean:
+        item = self.__getitem__(column)
+        return item.is_null()
+
+    def isNull(self, column: str) -> PyLegendBoolean:
+        return self.is_null(column)
+
+    def is_not_null(self, column: str) -> PyLegendBoolean:
+        item = self.__getitem__(column)
+        return item.is_not_null()
+
+    def isNotNull(self, column: str) -> PyLegendBoolean:
+        return self.is_not_null(column)
+
     def __getitem__(self, item: str) -> PyLegendPrimitive:
         if not isinstance(item, str):
             raise TypeError("Column indexing on a TDSRow should be with column name (string). Got - " + str(type(item)))
@@ -216,6 +233,8 @@ class AbstractTdsRow(metaclass=ABCMeta):
                     # Precise decimal type -> map to DecimalColumnExpression
                     if base_col.get_type() == "Numeric":
                         return PyLegendDecimalColumnExpression(self, column)
+                if isinstance(base_col, EnumTdsColumn):
+                    return PyLegendStringColumnExpression(self, column)
 
                 raise RuntimeError(f"Column '{column}' of type {base_col.get_type()} not supported yet")
 

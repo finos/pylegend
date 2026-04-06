@@ -29,9 +29,9 @@ class TestLegendClient:
                 data = self.rfile.read(content_len).decode()
 
                 if self.path in (
-                        "/api/sql/v1/execution/getSchemaFromQueryString",
-                        "/engine/api/sql/v1/execution/getSchemaFromQueryString",
-                ) and data == "select 1+2 as a":
+                        "/api/sql/v1/execution/schema",
+                        "/engine/api/sql/v1/execution/schema",
+                ) and data == '{"sql": "select 1+2 as a"}':
                     output = """{
                         "columns":
                             {
