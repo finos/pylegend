@@ -23,7 +23,6 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-from pylegend.core.language import row_mapper
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
@@ -49,7 +48,7 @@ class TestCorrFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"valA": lambda c: row_mapper(c, c).corr()}
+            {"valA": lambda c: c.row_mapper(c).corr()}
         )
         expected_sql = '''\
             SELECT
@@ -75,7 +74,7 @@ class TestCorrFunctionQueryGeneration:
         tds_row = PandasApiTdsRow.from_tds_frame("r", frame)
         val_a = tds_row["valA"]
         val_b = tds_row["valB"]
-        pair = row_mapper(val_a, val_b)  # type: ignore
+        pair = val_a.row_mapper(val_b)
         corr_result = pair.corr()
 
         from pylegend.core.language.shared.primitive_collection import PyLegendNumberPairCollection
@@ -90,7 +89,7 @@ class TestCorrFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.aggregate(
-            {"valA": lambda c: row_mapper(c, c).corr()}
+            {"valA": lambda c: c.row_mapper(c).corr()}
         )
         expected_sql = '''\
             SELECT
@@ -107,7 +106,7 @@ class TestCorrFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"valA": lambda c: row_mapper(c, c).corr()}
+            {"valA": lambda c: c.row_mapper(c).corr()}
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -131,7 +130,7 @@ class TestCorrFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.aggregate(
-            {"valA": lambda c: row_mapper(c, c).corr()}
+            {"valA": lambda c: c.row_mapper(c).corr()}
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
@@ -155,9 +154,11 @@ class TestCorrFunctionQueryGeneration:
 
     def test_number_pair_collection_with_literals(self) -> None:
         """Test that row_mapper works with Python literal numbers."""
-        pair = row_mapper(1.0, 2.0)
-        corr_result = pair.corr()
         from pylegend.core.language import PyLegendFloat
+        from pylegend.core.language.shared.literal_expressions import PyLegendFloatLiteralExpression
+        val = PyLegendFloat(PyLegendFloatLiteralExpression(1.0))
+        pair = val.row_mapper(2.0)
+        corr_result = pair.corr()
         assert isinstance(corr_result, PyLegendFloat)
 
     def test_number_pair_collection_with_integer_collection(self) -> None:
@@ -171,7 +172,7 @@ class TestCorrFunctionQueryGeneration:
         int_val = PyLegendInteger.__new__(PyLegendInteger)
         col_a = PyLegendIntegerCollection(int_val)
         col_b = PyLegendIntegerCollection(int_val)
-        pair = row_mapper(col_a, col_b)
+        pair = col_a.row_mapper(col_b)
         assert isinstance(pair, PyLegendNumberPairCollection)
 
     def test_number_pair_collection_with_decimal_collection(self) -> None:
@@ -185,7 +186,7 @@ class TestCorrFunctionQueryGeneration:
         dec_val = PyLegendDecimal.__new__(PyLegendDecimal)
         col_a = PyLegendDecimalCollection(dec_val)
         col_b = PyLegendDecimalCollection(dec_val)
-        pair = row_mapper(col_a, col_b)
+        pair = col_a.row_mapper(col_b)
         assert isinstance(pair, PyLegendNumberPairCollection)
 
     def test_corr_window_sql_generation(self) -> None:
@@ -312,7 +313,7 @@ class TestCorrFunctionEndToEnd:
         """CORR of a column with itself should be 1.0 for groups with > 1 distinct row."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
-            {"Quantity": lambda c: row_mapper(c, c).corr()}
+            {"Quantity": lambda c: c.row_mapper(c).corr()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert "Quantity" in res["columns"]
@@ -327,7 +328,7 @@ class TestCorrFunctionEndToEnd:
         """CORR of Quantity with itself across all rows."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.aggregate(
-            {"Quantity": lambda c: row_mapper(c, c).corr()}
+            {"Quantity": lambda c: c.row_mapper(c).corr()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Quantity"]
