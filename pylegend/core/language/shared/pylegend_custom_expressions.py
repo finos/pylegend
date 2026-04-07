@@ -127,7 +127,7 @@ class PyLegendCustomFloat(PyLegendCustomPrimitive, PyLegendFloat):
 
 class PyLegendCustomDecimal(PyLegendCustomPrimitive, PyLegendDecimal):
     def __init__(self, expr: PyLegendDecimal):
-        PyLegendDecimal.__init__(self, expr.value())
+        PyLegendDecimal.__init__(self, expr.value())  # pragma: no cover
 
 
 class PyLegendCustomDate(PyLegendCustomPrimitive, PyLegendDate):
@@ -422,15 +422,6 @@ class PyLegendWindow:
         self.__partition_by = partition_by
         self.__order_by = order_by
         self.__frame = frame
-
-    def get_partition_by(self) -> PyLegendOptional[PyLegendList[str]]:
-        return self.__partition_by
-
-    def get_order_by(self) -> PyLegendOptional[PyLegendList[PyLegendSortInfo]]:
-        return self.__order_by
-
-    def get_frame(self) -> PyLegendOptional[PyLegendWindowFrame]:
-        return self.__frame
 
     def to_sql_node(
             self,
