@@ -33,7 +33,6 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendDict,
     PyLegendUnion,
-    TYPE_CHECKING,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionFloatReturn,
@@ -258,7 +257,7 @@ class PyLegendFrameBoundType(Enum):
     FOLLOWING = 4
     UNBOUNDED_FOLLOWING = 5
 
-    def to_sql_node(self) -> FrameBoundType:
+    def to_sql_node(self, query: QuerySpecification, config: FrameToSqlConfig) -> FrameBoundType:
         _map = {
             PyLegendFrameBoundType.UNBOUNDED_PRECEDING: FrameBoundType.UNBOUNDED_PRECEDING,
             PyLegendFrameBoundType.PRECEDING: FrameBoundType.PRECEDING,
@@ -311,7 +310,7 @@ class PyLegendFrameBound:
             if self.duration_unit is not None else None
         )
         return FrameBound(
-            type_=self.type_.to_sql_node(),
+            type_=self.type_.to_sql_node(query, config),
             value=value_expression,
             duration_unit=duration_unit_node,
         )
