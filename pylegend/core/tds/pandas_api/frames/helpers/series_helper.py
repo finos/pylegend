@@ -23,6 +23,7 @@ from typing import (
 from pylegend._typing import (
     PyLegendAny,
     PyLegendCallable,
+    PyLegendDict,
     PyLegendList,
     PyLegendOptional,
     PyLegendSequence,
@@ -58,14 +59,14 @@ T = TypeVar("T")
 F = TypeVar("F", bound=PyLegendCallable[..., PyLegendAny])  # type: ignore[explicit-any]
 
 
-def get_series_from_col_type(col_type: str) -> type:
+def get_series_from_col_type(col_type: str) -> Type["Series"]:
     from pylegend.core.language.pandas_api.pandas_api_series import (
         IntegerSeries, FloatSeries, NumberSeries,
         StringSeries, BooleanSeries, DateSeries, DateTimeSeries,
         StrictDateSeries, DecimalSeries
     )
 
-    _map = {
+    _map: PyLegendDict[str, Type["Series"]] = {
         # Boolean
         "Boolean": BooleanSeries,
 
@@ -109,14 +110,14 @@ def get_series_from_col_type(col_type: str) -> type:
     return _map[col_type]
 
 
-def get_groupby_series_from_col_type(col_type: str) -> type:
+def get_groupby_series_from_col_type(col_type: str) -> Type["GroupbySeries"]:
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import (
         BooleanGroupbySeries, StringGroupbySeries, NumberGroupbySeries,
         IntegerGroupbySeries, FloatGroupbySeries, DecimalGroupbySeries,
         DateGroupbySeries, DateTimeGroupbySeries, StrictDateGroupbySeries
     )
 
-    _map = {
+    _map: PyLegendDict[str, Type["GroupbySeries"]] = {
         # Boolean
         "Boolean": BooleanGroupbySeries,
 

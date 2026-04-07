@@ -72,7 +72,7 @@ from pylegend.extensions.tds.result_handler import (
 )
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween, RangeBetween
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -621,6 +621,31 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             order_by=order_by,
             frame_spec=frame_spec,
             ascending=ascending,
+        )
+
+    def rows_between(self, start: PyLegendOptional[int] = None, end: PyLegendOptional[int] = None) -> "RowsBetween":
+        """Create a ROWS BETWEEN frame specification."""
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+        return RowsBetween(start, end)
+
+    def range_between(
+            self,
+            start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            *,
+            duration_start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_start_unit: PyLegendOptional[str] = None,
+            duration_end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_end_unit: PyLegendOptional[str] = None,
+    ) -> "RangeBetween":
+        """Create a RANGE BETWEEN frame specification."""
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RangeBetween
+        return RangeBetween(
+            start, end,
+            duration_start=duration_start,
+            duration_start_unit=duration_start_unit,
+            duration_end=duration_end,
+            duration_end_unit=duration_end_unit,
         )
 
     def merge(

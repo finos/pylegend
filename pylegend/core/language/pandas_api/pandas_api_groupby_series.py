@@ -100,7 +100,7 @@ def _get_new_groupby_series_for_column(
     col_type = column.get_type()
 
     groupby_series_cls = get_groupby_series_from_col_type(col_type)
-    return groupby_series_cls(base_groupby_frame, aggregated_frame)  # type: ignore[no-any-return]
+    return groupby_series_cls(base_groupby_frame, aggregated_frame)
 
 
 class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):

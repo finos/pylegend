@@ -101,12 +101,12 @@ class WindowSeries:
             else:
                 # __getitem__ with a string returns a GroupbySeries; extract its frame
                 new_gb_frame = new_gb_frame_or_series._base_groupby_frame
-            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore
+            return gb_series_cls(new_gb_frame, applied_function_frame)
         else:
             series_cls = get_series_from_col_type(col_type)
             new_series = series_cls(base_frame_unwrapped, column)
             new_series._filtered_frame = applied_function_frame
-            return new_series  # type: ignore
+            return new_series
 
     agg = aggregate
 
