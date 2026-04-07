@@ -934,3 +934,47 @@ class BitwiseNotExpression(Expression):
     ) -> None:
         super().__init__(_type="bitwiseNotExpression")
         self.value = value
+
+
+class WavgExpression(Expression):
+    value: "Expression"
+    weight: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        weight: "Expression",
+    ) -> None:
+        super().__init__(_type="wavgExpression")
+        self.value = value
+        self.weight = weight
+
+
+class MaxByExpression(Expression):
+    value: "Expression"
+    by: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        by: "Expression",
+    ) -> None:
+        super().__init__(_type="maxByExpression")
+        self.value = value
+        self.by = by
+
+
+class MinByExpression(Expression):
+    value: "Expression"
+    by: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        by: "Expression",
+    ) -> None:
+        super().__init__(_type="minByExpression")
+        self.value = value
+        self.by = by
+
+

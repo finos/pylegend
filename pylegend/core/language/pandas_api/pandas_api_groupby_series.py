@@ -681,6 +681,27 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                 f"Only ddof=0 (population) and ddof=1 (sample) are supported in cov function, but got: ddof={ddof}"
             )
 
+    def wavg(
+            self,
+            weights: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                                   "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        return self._two_col_window_func(weights, "wavg")
+
+    def max_by(
+            self,
+            by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                              "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        return self._two_col_window_func(by, "max_by")
+
+    def min_by(
+            self,
+            by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                              "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        return self._two_col_window_func(by, "min_by")
+
     def zscore(self) -> "FloatGroupbySeries":
         """Compute the z-score within each group: (x - mean) / stddev_pop.
 

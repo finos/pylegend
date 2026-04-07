@@ -27,6 +27,9 @@ from pylegend.core.language.shared.operations.collection_operation_expressions i
     PyLegendCorrExpression,
     PyLegendCovarPopulationExpression,
     PyLegendCovarSampleExpression,
+    PyLegendWavgExpression,
+    PyLegendMaxByExpression,
+    PyLegendMinByExpression,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -57,14 +60,32 @@ _FUNC_TYPE_CONFIG = {
     "corr": {
         "expression_class": PyLegendCorrExpression,
         "pure_func": "meta::pure::functions::math::corr",
+        "cast_to_float": True,
     },
     "covar_population": {
         "expression_class": PyLegendCovarPopulationExpression,
         "pure_func": "meta::pure::functions::math::covarPopulation",
+        "cast_to_float": True,
     },
     "covar_sample": {
         "expression_class": PyLegendCovarSampleExpression,
         "pure_func": "meta::pure::functions::math::covarSample",
+        "cast_to_float": True,
+    },
+    "wavg": {
+        "expression_class": PyLegendWavgExpression,
+        "pure_func": "meta::pure::functions::math::wavg",
+        "cast_to_float": True,
+    },
+    "max_by": {
+        "expression_class": PyLegendMaxByExpression,
+        "pure_func": "meta::pure::functions::math::maxBy",
+        "cast_to_float": False,
+    },
+    "min_by": {
+        "expression_class": PyLegendMinByExpression,
+        "pure_func": "meta::pure::functions::math::minBy",
+        "cast_to_float": False,
     },
 }
 
@@ -153,9 +174,10 @@ class TwoColumnWindowFunction(PandasApiAppliedFunction):
         return f"meta::pure::functions::math::mathUtility::rowMapper({expr_a_str}, {expr_b_str})"
 
     def get_agg_pure_expr(self) -> str:
-        """Returns fully qualified aggregation Pure expression with cast to Float."""
+        """Returns fully qualified aggregation Pure expression, with optional cast to Float."""
         pure_func = _FUNC_TYPE_CONFIG[self.__func_type]["pure_func"]
-        return f"$y->{pure_func}()->cast(@Float)"
+        cast = "->cast(@Float)" if _FUNC_TYPE_CONFIG[self.__func_type].get("cast_to_float", True) else ""
+        return f"$y->{pure_func}(){cast}"
 
     # ──────────────────────────────────────────────────────────────────────
     # Uniform interface (shared with WindowAggregateFunction)
