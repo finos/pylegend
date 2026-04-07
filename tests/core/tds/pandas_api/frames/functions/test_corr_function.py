@@ -199,7 +199,7 @@ class TestCorrFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         result = gb["valA"].corr(gb["valB"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        assigned_frame = frame.assign(newCol=lambda _: result)
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -228,7 +228,7 @@ class TestCorrFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         result = gb["valA"].corr(gb["valB"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        assigned_frame = frame.assign(newCol=lambda _: result)
         assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -250,7 +250,7 @@ class TestCorrFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         result = gb["valA"].corr(gb["valA"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        assigned_frame = frame.assign(newCol=lambda _: result)
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
