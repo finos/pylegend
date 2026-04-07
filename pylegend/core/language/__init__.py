@@ -89,7 +89,6 @@ from pylegend.core.language.shared.primitive_collection import (
     PyLegendStrictDateCollection,
     PyLegendNumberPairCollection,
     create_primitive_collection,
-    row_mapper,
 )
 from pylegend.core.language.shared.functions import (
     today,
@@ -107,6 +106,14 @@ from pylegend.core.language.shared.variable_expressions import (
     PyLegendStrictDateVariableExpression,
     PyLegendDateTimeVariableExpression,
 )
+from pylegend.core.language.legacy_api.legacy_api_custom_expressions import (
+    LegacyApiOLAPGroupByOperation,
+    LegacyApiOLAPAggregation,
+    LegacyApiOLAPRank,
+    olap_agg,
+    olap_rank,
+)
+from pylegend.core.language.shared.operations.date_operation_expressions import DurationUnit
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
@@ -154,6 +161,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateColumnExpression",
     "PyLegendDateTimeColumnExpression",
     "PyLegendStrictDateColumnExpression",
+    "DurationUnit",
 
     "PyLegendBooleanLiteralExpression",
     "PyLegendStringLiteralExpression",
@@ -168,6 +176,12 @@ __all__: PyLegendSequence[str] = [
     "LegacyApiAggregateSpecification",
     "agg",
 
+    "LegacyApiOLAPGroupByOperation",
+    "LegacyApiOLAPAggregation",
+    "LegacyApiOLAPRank",
+    "olap_agg",
+    "olap_rank",
+
     "PyLegendPrimitiveCollection",
     "PyLegendIntegerCollection",
     "PyLegendFloatCollection",
@@ -180,7 +194,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDateCollection",
     "PyLegendNumberPairCollection",
     "create_primitive_collection",
-    "row_mapper",
 
     "today",
     "now",

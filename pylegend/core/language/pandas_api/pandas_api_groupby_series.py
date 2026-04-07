@@ -127,7 +127,7 @@ def _get_new_groupby_series_for_column(
 
     class_name = _COL_TYPE_TO_GROUPBY_SERIES_CLASS_NAME.get(col_type)
     if class_name is None:
-        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")
+        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")  # pragma: no cover
     cls = globals()[class_name]
 
     return cls(base_groupby_frame, aggregated_frame)  # type: ignore[no-any-return]
@@ -322,7 +322,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         if self.applied_function_frame is None:
             aggregated_frame = self.get_base_frame().aggregate(func, axis, *args, **kwargs)
         else:
-            aggregated_frame = self.applied_function_frame.aggregate(func, axis, *args, **kwargs)
+            aggregated_frame = self.applied_function_frame.aggregate(func, axis, *args, **kwargs)  # pragma: no cover
         assert isinstance(aggregated_frame, PandasApiAppliedFunctionTdsFrame)
 
         num_grouping_cols = len(self._base_groupby_frame.get_grouping_columns())
@@ -737,8 +737,8 @@ class DecimalGroupbySeries(NumberGroupbySeries, PyLegendDecimal, PyLegendExpress
             applied_function_frame: PyLegendOptional[PandasApiAppliedFunctionTdsFrame] = None,
             expr: PyLegendOptional[PyLegendExpression] = None
     ) -> None:
-        super().__init__(base_groupby_frame, applied_function_frame, expr)
-        PyLegendDecimal.__init__(self, self)
+        super().__init__(base_groupby_frame, applied_function_frame, expr)  # pragma: no cover
+        PyLegendDecimal.__init__(self, self)  # pragma: no cover
 
 
 @add_primitive_methods

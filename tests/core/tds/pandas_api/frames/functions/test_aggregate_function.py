@@ -301,13 +301,13 @@ class TestAggregateFunction:
             """\
             #Table(test_schema.test_table)#
               ->aggregate(
-                ~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, 'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}]
+                ~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()->cast(@Float)}, 'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()->cast(@Float)}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, "
-            "'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "->aggregate(~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()->cast(@Float)}, "
+            "'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
 
     def test_aggregate_repeat_column(self) -> None:
@@ -327,12 +327,12 @@ class TestAggregateFunction:
             """\
             #Table(test_schema.test_table)#
               ->aggregate(
-                ~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()}]
+                ~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()->cast(@Float)}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()}])"
+            "->aggregate(~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
 
     def test_aggregate_subquery_generation(self) -> None:
@@ -447,10 +447,10 @@ class TestAggregateFunction:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
         assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
 
         res = frame.var()
@@ -463,10 +463,10 @@ class TestAggregateFunction:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])"
         )
         assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])"
         )
 
         res = frame.count()
@@ -780,7 +780,7 @@ class TestAggregateFunctionOnSeries:
             #Table(test_schema.test_table)#
               ->select(~[int_col])
               ->aggregate(
-                ~['mean(int_col)':{r | $r.int_col}:{c | $c->average()}, 'min(int_col)':{r | $r.int_col}:{c | $c->min()}, 'var(int_col)':{r | $r.int_col}:{c | $c->varianceSample()}]
+                ~['mean(int_col)':{r | $r.int_col}:{c | $c->average()}, 'min(int_col)':{r | $r.int_col}:{c | $c->min()}, 'var(int_col)':{r | $r.int_col}:{c | $c->varianceSample()->cast(@Float)}]
               )
         '''  # noqa: E501
         expected = dedent(expected).strip()

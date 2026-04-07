@@ -170,12 +170,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                COUNT("root".col2) AS "Count"
+                "root"."col1" AS "col1",
+                "root"."Count" AS "Count"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        COUNT("root".col2) AS "Count"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -205,17 +211,23 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
-                COUNT("root"."col2") AS "Count"
+                "root"."Count" AS "Count"
             FROM
                 (
-                    SELECT DISTINCT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
+                    SELECT
+                        "root"."col1" AS "col1",
+                        COUNT("root"."col2") AS "Count"
                     FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"
-            GROUP BY
-                "root"."col1"'''
+                        (
+                            SELECT DISTINCT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -247,18 +259,24 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
-                COUNT("root"."col2") AS "Count"
+                "root"."Count" AS "Count"
             FROM
                 (
                     SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
+                        "root"."col1" AS "col1",
+                        COUNT("root"."col2") AS "Count"
                     FROM
-                        test_schema.test_table AS "root"
-                    LIMIT 10
-                ) AS "root"
-            GROUP BY
-                "root"."col1"'''
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2"
+                            FROM
+                                test_schema.test_table AS "root"
+                            LIMIT 10
+                        ) AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -294,26 +312,32 @@ class TestGroupByAppliedFunction:
         expected = '''\
             SELECT
                 "root"."col1" AS "col1",
-                COUNT("root"."Count1") AS "Count2"
+                "root"."Count2" AS "Count2"
             FROM
                 (
                     SELECT
                         "root"."col1" AS "col1",
-                        COUNT("root"."col2") AS "Count1"
+                        COUNT("root"."Count1") AS "Count2"
                     FROM
                         (
                             SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2"
+                                "root"."col1" AS "col1",
+                                COUNT("root"."col2") AS "Count1"
                             FROM
-                                test_schema.test_table AS "root"
-                            LIMIT 10
+                                (
+                                    SELECT
+                                        "root".col1 AS "col1",
+                                        "root".col2 AS "col2"
+                                    FROM
+                                        test_schema.test_table AS "root"
+                                    LIMIT 10
+                                ) AS "root"
+                            GROUP BY
+                                "col1"
                         ) AS "root"
                     GROUP BY
-                        "root"."col1"
-                ) AS "root"
-            GROUP BY
-                "root"."col1"'''
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -352,13 +376,20 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                COUNT("root".col2) AS "Count1",
-                COUNT("root".col2) AS "Count2"
+                "root"."col1" AS "col1",
+                "root"."Count1" AS "Count1",
+                "root"."Count2" AS "Count2"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        COUNT("root".col2) AS "Count1",
+                        COUNT("root".col2) AS "Count2"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -387,12 +418,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                COUNT(DISTINCT "root".col1) AS "Cnt"
+                "root"."col2" AS "col2",
+                "root"."Cnt" AS "Cnt"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        COUNT(DISTINCT "root".col1) AS "Cnt"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -420,12 +457,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                AVG("root".col1) AS "Average"
+                "root"."col2" AS "col2",
+                "root"."Average" AS "Average"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        AVG("root".col1) AS "Average"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -454,12 +497,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                AVG(("root".col1 + 20)) AS "Average"
+                "root"."col2" AS "col2",
+                "root"."Average" AS "Average"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        AVG(("root".col1 + 20)) AS "Average"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -487,12 +536,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                (AVG("root".col1) + 2) AS "Average"
+                "root"."col2" AS "col2",
+                "root"."Average" AS "Average"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        (AVG("root".col1) + 2) AS "Average"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -520,12 +575,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                MAX("root".col1) AS "Maximum"
+                "root"."col2" AS "col2",
+                "root"."Maximum" AS "Maximum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        MAX("root".col1) AS "Maximum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -553,12 +614,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                MIN("root".col1) AS "Minimum"
+                "root"."col2" AS "col2",
+                "root"."Minimum" AS "Minimum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        MIN("root".col1) AS "Minimum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -586,12 +653,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                SUM("root".col1) AS "Sum"
+                "root"."col2" AS "col2",
+                "root"."Sum" AS "Sum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        SUM("root".col1) AS "Sum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -619,12 +692,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                MAX("root".col1) AS "Maximum"
+                "root"."col2" AS "col2",
+                "root"."Maximum" AS "Maximum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        MAX("root".col1) AS "Maximum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -652,12 +731,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                MIN("root".col1) AS "Minimum"
+                "root"."col2" AS "col2",
+                "root"."Minimum" AS "Minimum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        MIN("root".col1) AS "Minimum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -685,12 +770,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                SUM("root".col1) AS "Sum"
+                "root"."col2" AS "col2",
+                "root"."Sum" AS "Sum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        SUM("root".col1) AS "Sum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -718,12 +809,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                MAX("root".col1) AS "Maximum"
+                "root"."col2" AS "col2",
+                "root"."Maximum" AS "Maximum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        MAX("root".col1) AS "Maximum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -751,12 +848,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                MIN("root".col1) AS "Minimum"
+                "root"."col2" AS "col2",
+                "root"."Minimum" AS "Minimum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        MIN("root".col1) AS "Minimum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -784,12 +887,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                SUM("root".col1) AS "Sum"
+                "root"."col2" AS "col2",
+                "root"."Sum" AS "Sum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        SUM("root".col1) AS "Sum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -823,24 +932,30 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                STDDEV_SAMP("root".col1) AS "Std Dev Sample"
+                "root"."col2" AS "col2",
+                "root"."Std Dev Sample" AS "Std Dev Sample"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        STDDEV_SAMP("root".col1) AS "Std Dev Sample"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()}]
+                ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()}])')
+                '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_std_dev_agg(self) -> None:
         columns = [
@@ -863,24 +978,30 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                STDDEV_SAMP("root".col1) AS "Std Dev"
+                "root"."col2" AS "col2",
+                "root"."Std Dev" AS "Std Dev"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        STDDEV_SAMP("root".col1) AS "Std Dev"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()}]
+                ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()}])')
+                '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_std_dev_population_agg(self) -> None:
         columns = [
@@ -903,24 +1024,30 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                STDDEV_POP("root".col1) AS "Std Dev Population"
+                "root"."col2" AS "col2",
+                "root"."Std Dev Population" AS "Std Dev Population"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        STDDEV_POP("root".col1) AS "Std Dev Population"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()}]
+                ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()}])')
+                '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_sample_agg(self) -> None:
         columns = [
@@ -943,24 +1070,30 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                VAR_SAMP("root".col1) AS "Variance Sample"
+                "root"."col2" AS "col2",
+                "root"."Variance Sample" AS "Variance Sample"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        VAR_SAMP("root".col1) AS "Variance Sample"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()}]
+                ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()}])')
+                '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_agg(self) -> None:
         columns = [
@@ -983,24 +1116,30 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                VAR_SAMP("root".col1) AS "Variance"
+                "root"."col2" AS "col2",
+                "root"."Variance" AS "Variance"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        VAR_SAMP("root".col1) AS "Variance"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}]
+                ~[Variance:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}])')
+                '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_population_agg(self) -> None:
         columns = [
@@ -1023,24 +1162,30 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col2 AS "col2",
-                VAR_POP("root".col1) AS "Variance Population"
+                "root"."col2" AS "col2",
+                "root"."Variance Population" AS "Variance Population"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
+                (
+                    SELECT
+                        "root".col2 AS "col2",
+                        VAR_POP("root".col1) AS "Variance Population"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col2"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()}]
+                ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()}])')
+                '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()->cast(@Float)}])')
 
     def test_query_gen_group_by_string_max_agg(self) -> None:
         columns = [
@@ -1057,12 +1202,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                MAX("root".col2) AS "Maximum"
+                "root"."col1" AS "col1",
+                "root"."Maximum" AS "Maximum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        MAX("root".col2) AS "Maximum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1090,12 +1241,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                MIN("root".col2) AS "Minimum"
+                "root"."col1" AS "col1",
+                "root"."Minimum" AS "Minimum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        MIN("root".col2) AS "Minimum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1123,12 +1280,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                STRING_AGG("root".col2, ' ') AS "Joined"
+                "root"."col1" AS "col1",
+                "root"."Joined" AS "Joined"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        STRING_AGG("root".col2, ' ') AS "Joined"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1156,12 +1319,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                MAX("root".col2) AS "Maximum"
+                "root"."col1" AS "col1",
+                "root"."Maximum" AS "Maximum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        MAX("root".col2) AS "Maximum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1189,12 +1358,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                MIN("root".col2) AS "Minimum"
+                "root"."col1" AS "col1",
+                "root"."Minimum" AS "Minimum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        MIN("root".col2) AS "Minimum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1222,12 +1397,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                MAX("root".col2) AS "Maximum"
+                "root"."col1" AS "col1",
+                "root"."Maximum" AS "Maximum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        MAX("root".col2) AS "Maximum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -1255,12 +1436,18 @@ class TestGroupByAppliedFunction:
         )
         expected = '''\
             SELECT
-                "root".col1 AS "col1",
-                MIN("root".col2) AS "Minimum"
+                "root"."col1" AS "col1",
+                "root"."Minimum" AS "Minimum"
             FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
+                (
+                    SELECT
+                        "root".col1 AS "col1",
+                        MIN("root".col2) AS "Minimum"
+                    FROM
+                        test_schema.test_table AS "root"
+                    GROUP BY
+                        "col1"
+                ) AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\

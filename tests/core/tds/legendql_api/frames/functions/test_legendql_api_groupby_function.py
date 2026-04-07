@@ -895,6 +895,52 @@ class TestGroupByAppliedFunction:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col2], ~[Sum:{r | $r.col1}:{c | $c->sum()}])')
 
+    def test_query_gen_group_by_decimal_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.decimal_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col2"],
+            [
+                ("Maximum", lambda r: r.col1, lambda c: c.max()),  # type: ignore
+                ("Minimum", lambda r: r.col1, lambda c: c.min()),  # type: ignore
+                ("Sum", lambda r: r.col1, lambda c: c.sum()),  # type: ignore
+                ("DistVal", lambda r: r.col1, lambda c: c.distinct_value()),  # type: ignore
+            ]
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Decimal), "
+            "TdsColumn(Name: Minimum, Type: Decimal), TdsColumn(Name: Sum, Type: Decimal), "
+            "TdsColumn(Name: DistVal, Type: Decimal)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col2 AS "col2",
+                MAX("root".col1) AS "Maximum",
+                MIN("root".col1) AS "Minimum",
+                SUM("root".col1) AS "Sum",
+                core_unique_value_only("root".col1) AS "DistVal"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col2'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col2],
+                ~[Maximum:{r | $r.col1}:{c | $c->max()}, Minimum:{r | $r.col1}:{c | $c->min()}, \
+Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnly()}]
+              )'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col2], '
+                '~[Maximum:{r | $r.col1}:{c | $c->max()}, Minimum:{r | $r.col1}:{c | $c->min()}, '
+                'Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnly()}])')
+
     def test_query_gen_group_by_std_dev_sample_agg(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -922,12 +968,12 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()}]
+                ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()}])')
+                '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_std_dev_agg(self) -> None:
         columns = [
@@ -956,12 +1002,12 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()}]
+                ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()}])')
+                '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_std_dev_population_agg(self) -> None:
         columns = [
@@ -990,12 +1036,12 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()}]
+                ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()}])')
+                '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_sample_agg(self) -> None:
         columns = [
@@ -1024,12 +1070,12 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()}]
+                ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()}])')
+                '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_agg(self) -> None:
         columns = [
@@ -1058,12 +1104,12 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}]
+                ~[Variance:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}])')
+                '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_population_agg(self) -> None:
         columns = [
@@ -1092,12 +1138,12 @@ class TestGroupByAppliedFunction:
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()}]
+                ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()}])')
+                '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()->cast(@Float)}])')
 
     def test_query_gen_group_by_string_max_agg(self) -> None:
         columns = [
@@ -1197,6 +1243,39 @@ class TestGroupByAppliedFunction:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Joined:{r | $r.col2}:{c | $c->joinStrings(\' \')}])')
+
+    def test_query_gen_group_by_join_strings_default_separator_agg(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.number_column("col1"),
+            PrimitiveTdsColumn.string_column("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col1"],
+            ("Joined", lambda r: r.col2, lambda c: c.join_strings()),  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Joined, Type: String)]"
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                STRING_AGG("root".col2, ';') AS "Joined"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->groupBy(
+                ~[col1],
+                ~[Joined:{r | $r.col2}:{c | $c->joinStrings(';')}]
+              )'''
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+               ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Joined:{r | $r.col2}:{c | $c->joinStrings(\';\')}])')
 
     def test_query_gen_group_by_strictdate_max_agg(self) -> None:
         columns = [
@@ -1329,6 +1408,58 @@ class TestGroupByAppliedFunction:
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->groupBy(~[col1], ~[Minimum:{r | $r.col2}:{c | $c->min()}])')
+
+    @pytest.mark.parametrize(
+        "col_factory, col_type_name",
+        [
+            (PrimitiveTdsColumn.integer_column, "Integer"),
+            (PrimitiveTdsColumn.float_column, "Float"),
+            (PrimitiveTdsColumn.number_column, "Number"),
+            (PrimitiveTdsColumn.decimal_column, "Decimal"),
+            (PrimitiveTdsColumn.string_column, "String"),
+            (PrimitiveTdsColumn.boolean_column, "Boolean"),
+            (PrimitiveTdsColumn.strictdate_column, "StrictDate"),
+            (PrimitiveTdsColumn.date_column, "Date"),
+            (PrimitiveTdsColumn.datetime_column, "DateTime"),
+        ],
+        ids=["integer", "float", "number", "decimal", "string", "boolean", "strictdate", "date", "datetime"],
+    )
+    def test_query_gen_group_by_distinct_value_agg(self, col_factory, col_type_name) -> None:  # type: ignore
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            col_factory("col2")
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.group_by(
+            ["col1"],
+            ("DistVal", lambda r: r.col2, lambda c: c.distinct_value()),  # type: ignore
+        )
+        assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
+            f"[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: DistVal, Type: {col_type_name})]"
+        )
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                core_unique_value_only("root".col2) AS "DistVal"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        # Skipping pure compilation for Boolean - Legend engine parser does not support
+        # BOOLEAN column data type in relations (error: "Unsupported column data type 'BOOLEAN'")
+        if col_type_name != "Boolean":
+            assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+                '''\
+                #Table(test_schema.test_table)#
+                  ->groupBy(
+                    ~[col1],
+                    ~[DistVal:{r | $r.col2}:{c | $c->uniqueValueOnly()}]
+                  )'''
+            )
+            assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
+                   ('#Table(test_schema.test_table)#'
+                    '->groupBy(~[col1], ~[DistVal:{r | $r.col2}:{c | $c->uniqueValueOnly()}])')
 
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])

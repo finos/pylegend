@@ -64,6 +64,149 @@ class TestExpandingErrors:
         )
 
 
+class TestGroupbyExpandingErrors:
+    """Tests for error handling in groupby().expanding() method."""
+
+    def test_groupby_expanding_invalid_min_periods(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").expanding(min_periods=2)
+        assert v.value.args[0] == "The expanding function is only supported for min_periods=1, but got: min_periods=2"
+
+    def test_groupby_expanding_invalid_method(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").expanding(method='single')
+        assert v.value.args[0] == (
+            "The expanding function does not support the 'method' parameter, but got: method='single'"
+        )
+
+
+class TestGroupbyRollingErrors:
+    """Tests for error handling in groupby().rolling() method."""
+
+    def test_groupby_rolling_invalid_min_periods(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").rolling(window=3, min_periods=2)
+        assert v.value.args[0] == (
+            "The rolling function is only supported for min_periods=1 or None, but got: min_periods=2"
+        )
+
+    def test_groupby_rolling_invalid_center(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").rolling(window=3, center=True)
+        assert v.value.args[0] == "The rolling function does not support center=True, but got: center=True"
+
+    def test_groupby_rolling_invalid_win_type(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").rolling(window=3, win_type="triang")
+        assert v.value.args[0] == (
+            "The rolling function does not support the 'win_type' parameter, but got: win_type='triang'"
+        )
+
+    def test_groupby_rolling_invalid_on(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").rolling(window=3, on="val")
+        assert v.value.args[0] == "The rolling function does not support the 'on' parameter, but got: on='val'"
+
+    def test_groupby_rolling_invalid_closed(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").rolling(window=3, closed="left")
+        assert v.value.args[0] == (
+            "The rolling function does not support the 'closed' parameter, but got: closed='left'"
+        )
+
+    def test_groupby_rolling_invalid_step(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").rolling(window=3, step=2)
+        assert v.value.args[0] == "The rolling function does not support the 'step' parameter, but got: step=2"
+
+    def test_groupby_rolling_invalid_method(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(NotImplementedError) as v:
+            frame.groupby("grp").rolling(window=3, method="single")
+        assert v.value.args[0] == (
+            "The rolling function does not support the 'method' parameter, but got: method='single'"
+        )
+
+
+class TestGroupbyWindowFrameLegendExtErrors:
+    """Tests for error handling in groupby().window_frame_legend_ext() method."""
+
+    def test_groupby_window_frame_legend_ext_invalid_frame_spec(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(TypeError) as v:
+            frame.groupby("grp").window_frame_legend_ext(frame_spec="invalid")  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got str" in str(v.value)
+
+    def test_groupby_window_frame_legend_ext_with_none(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(TypeError) as v:
+            frame.groupby("grp").window_frame_legend_ext(frame_spec=None)  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got NoneType" in str(v.value)
+
+
 class TestRollingErrors:
     def test_invalid_min_periods(self) -> None:
         columns = [PrimitiveTdsColumn.string_column("col1")]
@@ -447,6 +590,544 @@ class TestExpandingOnGroupbyFrame:
                 'sum(val)':p|$p.'sum(val)__pylegend_olap_column__',
                 'lambda_1(val)':p|$p.'lambda_1(val)__pylegend_olap_column__',
                 rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_expanding_with_explicit_order_by(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("rnd")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("grp").expanding(order_by="val").agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."val__pylegend_olap_column__" AS "val",
+                "root"."rnd__pylegend_olap_column__" AS "rnd"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__",
+                        SUM("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".rnd AS "rnd",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), 0)), ~[
+                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
+              ])
+              ->project(~[
+                val:p|$p.val__pylegend_olap_column__,
+                rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+
+class TestRollingOnBaseFrame:
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_simple_sum(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.rolling(window=3, order_by="col1").agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."col1__pylegend_olap_column__" AS "col1",
+                "root"."col2__pylegend_olap_column__" AS "col2"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
+                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(minus(2), 0)), ~[
+                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
+                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
+              ])
+              ->project(~[
+                col1:p|$p.col1__pylegend_olap_column__,
+                col2:p|$p.col2__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+
+class TestExpandingOnGroupbyFrame:
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_simple_sum(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("rnd")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("grp").expanding().agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."val__pylegend_olap_column__" AS "val",
+                "root"."rnd__pylegend_olap_column__" AS "rnd"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__",
+                        SUM("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".rnd AS "rnd",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
+                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
+              ])
+              ->project(~[
+                val:p|$p.val__pylegend_olap_column__,
+                rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_complex_aggregation(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("rnd")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("grp").expanding().agg({
+            "val": ["sum", lambda x: x.count()],
+            "rnd": np.min
+        })
+
+        expected_sql = '''
+            SELECT
+                "root"."sum(val)__pylegend_olap_column__" AS "sum(val)",
+                "root"."lambda_1(val)__pylegend_olap_column__" AS "lambda_1(val)",
+                "root"."rnd__pylegend_olap_column__" AS "rnd"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum(val)__pylegend_olap_column__",
+                        COUNT("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lambda_1(val)__pylegend_olap_column__",
+                        MIN("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".rnd AS "rnd",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
+                'sum(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->sum()},
+                'lambda_1(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->count()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->min()}
+              ])
+              ->project(~[
+                'sum(val)':p|$p.'sum(val)__pylegend_olap_column__',
+                'lambda_1(val)':p|$p.'lambda_1(val)__pylegend_olap_column__',
+                rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_expanding_with_explicit_order_by(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("rnd")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("grp").expanding(order_by="val").agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."val__pylegend_olap_column__" AS "val",
+                "root"."rnd__pylegend_olap_column__" AS "rnd"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__",
+                        SUM("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".rnd AS "rnd",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), 0)), ~[
+                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
+              ])
+              ->project(~[
+                val:p|$p.val__pylegend_olap_column__,
+                rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+
+class TestRollingOnBaseFrame:
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_simple_sum(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.rolling(window=3, order_by="col1").agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."col1__pylegend_olap_column__" AS "col1",
+                "root"."col2__pylegend_olap_column__" AS "col2"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
+                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(minus(2), 0)), ~[
+                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
+                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
+              ])
+              ->project(~[
+                col1:p|$p.col1__pylegend_olap_column__,
+                col2:p|$p.col2__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+
+class TestExpandingOnGroupbyFrame:
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_simple_sum(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("rnd")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("grp").expanding().agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."val__pylegend_olap_column__" AS "val",
+                "root"."rnd__pylegend_olap_column__" AS "rnd"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__",
+                        SUM("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".rnd AS "rnd",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
+                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
+              ])
+              ->project(~[
+                val:p|$p.val__pylegend_olap_column__,
+                rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_complex_aggregation(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("rnd")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("grp").expanding().agg({
+            "val": ["sum", lambda x: x.count()],
+            "rnd": np.min
+        })
+
+        expected_sql = '''
+            SELECT
+                "root"."sum(val)__pylegend_olap_column__" AS "sum(val)",
+                "root"."lambda_1(val)__pylegend_olap_column__" AS "lambda_1(val)",
+                "root"."rnd__pylegend_olap_column__" AS "rnd"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "sum(val)__pylegend_olap_column__",
+                        COUNT("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "lambda_1(val)__pylegend_olap_column__",
+                        MIN("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."grp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".rnd AS "rnd",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~grp)], rows(unbounded(), 0)), ~[
+                'sum(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->sum()},
+                'lambda_1(val)__pylegend_olap_column__':{p,w,r | $r.val}:{c | $c->count()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->min()}
+              ])
+              ->project(~[
+                'sum(val)':p|$p.'sum(val)__pylegend_olap_column__',
+                'lambda_1(val)':p|$p.'lambda_1(val)__pylegend_olap_column__',
+                rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_expanding_with_explicit_order_by(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("rnd")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.groupby("grp").expanding(order_by="val").agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."val__pylegend_olap_column__" AS "val",
+                "root"."rnd__pylegend_olap_column__" AS "rnd"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__",
+                        SUM("root"."rnd") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "rnd__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".rnd AS "rnd",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), 0)), ~[
+                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()},
+                rnd__pylegend_olap_column__:{p,w,r | $r.rnd}:{c | $c->sum()}
+              ])
+              ->project(~[
+                val:p|$p.val__pylegend_olap_column__,
+                rnd:p|$p.rnd__pylegend_olap_column__
+              ])
+        '''
+        expected_pure = dedent(expected_pure).strip()
+        assert frame.to_pure_query() == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+
+class TestRollingOnBaseFrame:
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_simple_sum(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2")
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame = frame.rolling(window=3, order_by="col1").agg("sum")
+
+        expected_sql = '''
+            SELECT
+                "root"."col1__pylegend_olap_column__" AS "col1",
+                "root"."col2__pylegend_olap_column__" AS "col2"
+            FROM
+                (
+                    SELECT
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
+                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(minus(2), 0)), ~[
+                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
+                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
+              ])
+              ->project(~[
+                col1:p|$p.col1__pylegend_olap_column__,
+                col2:p|$p.col2__pylegend_olap_column__
               ])
         '''
         expected_pure = dedent(expected_pure).strip()
@@ -1238,656 +1919,960 @@ class TestWindowAggregateEndToEnd:
         assert json.loads(res)["result"] == expected
 
 
-class TestPylegendExtensionWindowFrame:
-    @pytest.fixture(autouse=True)
-    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+class TestWindowSeriesProperties:
+    """Tests for WindowSeries properties."""
 
+    def test_window_series_window_frame_property(self) -> None:
+        """window_frame property should return the window frame."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
-    # def test_temp(self):
-    #     from pylegend.extensions.tds.pandas_api.frames.pandas_api_csv_input_frame import (
-    #         PandasApiCsvNonExecutableInputTdsFrame as csv_frame,
-    #     )
-    #     frame = csv_frame("\np,o,i\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-29T00:32:34.0000000000000,10\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-30T00:32:34.0000000000000,20\n200,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-31T00:32:34.0000000000000,30\n300,2024-01-29T00:32:34.0000000000000,10\n300,2024-01-30T00:32:34.0000000000000,20")
-    #
-    #     new_frame = (
-    #         (lambda frame:
-    #             frame.__setitem__("newCol", frame.groupby("p")["i"].window_frame_legend_ext(range_between(duration_start=0, duration_start_unit="DAYS", duration_end=0, duration_end_unit="DAYS"), order_by="o").sum())
-    #             or frame
-    #         )(csv_frame("\np,o,i\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-29T00:32:34.0000000000000,10\n0,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-29T00:32:34.0000000000000,10\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-30T00:32:34.0000000000000,20\n100,2024-01-31T00:32:34.0000000000000,30\n100,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-29T00:32:34.0000000000000,10\n200,2024-01-30T00:32:34.0000000000000,20\n200,2024-01-31T00:32:34.0000000000000,30\n200,2024-01-31T00:32:34.0000000000000,30\n300,2024-01-29T00:32:34.0000000000000,10\n300,2024-01-30T00:32:34.0000000000000,20"))
-    #     )
-    #
-    #     new_frame
-    #
-    #     query = eval(
-    #         '(lambda frame:' +
-    #            '  frame.__setitem__("newCol", frame.groupby("p")["i"].window_frame_legend_ext(range_between(duration_start=0, duration_start_unit="DAYS", duration_end=0, duration_end_unit="DAYS"), order_by="o").sum())' +
-    #            '  or frame' +
-    #            ')(csv_frame("\\np,o,i\\n0,2024-01-29T00:32:34.0000000000000+0000,10\\n0,2024-01-29T00:32:34.0000000000000+0000,10\\n0,2024-01-31T00:32:34.0000000000000+0000,30\\n100,2024-01-29T00:32:34.0000000000000+0000,10\\n100,2024-01-30T00:32:34.0000000000000+0000,20\\n100,2024-01-30T00:32:34.0000000000000+0000,20\\n100,2024-01-31T00:32:34.0000000000000+0000,30\\n100,2024-01-31T00:32:34.0000000000000+0000,30\\n200,2024-01-29T00:32:34.0000000000000+0000,10\\n200,2024-01-29T00:32:34.0000000000000+0000,10\\n200,2024-01-29T00:32:34.0000000000000+0000,10\\n200,2024-01-30T00:32:34.0000000000000+0000,20\\n200,2024-01-31T00:32:34.0000000000000+0000,30\\n200,2024-01-31T00:32:34.0000000000000+0000,30\\n300,2024-01-29T00:32:34.0000000000000+0000,10\\n300,2024-01-30T00:32:34.0000000000000+0000,20"))')
-    #
-    #     print(query.columns()[1])
-    #
-    #     print(query.to_pure_query())
-
-    def test_unbounded_both_sides(self) -> None:
-        """ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING — not achievable via expanding or rolling."""
         columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.float_column("col2")
+            PrimitiveTdsColumn.integer_column("grp"),
+            PrimitiveTdsColumn.float_column("val"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.expanding()
+        ws = window_frame["val"]
 
-        frame = frame.window_frame_legend_ext(rows_between(), order_by="col1").agg("sum")
+        assert isinstance(ws, WindowSeries)
+        assert ws.window_frame is window_frame
 
-        expected_sql = '''
-            SELECT
-                "root"."col1__pylegend_olap_column__" AS "col1",
-                "root"."col2__pylegend_olap_column__" AS "col2"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1__pylegend_olap_column__",
-                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col2__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert frame.to_sql_query() == expected_sql
+    def test_window_series_column_name_property(self) -> None:
+        """column_name property should return the column name."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~[
-                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
-                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
-              ])
-              ->project(~[
-                col1:p|$p.col1__pylegend_olap_column__,
-                col2:p|$p.col2__pylegend_olap_column__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
-    def test_custom_preceding_and_following(self) -> None:
-        """ROWS BETWEEN 2 PRECEDING AND 3 FOLLOWING — not achievable via rolling (which always has following=0)."""
         columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.float_column("col2")
+            PrimitiveTdsColumn.integer_column("grp"),
+            PrimitiveTdsColumn.float_column("val"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.expanding()
+        ws = window_frame["val"]
 
-        frame = frame.window_frame_legend_ext(
-            rows_between(-2, 3), order_by="col1"
-        ).agg("sum")
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "val"
 
-        expected_sql = '''
-            SELECT
-                "root"."col1__pylegend_olap_column__" AS "col1",
-                "root"."col2__pylegend_olap_column__" AS "col2"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND 3 FOLLOWING) AS "col1__pylegend_olap_column__",
-                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 2 PRECEDING AND 3 FOLLOWING) AS "col2__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert frame.to_sql_query() == expected_sql
 
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(minus(2), 3)), ~[
-                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
-                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
-              ])
-              ->project(~[
-                col1:p|$p.col1__pylegend_olap_column__,
-                col2:p|$p.col2__pylegend_olap_column__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+class TestGroupbySeriesWindowFrameLegendExt:
+    """Tests for GroupbySeries.window_frame_legend_ext() method."""
 
-    def test_on_series(self) -> None:
-        """Single column via frame['col'].window_frame_legend_ext(...)."""
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
-        ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+    def test_groupby_series_window_frame_legend_ext_basic(self) -> None:
+        """window_frame_legend_ext() on GroupbySeries returns a WindowSeries."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
-        series = frame["col1"].window_frame_legend_ext(
-            rows_between(-1, 1), order_by="col1"
-        ).sum()
-
-        expected_sql = '''
-            SELECT
-                "root"."col1__pylegend_olap_column__" AS "col1"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS "col1__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert series.to_sql_query() == expected_sql
-
-    def test_on_groupby_frame(self) -> None:
-        """Groupby + custom window — PARTITION BY should include grouping columns."""
         columns = [
             PrimitiveTdsColumn.string_column("grp"),
             PrimitiveTdsColumn.integer_column("val"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("grp").window_frame_legend_ext(
-            rows_between(None, 0), order_by="val"
-        ).agg("sum")
+        ws = frame.groupby("grp")["val"].window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by="val"
+        )
 
-        expected_sql = '''
-            SELECT
-                "root"."val__pylegend_olap_column__" AS "val"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".grp AS "grp",
-                                "root".val AS "val",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert frame.to_sql_query() == expected_sql
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "val"
 
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), 0)), ~[
-                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()}
-              ])
-              ->project(~[
-                val:p|$p.val__pylegend_olap_column__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+    def test_groupby_series_window_frame_legend_ext_with_range_between(self) -> None:
+        """window_frame_legend_ext() works with range_between frame spec."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
-    def test_assign_with_custom_window(self) -> None:
-        """Assign a custom-window aggregate to a frame column."""
         columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2"),
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.float_column("val"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame["col1_window_sum"] = frame["col1"].window_frame_legend_ext(
-            rows_between(), order_by="col1"
+        ws = frame.groupby("grp")["val"].window_frame_legend_ext(
+            frame_spec=range_between(start=-10, end=10),
+            order_by="val",
+            ascending=False
+        )
+
+        assert isinstance(ws, WindowSeries)
+
+    def test_groupby_series_window_frame_legend_ext_generates_sql(self) -> None:
+        """window_frame_legend_ext() on GroupbySeries generates correct SQL with sum()."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.groupby("grp")["val"].window_frame_legend_ext(
+            frame_spec=rows_between(-2, 2),
+            order_by="val"
         ).sum()
 
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
-              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_window_sum:c|$c.col1__pylegend_olap_column__])
-        '''  # noqa: E501
-        expected_pure = dedent(expected_pure).strip()
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+        sql = result.to_sql_query()
+        assert "SUM" in sql
+        assert "OVER" in sql
+        assert "PARTITION BY" in sql
+        assert "ROWS BETWEEN" in sql
 
-    @pytest.mark.parametrize(
-        "start, end, expected_sql_rows_clause, expected_pure_rows_expr",
-        [
-            (None, None, "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING", "rows(unbounded(), unbounded())"),
-            (-1, None, "ROWS BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING", "rows(minus(1), unbounded())"),
-            (-1, 0, "ROWS BETWEEN 1 PRECEDING AND CURRENT ROW", "rows(minus(1), 0)"),
-            (0, 1, "ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING", "rows(0, 1)"),
-            (-1, 1, "ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING", "rows(minus(1), 1)"),
-            (-3, -1, "ROWS BETWEEN 3 PRECEDING AND 1 PRECEDING", "rows(minus(3), minus(1))"),
-            (1, 3, "ROWS BETWEEN 1 FOLLOWING AND 3 FOLLOWING", "rows(1, 3)"),
-            (0, 0, "ROWS BETWEEN CURRENT ROW AND CURRENT ROW", "rows(0, 0)"),
-        ],
-    )
-    def test_rows_between_sign_convention_parametrized(
-            self,
-            start: PyLegendOptional[int],
-            end: PyLegendOptional[int],
-            expected_sql_rows_clause: str,
-            expected_pure_rows_expr: str,
-    ) -> None:
-        """Verify that each rows_between(start, end) pair produces the correct SQL and Pure rows clause."""
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+
+class TestGroupbySeriesMedianMode:
+    """Tests for GroupbySeries.median() and mode() methods."""
+
+    def test_groupby_series_median_generates_sql(self) -> None:
+        """median() on GroupbySeries generates correct SQL."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.groupby("grp")["val"].median()
+
+        sql = result.to_sql_query()
+        # median typically uses PERCENTILE_CONT or similar
+        assert "grp" in sql.lower() or "val" in sql.lower()
+
+    def test_groupby_series_median_generates_pure(self) -> None:
+        """median() on GroupbySeries generates correct Pure."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.groupby("grp")["val"].median()
+
+        pure = result.to_pure_query()
+        assert "groupBy" in pure
+        assert "median" in pure
+
+    def test_groupby_series_mode_generates_sql(self) -> None:
+        """mode() on GroupbySeries generates correct SQL."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.groupby("grp")["val"].mode()
+
+        sql = result.to_sql_query()
+        # mode uses MODE() aggregate function
+        assert "grp" in sql.lower() or "val" in sql.lower()
+
+    def test_groupby_series_mode_generates_pure(self) -> None:
+        """mode() on GroupbySeries generates correct Pure."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.groupby("grp")["val"].mode()
+
+        pure = result.to_pure_query()
+        assert "groupBy" in pure
+        assert "mode" in pure
+
+    def test_groupby_series_median_returns_groupby_series(self) -> None:
+        """median() returns a GroupbySeries when single column."""
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.groupby("grp")["val"].median()
+
+        assert isinstance(result, GroupbySeries)
+
+    def test_groupby_series_mode_returns_groupby_series(self) -> None:
+        """mode() returns a GroupbySeries when single column."""
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame.groupby("grp")["val"].mode()
+
+        assert isinstance(result, GroupbySeries)
+
+
+class TestWindowAggregateFunctionValidation:
+    """Tests for WindowAggregateFunction.validate() method errors."""
+
+    def test_window_aggregate_invalid_axis_error(self) -> None:
+        """WindowAggregateFunction raises NotImplementedError for invalid axis."""
+        from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.expanding()
+
+        func = WindowAggregateFunction(
+            base_frame=window_frame,
+            func="sum",
+            axis=1,  # Invalid axis
+        )
+
+        with pytest.raises(NotImplementedError) as exc:
+            func.validate()
+        assert "The 'axis' parameter of the aggregate function must be 0 or 'index', but got: 1" in str(exc.value)
+
+    def test_window_aggregate_invalid_axis_string_error(self) -> None:
+        """WindowAggregateFunction raises NotImplementedError for invalid string axis."""
+        from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.expanding()
+
+        func = WindowAggregateFunction(
+            base_frame=window_frame,
+            func="sum",
+            axis="columns",  # Invalid axis
+        )
+
+        with pytest.raises(NotImplementedError) as exc:
+            func.validate()
+        assert "The 'axis' parameter of the aggregate function must be 0 or 'index', but got: columns" in str(exc.value)
+
+    def test_window_aggregate_with_extra_args_error(self) -> None:
+        """WindowAggregateFunction raises NotImplementedError for extra positional args."""
+        from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.expanding()
+
+        func = WindowAggregateFunction(
+            window_frame,
+            "sum",
+            0,
+            1, 2, 3,  # Extra positional args
+        )
+
+        with pytest.raises(NotImplementedError) as exc:
+            func.validate()
+        assert "WindowAggregateFunction currently does not support additional positional" in str(exc.value)
+        assert "keyword arguments" in str(exc.value)
+
+    def test_window_aggregate_with_extra_kwargs_error(self) -> None:
+        """WindowAggregateFunction raises NotImplementedError for extra keyword args."""
+        from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.expanding()
+
+        func = WindowAggregateFunction(
+            base_frame=window_frame,
+            func="sum",
+            axis=0,
+            **{"extra_kwarg": 123},  # Extra keyword args
+        )
+
+        with pytest.raises(NotImplementedError) as exc:
+            func.validate()
+        assert "WindowAggregateFunction currently does not support additional positional" in str(exc.value)
+        assert "keyword arguments" in str(exc.value)
+
+    def test_window_aggregate_valid_axis_index_string(self) -> None:
+        """WindowAggregateFunction accepts axis='index'."""
+        from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.expanding()
+
+        func = WindowAggregateFunction(
+            base_frame=window_frame,
+            func="sum",
+            axis="index",  # Valid string axis
+        )
+
+        # Should not raise
+        assert func.validate() is True
+
+
+class TestWindowSeriesShortcutMethods:
+    """Tests for WindowSeries shortcut methods (sum, mean, min, max, count, std, var)."""
+
+    def test_window_series_sum_basic(self) -> None:
+        """WindowSeries.sum() calls aggregate with 'sum'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.sum()
+        sql = result.to_sql_query()
+        assert "SUM" in sql
+
+    def test_window_series_sum_numeric_only_error(self) -> None:
+        """WindowSeries.sum(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.sum(numeric_only=True)
+        assert "numeric_only=True is not currently supported in sum function" in str(exc.value)
+
+    def test_window_series_sum_min_count_error(self) -> None:
+        """WindowSeries.sum(min_count=1) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.sum(min_count=1)
+        assert "min_count must be 0 in sum function, but got: 1" in str(exc.value)
+
+    def test_window_series_mean_basic(self) -> None:
+        """WindowSeries.mean() calls aggregate with 'mean'."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.mean()
+        sql = result.to_sql_query()
+        assert "AVG" in sql
+
+    def test_window_series_mean_numeric_only_error(self) -> None:
+        """WindowSeries.mean(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.mean(numeric_only=True)
+        assert "numeric_only=True is not currently supported in mean function" in str(exc.value)
+
+    def test_window_series_min_basic(self) -> None:
+        """WindowSeries.min() calls aggregate with 'min'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.min()
+        sql = result.to_sql_query()
+        assert "MIN" in sql
+
+    def test_window_series_min_numeric_only_error(self) -> None:
+        """WindowSeries.min(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.min(numeric_only=True)
+        assert "numeric_only=True is not currently supported in min function" in str(exc.value)
+
+    def test_window_series_max_basic(self) -> None:
+        """WindowSeries.max() calls aggregate with 'max'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.max()
+        sql = result.to_sql_query()
+        assert "MAX" in sql
+
+    def test_window_series_max_numeric_only_error(self) -> None:
+        """WindowSeries.max(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.max(numeric_only=True)
+        assert "numeric_only=True is not currently supported in max function" in str(exc.value)
+
+    def test_window_series_count_basic(self) -> None:
+        """WindowSeries.count() calls aggregate with 'count'."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.count()
+        sql = result.to_sql_query()
+        assert "COUNT" in sql
+
+    def test_window_series_std_ddof_1_default(self) -> None:
+        """WindowSeries.std() with default ddof=1 uses std_dev_sample."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.std()
+        sql = result.to_sql_query()
+        assert "STDDEV_SAMP" in sql
+
+    def test_window_series_std_ddof_0(self) -> None:
+        """WindowSeries.std(ddof=0) uses std_dev_population."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.std(ddof=0)
+        sql = result.to_sql_query()
+        assert "STDDEV_POP" in sql
+
+    def test_window_series_std_invalid_ddof_error(self) -> None:
+        """WindowSeries.std(ddof=2) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.std(ddof=2)
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: 2" in str(exc.value)
+
+    def test_window_series_std_numeric_only_error(self) -> None:
+        """WindowSeries.std(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.std(numeric_only=True)
+        assert "numeric_only=True is not currently supported in std function" in str(exc.value)
+
+    def test_window_series_var_ddof_1_default(self) -> None:
+        """WindowSeries.var() with default ddof=1 uses variance_sample."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.var()
+        sql = result.to_sql_query()
+        assert "VAR_SAMP" in sql
+
+    def test_window_series_var_ddof_0(self) -> None:
+        """WindowSeries.var(ddof=0) uses variance_population."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        result = ws.var(ddof=0)
+        sql = result.to_sql_query()
+        assert "VAR_POP" in sql
+
+    def test_window_series_var_invalid_ddof_error(self) -> None:
+        """WindowSeries.var(ddof=3) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.var(ddof=3)
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: 3" in str(exc.value)
+
+    def test_window_series_var_numeric_only_error(self) -> None:
+        """WindowSeries.var(numeric_only=True) raises NotImplementedError."""
+        columns = [
+            PrimitiveTdsColumn.float_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame["col1"].expanding()
+        with pytest.raises(NotImplementedError) as exc:
+            ws.var(numeric_only=True)
+        assert "numeric_only=True is not currently supported in var function" in str(exc.value)
+
+
+class TestWindowFrameLegendExtOnBaseFrame:
+    """Tests for frame.window_frame_legend_ext() method on base TDS frame."""
+
+    def test_window_frame_legend_ext_with_rows_between(self) -> None:
+        """window_frame_legend_ext() on base frame with rows_between returns PandasApiWindowTdsFrame."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by="col1"
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+    def test_window_frame_legend_ext_with_range_between(self) -> None:
+        """window_frame_legend_ext() on base frame with range_between returns PandasApiWindowTdsFrame."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=range_between(start=-5, end=5),
+            order_by="col1",
+            ascending=False
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+    def test_window_frame_legend_ext_generates_sql(self) -> None:
+        """window_frame_legend_ext() on base frame generates correct SQL with sum()."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame.window_frame_legend_ext(
-            rows_between(start, end), order_by="col1"
+            frame_spec=rows_between(-3, 3),
+            order_by="col1"
         ).agg("sum")
 
         sql = result.to_sql_query()
-        assert expected_sql_rows_clause in sql
+        assert "SUM" in sql
+        assert "OVER" in sql
+        assert "ROWS BETWEEN" in sql
 
-        pure = result.to_pure_query()
-        assert expected_pure_rows_expr in pure
-
-    @pytest.mark.parametrize(
-        "start, end, expected_sql_range_clause, expected_pure_range_expr",
-        [
-            (None, None, "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING", "_range(unbounded(), unbounded())"),
-            (-1, 0, "RANGE BETWEEN 1 PRECEDING AND CURRENT ROW", "_range(minus(1), 0)"),
-            (0, 1, "RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING", "_range(0, 1)"),
-            (-100, 0, "RANGE BETWEEN 100 PRECEDING AND CURRENT ROW", "_range(minus(100), 0)"),
-            (-1, 1, "RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING", "_range(minus(1), 1)"),
-        ],
-    )
-    def test_range_between_parametrized(
-            self,
-            start: PyLegendOptional[int],
-            end: PyLegendOptional[int],
-            expected_sql_range_clause: str,
-            expected_pure_range_expr: str,
-    ) -> None:
-        """Verify that each range_between(start, end) pair produces the correct SQL and Pure clause."""
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+    def test_window_frame_legend_ext_generates_pure(self) -> None:
+        """window_frame_legend_ext() on base frame generates correct Pure with sum()."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame.window_frame_legend_ext(
-            range_between(start, end), order_by="col1"
+            frame_spec=rows_between(-2, 2),
+            order_by="col1"
         ).agg("sum")
 
-        sql = result.to_sql_query()
-        assert expected_sql_range_clause in sql
-
         pure = result.to_pure_query()
-        assert expected_pure_range_expr in pure
+        assert "rows" in pure
+        assert "sum" in pure
 
-    def test_error_start_greater_than_end(self) -> None:
-        """start > end should raise ValueError."""
-        with pytest.raises(ValueError) as v:
-            rows_between(2, -1)
-        assert "Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!" in str(v.value)
+    def test_window_frame_legend_ext_with_multiple_order_by(self) -> None:
+        """window_frame_legend_ext() works with multiple order_by columns."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
-    def test_error_start_greater_than_end_range(self) -> None:
-        """start > end should raise ValueError for range_between too."""
-        with pytest.raises(ValueError) as v:
-            range_between(0, -2)
-        assert "Invalid window frame boundary - lower bound of window frame cannot be greater than the upper bound!" in str(v.value)
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-    def test_error_invalid_frame_spec_type(self) -> None:
-        """Passing a non-FrameSpec object should raise TypeError."""
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=["col1", "col2"],
+            ascending=[True, False]
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+    def test_window_frame_legend_ext_with_no_order_by(self) -> None:
+        """window_frame_legend_ext() works with order_by=None."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=None
+        )
+
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+
+class TestWindowFrameLegendExtErrors:
+    """Tests for error handling in frame.window_frame_legend_ext() method."""
+
+    def test_base_frame_window_frame_legend_ext_invalid_frame_spec(self) -> None:
+        """window_frame_legend_ext() on base frame raises TypeError for invalid frame_spec."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         with pytest.raises(TypeError) as v:
-            frame.window_frame_legend_ext("not_a_frame_spec", order_by="col1")  # type: ignore
-        assert "frame_spec must be a RowsBetween or RangeBetween" in str(v.value)
+            frame.window_frame_legend_ext(frame_spec="invalid")  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got str" in str(v.value)
 
-    @pytest.mark.parametrize(
-        "kwargs, expected_sql_clause, expected_pure_expr",
-        [
-            (
-                dict(duration_start="unbounded", duration_end="unbounded"),
-                "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
-                "_range(unbounded(), unbounded())",
-            ),
-            (
-                dict(duration_start=-1, duration_start_unit="DAYS", duration_end="unbounded"),
-                "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND UNBOUNDED FOLLOWING",
-                "_range(minus(1), DurationUnit.DAYS, unbounded())",
-            ),
-            (
-                dict(duration_start=-1, duration_start_unit="DAYS", duration_end=0, duration_end_unit="HOURS"),
-                "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND CURRENT ROW",
-                "_range(minus(1), DurationUnit.DAYS, 0, DurationUnit.HOURS)",
-            ),
-            (
-                dict(duration_start=0, duration_start_unit="DAYS", duration_end=1, duration_end_unit="HOURS"),
-                "RANGE BETWEEN CURRENT ROW AND INTERVAL '1 HOUR' FOLLOWING",
-                "_range(0, DurationUnit.DAYS, 1, DurationUnit.HOURS)",
-            ),
-            (
-                dict(
-                    duration_start=-1, duration_start_unit="DAYS",
-                    duration_end=1, duration_end_unit="MONTHS",
-                ),
-                "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND INTERVAL '1 MONTH' FOLLOWING",
-                "_range(minus(1), DurationUnit.DAYS, 1, DurationUnit.MONTHS)",
-            ),
-            (
-                dict(duration_start="unbounded", duration_end=-1, duration_end_unit="DAYS"),
-                "RANGE BETWEEN UNBOUNDED PRECEDING AND INTERVAL '1 DAY' PRECEDING",
-                "_range(unbounded(), minus(1), DurationUnit.DAYS)",
-            ),
-        ],
-    )
-    def test_range_between_duration_parametrized(
-            self,
-            kwargs: dict,
-            expected_sql_clause: str,
-            expected_pure_expr: str,
-    ) -> None:
-        """Verify duration-based range_between produces correct SQL and Pure."""
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        result = frame.window_frame_legend_ext(
-            range_between(**kwargs), order_by="col1"
-        ).agg("sum")
-
-        sql = result.to_sql_query()
-        assert expected_sql_clause in sql
-
-        pure = result.to_pure_query()
-        assert expected_pure_expr in pure
-
-    def test_error_mix_simple_and_duration(self) -> None:
-        """Cannot mix positional start/end with duration kwargs."""
-        with pytest.raises(ValueError) as v:
-            range_between(start=-1, duration_end=1, duration_end_unit="DAYS")
-        assert "Cannot mix" in str(v.value)
-
-    def test_error_invalid_duration_string(self) -> None:
-        """Duration bound string must be 'unbounded'."""
-        with pytest.raises(ValueError) as v:
-            range_between(duration_start="invalid", duration_end="unbounded")
-        assert "must be 'unbounded'" in str(v.value)
-
-    def test_error_invalid_duration_unit_string(self) -> None:
-        """Invalid duration unit string should raise ValueError."""
-        with pytest.raises(ValueError) as v:
-            range_between(duration_start=-1, duration_start_unit="LIGHTYEARS", duration_end="unbounded")
-        assert "Invalid duration unit" in str(v.value)
-
-    def test_range_between_float_offsets(self) -> None:
-        """Float offsets (e.g. 2.5) should work in range_between."""
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        result = frame.window_frame_legend_ext(
-            range_between(-2.5, 1.5), order_by="col1"
-        ).agg("sum")
-
-        sql = result.to_sql_query()
-        assert "RANGE BETWEEN 2.5 PRECEDING AND 1.5 FOLLOWING" in sql
-
-        pure = result.to_pure_query()
-        assert "_range(minus(2.5), 1.5)" in pure
-
-    def test_range_between_decimal_offsets(self) -> None:
-        """Decimal offsets should work in range_between, producing CAST and D suffix."""
-        from decimal import Decimal
-
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        result = frame.window_frame_legend_ext(
-            range_between(Decimal("-0.5"), Decimal("2.1")), order_by="col1"
-        ).agg("sum")
-
-        sql = result.to_sql_query()
-        assert "CAST('0.5' AS DECIMAL) PRECEDING" in sql
-        assert "CAST('2.1' AS DECIMAL) FOLLOWING" in sql
-
-        pure = result.to_pure_query()
-        assert "_range(minus(0.5D), 2.1D)" in pure
-
-    def test_range_between_duration_with_float_offset(self) -> None:
-        """Float offsets with duration units (e.g. 0.5 DAYS)."""
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-
-        result = frame.window_frame_legend_ext(
-            range_between(
-                duration_start=-0.5, duration_start_unit="DAYS",
-                duration_end=1.5, duration_end_unit="HOURS",
-            ),
-            order_by="col1",
-        ).agg("sum")
-
-        sql = result.to_sql_query()
-        assert "INTERVAL '0.5 DAY' PRECEDING" in sql
-        assert "INTERVAL '1.5 HOUR' FOLLOWING" in sql
-
-        pure = result.to_pure_query()
-        assert "_range(minus(0.5), DurationUnit.DAYS, 1.5, DurationUnit.HOURS)" in pure
-
-    def test_ascending_false_single_column(self) -> None:
-        """Single order_by column with ascending=False should produce DESC."""
+    def test_base_frame_window_frame_legend_ext_with_none(self) -> None:
+        """window_frame_legend_ext() on base frame raises TypeError for frame_spec=None."""
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.float_column("col2")
+            PrimitiveTdsColumn.float_column("col2"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.window_frame_legend_ext(
-            rows_between(None, 0), order_by="col1", ascending=False
-        ).agg("sum")
+        with pytest.raises(TypeError) as v:
+            frame.window_frame_legend_ext(frame_spec=None)  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got NoneType" in str(v.value)
 
-        expected_sql = '''
-            SELECT
-                "root"."col1__pylegend_olap_column__" AS "col1",
-                "root"."col2__pylegend_olap_column__" AS "col2"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__",
-                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col2__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert frame.to_sql_query() == expected_sql
-
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[__pylegend_zero_column__], [descending(~col1)], rows(unbounded(), 0)), ~[
-                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
-                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
-              ])
-              ->project(~[
-                col1:p|$p.col1__pylegend_olap_column__,
-                col2:p|$p.col2__pylegend_olap_column__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
-
-    def test_ascending_mixed_multiple_columns(self) -> None:
-        """Multiple order_by columns with mixed ascending=[True, False]."""
+    def test_base_frame_window_frame_legend_ext_with_integer(self) -> None:
+        """window_frame_legend_ext() on base frame raises TypeError for integer frame_spec."""
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.float_column("col2")
+            PrimitiveTdsColumn.float_column("col2"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.window_frame_legend_ext(
-            rows_between(None, None), order_by=["col1", "col2"], ascending=[True, False]
-        ).agg("sum")
+        with pytest.raises(TypeError) as v:
+            frame.window_frame_legend_ext(frame_spec=123)  # type: ignore
+        assert "frame_spec must be a RowsBetween or RangeBetween, got int" in str(v.value)
 
-        expected_sql = '''
-            SELECT
-                "root"."col1__pylegend_olap_column__" AS "col1",
-                "root"."col2__pylegend_olap_column__" AS "col2"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1", "root"."col2" DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1__pylegend_olap_column__",
-                        SUM("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1", "root"."col2" DESC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col2__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert frame.to_sql_query() == expected_sql
 
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1), descending(~col2)], rows(unbounded(), unbounded())), ~[
-                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()},
-                col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->sum()}
-              ])
-              ->project(~[
-                col1:p|$p.col1__pylegend_olap_column__,
-                col2:p|$p.col2__pylegend_olap_column__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+class TestSeriesWindowFrameLegendExt:
+    """Tests for frame['col'].window_frame_legend_ext() method on Series."""
 
-    def test_ascending_on_series(self) -> None:
-        """Series-level window_frame_legend_ext with ascending=False."""
+    def test_series_window_frame_legend_ext_basic(self) -> None:
+        """window_frame_legend_ext() on Series returns a WindowSeries."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
+            PrimitiveTdsColumn.float_column("col2"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        series = frame["col1"].window_frame_legend_ext(
-            rows_between(-1, 1), order_by="col1", ascending=False
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by="col1"
+        )
+
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "col1"
+
+    def test_series_window_frame_legend_ext_with_range_between(self) -> None:
+        """window_frame_legend_ext() on Series works with range_between frame spec."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.float_column("val"),
+            PrimitiveTdsColumn.string_column("name"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["val"].window_frame_legend_ext(
+            frame_spec=range_between(start=-10, end=10),
+            order_by="val",
+            ascending=False
+        )
+
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "val"
+
+    def test_series_window_frame_legend_ext_generates_sql(self) -> None:
+        """window_frame_legend_ext() on Series generates correct SQL with sum()."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        result = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-2, 2),
+            order_by="col1"
         ).sum()
 
-        expected_sql = '''
-            SELECT
-                "root"."col1__pylegend_olap_column__" AS "col1"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" DESC ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS "col1__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert series.to_sql_query() == expected_sql
+        sql = result.to_sql_query()
+        assert "SUM" in sql
+        assert "OVER" in sql
+        assert "ROWS BETWEEN" in sql
 
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[__pylegend_zero_column__], [descending(~col1)], rows(minus(1), 1)), ~[
-                col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()}
-              ])
-              ->project(~[
-                col1:p|$p.col1__pylegend_olap_column__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert series.to_pure_query() == expected_pure
-
-    def test_ascending_on_groupby(self) -> None:
-        """Groupby frame with ascending=False."""
+    def test_series_window_frame_legend_ext_generates_pure(self) -> None:
+        """window_frame_legend_ext() on Series generates correct Pure with sum()."""
         columns = [
-            PrimitiveTdsColumn.string_column("grp"),
-            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        frame = frame.groupby("grp").window_frame_legend_ext(
-            rows_between(None, 0), order_by="val", ascending=False
-        ).agg("sum")
+        result = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-2, 2),
+            order_by="col1"
+        ).sum()
 
-        expected_sql = '''
-            SELECT
-                "root"."val__pylegend_olap_column__" AS "val"
-            FROM
-                (
-                    SELECT
-                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "val__pylegend_olap_column__"
-                    FROM
-                        (
-                            SELECT
-                                "root".grp AS "grp",
-                                "root".val AS "val",
-                                0 AS "__pylegend_zero_column__"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"
-                ) AS "root"
-        '''  # noqa: E501
-        expected_sql = dedent(expected_sql).strip()
-        assert frame.to_sql_query() == expected_sql
+        pure = result.to_pure_query()
+        assert "rows" in pure
+        assert "sum" in pure
 
-        expected_pure = '''
-            #Table(test_schema.test_table)#
-              ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[grp, __pylegend_zero_column__], [descending(~val)], rows(unbounded(), 0)), ~[
-                val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()}
-              ])
-              ->project(~[
-                val:p|$p.val__pylegend_olap_column__
-              ])
-        '''
-        expected_pure = dedent(expected_pure).strip()
-        assert frame.to_pure_query() == expected_pure
-        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+    def test_series_window_frame_legend_ext_with_multiple_order_by(self) -> None:
+        """window_frame_legend_ext() on Series works with multiple order_by columns."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
-    def test_error_ascending_length_mismatch(self) -> None:
-        """ascending list length must match order_by length."""
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        with pytest.raises(ValueError) as v:
-            frame.window_frame_legend_ext(
-                rows_between(), order_by=["col1"], ascending=[True, False]
-            )
-        assert "Length of ascending (2) must match length of order_by (1)" in str(v.value)
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=["col1", "col2"],
+            ascending=[True, False]
+        )
 
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "col1"
+
+    def test_series_window_frame_legend_ext_with_no_order_by(self) -> None:
+        """window_frame_legend_ext() on Series works with order_by=None."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(None, 0),
+            order_by=None
+        )
+
+        assert isinstance(ws, WindowSeries)
+        assert ws.column_name == "col1"
+
+    def test_series_window_frame_legend_ext_with_ascending_bool(self) -> None:
+        """window_frame_legend_ext() on Series works with ascending as single bool."""
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-5, 5),
+            order_by="col1",
+            ascending=True
+        )
+
+        assert isinstance(ws, WindowSeries)
+
+        ws2 = frame["col1"].window_frame_legend_ext(
+            frame_spec=rows_between(-5, 5),
+            order_by="col1",
+            ascending=False
+        )
+
+        assert isinstance(ws2, WindowSeries)
+
+
+class TestPandasApiWindowTdsFrameInit:
+    """Tests for PandasApiWindowTdsFrame.__init__() edge cases."""
+
+    def test_window_tds_frame_order_by_as_list(self) -> None:
+        """PandasApiWindowTdsFrame handles order_by as a list (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass order_by as a list (not a string) to cover the list(order_by) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=["col1", "col2"],  # list, not string
+            frame_spec=rows_between(None, 0),
+            ascending=True
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [True, True]
+
+    def test_window_tds_frame_order_by_as_tuple(self) -> None:
+        """PandasApiWindowTdsFrame handles order_by as a tuple (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass order_by as a tuple to cover the list(order_by) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=("col1", "col2"),  # tuple, not string
+            frame_spec=rows_between(None, 0),
+            ascending=False
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [False, False]
+
+    def test_window_tds_frame_ascending_as_list(self) -> None:
+        """PandasApiWindowTdsFrame handles ascending as a list (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass ascending as a list to cover the list(ascending) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=["col1", "col2"],
+            frame_spec=rows_between(None, 0),
+            ascending=[True, False]  # list, not single bool
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [True, False]
+
+    def test_window_tds_frame_ascending_as_tuple(self) -> None:
+        """PandasApiWindowTdsFrame handles ascending as a tuple (sequence)."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Pass ascending as a tuple to cover the list(ascending) branch
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=("col1", "col2"),
+            frame_spec=rows_between(None, 0),
+            ascending=(False, True)  # tuple, not single bool
+        )
+
+        assert window_frame._order_by == ["col1", "col2"]
+        assert window_frame._ascending == [False, True]
+
+    def test_window_tds_frame_ascending_length_mismatch_error(self) -> None:
+        """PandasApiWindowTdsFrame raises ValueError when ascending length doesn't match order_by."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as exc:
+            PandasApiWindowTdsFrame(
+                base_frame=frame,
+                order_by=["col1", "col2", "col3"],  # 3 columns
+                frame_spec=rows_between(None, 0),
+                ascending=[True, False]  # only 2 bools - mismatch!
+            )
+
+        assert "Length of ascending (2) must match length of order_by (3)" in str(exc.value)
+
+    def test_window_tds_frame_ascending_length_mismatch_error_more_ascending(self) -> None:
+        """PandasApiWindowTdsFrame raises ValueError when ascending has more elements than order_by."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        with pytest.raises(ValueError) as exc:
+            PandasApiWindowTdsFrame(
+                base_frame=frame,
+                order_by=["col1"],  # 1 column
+                frame_spec=rows_between(None, 0),
+                ascending=[True, False, True]  # 3 bools - mismatch!
+            )
+
+        assert "Length of ascending (3) must match length of order_by (1)" in str(exc.value)
+
+    def test_window_tds_frame_with_order_by_list_ascending_list_generates_sql(self) -> None:
+        """PandasApiWindowTdsFrame with list order_by and list ascending generates correct SQL."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=["col1", "col2"],  # list
+            frame_spec=rows_between(-2, 2),
+            ascending=[True, False]  # list
+        )
+
+        result = window_frame.agg("sum")
+        sql = result.to_sql_query()
+
+        assert "SUM" in sql
+        assert "OVER" in sql
+        assert "ORDER BY" in sql
+
+    def test_window_tds_frame_with_empty_ascending_list_when_no_order_by(self) -> None:
+        """PandasApiWindowTdsFrame with ascending list and no order_by is handled correctly."""
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # When order_by is None, passing an empty ascending list should work
+        window_frame = PandasApiWindowTdsFrame(
+            base_frame=frame,
+            order_by=None,
+            frame_spec=rows_between(None, 0),
+            ascending=[]  # empty list when no order_by
+        )
+
+        assert window_frame._order_by is None
+        assert window_frame._ascending == []

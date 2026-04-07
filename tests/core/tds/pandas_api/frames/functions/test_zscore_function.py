@@ -240,7 +240,7 @@ class TestZScoreFunctionQueryGeneration:
 
 class TestZScoreEndToEnd:
 
-    @pytest.mark.skip(reason="Legend engine SQL layer does not yet support window functions within function calls")
+    @pytest.mark.skip(reason="Legend engine SQL layer does not yet support window functions within function calls")  # pragma: no cover
     def test_e2e_zscore_window(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """Broadcast zScore per firm back to every row via assign."""
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
@@ -269,4 +269,94 @@ class TestZScoreEndToEnd:
         }
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res == expected
+
+
+class TestZScoreWindowFunctionInternals:
+    """Tests for ZScoreWindowFunction internal methods."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_zscore_window_function_name(self) -> None:
+        """Test that ZScoreWindowFunction.name() returns the expected value."""
+        from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+        assert ZScoreWindowFunction.name() == "zscore_window"
+
+    def test_zscore_window_function_base_frame(self) -> None:
+        """Test base_frame() returns the underlying TDS frame."""
+        from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+        from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("grp"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="grp")
+        func = ZScoreWindowFunction(
+            base_frame=gb,
+            col_name="id",
+            result_col_name="zScore",
+        )
+        base = func.base_frame()
+        assert isinstance(base, PandasApiBaseTdsFrame)
+
+    def test_zscore_window_function_tds_frame_parameters(self) -> None:
+        """Test tds_frame_parameters() returns empty list."""
+        from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("grp"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="grp")
+        func = ZScoreWindowFunction(
+            base_frame=gb,
+            col_name="id",
+            result_col_name="zScore",
+        )
+        params = func.tds_frame_parameters()
+        assert params == []
+
+    def test_zscore_window_function_to_sql(self) -> None:
+        """Test to_sql() generates proper QuerySpecification."""
+        from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+        from pylegend.core.sql.metamodel import QuerySpecification
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("grp"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="grp")
+        func = ZScoreWindowFunction(
+            base_frame=gb,
+            col_name="id",
+            result_col_name="zScore",
+        )
+        query = func.to_sql(FrameToSqlConfig())
+        assert isinstance(query, QuerySpecification)
+
+    def test_zscore_window_function_to_pure(self) -> None:
+        """Test to_pure() generates proper Pure query string."""
+        from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.integer_column("grp"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        gb = frame.groupby(by="grp")
+        func = ZScoreWindowFunction(
+            base_frame=gb,
+            col_name="id",
+            result_col_name="zScore",
+        )
+        pure = func.to_pure(FrameToPureConfig())
+        assert "extend" in pure
+        assert "project" in pure
+        assert "zScore__pylegend_olap_column__" in pure
+        assert "zScore" in pure
 

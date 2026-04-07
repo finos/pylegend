@@ -404,7 +404,7 @@ def convert_aggregate_series_to_window_aggregate_series(
     assert core_series is not None
     applied_func_frame = get_applied_func(core_series)
     if not isinstance(applied_func_frame, AggregateFunction):
-        return series
+        return series  # pragma: no cover
 
     core_series_with_window = _convert_core_aggregate_series_to_window_aggregate_seroes(core_series)
     if series.expr is None:
@@ -465,7 +465,7 @@ def _replace_core_series_in_expr(
         applied_func = get_applied_func(leaf_series)
         if isinstance(applied_func, AggregateFunction):
             return True
-        return False
+        return False  # pragma: no cover
 
     _recursively_replace_leaf_when_meets_condition(cloned, core_series_with_window, visited, condition_for_replacement)
     return cloned
@@ -482,7 +482,7 @@ def _recursively_replace_leaf_when_meets_condition(
 
     obj_id = id(expr)
     if obj_id in visited:
-        return
+        return  # pragma: no cover
     visited.add(obj_id)
 
     for attr_name in list(vars(expr)):

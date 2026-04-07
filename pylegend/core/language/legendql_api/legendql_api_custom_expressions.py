@@ -417,8 +417,8 @@ class LegendQLApiWindow:
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         partitions_str = (
-            "[]" if self.__partition_by is None or len(self.__partition_by) == 0
-            else "~[" + (', '.join(map(escape_column_name, self.__partition_by))) + "]"
+            "" if self.__partition_by is None or len(self.__partition_by) == 0
+            else "~[" + (', '.join(map(escape_column_name, self.__partition_by))) + "], "
         )
         sorts_str = (
             "[]" if self.__order_by is None or len(self.__order_by) == 0
@@ -427,7 +427,7 @@ class LegendQLApiWindow:
 
         frame_str = f", {self.__frame.to_pure_expression(config)}" if self.__frame else ""
 
-        return f"over({partitions_str}, {sorts_str}{frame_str})"
+        return f"over({partitions_str}{sorts_str}{frame_str})"
 
 
 class LegendQLApiPartialFrame:

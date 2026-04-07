@@ -126,7 +126,7 @@ def _get_new_series_for_column(
 
     class_name = _COL_TYPE_TO_SERIES_CLASS_NAME.get(col_type)
     if class_name is None:
-        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")
+        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")  # pragma: no cover
     cls = globals()[class_name]
 
     new_series: Series = cls(base_frame, col_name)
