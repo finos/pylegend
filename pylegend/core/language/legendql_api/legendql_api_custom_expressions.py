@@ -93,7 +93,7 @@ class LegendQLApiPrimitive(PyLegendCustomPrimitive, metaclass=ABCMeta):
     def descending(self) -> "LegendQLApiSortInfo":
         val = self.value()
         if isinstance(val, PyLegendColumnExpression):
-            return LegendQLApiSortInfo(column_expr=val, direction=LegendQLApiSortDirection.DESC)  # type: ignore[arg-type]  # noqa: E501
+            return LegendQLApiSortInfo(column_expr=val, direction=LegendQLApiSortDirection.DESC)
         else:
             raise RuntimeError("'descending' function can only be called on column expressions. "
                                "E.g. - r.col1.descending() / r['col1'].descending()\n."

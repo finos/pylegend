@@ -441,7 +441,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             ),
             order_by=(
                 None if order_by is None else
-                infer_sorts_from_frame(self, order_by, "'window' function order_by")
+                infer_sorts_from_frame(self, order_by, "'window' function order_by")  # type: ignore[arg-type]
             ),
             frame=frame
         )
