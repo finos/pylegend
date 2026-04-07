@@ -61,7 +61,7 @@ from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function,
-    get_pure_query_from_expr,
+    get_pure_query_from_expr, get_groupby_series_from_col_type,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -85,36 +85,11 @@ __all__: PyLegendSequence[str] = [
     "FloatGroupbySeries",
     "DateGroupbySeries",
     "DateTimeGroupbySeries",
+    "DecimalGroupbySeries",
     "StrictDateGroupbySeries",
 ]
 
 R = PyLegendTypeVar('R')
-
-
-_COL_TYPE_TO_GROUPBY_SERIES_CLASS_NAME: PyLegendDict[str, str] = {
-    "Boolean": "BooleanGroupbySeries",
-    "String": "StringGroupbySeries",
-    "Varchar": "StringGroupbySeries",
-    "Number": "NumberGroupbySeries",
-    "Integer": "IntegerGroupbySeries",
-    "TinyInt": "IntegerGroupbySeries",
-    "UTinyInt": "IntegerGroupbySeries",
-    "SmallInt": "IntegerGroupbySeries",
-    "USmallInt": "IntegerGroupbySeries",
-    "Int": "IntegerGroupbySeries",
-    "UInt": "IntegerGroupbySeries",
-    "BigInt": "IntegerGroupbySeries",
-    "UBigInt": "IntegerGroupbySeries",
-    "Float": "FloatGroupbySeries",
-    "Float4": "FloatGroupbySeries",
-    "Double": "FloatGroupbySeries",
-    "Decimal": "DecimalGroupbySeries",
-    "Numeric": "DecimalGroupbySeries",
-    "Date": "DateGroupbySeries",
-    "DateTime": "DateTimeGroupbySeries",
-    "Timestamp": "DateTimeGroupbySeries",
-    "StrictDate": "StrictDateGroupbySeries",
-}
 
 
 def _get_new_groupby_series_for_column(
@@ -123,14 +98,9 @@ def _get_new_groupby_series_for_column(
         column: TdsColumn,
 ) -> "GroupbySeries":
     col_type = column.get_type()
-    col_name = column.get_name()
 
-    class_name = _COL_TYPE_TO_GROUPBY_SERIES_CLASS_NAME.get(col_type)
-    if class_name is None:
-        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")  # pragma: no cover
-    cls = globals()[class_name]
-
-    return cls(base_groupby_frame, aggregated_frame)  # type: ignore[no-any-return]
+    groupby_series_cls = get_groupby_series_from_col_type(col_type)
+    return groupby_series_cls(base_groupby_frame, aggregated_frame)
 
 
 class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):

@@ -21,6 +21,8 @@ from typing import IO, TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -70,7 +72,7 @@ from pylegend.extensions.tds.result_handler import (
 )
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween, RangeBetween
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -129,37 +131,9 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             for col in self.__columns:
                 if col.get_name() == key:
                     col_type = col.get_type()
-                    if col_type == "Boolean":
-                        from pylegend.core.language.pandas_api.pandas_api_series import \
-                            BooleanSeries  # pragma: no cover
-                        return BooleanSeries(self, key)  # pragma: no cover (Boolean column not supported in PURE)
-                    elif col_type in ("String", "Varchar"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
-                        return StringSeries(self, key)
-                    elif col_type == "Number":  # pragma: no cover
-                        from pylegend.core.language.pandas_api.pandas_api_series import NumberSeries
-                        return NumberSeries(self, key)
-                    elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
-                                      "Int", "UInt", "BigInt", "UBigInt"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
-                        return IntegerSeries(self, key)
-                    elif col_type in ("Float", "Float4", "Double"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import FloatSeries
-                        return FloatSeries(self, key)
-                    elif col_type in ("Decimal", "Numeric"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import DecimalSeries
-                        return DecimalSeries(self, key)
-                    elif col_type == "Date":
-                        from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
-                        return DateSeries(self, key)
-                    elif col_type in ("DateTime", "Timestamp"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
-                        return DateTimeSeries(self, key)
-                    elif col_type == "StrictDate":
-                        from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
-                        return StrictDateSeries(self, key)
-                    else:
-                        raise ValueError(f"Unsupported column type '{col_type}' for column '{key}'")  # pragma: no cover
+                    series_cls = get_series_from_col_type(col_type)
+                    return series_cls(self, key)
+
             raise KeyError(f"['{key}'] not in index")
 
         elif isinstance(key, list):
@@ -647,6 +621,31 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             order_by=order_by,
             frame_spec=frame_spec,
             ascending=ascending,
+        )
+
+    def rows_between(self, start: PyLegendOptional[int] = None, end: PyLegendOptional[int] = None) -> "RowsBetween":
+        """Create a ROWS BETWEEN frame specification."""
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+        return RowsBetween(start, end)
+
+    def range_between(
+            self,
+            start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            *,
+            duration_start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_start_unit: PyLegendOptional[str] = None,
+            duration_end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_end_unit: PyLegendOptional[str] = None,
+    ) -> "RangeBetween":
+        """Create a RANGE BETWEEN frame specification."""
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RangeBetween
+        return RangeBetween(
+            start, end,
+            duration_start=duration_start,
+            duration_start_unit=duration_start_unit,
+            duration_end=duration_end,
+            duration_end_unit=duration_end_unit,
         )
 
     def merge(

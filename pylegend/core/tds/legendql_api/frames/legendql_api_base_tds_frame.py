@@ -335,8 +335,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             end: PyLegendUnion[str, int]) -> LegendQLApiWindowFrame:
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.ROWS,
-            _infer_window_frame_bound(start, is_start_bound=True),
-            _infer_window_frame_bound(end)
+            _infer_window_frame_bound(start, is_start_bound=True),  # type: ignore[arg-type]
+            _infer_window_frame_bound(end)  # type: ignore[arg-type]
         )
 
     def range(
@@ -378,8 +378,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
             return LegendQLApiWindowFrame(
                 LegendQLApiWindowFrameMode.RANGE,
-                _infer_window_frame_bound(number_start, is_start_bound=True),
-                _infer_window_frame_bound(number_end),
+                _infer_window_frame_bound(number_start, is_start_bound=True),  # type: ignore[arg-type]
+                _infer_window_frame_bound(number_end),  # type: ignore[arg-type]
             )
 
         if duration_start is None or duration_end is None:
@@ -398,8 +398,8 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.RANGE,
-            _infer_window_frame_bound(duration_start, is_start_bound=True, duration_unit=duration_start_unit),
-            _infer_window_frame_bound(duration_end, duration_unit=duration_end_unit)
+            _infer_window_frame_bound(duration_start, is_start_bound=True, duration_unit=duration_start_unit),  # type: ignore[arg-type]  # noqa: E501
+            _infer_window_frame_bound(duration_end, duration_unit=duration_end_unit)  # type: ignore[arg-type]
         )
 
     def window(
@@ -441,7 +441,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
             ),
             order_by=(
                 None if order_by is None else
-                infer_sorts_from_frame(self, order_by, "'window' function order_by")
+                infer_sorts_from_frame(self, order_by, "'window' function order_by")  # type: ignore[arg-type]
             ),
             frame=frame
         )

@@ -25,6 +25,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_groupby_series_from_col_type
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 
@@ -203,36 +204,8 @@ class PandasApiGroupbyTdsFrame:
         if selected_columns is not None and isinstance(item, str):
             column: TdsColumn = selected_columns[0]
             col_type = column.get_type()
-            if col_type == "Boolean":  # pragma: no cover (Boolean column not supported in PURE)
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import BooleanGroupbySeries
-                return BooleanGroupbySeries(new_frame)
-            elif col_type in ("String", "Varchar"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import StringGroupbySeries
-                return StringGroupbySeries(new_frame)
-            elif col_type == "Number":
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import NumberGroupbySeries
-                return NumberGroupbySeries(new_frame)
-            elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
-                              "Int", "UInt", "BigInt", "UBigInt"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import IntegerGroupbySeries
-                return IntegerGroupbySeries(new_frame)
-            elif col_type in ("Float", "Float4", "Double"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries
-                return FloatGroupbySeries(new_frame)
-            elif col_type in ("Decimal", "Numeric"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DecimalGroupbySeries  # noqa: E501  # pragma: no cover
-                return DecimalGroupbySeries(new_frame)  # pragma: no cover
-            elif col_type == "Date":
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateGroupbySeries
-                return DateGroupbySeries(new_frame)
-            elif col_type in ("DateTime", "Timestamp"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateTimeGroupbySeries
-                return DateTimeGroupbySeries(new_frame)
-            elif col_type == "StrictDate":
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import StrictDateGroupbySeries
-                return StrictDateGroupbySeries(new_frame)
-            else:
-                raise ValueError(f"Unsupported column type '{col_type}' for column '{column.get_name()}'")  # pragma: no cover
+            groupby_series_cls = get_groupby_series_from_col_type(col_type)
+            return groupby_series_cls(new_frame)
 
         return new_frame
 

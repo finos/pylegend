@@ -193,27 +193,3 @@ class RangeBetween(FrameSpec):
 
     def build_end_bound(self) -> PandasApiFrameBound:
         return self._build_frame_bound(self._end, is_start=False, duration_unit=self._end_duration_unit)
-
-
-def rows_between(start: PyLegendOptional[int] = None, end: PyLegendOptional[int] = None) -> RowsBetween:
-    """Create a ROWS BETWEEN frame specification."""
-    return RowsBetween(start, end)
-
-
-def range_between(
-        start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
-        end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
-        *,
-        duration_start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
-        duration_start_unit: PyLegendOptional[str] = None,
-        duration_end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
-        duration_end_unit: PyLegendOptional[str] = None,
-) -> RangeBetween:
-    """Create a RANGE BETWEEN frame specification."""
-    return RangeBetween(
-        start, end,
-        duration_start=duration_start,
-        duration_start_unit=duration_start_unit,
-        duration_end=duration_end,
-        duration_end_unit=duration_end_unit,
-    )
