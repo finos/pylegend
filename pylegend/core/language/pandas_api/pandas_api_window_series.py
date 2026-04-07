@@ -19,6 +19,8 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type, \
+    get_groupby_series_from_col_type
 from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
 if TYPE_CHECKING:
@@ -91,7 +93,7 @@ class WindowSeries:
         col_type = result_columns[0].get_type()
 
         if isinstance(base, PandasApiGroupbyTdsFrame):
-            gb_series_cls = _resolve_groupby_series_class(col_type)
+            gb_series_cls = get_groupby_series_from_col_type(col_type)
             # Use __getitem__ to get a groupby frame with the column selected
             new_gb_frame_or_series = base[column]
             if isinstance(new_gb_frame_or_series, PandasApiGroupbyTdsFrame):
@@ -101,7 +103,7 @@ class WindowSeries:
                 new_gb_frame = new_gb_frame_or_series._base_groupby_frame
             return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore
         else:
-            series_cls = _resolve_series_class(col_type)
+            series_cls = get_series_from_col_type(col_type)
             new_series = series_cls(base_frame_unwrapped, column)
             new_series._filtered_frame = applied_function_frame
             return new_series  # type: ignore
@@ -177,42 +179,3 @@ class WindowSeries:
             raise NotImplementedError(
                 f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
             )
-
-
-def _resolve_series_class(col_type: str) -> type:
-    from pylegend.core.language.pandas_api.pandas_api_series import (
-        Series, IntegerSeries, FloatSeries, NumberSeries, DecimalSeries,
-        StringSeries, BooleanSeries, DateSeries, DateTimeSeries, StrictDateSeries,
-    )
-    _map = {
-        "Integer": IntegerSeries,
-        "Float": FloatSeries,
-        "Number": NumberSeries,
-        "Decimal": DecimalSeries,
-        "String": StringSeries,
-        "Boolean": BooleanSeries,
-        "Date": DateSeries,
-        "DateTime": DateTimeSeries,
-        "StrictDate": StrictDateSeries,
-    }
-    return _map.get(col_type, Series)
-
-
-def _resolve_groupby_series_class(col_type: str) -> type:
-    from pylegend.core.language.pandas_api.pandas_api_groupby_series import (
-        GroupbySeries, IntegerGroupbySeries, FloatGroupbySeries, NumberGroupbySeries,
-        DecimalGroupbySeries, StringGroupbySeries, BooleanGroupbySeries,
-        DateGroupbySeries, DateTimeGroupbySeries, StrictDateGroupbySeries,
-    )
-    _map = {
-        "Integer": IntegerGroupbySeries,
-        "Float": FloatGroupbySeries,
-        "Number": NumberGroupbySeries,
-        "Decimal": DecimalGroupbySeries,
-        "String": StringGroupbySeries,
-        "Boolean": BooleanGroupbySeries,
-        "Date": DateGroupbySeries,
-        "DateTime": DateTimeGroupbySeries,
-        "StrictDate": StrictDateGroupbySeries,
-    }
-    return _map.get(col_type, GroupbySeries)

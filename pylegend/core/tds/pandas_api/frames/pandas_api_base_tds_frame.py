@@ -21,6 +21,8 @@ from typing import IO, TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -129,37 +131,9 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             for col in self.__columns:
                 if col.get_name() == key:
                     col_type = col.get_type()
-                    if col_type == "Boolean":
-                        from pylegend.core.language.pandas_api.pandas_api_series import \
-                            BooleanSeries  # pragma: no cover
-                        return BooleanSeries(self, key)  # pragma: no cover (Boolean column not supported in PURE)
-                    elif col_type in ("String", "Varchar"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
-                        return StringSeries(self, key)
-                    elif col_type == "Number":  # pragma: no cover
-                        from pylegend.core.language.pandas_api.pandas_api_series import NumberSeries
-                        return NumberSeries(self, key)
-                    elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
-                                      "Int", "UInt", "BigInt", "UBigInt"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
-                        return IntegerSeries(self, key)
-                    elif col_type in ("Float", "Float4", "Double"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import FloatSeries
-                        return FloatSeries(self, key)
-                    elif col_type in ("Decimal", "Numeric"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import DecimalSeries
-                        return DecimalSeries(self, key)
-                    elif col_type == "Date":
-                        from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
-                        return DateSeries(self, key)
-                    elif col_type in ("DateTime", "Timestamp"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
-                        return DateTimeSeries(self, key)
-                    elif col_type == "StrictDate":
-                        from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
-                        return StrictDateSeries(self, key)
-                    else:
-                        raise ValueError(f"Unsupported column type '{col_type}' for column '{key}'")  # pragma: no cover
+                    series_cls = get_series_from_col_type(col_type)
+                    return series_cls(self, key)
+
             raise KeyError(f"['{key}'] not in index")
 
         elif isinstance(key, list):

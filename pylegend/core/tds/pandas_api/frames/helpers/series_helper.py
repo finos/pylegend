@@ -58,6 +58,108 @@ T = TypeVar("T")
 F = TypeVar("F", bound=PyLegendCallable[..., PyLegendAny])  # type: ignore[explicit-any]
 
 
+def get_series_from_col_type(col_type: str) -> type:
+    from pylegend.core.language.pandas_api.pandas_api_series import (
+        IntegerSeries, FloatSeries, NumberSeries,
+        StringSeries, BooleanSeries, DateSeries, DateTimeSeries,
+        StrictDateSeries, DecimalSeries
+    )
+
+    _map = {
+        # Boolean
+        "Boolean": BooleanSeries,
+
+        # String
+        "String": StringSeries,
+        "Varchar": StringSeries,
+
+        # Number
+        "Number": NumberSeries,
+
+        # Integer
+        "Integer": IntegerSeries,
+        "TinyInt": IntegerSeries,
+        "UTinyInt": IntegerSeries,
+        "SmallInt": IntegerSeries,
+        "USmallInt": IntegerSeries,
+        "Int": IntegerSeries,
+        "UInt": IntegerSeries,
+        "BigInt": IntegerSeries,
+        "UBigInt": IntegerSeries,
+
+        # Float
+        "Float": FloatSeries,
+        "Float4": FloatSeries,
+        "Double": FloatSeries,
+
+        # Decimal
+        "Decimal": DecimalSeries,
+        "Numeric": DecimalSeries,
+
+        # Dates and Times
+        "Date": DateSeries,
+        "DateTime": DateTimeSeries,
+        "Timestamp": DateTimeSeries,
+        "StrictDate": StrictDateSeries,
+    }
+
+    if col_type not in _map:
+        raise ValueError(f"Unsupported column type '{col_type}'")  # pragma: no cover
+
+    return _map[col_type]
+
+
+def get_groupby_series_from_col_type(col_type: str) -> type:
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import (
+        BooleanGroupbySeries, StringGroupbySeries, NumberGroupbySeries,
+        IntegerGroupbySeries, FloatGroupbySeries, DecimalGroupbySeries,
+        DateGroupbySeries, DateTimeGroupbySeries, StrictDateGroupbySeries
+    )
+
+    _map = {
+        # Boolean
+        "Boolean": BooleanGroupbySeries,
+
+        # String
+        "String": StringGroupbySeries,
+        "Varchar": StringGroupbySeries,
+
+        # Number
+        "Number": NumberGroupbySeries,
+
+        # Integer
+        "Integer": IntegerGroupbySeries,
+        "TinyInt": IntegerGroupbySeries,
+        "UTinyInt": IntegerGroupbySeries,
+        "SmallInt": IntegerGroupbySeries,
+        "USmallInt": IntegerGroupbySeries,
+        "Int": IntegerGroupbySeries,
+        "UInt": IntegerGroupbySeries,
+        "BigInt": IntegerGroupbySeries,
+        "UBigInt": IntegerGroupbySeries,
+
+        # Float
+        "Float": FloatGroupbySeries,
+        "Float4": FloatGroupbySeries,
+        "Double": FloatGroupbySeries,
+
+        # Decimal
+        "Decimal": DecimalGroupbySeries,
+        "Numeric": DecimalGroupbySeries,
+
+        # Dates and Times
+        "Date": DateGroupbySeries,
+        "DateTime": DateTimeGroupbySeries,
+        "Timestamp": DateTimeGroupbySeries,
+        "StrictDate": StrictDateGroupbySeries,
+    }
+
+    if col_type not in _map:
+        raise ValueError(f"Unsupported column type '{col_type}'")  # pragma: no cover
+
+    return _map[col_type]
+
+
 def grammar_method(func: F) -> F:  # type: ignore[explicit-any]
     setattr(func, "_is_grammar_method", True)
     return func
