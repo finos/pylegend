@@ -31,7 +31,6 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTd
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
-from pylegend.core.language.pandas_api.pandas_api_frame_spec import rows_between, range_between
 from tests.test_helpers import generate_pure_query_and_compile
 from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
@@ -1968,7 +1967,7 @@ class TestGroupbySeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         ws = frame.groupby("grp")["val"].window_frame_legend_ext(
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             order_by="val"
         )
 
@@ -1986,7 +1985,7 @@ class TestGroupbySeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         ws = frame.groupby("grp")["val"].window_frame_legend_ext(
-            frame_spec=range_between(start=-10, end=10),
+            frame_spec=frame.range_between(start=-10, end=10),
             order_by="val",
             ascending=False
         )
@@ -2002,7 +2001,7 @@ class TestGroupbySeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame.groupby("grp")["val"].window_frame_legend_ext(
-            frame_spec=rows_between(-2, 2),
+            frame_spec=frame.rows_between(-2, 2),
             order_by="val"
         ).sum()
 
@@ -2430,7 +2429,7 @@ class TestWindowFrameLegendExtOnBaseFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         window_frame = frame.window_frame_legend_ext(
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             order_by="col1"
         )
 
@@ -2447,7 +2446,7 @@ class TestWindowFrameLegendExtOnBaseFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         window_frame = frame.window_frame_legend_ext(
-            frame_spec=range_between(start=-5, end=5),
+            frame_spec=frame.range_between(start=-5, end=5),
             order_by="col1",
             ascending=False
         )
@@ -2463,7 +2462,7 @@ class TestWindowFrameLegendExtOnBaseFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame.window_frame_legend_ext(
-            frame_spec=rows_between(-3, 3),
+            frame_spec=frame.rows_between(-3, 3),
             order_by="col1"
         ).agg("sum")
 
@@ -2481,7 +2480,7 @@ class TestWindowFrameLegendExtOnBaseFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame.window_frame_legend_ext(
-            frame_spec=rows_between(-2, 2),
+            frame_spec=frame.rows_between(-2, 2),
             order_by="col1"
         ).agg("sum")
 
@@ -2501,7 +2500,7 @@ class TestWindowFrameLegendExtOnBaseFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         window_frame = frame.window_frame_legend_ext(
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             order_by=["col1", "col2"],
             ascending=[True, False]
         )
@@ -2519,7 +2518,7 @@ class TestWindowFrameLegendExtOnBaseFrame:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         window_frame = frame.window_frame_legend_ext(
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             order_by=None
         )
 
@@ -2580,7 +2579,7 @@ class TestSeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         ws = frame["col1"].window_frame_legend_ext(
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             order_by="col1"
         )
 
@@ -2598,7 +2597,7 @@ class TestSeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         ws = frame["val"].window_frame_legend_ext(
-            frame_spec=range_between(start=-10, end=10),
+            frame_spec=frame.range_between(start=-10, end=10),
             order_by="val",
             ascending=False
         )
@@ -2615,7 +2614,7 @@ class TestSeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame["col1"].window_frame_legend_ext(
-            frame_spec=rows_between(-2, 2),
+            frame_spec=frame.rows_between(-2, 2),
             order_by="col1"
         ).sum()
 
@@ -2633,7 +2632,7 @@ class TestSeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         result = frame["col1"].window_frame_legend_ext(
-            frame_spec=rows_between(-2, 2),
+            frame_spec=frame.rows_between(-2, 2),
             order_by="col1"
         ).sum()
 
@@ -2653,7 +2652,7 @@ class TestSeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         ws = frame["col1"].window_frame_legend_ext(
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             order_by=["col1", "col2"],
             ascending=[True, False]
         )
@@ -2672,7 +2671,7 @@ class TestSeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         ws = frame["col1"].window_frame_legend_ext(
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             order_by=None
         )
 
@@ -2689,7 +2688,7 @@ class TestSeriesWindowFrameLegendExt:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         ws = frame["col1"].window_frame_legend_ext(
-            frame_spec=rows_between(-5, 5),
+            frame_spec=frame.rows_between(-5, 5),
             order_by="col1",
             ascending=True
         )
@@ -2697,7 +2696,7 @@ class TestSeriesWindowFrameLegendExt:
         assert isinstance(ws, WindowSeries)
 
         ws2 = frame["col1"].window_frame_legend_ext(
-            frame_spec=rows_between(-5, 5),
+            frame_spec=frame.rows_between(-5, 5),
             order_by="col1",
             ascending=False
         )
@@ -2722,7 +2721,7 @@ class TestPandasApiWindowTdsFrameInit:
         window_frame = PandasApiWindowTdsFrame(
             base_frame=frame,
             order_by=["col1", "col2"],  # list, not string
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             ascending=True
         )
 
@@ -2743,7 +2742,7 @@ class TestPandasApiWindowTdsFrameInit:
         window_frame = PandasApiWindowTdsFrame(
             base_frame=frame,
             order_by=("col1", "col2"),  # tuple, not string
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             ascending=False
         )
 
@@ -2764,7 +2763,7 @@ class TestPandasApiWindowTdsFrameInit:
         window_frame = PandasApiWindowTdsFrame(
             base_frame=frame,
             order_by=["col1", "col2"],
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             ascending=[True, False]  # list, not single bool
         )
 
@@ -2785,7 +2784,7 @@ class TestPandasApiWindowTdsFrameInit:
         window_frame = PandasApiWindowTdsFrame(
             base_frame=frame,
             order_by=("col1", "col2"),
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             ascending=(False, True)  # tuple, not single bool
         )
 
@@ -2807,7 +2806,7 @@ class TestPandasApiWindowTdsFrameInit:
             PandasApiWindowTdsFrame(
                 base_frame=frame,
                 order_by=["col1", "col2", "col3"],  # 3 columns
-                frame_spec=rows_between(None, 0),
+                frame_spec=frame.rows_between(None, 0),
                 ascending=[True, False]  # only 2 bools - mismatch!
             )
 
@@ -2827,7 +2826,7 @@ class TestPandasApiWindowTdsFrameInit:
             PandasApiWindowTdsFrame(
                 base_frame=frame,
                 order_by=["col1"],  # 1 column
-                frame_spec=rows_between(None, 0),
+                frame_spec=frame.rows_between(None, 0),
                 ascending=[True, False, True]  # 3 bools - mismatch!
             )
 
@@ -2846,7 +2845,7 @@ class TestPandasApiWindowTdsFrameInit:
         window_frame = PandasApiWindowTdsFrame(
             base_frame=frame,
             order_by=["col1", "col2"],  # list
-            frame_spec=rows_between(-2, 2),
+            frame_spec=frame.rows_between(-2, 2),
             ascending=[True, False]  # list
         )
 
@@ -2870,7 +2869,7 @@ class TestPandasApiWindowTdsFrameInit:
         window_frame = PandasApiWindowTdsFrame(
             base_frame=frame,
             order_by=None,
-            frame_spec=rows_between(None, 0),
+            frame_spec=frame.rows_between(None, 0),
             ascending=[]  # empty list when no order_by
         )
 
