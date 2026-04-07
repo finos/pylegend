@@ -184,7 +184,7 @@ class TestCovarSampleFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         result = gb["valA"].cov(gb["valB"])  # ddof=1 is default = covar_sample
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        assigned_frame = frame.assign(newCol=lambda _: result)
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -212,7 +212,7 @@ class TestCovarSampleFunctionQueryGeneration:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
         result = gb["valA"].cov(gb["valB"])  # ddof=1 = covar_sample
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        assigned_frame = frame.assign(newCol=lambda _: result)
         assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.valA, $r.valB)}:y | $y->meta::pure::functions::math::covarSample()->cast(@Float))'
