@@ -535,6 +535,79 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "GroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution within each group.
+        """
+        applied_function_frame = self._base_groupby_frame.cume_dist_legend_ext(ascending=ascending)
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+        return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "GroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket within each group.
+        """
+        applied_function_frame = self._base_groupby_frame.ntile_legend_ext(
+            num_buckets=num_buckets, ascending=ascending,
+        )
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+        return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def max_by(
+            self,
+            by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                              "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        return self._generic_two_col_window_func(by, "max_by")
+
+    def min_by(
+            self,
+            by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                              "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        return self._generic_two_col_window_func(by, "min_by")
+
+    def _generic_two_col_window_func(
+            self,
+            other: "GroupbySeries",
+            func_type: str,
+    ) -> "FloatGroupbySeries":
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+
+        selected_a = self._base_groupby_frame.get_selected_columns()
+        assert selected_a is not None and len(selected_a) == 1, (
+            f"{func_type}() requires exactly one column selected on self"
+        )
+        col_name_a = selected_a[0].get_name()
+
+        selected_b = other._base_groupby_frame.get_selected_columns()
+        assert selected_b is not None and len(selected_b) == 1, (
+            f"{func_type}() requires exactly one column selected on other"
+        )
+        col_name_b = selected_b[0].get_name()
+
+        applied_function_frame = PandasApiAppliedFunctionTdsFrame(TwoColumnWindowFunction(
+            base_frame=self._base_groupby_frame,
+            col_name_a=col_name_a,
+            col_name_b=col_name_b,
+            result_col_name=col_name_a,
+            func_type=func_type,
+        ))
+        # Late-bind to avoid forward reference — FloatGroupbySeries is defined later in this module
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries as _Float
+        return _Float(self._base_groupby_frame, applied_function_frame)
+
 
 @add_primitive_methods
 class BooleanGroupbySeries(GroupbySeries, PyLegendBoolean, PyLegendExpressionBooleanReturn):
@@ -621,6 +694,13 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
             raise NotImplementedError(
                 f"Only ddof=0 (population) and ddof=1 (sample) are supported in cov function, but got: ddof={ddof}"
             )
+
+    def wavg(
+            self,
+            weights: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                                   "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        return self._two_col_window_func(weights, "wavg")
 
     def zscore(self) -> "FloatGroupbySeries":
         """Compute the z-score within each group: (x - mean) / stddev_pop.
