@@ -29,9 +29,11 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindowFrame,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import PwrFunc, AggFunc
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -243,7 +245,7 @@ class PandasApiWindowTdsFrame:
             )
         )
 
-    def first(self, numeric_only: bool = False) -> PandasApiBaseTdsFrame:
+    def first(self, numeric_only: bool = False) -> PandasApiTdsFrame:
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
             PandasApiPartialFrame,
             PandasApiWindowReference,
@@ -279,11 +281,11 @@ class PandasApiWindowTdsFrame:
                 w: PandasApiWindowReference,
                 r: PandasApiTdsRow,
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
-            return p.first(w, r)
+            return p.first(w, r)  # type: ignore[return-value]
 
         return self.window_func_legend_ext(pwr_func=pwr_func)
 
-    def last(self, numeric_only: bool = False) -> PandasApiBaseTdsFrame:
+    def last(self, numeric_only: bool = False) -> PandasApiTdsFrame:
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
             PandasApiPartialFrame,
             PandasApiWindowReference,
@@ -316,7 +318,6 @@ class PandasApiWindowTdsFrame:
                 w: PandasApiWindowReference,
                 r: PandasApiTdsRow,
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
-            return p.last(w, r)
+            return p.last(w, r)  # type: ignore[return-value]
 
         return self.window_func_legend_ext(pwr_func=pwr_func)
-

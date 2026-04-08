@@ -229,7 +229,10 @@ class AssignFunction(PandasApiAppliedFunction):
                         target_col_name = c[0] + temp_column_name_suffix
                         extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
                         extend_exprs.append(extend)
-                    elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction, SingleColumnWindowFunction)):
+                    elif isinstance(
+                        applied_func,
+                        (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction, SingleColumnWindowFunction)
+                    ):
                         extend_exprs.extend(
                             applied_func.build_pure_extend_strs(temp_column_name_suffix, config)
                         )

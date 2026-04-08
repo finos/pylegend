@@ -330,4 +330,3 @@ class TestCorrFunctionEndToEnd:
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Quantity"]
         assert res["rows"][0]["values"][0] == 1.0
-

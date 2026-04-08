@@ -471,7 +471,10 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
                 function_expr = c[1].to_pure_expression(config)
                 temp_name = escape_column_name(col_name + temp_column_name_suffix)
                 extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
-            elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction, SingleColumnWindowFunction)):
+            elif isinstance(
+                applied_func,
+                (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction, SingleColumnWindowFunction)
+            ):
                 assert has_window_func is False
                 has_window_func = True
                 extend_strs = applied_func.build_pure_extend_strs(temp_column_name_suffix, config)

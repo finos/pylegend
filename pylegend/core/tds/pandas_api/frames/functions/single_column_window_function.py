@@ -214,7 +214,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
         pwr_result = self.__pwr_func(partial_frame, window_ref, tds_row)
 
         # Collect (col_name, sql_expression) pairs
-        col_entries: PyLegendList[tuple] = []
+        col_entries = []
 
         if isinstance(pwr_result, PandasApiTdsRow):
             # pwr_func returned a full row — expand to all base columns
@@ -223,7 +223,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
                 col_entries.append((col.get_name(), col_primitive))
         else:
             col_name = self.__infer_column_name(pwr_result)
-            col_entries.append((col_name, pwr_result))
+            col_entries.append((col_name, pwr_result))  # type: ignore[arg-type]
 
         # 5. For each column, resolve the SQL expression (with optional agg),
         #    wrap in WindowExpression, and add with a temp alias
@@ -285,14 +285,14 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
         pwr_result = self.__pwr_func(partial_frame, window_ref, tds_row)
 
         # Collect (col_name, mapper_primitive) pairs
-        col_entries: PyLegendList[tuple] = []
+        col_entries = []
 
         if isinstance(pwr_result, PandasApiTdsRow):
             for col in self.base_frame().columns():
                 col_entries.append((col.get_name(), pwr_result[col.get_name()]))
         else:
             col_name = self.__infer_column_name(pwr_result)
-            col_entries.append((col_name, pwr_result))
+            col_entries.append((col_name, pwr_result))  # type: ignore[arg-type]
 
         # 2. Build the window expression (with zero column)
         window_with_zero = self.__base_window_frame.construct_window(include_zero_column=True)

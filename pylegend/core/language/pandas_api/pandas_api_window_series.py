@@ -20,6 +20,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import PwrFunc, AggFunc
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type, \
     get_groupby_series_from_col_type
 from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -234,12 +235,12 @@ class WindowSeries:
                 new_gb_frame = new_gb_frame_or_series
             else:
                 new_gb_frame = new_gb_frame_or_series._base_groupby_frame
-            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore
+            return gb_series_cls(new_gb_frame, applied_function_frame)
         else:
             series_cls = get_series_from_col_type(col_type)
             new_series = series_cls(base_frame_unwrapped, column)
             new_series._filtered_frame = applied_function_frame
-            return new_series  # type: ignore
+            return new_series
 
     def first(self) -> PyLegendUnion["Series", "GroupbySeries"]:
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
