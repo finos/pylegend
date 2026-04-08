@@ -123,7 +123,6 @@ class PandasApiStrictDate(PandasApiPrimitive, PyLegendStrictDate):
         PyLegendStrictDate.__init__(self, expr.value())
 
 
-
 class PandasApiPartialFrame(PyLegendPartialFrame):
     if TYPE_CHECKING:
         from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
