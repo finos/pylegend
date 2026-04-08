@@ -889,7 +889,7 @@ class TestSingleColumnWindowFunctionValidation:
 
         func = SingleColumnWindowFunction(
             base_window_frame=window_frame,
-            pwr_func=lambda a, b: a,  # type: ignore  -- only 2 params
+            pwr_func=lambda a, b: a,  # type: ignore
         )
         with pytest.raises(TypeError, match="pwr_func must accept exactly 3 positional parameters"):
             func.validate()
@@ -933,7 +933,7 @@ class TestSingleColumnWindowFunctionValidation:
         func = SingleColumnWindowFunction(
             base_window_frame=window_frame,
             pwr_func=lambda p, w, r: p.first(w, r)["col1"],
-            agg_func=lambda a, b: a,  # type: ignore  -- 2 params
+            agg_func=lambda a, b: a,  # type: ignore
         )
         with pytest.raises(TypeError, match="agg_func must accept exactly 1 positional parameter"):
             func.validate()
@@ -950,7 +950,7 @@ class TestSingleColumnWindowFunctionValidation:
 
         with pytest.raises(AttributeError):
             SingleColumnWindowFunction(
-                base_window_frame=frame,  # type: ignore  -- not a PandasApiWindowTdsFrame
+                base_window_frame=frame,  # type: ignore
                 pwr_func=lambda p, w, r: p.first(w, r)["col1"],
             )
 

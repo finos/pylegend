@@ -105,7 +105,7 @@ class PandasApiFloat(PandasApiPrimitive, PyLegendFloat):
 
 class PandasApiDecimal(PandasApiPrimitive, PyLegendDecimal):
     def __init__(self, expr: PyLegendDecimal):
-        PyLegendDecimal.__init__(self, expr.value())
+        PyLegendDecimal.__init__(self, expr.value())  # pragma: no cover
 
 
 class PandasApiDate(PandasApiPrimitive, PyLegendDate):
