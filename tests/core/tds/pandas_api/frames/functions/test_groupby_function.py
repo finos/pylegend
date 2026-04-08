@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+# flake8: noqa
+
 import json
 from textwrap import dedent
 
@@ -212,33 +215,81 @@ class TestGroupbyErrors:
             gb_series.max(min_count=5)
         assert "min_count must be -1 (default) in max function, but got: 5" in v_max.value.args[0]
 
-    def test_groupby_std_error_ddof_not_one(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+    def test_groupby_std_with_ddof(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
-        gb_series = frame.groupby("col1")["col1"]
+        gb_series = frame.groupby("col1")["col2"]
 
-        with pytest.raises(NotImplementedError) as v:
-            gb.std(ddof=0)
-        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+        # ddof=0 should use population std dev
+        res_pop = gb.std(ddof=0)
+        res_series_pop = gb_series.std(ddof=0)
+        expected_sql_pop = """\
+            SELECT
+                "root".col1 AS "col1",
+                STDDEV_POP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
+        assert res_series_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
 
-        with pytest.raises(NotImplementedError) as v:
-            gb_series.std(ddof=0)
-        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+        # ddof=1 should use sample std dev (default)
+        res_sample = gb.std(ddof=1)
+        res_series_sample = gb_series.std(ddof=1)
+        expected_sql_sample = """\
+            SELECT
+                "root".col1 AS "col1",
+                STDDEV_SAMP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
+        assert res_series_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
 
-    def test_groupby_var_error_ddof_not_one(self) -> None:
-        columns = [PrimitiveTdsColumn.integer_column("col1")]
+    def test_groupby_var_with_ddof(self) -> None:
+        columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.integer_column("col2")]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby("col1")
-        gb_series = frame.groupby("col1")["col1"]
+        gb_series = frame.groupby("col1")["col2"]
 
-        with pytest.raises(NotImplementedError) as v:
-            gb.var(ddof=2)
-        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+        # ddof=0 should use population variance
+        res_pop = gb.var(ddof=0)
+        res_series_pop = gb_series.var(ddof=0)
+        expected_sql_pop = """\
+            SELECT
+                "root".col1 AS "col1",
+                VAR_POP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
+        assert res_series_pop.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_pop)
 
-        with pytest.raises(NotImplementedError) as v:
-            gb_series.var(ddof=2)
-        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+        # ddof=1 should use sample variance (default)
+        res_sample = gb.var(ddof=1)
+        res_series_sample = gb_series.var(ddof=1)
+        expected_sql_sample = """\
+            SELECT
+                "root".col1 AS "col1",
+                VAR_SAMP("root".col2) AS "col2"
+            FROM
+                test_schema.test_table AS "root"
+            GROUP BY
+                "root".col1
+            ORDER BY
+                "root".col1"""
+        assert res_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
+        assert res_series_sample.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql_sample)
 
     def test_groupby_invalid_column_selection_from_series(self) -> None:
         columns = [
@@ -781,7 +832,7 @@ class TestGroupbyFunctionality:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->stdDevSample()->cast(@Float)}])"
         ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.var()
@@ -797,7 +848,7 @@ class TestGroupbyFunctionality:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->groupBy(~[col1], ~[col2:{r | $r.col2}:{c | $c->varianceSample()->cast(@Float)}])"
         ) == generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client)
 
         res = gb.count()
@@ -1126,3 +1177,258 @@ class TestGroupbyEndtoEnd:
             ],
         }
         assert json.loads(frame.execute_frame_to_string())["result"] == expected
+
+
+class TestGroupbyAggregateFunctionAssignment:
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_simple_groupby_aggregate_assignment(self) -> None:
+        """Assign a groupby aggregated series (sum) to a new column. Should partition by grouping column."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["val_sum"] = frame.groupby("grp", sort=False)["val"].sum()
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."grp" AS "grp",
+                "root"."val" AS "val",
+                "root"."val_sum__pylegend_olap_column__" AS "val_sum"
+            FROM
+                (
+                    SELECT
+                        "root"."grp" AS "grp",
+                        "root"."val" AS "val",
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "val_sum__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), unbounded())), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_sum:c|$c.val__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_multiple_groupby_aggregate_assignments(self) -> None:
+        """Multiple groupby aggregate assignments on different columns."""
+        columns = [
+            PrimitiveTdsColumn.string_column("dept"),
+            PrimitiveTdsColumn.integer_column("salary"),
+            PrimitiveTdsColumn.float_column("bonus"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["salary_sum"] = frame.groupby("dept", sort=False)["salary"].sum()
+        frame["bonus_mean"] = frame.groupby("dept", sort=False)["bonus"].mean()
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."dept" AS "dept",
+                "root"."salary" AS "salary",
+                "root"."bonus" AS "bonus",
+                "root"."salary_sum" AS "salary_sum",
+                "root"."bonus_mean__pylegend_olap_column__" AS "bonus_mean"
+            FROM
+                (
+                    SELECT
+                        "root"."dept" AS "dept",
+                        "root"."salary" AS "salary",
+                        "root"."bonus" AS "bonus",
+                        "root"."salary_sum" AS "salary_sum",
+                        AVG("root"."bonus") OVER (PARTITION BY "root"."dept", "root"."__pylegend_zero_column__" ORDER BY "root"."bonus" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "bonus_mean__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root"."dept" AS "dept",
+                                "root"."salary" AS "salary",
+                                "root"."bonus" AS "bonus",
+                                "root"."salary_sum__pylegend_olap_column__" AS "salary_sum",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                (
+                                    SELECT
+                                        "root"."dept" AS "dept",
+                                        "root"."salary" AS "salary",
+                                        "root"."bonus" AS "bonus",
+                                        SUM("root"."salary") OVER (PARTITION BY "root"."dept", "root"."__pylegend_zero_column__" ORDER BY "root"."salary" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "salary_sum__pylegend_olap_column__"
+                                    FROM
+                                        (
+                                            SELECT
+                                                "root".dept AS "dept",
+                                                "root".salary AS "salary",
+                                                "root".bonus AS "bonus",
+                                                0 AS "__pylegend_zero_column__"
+                                            FROM
+                                                test_schema.test_table AS "root"
+                                        ) AS "root"
+                                ) AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[dept, __pylegend_zero_column__], [ascending(~salary)], rows(unbounded(), unbounded())), ~salary__pylegend_olap_column__:{p,w,r | $r.salary}:{c | $c->sum()})
+              ->project(~[dept:c|$c.dept, salary:c|$c.salary, bonus:c|$c.bonus, salary_sum:c|$c.salary__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[dept, __pylegend_zero_column__], [ascending(~bonus)], rows(unbounded(), unbounded())), ~bonus__pylegend_olap_column__:{p,w,r | $r.bonus}:{c | $c->average()})
+              ->project(~[dept:c|$c.dept, salary:c|$c.salary, bonus:c|$c.bonus, salary_sum:c|$c.salary_sum, bonus_mean:c|$c.bonus__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_groupby_aggregate_assignment_with_arithmetic(self) -> None:
+        """Groupby aggregate combined with arithmetic."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["val_sum_plus"] = frame.groupby("grp", sort=False)["val"].sum() + 100
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."grp" AS "grp",
+                "root"."val" AS "val",
+                ("root"."val_sum_plus__pylegend_olap_column__" + 100) AS "val_sum_plus"
+            FROM
+                (
+                    SELECT
+                        "root"."grp" AS "grp",
+                        "root"."val" AS "val",
+                        SUM("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "val_sum_plus__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), unbounded())), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, val_sum_plus:c|(toOne($c.val__pylegend_olap_column__) + 100)])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_multi_column_groupby_aggregate_assignment(self) -> None:
+        """Groupby on multiple columns should partition by all grouping columns."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp1"),
+            PrimitiveTdsColumn.string_column("grp2"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["val_max"] = frame.groupby(["grp1", "grp2"], sort=False)["val"].max()
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."grp1" AS "grp1",
+                "root"."grp2" AS "grp2",
+                "root"."val" AS "val",
+                "root"."val_max__pylegend_olap_column__" AS "val_max"
+            FROM
+                (
+                    SELECT
+                        "root"."grp1" AS "grp1",
+                        "root"."grp2" AS "grp2",
+                        "root"."val" AS "val",
+                        MAX("root"."val") OVER (PARTITION BY "root"."grp1", "root"."grp2", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "val_max__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp1 AS "grp1",
+                                "root".grp2 AS "grp2",
+                                "root".val AS "val",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp1, grp2, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), unbounded())), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->max()})
+              ->project(~[grp1:c|$c.grp1, grp2:c|$c.grp2, val:c|$c.val, val_max:c|$c.val__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_overwrite_existing_column_with_groupby_aggregate(self) -> None:
+        """Overwrite an existing column with a groupby aggregated value."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["val"] = frame.groupby("grp", sort=False)["val"].max()
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."grp" AS "grp",
+                "root"."val__pylegend_olap_column__" AS "val"
+            FROM
+                (
+                    SELECT
+                        "root"."grp" AS "grp",
+                        MAX("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "val__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~val)], rows(unbounded(), unbounded())), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->max()})
+              ->project(~[grp:c|$c.grp, val:c|$c.val__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_cross_frame_groupby_aggregate_assignment(self) -> None:
+        """Assign a groupby aggregate from a different base frame (e.g. filtered frame) should raise."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.string_column("label"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        filtered = frame.filter(items=["grp", "val"])
+
+        with pytest.raises(ValueError) as v:
+            frame["filtered_sum"] = filtered.groupby("grp", sort=False)["val"].sum()
+        assert "Assignment from a different frame is not allowed" in str(v.value)
+

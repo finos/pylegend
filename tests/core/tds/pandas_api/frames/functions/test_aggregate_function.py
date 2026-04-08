@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+# flake8: noqa
+
 import json
 from textwrap import dedent
 
@@ -22,6 +25,7 @@ from pylegend._typing import (
 )
 import pytest
 
+from pylegend.core.language.pandas_api.pandas_api_series import Series
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
@@ -297,13 +301,13 @@ class TestAggregateFunction:
             """\
             #Table(test_schema.test_table)#
               ->aggregate(
-                ~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, 'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}]
+                ~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()->cast(@Float)}, 'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()->cast(@Float)}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()}, "
-            "'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()}])"
+            "->aggregate(~['var(col3)':{r | $r.col3}:{c | $c->varianceSample()->cast(@Float)}, "
+            "'std(col2)':{r | $r.col2}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
 
     def test_aggregate_repeat_column(self) -> None:
@@ -323,12 +327,12 @@ class TestAggregateFunction:
             """\
             #Table(test_schema.test_table)#
               ->aggregate(
-                ~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()}]
+                ~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()->cast(@Float)}]
               )"""
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             "#Table(test_schema.test_table)#"
-            "->aggregate(~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()}])"
+            "->aggregate(~['std(col3)':{r | $r.col3}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
 
     def test_aggregate_subquery_generation(self) -> None:
@@ -443,10 +447,10 @@ class TestAggregateFunction:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
         assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()}])"
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])"
         )
 
         res = frame.var()
@@ -459,10 +463,10 @@ class TestAggregateFunction:
         assert res.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert res_series.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
         assert generate_pure_query_and_compile(res, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])"
         )
         assert generate_pure_query_and_compile(res_series, FrameToPureConfig(pretty=False), self.legend_client) == (
-            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()}])"
+            "#Table(test_schema.test_table)#->select(~[col1])->aggregate(~[col1:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])"
         )
 
         res = frame.count()
@@ -776,9 +780,444 @@ class TestAggregateFunctionOnSeries:
             #Table(test_schema.test_table)#
               ->select(~[int_col])
               ->aggregate(
-                ~['mean(int_col)':{r | $r.int_col}:{c | $c->average()}, 'min(int_col)':{r | $r.int_col}:{c | $c->min()}, 'var(int_col)':{r | $r.int_col}:{c | $c->varianceSample()}]
+                ~['mean(int_col)':{r | $r.int_col}:{c | $c->average()}, 'min(int_col)':{r | $r.int_col}:{c | $c->min()}, 'var(int_col)':{r | $r.int_col}:{c | $c->varianceSample()->cast(@Float)}]
               )
         '''  # noqa: E501
         expected = dedent(expected).strip()
         assert frame1.to_pure_query(FrameToPureConfig()) == expected
         assert frame2.to_pure_query(FrameToPureConfig()) == expected
+
+
+class TestAggregateFunctionAssignment:
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_simple_assignment(self) -> None:
+        """Basic: assign an aggregated series to a new column; verify isinstance, SQL, and Pure."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1_int"),
+            PrimitiveTdsColumn.string_column("col2_str"),
+            PrimitiveTdsColumn.date_column("col3_date")
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        aggregated_series = frame["col1_int"].sum()
+
+        assert isinstance(aggregated_series, Series)
+        frame["col1_sum"] = aggregated_series
+        expected_sql = dedent('''
+            SELECT
+                "root"."col1_int" AS "col1_int",
+                "root"."col2_str" AS "col2_str",
+                "root"."col3_date" AS "col3_date",
+                "root"."col1_sum__pylegend_olap_column__" AS "col1_sum"
+            FROM
+                (
+                    SELECT
+                        "root"."col1_int" AS "col1_int",
+                        "root"."col2_str" AS "col2_str",
+                        "root"."col3_date" AS "col3_date",
+                        SUM("root"."col1_int") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1_int" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1_sum__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1_int AS "col1_int",
+                                "root".col2_str AS "col2_str",
+                                "root".col3_date AS "col3_date",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure_frame = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1_int)], rows(unbounded(), unbounded())), ~col1_int__pylegend_olap_column__:{p,w,r | $r.col1_int}:{c | $c->sum()})
+              ->project(~[col1_int:c|$c.col1_int, col2_str:c|$c.col2_str, col3_date:c|$c.col3_date, col1_sum:c|$c.col1_int__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure_frame
+
+    def test_assign_multiple_aggregates_and_overwrite(self) -> None:
+        """Multiple aggregate assignments including overwriting an existing column."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+            PrimitiveTdsColumn.string_column("col3"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["col1_sum"] = frame["col1"].sum()
+        frame["col2_mean"] = frame["col2"].mean()
+        frame["col3_count"] = frame["col3"].count()
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_sum:c|$c.col1__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)], rows(unbounded(), unbounded())), ~col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->average()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_sum:c|$c.col1_sum, col2_mean:c|$c.col2__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col3)], rows(unbounded(), unbounded())), ~col3__pylegend_olap_column__:{p,w,r | $r.col3}:{c | $c->count()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_sum:c|$c.col1_sum, col2_mean:c|$c.col2_mean, col3_count:c|$c.col3__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+        col_names = [c.get_name() for c in frame.columns()]
+        assert col_names == ["col1", "col2", "col3", "col1_sum", "col2_mean", "col3_count"]
+
+        frame["col1"] = frame["col1"].max()
+
+        expected_pure_overwrite = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_sum:c|$c.col1__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)], rows(unbounded(), unbounded())), ~col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->average()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_sum:c|$c.col1_sum, col2_mean:c|$c.col2__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col3)], rows(unbounded(), unbounded())), ~col3__pylegend_olap_column__:{p,w,r | $r.col3}:{c | $c->count()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col3:c|$c.col3, col1_sum:c|$c.col1_sum, col2_mean:c|$c.col2_mean, col3_count:c|$c.col3__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->max()})
+              ->project(~[col1:c|$c.col1__pylegend_olap_column__, col2:c|$c.col2, col3:c|$c.col3, col1_sum:c|$c.col1_sum, col2_mean:c|$c.col2_mean, col3_count:c|$c.col3_count])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure_overwrite
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."col1__pylegend_olap_column__" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col3" AS "col3",
+                "root"."col1_sum" AS "col1_sum",
+                "root"."col2_mean" AS "col2_mean",
+                "root"."col3_count" AS "col3_count"
+            FROM
+                (
+                    SELECT
+                        MAX("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1__pylegend_olap_column__",
+                        "root"."col2" AS "col2",
+                        "root"."col3" AS "col3",
+                        "root"."col1_sum" AS "col1_sum",
+                        "root"."col2_mean" AS "col2_mean",
+                        "root"."col3_count" AS "col3_count"
+                    FROM
+                        (
+                            SELECT
+                                "root"."col1" AS "col1",
+                                "root"."col2" AS "col2",
+                                "root"."col3" AS "col3",
+                                "root"."col1_sum" AS "col1_sum",
+                                "root"."col2_mean" AS "col2_mean",
+                                "root"."col3_count__pylegend_olap_column__" AS "col3_count",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                (
+                                    SELECT
+                                        "root"."col1" AS "col1",
+                                        "root"."col2" AS "col2",
+                                        "root"."col3" AS "col3",
+                                        "root"."col1_sum" AS "col1_sum",
+                                        "root"."col2_mean" AS "col2_mean",
+                                        COUNT("root"."col3") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col3" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col3_count__pylegend_olap_column__"
+                                    FROM
+                                        (
+                                            SELECT
+                                                "root"."col1" AS "col1",
+                                                "root"."col2" AS "col2",
+                                                "root"."col3" AS "col3",
+                                                "root"."col1_sum" AS "col1_sum",
+                                                "root"."col2_mean__pylegend_olap_column__" AS "col2_mean",
+                                                0 AS "__pylegend_zero_column__"
+                                            FROM
+                                                (
+                                                    SELECT
+                                                        "root"."col1" AS "col1",
+                                                        "root"."col2" AS "col2",
+                                                        "root"."col3" AS "col3",
+                                                        "root"."col1_sum" AS "col1_sum",
+                                                        AVG("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col2_mean__pylegend_olap_column__"
+                                                    FROM
+                                                        (
+                                                            SELECT
+                                                                "root"."col1" AS "col1",
+                                                                "root"."col2" AS "col2",
+                                                                "root"."col3" AS "col3",
+                                                                "root"."col1_sum__pylegend_olap_column__" AS "col1_sum",
+                                                                0 AS "__pylegend_zero_column__"
+                                                            FROM
+                                                                (
+                                                                    SELECT
+                                                                        "root"."col1" AS "col1",
+                                                                        "root"."col2" AS "col2",
+                                                                        "root"."col3" AS "col3",
+                                                                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1_sum__pylegend_olap_column__"
+                                                                    FROM
+                                                                        (
+                                                                            SELECT
+                                                                                "root".col1 AS "col1",
+                                                                                "root".col2 AS "col2",
+                                                                                "root".col3 AS "col3",
+                                                                                0 AS "__pylegend_zero_column__"
+                                                                            FROM
+                                                                                test_schema.test_table AS "root"
+                                                                        ) AS "root"
+                                                                ) AS "root"
+                                                        ) AS "root"
+                                                ) AS "root"
+                                        ) AS "root"
+                                ) AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+    def test_assign_aggregate_after_truncate(self) -> None:
+        """Assignment on a truncated frame wraps the base in a sub-query."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame = frame.truncate(0, 10)
+        frame["col1_sum"] = frame["col1"].sum()
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col1_sum__pylegend_olap_column__" AS "col1_sum"
+            FROM
+                (
+                    SELECT
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1_sum__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                            LIMIT 11
+                            OFFSET 0
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->slice(0, 11)
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_sum:c|$c.col1__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_assign_aggregate_with_arithmetic(self) -> None:
+        """Aggregate result combined with arithmetic. Aggregate in inner query, arithmetic in outer."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["col1_sum_plus"] = frame["col1"].sum() + 42
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                ("root"."col1_sum_plus__pylegend_olap_column__" + 42) AS "col1_sum_plus"
+            FROM
+                (
+                    SELECT
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1_sum_plus__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_sum_plus:c|(toOne($c.col1__pylegend_olap_column__) + 42)])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_assign_aggregate_arithmetic_multiple_ops(self) -> None:
+        """Multiple arithmetic operations on aggregated values."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["col1_shifted"] = frame["col1"].sum() - 10
+        frame["col2_scaled"] = frame["col2"].mean() * 2
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."col1_shifted" AS "col1_shifted",
+                ("root"."col2_scaled__pylegend_olap_column__" * 2) AS "col2_scaled"
+            FROM
+                (
+                    SELECT
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        "root"."col1_shifted" AS "col1_shifted",
+                        AVG("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col2_scaled__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root"."col1" AS "col1",
+                                "root"."col2" AS "col2",
+                                ("root"."col1_shifted__pylegend_olap_column__" - 10) AS "col1_shifted",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                (
+                                    SELECT
+                                        "root"."col1" AS "col1",
+                                        "root"."col2" AS "col2",
+                                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1_shifted__pylegend_olap_column__"
+                                    FROM
+                                        (
+                                            SELECT
+                                                "root".col1 AS "col1",
+                                                "root".col2 AS "col2",
+                                                0 AS "__pylegend_zero_column__"
+                                            FROM
+                                                test_schema.test_table AS "root"
+                                        ) AS "root"
+                                ) AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col1)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $r.col1}:{c | $c->sum()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_shifted:c|(toOne($c.col1__pylegend_olap_column__) - 10)])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)], rows(unbounded(), unbounded())), ~col2__pylegend_olap_column__:{p,w,r | $r.col2}:{c | $c->average()})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, col1_shifted:c|$c.col1_shifted, col2_scaled:c|(toOne($c.col2__pylegend_olap_column__) * 2)])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_chaining_after_aggregate_assignment(self) -> None:
+        """Operations like filter/drop work correctly on a frame with an assigned aggregate."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.string_column("col2"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["col1_sum"] = frame["col1"].sum()
+        filtered = frame.filter(items=["col1", "col1_sum"])
+        assert [c.get_name() for c in filtered.columns()] == ["col1", "col1_sum"]
+        dropped = frame.drop(columns=["col2"])
+        assert [c.get_name() for c in dropped.columns()] == ["col1", "col1_sum"]
+
+    def test_multiple_aggregates_on_same_column(self) -> None:
+        """Different aggregates on the same source column each get their own output column."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.string_column("label"),
+        ]
+        frame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        frame["val_sum"] = frame["val"].sum()
+        frame["val_min"] = frame["val"].min()
+        frame["val_max"] = frame["val"].max()
+
+        expected_sql = dedent('''
+            SELECT
+                "root"."val" AS "val",
+                "root"."label" AS "label",
+                "root"."val_sum" AS "val_sum",
+                "root"."val_min" AS "val_min",
+                "root"."val_max__pylegend_olap_column__" AS "val_max"
+            FROM
+                (
+                    SELECT
+                        "root"."val" AS "val",
+                        "root"."label" AS "label",
+                        "root"."val_sum" AS "val_sum",
+                        "root"."val_min" AS "val_min",
+                        MAX("root"."val") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "val_max__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root"."val" AS "val",
+                                "root"."label" AS "label",
+                                "root"."val_sum" AS "val_sum",
+                                "root"."val_min__pylegend_olap_column__" AS "val_min",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                (
+                                    SELECT
+                                        "root"."val" AS "val",
+                                        "root"."label" AS "label",
+                                        "root"."val_sum" AS "val_sum",
+                                        MIN("root"."val") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "val_min__pylegend_olap_column__"
+                                    FROM
+                                        (
+                                            SELECT
+                                                "root"."val" AS "val",
+                                                "root"."label" AS "label",
+                                                "root"."val_sum__pylegend_olap_column__" AS "val_sum",
+                                                0 AS "__pylegend_zero_column__"
+                                            FROM
+                                                (
+                                                    SELECT
+                                                        "root"."val" AS "val",
+                                                        "root"."label" AS "label",
+                                                        SUM("root"."val") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."val" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "val_sum__pylegend_olap_column__"
+                                                    FROM
+                                                        (
+                                                            SELECT
+                                                                "root".val AS "val",
+                                                                "root".label AS "label",
+                                                                0 AS "__pylegend_zero_column__"
+                                                            FROM
+                                                                test_schema.test_table AS "root"
+                                                        ) AS "root"
+                                                ) AS "root"
+                                        ) AS "root"
+                                ) AS "root"
+                        ) AS "root"
+                ) AS "root"
+        ''').strip()  # noqa: E501
+        assert frame.to_sql_query() == expected_sql
+
+        expected_pure = dedent('''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~val)], rows(unbounded(), unbounded())), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->sum()})
+              ->project(~[val:c|$c.val, label:c|$c.label, val_sum:c|$c.val__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~val)], rows(unbounded(), unbounded())), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->min()})
+              ->project(~[val:c|$c.val, label:c|$c.label, val_sum:c|$c.val_sum, val_min:c|$c.val__pylegend_olap_column__])
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~val)], rows(unbounded(), unbounded())), ~val__pylegend_olap_column__:{p,w,r | $r.val}:{c | $c->max()})
+              ->project(~[val:c|$c.val, label:c|$c.label, val_sum:c|$c.val_sum, val_min:c|$c.val_min, val_max:c|$c.val__pylegend_olap_column__])
+        ''').strip()  # noqa: E501
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure

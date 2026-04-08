@@ -49,6 +49,7 @@ from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+    from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
     from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
     from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
 
@@ -213,6 +214,34 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             observed: bool = False,
             dropna: bool = False,
     ) -> "PandasApiGroupbyTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def expanding(
+            self,
+            min_periods: int = 1,
+            axis: PyLegendUnion[int, str] = 0,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def rolling(
+            self,
+            window: int,
+            min_periods: PyLegendOptional[int] = None,
+            center: bool = False,
+            win_type: PyLegendOptional[str] = None,
+            on: PyLegendOptional[str] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            closed: PyLegendOptional[str] = None,
+            step: PyLegendOptional[int] = None,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
+    ) -> "PandasApiWindowTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod

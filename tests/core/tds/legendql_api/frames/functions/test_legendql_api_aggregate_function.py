@@ -156,8 +156,8 @@ class TestAggregateAppliedFunction:
             'Max:{r | $r.col1}:{c | $c->max()}, '
             'Min:{r | $r.col1}:{c | $c->min()}, '
             'Cnt:{r | $r.col1}:{c | $c->distinct()->count()}, '
-            'StdDev:{r | $r.col2}:{c | $c->stdDevSample()}, '
-            'Var:{r | $r.col2}:{c | $c->varianceSample()}])'
+            'StdDev:{r | $r.col2}:{c | $c->stdDevSample()->cast(@Float)}, '
+            'Var:{r | $r.col2}:{c | $c->varianceSample()->cast(@Float)}])'
         )
 
         frame = frame_base.distinct().aggregate(

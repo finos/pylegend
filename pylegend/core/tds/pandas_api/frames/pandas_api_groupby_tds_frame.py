@@ -25,12 +25,15 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_groupby_series_from_col_type
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 
 if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+    from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
 
 
 class PandasApiGroupbyTdsFrame:
@@ -201,36 +204,8 @@ class PandasApiGroupbyTdsFrame:
         if selected_columns is not None and isinstance(item, str):
             column: TdsColumn = selected_columns[0]
             col_type = column.get_type()
-            if col_type == "Boolean":  # pragma: no cover (Boolean column not supported in PURE)
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import BooleanGroupbySeries
-                return BooleanGroupbySeries(new_frame)
-            elif col_type in ("String", "Varchar"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import StringGroupbySeries
-                return StringGroupbySeries(new_frame)
-            elif col_type == "Number":
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import NumberGroupbySeries
-                return NumberGroupbySeries(new_frame)
-            elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
-                              "Int", "UInt", "BigInt", "UBigInt"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import IntegerGroupbySeries
-                return IntegerGroupbySeries(new_frame)
-            elif col_type in ("Float", "Float4", "Double"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries
-                return FloatGroupbySeries(new_frame)
-            elif col_type in ("Decimal", "Numeric"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DecimalGroupbySeries
-                return DecimalGroupbySeries(new_frame)
-            elif col_type == "Date":
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateGroupbySeries
-                return DateGroupbySeries(new_frame)
-            elif col_type in ("DateTime", "Timestamp"):
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import DateTimeGroupbySeries
-                return DateTimeGroupbySeries(new_frame)
-            elif col_type == "StrictDate":
-                from pylegend.core.language.pandas_api.pandas_api_groupby_series import StrictDateGroupbySeries
-                return StrictDateGroupbySeries(new_frame)
-            else:
-                raise ValueError(f"Unsupported column type '{col_type}' for column '{column.get_name()}'")  # pragma: no cover
+            groupby_series_cls = get_groupby_series_from_col_type(col_type)
+            return groupby_series_cls(new_frame)
 
         return new_frame
 
@@ -303,7 +278,7 @@ class PandasApiGroupbyTdsFrame:
             raise NotImplementedError("engine parameter is not supported in sum function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in sum function.")
-        return self.aggregate("sum", 0)
+        return self.aggregate(self._numeric_only_func_map("sum"), 0)
 
     def mean(
         self,
@@ -317,7 +292,7 @@ class PandasApiGroupbyTdsFrame:
             raise NotImplementedError("engine parameter is not supported in mean function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in mean function.")
-        return self.aggregate("mean", 0)
+        return self.aggregate(self._numeric_only_func_map("mean"), 0)
 
     def min(
         self,
@@ -360,15 +335,17 @@ class PandasApiGroupbyTdsFrame:
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: {ddof}"
+            )
         if engine is not None:
             raise NotImplementedError("engine parameter is not supported in std function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in std function.")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
-        return self.aggregate("std", 0)
+        return self.aggregate("std_dev_sample" if ddof == 1 else "std_dev_population", 0)
 
     def var(
         self,
@@ -377,18 +354,49 @@ class PandasApiGroupbyTdsFrame:
         engine_kwargs: PyLegendOptional[PyLegendDict[str, bool]] = None,
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
+            )
         if engine is not None:
             raise NotImplementedError("engine parameter is not supported in var function.")
         if engine_kwargs is not None:
             raise NotImplementedError("engine_kwargs parameter is not supported in var function.")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
-        return self.aggregate("var", 0)
+        return self.aggregate("variance_sample" if ddof == 1 else "variance_population", 0)
 
     def count(self) -> "PandasApiTdsFrame":
         return self.aggregate("count", 0)
+
+    def median(self) -> "PandasApiTdsFrame":
+        numeric_func_map = self._numeric_only_func_map("median")
+        return self.aggregate(numeric_func_map, 0)
+
+    def mode(self) -> "PandasApiTdsFrame":
+        numeric_func_map = self._numeric_only_func_map("mode")
+        return self.aggregate(numeric_func_map, 0)
+
+    def _numeric_only_func_map(self, func_name: str) -> PyLegendAggInput:
+        """Build a {col: func_name} dict for numeric non-groupby columns only."""
+        from pylegend.core.tds.tds_column import PrimitiveTdsColumn
+        grouping_names = {c.get_name() for c in self.get_grouping_columns()}
+        numeric_types = {
+            "Integer", "Float", "Number", "Decimal",
+            "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+            "Int", "UInt", "BigInt", "UBigInt",
+        }
+        result: PyLegendDict[PyLegendHashable, str] = {}
+        selected = self.get_selected_columns()
+        columns = selected if selected is not None else self.base_frame().columns()
+        for col in columns:
+            # Skip groupby columns only when no explicit column selection was made
+            # If user explicitly selected a groupby column, allow aggregation on it
+            if selected is None and col.get_name() in grouping_names:
+                continue
+            if isinstance(col, PrimitiveTdsColumn) and col.get_type() in numeric_types:
+                result[col.get_name()] = func_name
+        return result
 
     def rank(
             self,
@@ -469,3 +477,118 @@ class PandasApiGroupbyTdsFrame:
             freq=freq
         ))
         return PandasApiAppliedFunctionTdsFrame(PctChangeFunction(shift_extended_frame))
+
+    def expanding(
+            self,
+            min_periods: int = 1,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+
+        if min_periods != 1:
+            raise NotImplementedError(
+                f"The expanding function is only supported for min_periods=1, but got: min_periods={min_periods!r}"
+            )
+        if method is not None:
+            raise NotImplementedError(
+                f"The expanding function does not support the 'method' parameter, but got: method={method!r}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            frame_spec=RowsBetween(None, 0),
+            ascending=ascending,
+        )
+
+    def rolling(
+            self,
+            window: int,
+            min_periods: PyLegendOptional[int] = None,
+            center: bool = False,
+            win_type: PyLegendOptional[str] = None,
+            on: PyLegendOptional[str] = None,
+            closed: PyLegendOptional[str] = None,
+            step: PyLegendOptional[int] = None,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+
+        if min_periods is not None and min_periods != 1:
+            raise NotImplementedError(
+                f"The rolling function is only supported for min_periods=1 or None, but got: min_periods={min_periods!r}"
+            )
+        if center is not False:
+            raise NotImplementedError(
+                f"The rolling function does not support center=True, but got: center={center!r}"
+            )
+        if win_type is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'win_type' parameter, but got: win_type={win_type!r}"
+            )
+        if on is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'on' parameter, but got: on={on!r}"
+            )
+        if closed is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'closed' parameter, but got: closed={closed!r}"
+            )
+        if step is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'step' parameter, but got: step={step!r}"
+            )
+        if method is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'method' parameter, but got: method={method!r}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            frame_spec=RowsBetween(-(window - 1), 0),
+            ascending=ascending,
+        )
+
+    def window_frame_legend_ext(
+            self,
+            frame_spec: "FrameSpec",
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Create a custom window specification with explicit control over the
+        window frame.  When called on a groupby frame the grouping columns
+        are automatically used as PARTITION BY columns.
+
+        Parameters
+        ----------
+        frame_spec:
+            A ``RowsBetween`` or ``RangeBetween`` specification object.
+        order_by:
+            Column name(s) to use for ORDER BY within the window.
+        ascending:
+            Sort direction(s) for the ORDER BY columns.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
+
+        if not isinstance(frame_spec, FrameSpecCls):
+            raise TypeError(
+                f"frame_spec must be a RowsBetween or RangeBetween, got {type(frame_spec).__name__}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            frame_spec=frame_spec,
+            ascending=ascending,
+        )
