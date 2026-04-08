@@ -14,6 +14,7 @@
 
 from abc import ABCMeta
 from pylegend.core.language import (
+    PyLegendPrimitive,
     PyLegendBoolean,
     PyLegendString,
     PyLegendNumber,
@@ -33,7 +34,6 @@ from pylegend._typing import (
 )
 from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.language.shared.pylegend_custom_expressions import (
-    PyLegendCustomPrimitive,
     PyLegendSortDirection as LegendQLApiSortDirection,
     PyLegendDurationUnit as LegendQLApiDurationUnit,
     PyLegendFrameBoundType as LegendQLApiWindowFrameBoundType,
@@ -80,7 +80,7 @@ __all__: PyLegendSequence[str] = [
 ]
 
 
-class LegendQLApiPrimitive(PyLegendCustomPrimitive, metaclass=ABCMeta):
+class LegendQLApiPrimitive(PyLegendPrimitive, metaclass=ABCMeta):
     def ascending(self) -> "LegendQLApiSortInfo":
         val = self.value()
         if isinstance(val, PyLegendColumnExpression):
