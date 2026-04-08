@@ -12,25 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABCMeta
 from pylegend.core.language import (
+    PyLegendPrimitive,
+    PyLegendBoolean,
+    PyLegendString,
+    PyLegendNumber,
     PyLegendInteger,
     PyLegendFloat,
+    PyLegendDecimal,
+    PyLegendDate,
+    PyLegendDateTime,
+    PyLegendStrictDate,
 )
 from pylegend._typing import (
     PyLegendSequence,
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.pylegend_custom_expressions import (
-    PyLegendCustomPrimitive as PandasApiPrimitive,
-    PyLegendCustomBoolean as PandasApiBoolean,
-    PyLegendCustomString as PandasApiString,
-    PyLegendCustomNumber as PandasApiNumber,
-    PyLegendCustomInteger as PandasApiInteger,
-    PyLegendCustomFloat as PandasApiFloat,
-    PyLegendCustomDecimal as PandasApiDecimal,
-    PyLegendCustomDate as PandasApiDate,
-    PyLegendCustomDateTime as PandasApiDateTime,
-    PyLegendCustomStrictDate as PandasApiStrictDate,
     PyLegendSortDirection as PandasApiSortDirection,
     PyLegendSortInfo as PandasApiSortInfo,
     PyLegendDurationUnit as PandasApiDurationUnit,
@@ -73,6 +72,55 @@ __all__: PyLegendSequence[str] = [
     "PandasApiPartialFrame",
     "PandasApiPercentRankExpression",
 ]
+
+
+class PandasApiPrimitive(PyLegendPrimitive, metaclass=ABCMeta):
+    pass
+
+
+class PandasApiBoolean(PandasApiPrimitive, PyLegendBoolean):
+    def __init__(self, expr: PyLegendBoolean):
+        PyLegendBoolean.__init__(self, expr.value())
+
+
+class PandasApiString(PandasApiPrimitive, PyLegendString):
+    def __init__(self, expr: PyLegendString):
+        PyLegendString.__init__(self, expr.value())
+
+
+class PandasApiNumber(PandasApiPrimitive, PyLegendNumber):
+    def __init__(self, expr: PyLegendNumber):
+        PyLegendNumber.__init__(self, expr.value())
+
+
+class PandasApiInteger(PandasApiPrimitive, PyLegendInteger):
+    def __init__(self, expr: PyLegendInteger):
+        PyLegendInteger.__init__(self, expr.value())
+
+
+class PandasApiFloat(PandasApiPrimitive, PyLegendFloat):
+    def __init__(self, expr: PyLegendFloat):
+        PyLegendFloat.__init__(self, expr.value())
+
+
+class PandasApiDecimal(PandasApiPrimitive, PyLegendDecimal):
+    def __init__(self, expr: PyLegendDecimal):
+        PyLegendDecimal.__init__(self, expr.value())
+
+
+class PandasApiDate(PandasApiPrimitive, PyLegendDate):
+    def __init__(self, expr: PyLegendDate):
+        PyLegendDate.__init__(self, expr.value())
+
+
+class PandasApiDateTime(PandasApiPrimitive, PyLegendDateTime):
+    def __init__(self, expr: PyLegendDateTime):
+        PyLegendDateTime.__init__(self, expr.value())
+
+
+class PandasApiStrictDate(PandasApiPrimitive, PyLegendStrictDate):
+    def __init__(self, expr: PyLegendStrictDate):
+        PyLegendStrictDate.__init__(self, expr.value())
 
 
 class PandasApiPartialFrame(PyLegendPartialFrame):
