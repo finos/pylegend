@@ -579,4 +579,3 @@ class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
     def min_by(self) -> "PyLegendNumber":
         nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
         return PyLegendNumber(PyLegendMinByExpression(nested_expr_a, nested_expr_b))
-

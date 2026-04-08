@@ -976,5 +976,3 @@ class MinByExpression(Expression):
         super().__init__(_type="minByExpression")
         self.value = value
         self.by = by
-
-

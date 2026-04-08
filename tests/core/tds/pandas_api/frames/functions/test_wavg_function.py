@@ -110,8 +110,7 @@ class TestWavgFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["quantity"].wavg(gb["weight"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        frame["newCol"] = gb["quantity"].wavg(gb["weight"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -128,7 +127,7 @@ class TestWavgFunctionQueryGeneration:
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
-        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_wavg_window_pure_generation(self) -> None:
         columns = [
@@ -138,9 +137,8 @@ class TestWavgFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["quantity"].wavg(gb["weight"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
-        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+        frame["newCol"] = gb["quantity"].wavg(gb["weight"])
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~quantity__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.quantity, $r.weight)}:y | $y->meta::pure::functions::math::wavg()->cast(@Float))'
             '->project(~[id:c|$c.id, quantity:c|$c.quantity, weight:c|$c.weight, newCol:c|$c.quantity__pylegend_olap_column__])'

@@ -1109,4 +1109,3 @@ class PyLegendMinByExpression(PyLegendBinaryExpression, PyLegendExpressionNumber
             PyLegendMinByExpression.__to_sql_func,
             PyLegendMinByExpression.__to_pure_func
         )
-

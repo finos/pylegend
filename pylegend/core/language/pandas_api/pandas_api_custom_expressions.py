@@ -44,6 +44,8 @@ from pylegend.core.language.shared.pylegend_custom_expressions import (
     PyLegendRankExpression as PandasApiRankExpression,
     PyLegendDenseRankExpression as PandasApiDenseRankExpression,
     PyLegendPercentRankExpression as PandasApiPercentRankExpression,
+    PyLegendCumeDistExpression as PandasApiCumeDistExpression,
+    PyLegendNtileExpression as PandasApiNtileExpression,
 )
 
 __all__: PyLegendSequence[str] = [

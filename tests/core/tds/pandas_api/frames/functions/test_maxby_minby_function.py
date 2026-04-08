@@ -95,8 +95,7 @@ class TestMaxByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["name"].max_by(gb["employeeNumber"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        frame["newCol"] = gb["name"].max_by(gb["employeeNumber"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -113,7 +112,7 @@ class TestMaxByFunctionQueryGeneration:
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
-        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_max_by_window_pure_generation(self) -> None:
         columns = [
@@ -123,9 +122,8 @@ class TestMaxByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["name"].max_by(gb["employeeNumber"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
-        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+        frame["newCol"] = gb["name"].max_by(gb["employeeNumber"])
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~name__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.name, $r.employeeNumber)}:y | $y->meta::pure::functions::math::maxBy())'
             '->project(~[id:c|$c.id, name:c|$c.name, employeeNumber:c|$c.employeeNumber, newCol:c|$c.name__pylegend_olap_column__])'
@@ -207,8 +205,7 @@ class TestMinByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["name"].min_by(gb["employeeNumber"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        frame["newCol"] = gb["name"].min_by(gb["employeeNumber"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -225,7 +222,7 @@ class TestMinByFunctionQueryGeneration:
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
-        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_min_by_window_pure_generation(self) -> None:
         columns = [
@@ -235,9 +232,8 @@ class TestMinByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["name"].min_by(gb["employeeNumber"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
-        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+        frame["newCol"] = gb["name"].min_by(gb["employeeNumber"])
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~name__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.name, $r.employeeNumber)}:y | $y->meta::pure::functions::math::minBy())'
             '->project(~[id:c|$c.id, name:c|$c.name, employeeNumber:c|$c.employeeNumber, newCol:c|$c.name__pylegend_olap_column__])'

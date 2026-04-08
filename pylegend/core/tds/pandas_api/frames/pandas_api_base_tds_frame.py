@@ -718,6 +718,28 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         else:
             return merged
 
+    def concat_legend_ext(
+            self,
+            other: "PandasApiBaseTdsFrame",
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Concatenate this frame with another frame vertically (UNION ALL).
+        Both frames must have compatible schemas (same column names and types).
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.concat_function import (
+            PandasApiConcatFunction
+        )
+        if not isinstance(other, PandasApiBaseTdsFrame):
+            raise TypeError(
+                f"concat_legend_ext expects a PandasApiBaseTdsFrame, got: {type(other).__name__}"
+            )
+        return PandasApiAppliedFunctionTdsFrame(PandasApiConcatFunction(self, other))
+
     def join(
             self,
             other: "PandasApiTdsFrame",

@@ -110,7 +110,7 @@ class TestConcatLegendExtErrors:
         with pytest.raises(TypeError) as v:
             frame.concat_legend_ext(123)  # type: ignore
 
-        assert "Can only concatenate TdsFrame objects" in v.value.args[0]
+        assert "concat_legend_ext expects a PandasApiBaseTdsFrame, got: int" in v.value.args[0]
 
 
 class TestConcatLegendExtOnFrame:

@@ -564,62 +564,6 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
         return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
 
-    def expanding(
-            self,
-            min_periods: int = 1,
-            method: PyLegendOptional[str] = None,
-            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
-    ) -> "WindowSeries":
-        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-
-        window_frame = self._base_groupby_frame.expanding(
-            min_periods=min_periods, method=method, order_by=order_by, ascending=ascending
-        )
-        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
-
-    def rolling(
-            self,
-            window: int,
-            min_periods: PyLegendOptional[int] = None,
-            center: bool = False,
-            win_type: PyLegendOptional[str] = None,
-            on: PyLegendOptional[str] = None,
-            closed: PyLegendOptional[str] = None,
-            step: PyLegendOptional[int] = None,
-            method: PyLegendOptional[str] = None,
-            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
-    ) -> "WindowSeries":
-        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-
-        window_frame = self._base_groupby_frame.rolling(
-            window=window, min_periods=min_periods, center=center, win_type=win_type,
-            on=on, closed=closed, step=step, method=method, order_by=order_by,
-            ascending=ascending
-        )
-        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
-
-    def window_frame_legend_ext(
-            self,
-            frame_spec: "FrameSpec",
-            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
-    ) -> "WindowSeries":
-        """
-        PyLegend extension (not present in pandas).
-
-        Create a custom window specification with explicit control over the
-        window frame on a single column.  When called on a groupby series
-        the grouping columns are automatically used as PARTITION BY.
-        """
-        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-
-        window_frame = self._base_groupby_frame.window_frame_legend_ext(
-            frame_spec=frame_spec, order_by=order_by, ascending=ascending
-        )
-        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
-
     def max_by(
             self,
             by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
@@ -757,7 +701,6 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                                    "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
         return self._two_col_window_func(weights, "wavg")
-
 
     def zscore(self) -> "FloatGroupbySeries":
         """Compute the z-score within each group: (x - mean) / stddev_pop.
