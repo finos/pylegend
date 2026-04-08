@@ -1150,7 +1150,7 @@ class TestSeriesPureQueryWithArithmetic:
     def test_groupby_series_to_pure_query_with_arithmetic_single_column_window(self) -> None:
         """
         series = frame.groupby('grp').window_frame_legend_ext(...)['val'].first() + 5
-        series.to_pure_query() should work through get_pure_query_from_expr.
+        series.to_pure_query() should work through get_pure_query_and_compile.
         """
         columns = [
             PrimitiveTdsColumn.string_column("grp"),
@@ -1318,3 +1318,742 @@ class TestPythonLiteralPwrFunc:
 
         pure = series.to_pure_query()
         assert "42" in pure
+
+
+class TestWindowFuncWorkflows:
+    """
+    Real-world workflow tests for window_frame_legend_ext.
+
+    These tests exercise common patterns a user would employ,
+    verifying both SQL and Pure generation, and compiling against the engine.
+    """
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    # ── Multiple sequential window assigns ───────────────────────────────
+
+    def test_multiple_window_assigns_on_same_frame(self) -> None:
+        """
+        Assign first and last of different columns sequentially.
+        Mimics a common analytics pattern where you want both the opening
+        and closing value within the same window.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("ticker"),
+            PrimitiveTdsColumn.float_column("price"),
+            PrimitiveTdsColumn.integer_column("volume"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["market", "trades"], columns)
+
+        gb_window = frame.groupby("ticker").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="price",
+        )
+        frame["open_price"] = gb_window["price"].first()
+        frame["close_price"] = gb_window["price"].last()
+
+        sql = frame.to_sql_query()
+        assert "first_value" in sql
+        assert "last_value" in sql
+        assert sql.count("PARTITION BY") >= 2
+
+        pure = frame.to_pure_query()
+        assert "$p->first($w, $r).price" in pure
+        assert "$p->last($w, $r).price" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Chaining with other frame operations ─────────────────────────────
+
+    def test_window_then_filter(self) -> None:
+        """
+        Compute a window function, then filter results.
+        e.g. keep only rows where the first value in the window matches the current value.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["schema1", "tbl"], columns)
+
+        frame["first_val"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="id",
+        )["val"].first()
+
+        filtered = frame.filter(items=["id", "val", "first_val"])
+        sql = filtered.to_sql_query()
+        assert "first_value" in sql
+        assert '"id"' in sql
+
+        pure = filtered.to_pure_query()
+        assert generate_pure_query_and_compile(filtered, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_window_then_sort(self) -> None:
+        """
+        Assign a window column, then sort by it.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["schema1", "tbl"], columns)
+
+        frame["first_val"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="id",
+        )["val"].first()
+
+        sorted_frame = frame.sort_values(by="first_val")
+        sql = sorted_frame.to_sql_query()
+        assert "first_value" in sql
+        assert "ORDER BY" in sql
+
+        pure = sorted_frame.to_pure_query()
+        assert generate_pure_query_and_compile(sorted_frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_filter_then_window(self) -> None:
+        """
+        Filter a frame first, then apply a window function on the filtered result.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("category"),
+            PrimitiveTdsColumn.integer_column("amount"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["schema1", "data"], columns)
+
+        filtered = frame.filter(items=["category", "amount"])
+        filtered["first_amount"] = filtered.window_frame_legend_ext(
+            frame_spec=filtered.rows_between(),
+            order_by="amount",
+        )["amount"].first()
+
+        sql = filtered.to_sql_query()
+        assert "first_value" in sql
+
+        pure = filtered.to_pure_query()
+        assert generate_pure_query_and_compile(filtered, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Multiple order-by columns ────────────────────────────────────────
+
+    def test_multiple_order_by_columns(self) -> None:
+        """
+        Window with multiple order_by columns (list of strings).
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("dept"),
+            PrimitiveTdsColumn.integer_column("emp_id"),
+            PrimitiveTdsColumn.float_column("salary"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["hr", "employees"], columns)
+
+        frame["first_salary"] = frame.groupby("dept").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by=["emp_id", "salary"],
+        )["salary"].first()
+
+        sql = frame.to_sql_query()
+        # Should have ORDER BY with both columns
+        assert '"root"."emp_id"' in sql
+        assert '"root"."salary"' in sql
+        assert "first_value" in sql
+
+        pure = frame.to_pure_query()
+        assert "ascending(~emp_id)" in pure
+        assert "ascending(~salary)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_multiple_order_by_with_mixed_ascending(self) -> None:
+        """
+        Window with multiple order_by columns and mixed ascending/descending.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("dept"),
+            PrimitiveTdsColumn.integer_column("rank"),
+            PrimitiveTdsColumn.float_column("salary"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["hr", "employees"], columns)
+
+        frame["top_salary"] = frame.groupby("dept").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by=["rank", "salary"],
+            ascending=[True, False],
+        )["salary"].first()
+
+        sql = frame.to_sql_query()
+        # ascending is implicit (no keyword), descending is explicit
+        assert "DESC" in sql
+        assert '"root"."rank"' in sql
+        assert '"root"."salary" DESC' in sql
+
+        pure = frame.to_pure_query()
+        assert "ascending(~rank)" in pure
+        assert "descending(~salary)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Descending order with first/last/shift ───────────────────────────
+
+    def test_first_with_descending_order(self) -> None:
+        """
+        first() with descending order — gives the maximum row's value.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["desc_first"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+            ascending=False,
+        )["col1"].first()
+
+        sql = frame.to_sql_query()
+        assert "DESC" in sql
+        assert "first_value" in sql
+
+        pure = frame.to_pure_query()
+        assert "descending(~col1)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_last_with_descending_order(self) -> None:
+        """
+        last() with descending order.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["desc_last"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+            ascending=False,
+        )["col1"].last()
+
+        sql = frame.to_sql_query()
+        assert "DESC" in sql
+        assert "last_value" in sql
+
+        pure = frame.to_pure_query()
+        assert "descending(~col1)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_shift_with_descending_order(self) -> None:
+        """
+        shift() with descending order — lag/lead relative to the descending sorted window.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("ts"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["prev_val"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="ts",
+            ascending=False,
+        )["val"].shift(periods=2)
+
+        sql = frame.to_sql_query()
+        assert "DESC" in sql
+        assert "lag(" in sql
+        assert ", 2)" in sql
+
+        pure = frame.to_pure_query()
+        assert "descending(~ts)" in pure
+        assert "lag($r, 2)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Edge cases for shift ─────────────────────────────────────────────
+
+    def test_shift_periods_zero(self) -> None:
+        """
+        shift(periods=0) should produce lead with 0 offset (effectively the current row).
+        periods=0 is non-positive, so it goes through the lead branch with -periods = 0.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["same"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        )["col1"].shift(periods=0)
+
+        sql = frame.to_sql_query()
+        # periods=0 → lead branch with offset 0
+        assert "lead(" in sql
+        assert ", 0)" in sql
+
+        pure = frame.to_pure_query()
+        assert "lead($r, 0)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_shift_large_positive_periods(self) -> None:
+        """
+        shift(periods=100) — large lag offset.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["lagged"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        )["col1"].shift(periods=100)
+
+        sql = frame.to_sql_query()
+        assert "lag(" in sql
+        assert ", 100)" in sql
+
+        pure = frame.to_pure_query()
+        assert "lag($r, 100)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── range_between frame spec ─────────────────────────────────────────
+
+    def test_range_between_frame_spec(self) -> None:
+        """
+        window_frame_legend_ext with range_between instead of rows_between.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("ts"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["first_in_range"] = frame.window_frame_legend_ext(
+            frame_spec=frame.range_between(-10, 10),
+            order_by="ts",
+        )["val"].first()
+
+        sql = frame.to_sql_query()
+        assert "RANGE BETWEEN" in sql
+        assert "10 PRECEDING" in sql
+        assert "10 FOLLOWING" in sql
+        assert "first_value" in sql
+
+        pure = frame.to_pure_query()
+        assert "range(" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Different column types ───────────────────────────────────────────
+
+    def test_first_on_string_column(self) -> None:
+        """first() on a string column."""
+        columns = [
+            PrimitiveTdsColumn.string_column("name"),
+            PrimitiveTdsColumn.integer_column("id"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["first_name"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="id",
+        )["name"].first()
+
+        sql = frame.to_sql_query()
+        assert "first_value" in sql
+        assert '"name"' in sql
+
+        pure = frame.to_pure_query()
+        assert "first" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_last_on_float_column_direct_series(self) -> None:
+        """last() on a float column producing a standalone series."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("measurement"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(-3, 0),
+            order_by="id",
+        )["measurement"].last()
+
+        sql = series.to_sql_query()
+        assert "last_value" in sql
+        assert "3 PRECEDING" in sql
+        assert "CURRENT ROW" in sql
+
+        pure = series.to_pure_query()
+        assert "last" in pure
+
+    # ── Multiple groupby columns ─────────────────────────────────────────
+
+    def test_multiple_groupby_columns(self) -> None:
+        """
+        Groupby on multiple columns, then apply window function.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("region"),
+            PrimitiveTdsColumn.string_column("product"),
+            PrimitiveTdsColumn.float_column("revenue"),
+            PrimitiveTdsColumn.integer_column("quarter"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["sales", "data"], columns)
+
+        frame["first_revenue"] = frame.groupby(["region", "product"]).window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="quarter",
+        )["revenue"].first()
+
+        sql = frame.to_sql_query()
+        assert "first_value" in sql
+        assert "PARTITION BY" in sql
+        # Both groupby columns should appear in PARTITION BY
+        assert '"root"."region"' in sql
+        assert '"root"."product"' in sql
+
+        pure = frame.to_pure_query()
+        assert "region" in pure
+        assert "product" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── last(numeric_only=True) on groupby ───────────────────────────────
+
+    def test_last_numeric_only_on_groupby_window(self) -> None:
+        """
+        groupby.window_frame_legend_ext(...).last(numeric_only=True) keeps
+        grouping columns plus numeric columns with last_value applied.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("dept"),
+            PrimitiveTdsColumn.integer_column("headcount"),
+            PrimitiveTdsColumn.float_column("budget"),
+            PrimitiveTdsColumn.string_column("manager"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["hr", "departments"], columns)
+
+        applied = frame.groupby("dept").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="headcount",
+        ).last(numeric_only=True)
+
+        sql = applied.to_sql_query()
+        assert "last_value" in sql
+
+        pure = applied.to_pure_query()
+        assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── first(numeric_only=True) on groupby ──────────────────────────────
+
+    def test_first_numeric_only_on_groupby_window(self) -> None:
+        """
+        groupby.window_frame_legend_ext(...).first(numeric_only=True) keeps
+        grouping columns plus numeric columns with first_value applied.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("dept"),
+            PrimitiveTdsColumn.integer_column("headcount"),
+            PrimitiveTdsColumn.float_column("budget"),
+            PrimitiveTdsColumn.string_column("manager"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["hr", "departments"], columns)
+
+        applied = frame.groupby("dept").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="headcount",
+        ).first(numeric_only=True)
+
+        sql = applied.to_sql_query()
+        assert "first_value" in sql
+        # Numeric columns should have first_value applied
+        assert '"headcount"' in sql
+        assert '"budget"' in sql
+
+        pure = applied.to_pure_query()
+        assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Bounded rows_between with asymmetric bounds ──────────────────────
+
+    def test_trailing_window(self) -> None:
+        """
+        rows_between(-5, 0) — trailing window (5 preceding to current row).
+        Common for moving first/last over trailing N rows.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("ts"),
+            PrimitiveTdsColumn.float_column("price"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["trail_first"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(-5, 0),
+            order_by="ts",
+        )["price"].first()
+
+        sql = frame.to_sql_query()
+        assert "5 PRECEDING" in sql
+        assert "CURRENT ROW" in sql
+        assert "first_value" in sql
+
+        pure = frame.to_pure_query()
+        assert "rows(minus(5), 0)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_leading_window(self) -> None:
+        """
+        rows_between(0, 5) — leading window (current row to 5 following).
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("ts"),
+            PrimitiveTdsColumn.float_column("price"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["lead_last"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(0, 5),
+            order_by="ts",
+        )["price"].last()
+
+        sql = frame.to_sql_query()
+        assert "CURRENT ROW" in sql
+        assert "5 FOLLOWING" in sql
+        assert "last_value" in sql
+
+        pure = frame.to_pure_query()
+        assert "rows(0, 5)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Arithmetic with different operations ─────────────────────────────
+
+    def test_first_minus_last_arithmetic(self) -> None:
+        """
+        Compute the spread: first() - last() within the same window.
+        Each is a separate assign (two window operations on same frame).
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("ts"),
+            PrimitiveTdsColumn.float_column("price"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        window = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="ts",
+        )
+        frame["first_price"] = window["price"].first()
+        frame["last_price"] = window["price"].last()
+        frame["spread"] = frame["first_price"] - frame["last_price"]
+
+        sql = frame.to_sql_query()
+        assert "first_value" in sql
+        assert "last_value" in sql
+
+        pure = frame.to_pure_query()
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_shift_subtraction_returns_change(self) -> None:
+        """
+        Compute row-over-row change: current_value - lag(value).
+        A very common time-series pattern.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("ts"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["prev_val"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="ts",
+        )["val"].shift(periods=1)
+
+        frame["change"] = frame["val"] - frame["prev_val"]
+
+        sql = frame.to_sql_query()
+        assert "lag(" in sql
+
+        pure = frame.to_pure_query()
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── Series-level window_frame_legend_ext ──────────────────────────────
+
+    def test_series_window_frame_legend_ext_with_no_frame_spec(self) -> None:
+        """
+        frame['col'].window_frame_legend_ext(order_by=...).first()
+        Using the Series-level entry point with no frame_spec.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame["val"].window_frame_legend_ext(
+            order_by="id",
+        ).first()
+
+        sql = series.to_sql_query()
+        assert "first_value" in sql
+        assert "ROWS BETWEEN" not in sql
+
+        pure = series.to_pure_query()
+        assert "rows(" not in pure
+
+    def test_groupby_series_window_frame_legend_ext_shift(self) -> None:
+        """
+        frame.groupby('grp')['val'].window_frame_legend_ext(order_by=...).shift()
+        Using the GroupbySeries-level entry point.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.groupby("grp")["val"].window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="val",
+        ).shift(periods=-2)
+
+        sql = series.to_sql_query()
+        assert "lead(" in sql
+        assert ", 2)" in sql
+        assert "PARTITION BY" in sql
+
+        pure = series.to_pure_query()
+        assert "lead($r, 2)" in pure
+
+    # ── Custom pwr_func patterns ─────────────────────────────────────────
+
+    def test_custom_pwr_func_nth_on_window_series(self) -> None:
+        """
+        WindowSeries.window_func_legend_ext with p.nth for the 3rd row.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="id",
+        )["val"].window_func_legend_ext(
+            pwr_func=lambda p, w, r: p.nth(w, r, 3)["val"],
+        )
+
+        sql = series.to_sql_query()
+        assert "nth_value" in sql
+        assert ", 3)" in sql
+
+        pure = series.to_pure_query()
+        assert "nth($w, $r, 3)" in pure
+
+    def test_custom_pwr_func_lead_on_window_series(self) -> None:
+        """
+        WindowSeries.window_func_legend_ext with p.lead for 2 rows ahead.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["lead2"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="id",
+        )["val"].window_func_legend_ext(
+            pwr_func=lambda p, w, r: p.lead(r, 2)["val"],
+        )
+
+        sql = frame.to_sql_query()
+        assert "lead(" in sql
+        assert ", 2)" in sql
+
+        pure = frame.to_pure_query()
+        assert "lead($r, 2)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_custom_pwr_func_lag_on_window_series(self) -> None:
+        """
+        WindowSeries.window_func_legend_ext with p.lag for 3 rows behind.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("id"),
+            PrimitiveTdsColumn.float_column("val"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["lag3"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="id",
+        )["val"].window_func_legend_ext(
+            pwr_func=lambda p, w, r: p.lag(r, 3)["val"],
+        )
+
+        sql = frame.to_sql_query()
+        assert "lag(" in sql
+        assert ", 3)" in sql
+
+        pure = frame.to_pure_query()
+        assert "lag($r, 3)" in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+    # ── WindowTdsFrame-level operations ──────────────────────────────────
+
+    def test_nth_multi_column_on_window_tds_frame(self) -> None:
+        """
+        WindowTdsFrame.window_func_legend_ext with p.nth across all columns.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("a"),
+            PrimitiveTdsColumn.float_column("b"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        applied = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="a",
+        ).window_func_legend_ext(
+            pwr_func=lambda p, w, r: p.nth(w, r, 5),
+        )
+
+        sql = applied.to_sql_query()
+        assert "nth_value" in sql
+        assert sql.count("nth_value") == 2  # one for each column
+
+        pure = applied.to_pure_query()
+        assert "nth($w, $r, 5).a" in pure
+        assert "nth($w, $r, 5).b" in pure
+        assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_shift_multi_column_on_window_tds_frame(self) -> None:
+        """
+        WindowTdsFrame-level shift (lag) across all columns.
+        shift() is on WindowSeries, but a TdsFrame-level lag via window_func_legend_ext
+        can be done with a pwr_func that returns the lag TdsRow.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("a"),
+            PrimitiveTdsColumn.float_column("b"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        applied = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="a",
+        ).window_func_legend_ext(
+            pwr_func=lambda p, w, r: p.lag(r, 1),
+        )
+
+        sql = applied.to_sql_query()
+        assert "lag(" in sql
+        assert sql.count("lag(") == 2
+
+        pure = applied.to_pure_query()
+        assert "lag($r, 1).a" in pure
+        assert "lag($r, 1).b" in pure
+        assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
