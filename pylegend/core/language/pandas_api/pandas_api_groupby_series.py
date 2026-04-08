@@ -61,7 +61,7 @@ from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function,
-    get_pure_query_from_expr,
+    get_pure_query_from_expr, get_groupby_series_from_col_type,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -85,36 +85,11 @@ __all__: PyLegendSequence[str] = [
     "FloatGroupbySeries",
     "DateGroupbySeries",
     "DateTimeGroupbySeries",
+    "DecimalGroupbySeries",
     "StrictDateGroupbySeries",
 ]
 
 R = PyLegendTypeVar('R')
-
-
-_COL_TYPE_TO_GROUPBY_SERIES_CLASS_NAME: PyLegendDict[str, str] = {
-    "Boolean": "BooleanGroupbySeries",
-    "String": "StringGroupbySeries",
-    "Varchar": "StringGroupbySeries",
-    "Number": "NumberGroupbySeries",
-    "Integer": "IntegerGroupbySeries",
-    "TinyInt": "IntegerGroupbySeries",
-    "UTinyInt": "IntegerGroupbySeries",
-    "SmallInt": "IntegerGroupbySeries",
-    "USmallInt": "IntegerGroupbySeries",
-    "Int": "IntegerGroupbySeries",
-    "UInt": "IntegerGroupbySeries",
-    "BigInt": "IntegerGroupbySeries",
-    "UBigInt": "IntegerGroupbySeries",
-    "Float": "FloatGroupbySeries",
-    "Float4": "FloatGroupbySeries",
-    "Double": "FloatGroupbySeries",
-    "Decimal": "DecimalGroupbySeries",
-    "Numeric": "DecimalGroupbySeries",
-    "Date": "DateGroupbySeries",
-    "DateTime": "DateTimeGroupbySeries",
-    "Timestamp": "DateTimeGroupbySeries",
-    "StrictDate": "StrictDateGroupbySeries",
-}
 
 
 def _get_new_groupby_series_for_column(
@@ -123,14 +98,9 @@ def _get_new_groupby_series_for_column(
         column: TdsColumn,
 ) -> "GroupbySeries":
     col_type = column.get_type()
-    col_name = column.get_name()
 
-    class_name = _COL_TYPE_TO_GROUPBY_SERIES_CLASS_NAME.get(col_type)
-    if class_name is None:
-        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")  # pragma: no cover
-    cls = globals()[class_name]
-
-    return cls(base_groupby_frame, aggregated_frame)  # type: ignore[no-any-return]
+    groupby_series_cls = get_groupby_series_from_col_type(col_type)
+    return groupby_series_cls(base_groupby_frame, aggregated_frame)
 
 
 class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
@@ -508,6 +478,62 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
         else:
             return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def expanding(
+            self,
+            min_periods: int = 1,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "WindowSeries":
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        window_frame = self._base_groupby_frame.expanding(
+            min_periods=min_periods, method=method, order_by=order_by, ascending=ascending
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
+    def rolling(
+            self,
+            window: int,
+            min_periods: PyLegendOptional[int] = None,
+            center: bool = False,
+            win_type: PyLegendOptional[str] = None,
+            on: PyLegendOptional[str] = None,
+            closed: PyLegendOptional[str] = None,
+            step: PyLegendOptional[int] = None,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "WindowSeries":
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        window_frame = self._base_groupby_frame.rolling(
+            window=window, min_periods=min_periods, center=center, win_type=win_type,
+            on=on, closed=closed, step=step, method=method, order_by=order_by,
+            ascending=ascending
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
+    def window_frame_legend_ext(
+            self,
+            frame_spec: "FrameSpec",
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "WindowSeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Create a custom window specification with explicit control over the
+        window frame on a single column.  When called on a groupby series
+        the grouping columns are automatically used as PARTITION BY.
+        """
+        from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+        window_frame = self._base_groupby_frame.window_frame_legend_ext(
+            frame_spec=frame_spec, order_by=order_by, ascending=ascending
+        )
+        return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
 
     def cume_dist_legend_ext(
             self,

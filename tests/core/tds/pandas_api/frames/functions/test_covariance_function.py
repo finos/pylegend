@@ -86,8 +86,7 @@ class TestCovarPopulationFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["valA"].cov(gb["valB"], ddof=0)
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        frame["newCol"] = gb["valA"].cov(gb["valB"], ddof=0)
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -104,7 +103,7 @@ class TestCovarPopulationFunctionQueryGeneration:
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
-        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_covar_pop_window_pure_generation(self) -> None:
         columns = [
@@ -114,9 +113,8 @@ class TestCovarPopulationFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["valA"].cov(gb["valB"], ddof=0)
-        assigned_frame = frame.assign(newCol=lambda r: result)
-        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+        frame["newCol"] = gb["valA"].cov(gb["valB"], ddof=0)
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.valA, $r.valB)}:y | $y->meta::pure::functions::math::covarPopulation()->cast(@Float))'
             '->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'
@@ -183,8 +181,7 @@ class TestCovarSampleFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["valA"].cov(gb["valB"])  # ddof=1 is default = covar_sample
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        frame["newCol"] = gb["valA"].cov(gb["valB"])  # ddof=1 is default = covar_sample
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -201,7 +198,7 @@ class TestCovarSampleFunctionQueryGeneration:
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
-        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_covar_samp_window_pure_generation(self) -> None:
         columns = [
@@ -211,9 +208,8 @@ class TestCovarSampleFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["valA"].cov(gb["valB"])  # ddof=1 = covar_sample
-        assigned_frame = frame.assign(newCol=lambda r: result)
-        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+        frame["newCol"] = gb["valA"].cov(gb["valB"])  # ddof=1 = covar_sample
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.valA, $r.valB)}:y | $y->meta::pure::functions::math::covarSample()->cast(@Float))'
             '->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'
@@ -422,4 +418,3 @@ class TestTwoColumnWindowFunctionInternals:
         assert "extend" in pure
         assert "project" in pure
         assert "result__pylegend_olap_column__" in pure
-

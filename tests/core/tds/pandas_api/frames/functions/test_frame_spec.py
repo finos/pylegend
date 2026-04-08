@@ -23,8 +23,6 @@ from pylegend.core.language.pandas_api.pandas_api_frame_spec import (
     FrameSpec,
     RowsBetween,
     RangeBetween,
-    rows_between,
-    range_between,
 )
 from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiDurationUnit,
@@ -33,6 +31,9 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindowFrameMode,
 )
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
+from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 
 
 class TestRowsBetweenValidation:
@@ -155,10 +156,12 @@ class TestRangeBetweenDuration:
 
 class TestRangeBetweenFunction:
     """Tests for the range_between helper function."""
+    columns = [PrimitiveTdsColumn.string_column("col1")]
+    frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
     def test_range_between_function_simple(self) -> None:
         """range_between() function with simple bounds works."""
-        rb = range_between(start=-10, end=10)
+        rb = self.frame.range_between(start=-10, end=10)
         assert isinstance(rb, RangeBetween)
         start_bound = rb.build_start_bound()
         end_bound = rb.build_end_bound()
@@ -167,7 +170,7 @@ class TestRangeBetweenFunction:
 
     def test_range_between_function_duration(self) -> None:
         """range_between() function with duration bounds works."""
-        rb = range_between(
+        rb = self.frame.range_between(
             duration_start=-1,
             duration_start_unit="WEEKS",
             duration_end=2,
@@ -181,7 +184,7 @@ class TestRangeBetweenFunction:
 
     def test_range_between_function_defaults(self) -> None:
         """range_between() function with defaults (unbounded both)."""
-        rb = range_between()
+        rb = self.frame.range_between()
         assert isinstance(rb, RangeBetween)
         start_bound = rb.build_start_bound()
         end_bound = rb.build_end_bound()
@@ -214,10 +217,12 @@ class TestDurationUnitFromString:
 
 class TestRowsBetweenFunction:
     """Tests for the rows_between helper function."""
+    columns = [PrimitiveTdsColumn.string_column("col1")]
+    frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
     def test_rows_between_function_creates_instance(self) -> None:
         """rows_between() function creates RowsBetween instance."""
-        rb = rows_between(start=-5, end=5)
+        rb = self.frame.rows_between(start=-5, end=5)
         assert isinstance(rb, RowsBetween)
         start_bound = rb.build_start_bound()
         end_bound = rb.build_end_bound()

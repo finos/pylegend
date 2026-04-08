@@ -198,8 +198,7 @@ class TestCorrFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["valA"].corr(gb["valB"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        frame["newCol"] = gb["valA"].corr(gb["valB"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -216,7 +215,7 @@ class TestCorrFunctionQueryGeneration:
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
-        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_corr_window_pure_generation(self) -> None:
         """Test window corr Pure generation."""
@@ -227,15 +226,14 @@ class TestCorrFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["valA"].corr(gb["valB"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
-        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(), self.legend_client) == dedent(
+        frame["newCol"] = gb["valA"].corr(gb["valB"])
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
               ->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.valA, $r.valB)}:y | $y->meta::pure::functions::math::corr()->cast(@Float))
               ->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'''
         )  # noqa: E501
-        assert generate_pure_query_and_compile(assigned_frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~valA__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.valA, $r.valB)}:y | $y->meta::pure::functions::math::corr()->cast(@Float))'
             '->project(~[id:c|$c.id, valA:c|$c.valA, valB:c|$c.valB, newCol:c|$c.valA__pylegend_olap_column__])'
@@ -249,8 +247,7 @@ class TestCorrFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        result = gb["valA"].corr(gb["valA"])
-        assigned_frame = frame.assign(newCol=lambda r: result)
+        frame["newCol"] = gb["valA"].corr(gb["valA"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -265,7 +262,7 @@ class TestCorrFunctionQueryGeneration:
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
-        assert assigned_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
 
     def test_corr_window_validate_missing_col_a(self) -> None:
         """Test that TwoColumnWindowFunction raises ValueError for missing column A."""
@@ -333,4 +330,3 @@ class TestCorrFunctionEndToEnd:
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Quantity"]
         assert res["rows"][0]["values"][0] == 1.0
-
