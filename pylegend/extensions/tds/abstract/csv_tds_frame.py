@@ -75,10 +75,16 @@ def tds_columns_from_csv_string(
             primitive_type = PrimitiveType.String
 
         tds_columns.append(
-            PrimitiveTdsColumn(name=col, _type=primitive_type)
+            PrimitiveTdsColumn(name=_remove_quotes_if_present(col), _type=primitive_type)
         )
 
     return tds_columns
+
+
+def _remove_quotes_if_present(col_name: str) -> str:
+    if len(col_name) >= 2 and col_name[0] == col_name[-1] and col_name[0] in ("'", '"'):
+        return col_name[1:-1]
+    return col_name
 
 
 def is_strict_date_or_datetime(col: pd.Series) -> bool:  # type: ignore[explicit-any]
