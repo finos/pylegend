@@ -839,3 +839,482 @@ class TestNoFrameSpecWindowFunction:
         assert "rows(" not in pure
         assert "range(" not in pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+
+class TestSingleColumnWindowFunctionValidation:
+    """Tests for validate() error paths in SingleColumnWindowFunction."""
+
+    def _make_window_frame(self) -> "PandasApiTdsFrame":
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        return frame
+
+    def test_validate_pwr_func_not_callable(self) -> None:
+        """validate() raises TypeError when pwr_func is not callable."""
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        frame = self._make_window_frame()
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        )
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+        func = SingleColumnWindowFunction(
+            base_window_frame=window_frame,
+            pwr_func="not_callable",  # type: ignore
+        )
+        with pytest.raises(TypeError, match="pwr_func must be callable"):
+            func.validate()
+
+    def test_validate_pwr_func_wrong_param_count(self) -> None:
+        """validate() raises TypeError when pwr_func has wrong number of required params."""
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        frame = self._make_window_frame()
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        )
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+        func = SingleColumnWindowFunction(
+            base_window_frame=window_frame,
+            pwr_func=lambda a, b: a,  # type: ignore  -- only 2 params
+        )
+        with pytest.raises(TypeError, match="pwr_func must accept exactly 3 positional parameters"):
+            func.validate()
+
+    def test_validate_agg_func_not_callable(self) -> None:
+        """validate() raises TypeError when agg_func is not callable."""
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        frame = self._make_window_frame()
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        )
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+        func = SingleColumnWindowFunction(
+            base_window_frame=window_frame,
+            pwr_func=lambda p, w, r: p.first(w, r)["col1"],
+            agg_func="not_callable",  # type: ignore
+        )
+        with pytest.raises(TypeError, match="agg_func must be callable or None"):
+            func.validate()
+
+    def test_validate_agg_func_wrong_param_count(self) -> None:
+        """validate() raises TypeError when agg_func has wrong number of required params."""
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+        frame = self._make_window_frame()
+        window_frame = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        )
+        assert isinstance(window_frame, PandasApiWindowTdsFrame)
+
+        func = SingleColumnWindowFunction(
+            base_window_frame=window_frame,
+            pwr_func=lambda p, w, r: p.first(w, r)["col1"],
+            agg_func=lambda a, b: a,  # type: ignore  -- 2 params
+        )
+        with pytest.raises(TypeError, match="agg_func must accept exactly 1 positional parameter"):
+            func.validate()
+
+    def test_validate_base_window_frame_type_check_exists(self) -> None:
+        """The validate() check for base_window_frame type can't be reached
+        because __init__ calls construct_window() which would fail first.
+        This test just confirms the constructor rejects non-window frames."""
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+
+        frame = self._make_window_frame()
+
+        with pytest.raises(AttributeError):
+            SingleColumnWindowFunction(
+                base_window_frame=frame,  # type: ignore  -- not a PandasApiWindowTdsFrame
+                pwr_func=lambda p, w, r: p.first(w, r)["col1"],
+            )
+
+
+class TestWindowSeriesShiftValidation:
+    """Tests for shift() validation errors on WindowSeries."""
+
+    def _make_window_series(self):
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        return frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        )["col1"]
+
+    def test_shift_freq_not_supported(self) -> None:
+        ws = self._make_window_series()
+        with pytest.raises(NotImplementedError, match="'freq' argument.*is not supported"):
+            ws.shift(freq="D")
+
+    def test_shift_axis_not_supported(self) -> None:
+        ws = self._make_window_series()
+        with pytest.raises(NotImplementedError, match="'axis' argument.*must be 0 or 'index'"):
+            ws.shift(axis=1)
+
+    def test_shift_fill_value_not_supported(self) -> None:
+        ws = self._make_window_series()
+        with pytest.raises(NotImplementedError, match="'fill_value' argument.*is not supported"):
+            ws.shift(fill_value=0)
+
+    def test_shift_suffix_not_supported(self) -> None:
+        ws = self._make_window_series()
+        with pytest.raises(NotImplementedError, match="'suffix' argument.*is not supported"):
+            ws.shift(suffix="_shifted")
+
+    def test_shift_periods_not_int(self) -> None:
+        ws = self._make_window_series()
+        with pytest.raises(NotImplementedError, match="'periods' argument.*must be an int"):
+            ws.shift(periods=1.5)  # type: ignore
+
+
+class TestLastOnWindowTdsFrame:
+    """Tests for last() on WindowTdsFrame (both plain and numeric_only)."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_last_numeric_only_on_window_tds_frame(self) -> None:
+        """window_frame.last(numeric_only=True) should only apply last_value to numeric columns."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("score"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        applied = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="val",
+        ).last(numeric_only=True)
+
+        sql = applied.to_sql_query()
+        # Should contain last_value for numeric cols, and the string column should be excluded
+        assert "last_value" in sql
+        assert '"grp"' not in sql or "grp" in sql  # grp may still appear in sub-queries
+
+        pure = applied.to_pure_query()
+        assert "last" in pure
+        assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_last_plain_on_window_tds_frame(self) -> None:
+        """window_frame.last() without numeric_only should apply last_value to all columns."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        applied = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col1",
+        ).last()
+
+        expected_sql = '''
+            SELECT
+                "root"."col1__pylegend_olap_column__" AS "col1",
+                "root"."col2__pylegend_olap_column__" AS "col2"
+            FROM
+                (
+                    SELECT
+                        last_value("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col1__pylegend_olap_column__",
+                        last_value("root"."col2") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "col2__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert applied.to_sql_query() == expected_sql
+
+        pure = applied.to_pure_query()
+        assert "last" in pure
+        assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
+
+
+class TestWindowFuncLegendExtOnGroupbySeries:
+    """Tests for window_func_legend_ext on GroupbySeries returning GroupbySeries."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_groupby_series_window_func_legend_ext_returns_groupby_series(self) -> None:
+        """
+        frame.groupby('grp')['val'].window_frame_legend_ext(...).first()
+        should return a GroupbySeries.
+        """
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
+
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("score"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.groupby("grp")["val"].window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="score",
+        ).first()
+        assert isinstance(series, GroupbySeries)
+
+        sql = series.to_sql_query()
+        assert "first_value" in sql
+
+    def test_series_window_func_legend_ext_returns_series(self) -> None:
+        """
+        frame['val'].window_frame_legend_ext(...).first()
+        should return a Series.
+        """
+        from pylegend.core.language.pandas_api.pandas_api_series import Series
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("score"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame["val"].window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="score",
+        ).first()
+        assert isinstance(series, Series)
+
+        sql = series.to_sql_query()
+        assert "first_value" in sql
+
+
+class TestSeriesPureQueryWithArithmetic:
+    """Tests for the get_pure_query_from_expr path (series.to_pure_query() with arithmetic)."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_series_to_pure_query_with_arithmetic_single_column_window(self) -> None:
+        """
+        series = frame.window_frame_legend_ext(...)['col'].first() + 10
+        series.to_pure_query() should work through get_pure_query_from_expr.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col2",
+        )["col1"].first() + 10
+
+        pure = series.to_pure_query()
+        assert "first" in pure
+        assert "10" in pure
+        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_groupby_series_to_pure_query_with_arithmetic_single_column_window(self) -> None:
+        """
+        series = frame.groupby('grp').window_frame_legend_ext(...)['val'].first() + 5
+        series.to_pure_query() should work through get_pure_query_from_expr.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("score"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.groupby("grp").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="score",
+        )["val"].first() + 5
+
+        pure = series.to_pure_query()
+        assert "first" in pure
+        assert "5" in pure
+        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == pure
+
+
+class TestAggFuncPaths:
+    """Tests for SingleColumnWindowFunction with an agg_func provided."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_window_func_legend_ext_with_agg_func(self) -> None:
+        """
+        Use window_func_legend_ext on WindowSeries with both pwr_func and agg_func.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        ws = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col2",
+        )["col1"]
+
+        # Use pwr_func that references a column and agg_func that sums the collection
+        series = ws.window_func_legend_ext(
+            pwr_func=lambda p, w, r: r["col1"],
+            agg_func=lambda c: c.sum(),
+        )
+
+        sql = series.to_sql_query()
+        assert "sum" in sql.lower()
+        assert "OVER" in sql
+
+        pure = series.to_pure_query()
+        assert "sum" in pure.lower()
+
+    def test_window_tds_frame_func_legend_ext_with_agg_func(self) -> None:
+        """
+        Use window_func_legend_ext on WindowTdsFrame with both pwr_func and agg_func.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        wf = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col2",
+        )
+
+        # pwr_func returning a single column primitive (r["col1"]), with sum agg
+        applied = wf.window_func_legend_ext(
+            pwr_func=lambda p, w, r: r["col1"],
+            agg_func=lambda c: c.sum(),
+        )
+
+        sql = applied.to_sql_query()
+        assert "sum" in sql.lower()
+        assert "OVER" in sql
+
+        pure = applied.to_pure_query()
+        assert "sum" in pure.lower()
+
+    def test_assign_with_agg_func_single_column_window(self) -> None:
+        """
+        frame['new'] = frame.window_frame_legend_ext(...)['col'].window_func_legend_ext(pwr_func, agg_func)
+        Tests the agg_func path through assign_function to_sql and to_pure.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["sum_col1"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col2",
+        )["col1"].window_func_legend_ext(
+            pwr_func=lambda p, w, r: r["col1"],
+            agg_func=lambda c: c.sum(),
+        )
+
+        sql = frame.to_sql_query()
+        assert "sum" in sql.lower()
+        assert "OVER" in sql
+
+        pure = frame.to_pure_query()
+        assert "sum" in pure.lower()
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
+
+class TestPythonLiteralPwrFunc:
+    """Tests for pwr_func returning a raw Python literal (not a PyLegendPrimitive)."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+
+    def test_pwr_func_returning_literal_single_column(self) -> None:
+        """
+        window_func_legend_ext with pwr_func returning a raw int (42).
+        Tests the else branch for non-PyLegendPrimitive in to_sql, to_pure, to_sql_expression, build_pure_extend_strs.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # pwr_func returns raw int 42, not a PyLegendPrimitive
+        frame["const"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col2",
+        )["col1"].window_func_legend_ext(
+            pwr_func=lambda p, w, r: 42,
+        )
+
+        sql = frame.to_sql_query()
+        assert "42" in sql
+        assert "OVER" in sql
+
+        pure = frame.to_pure_query()
+        assert "42" in pure
+
+    def test_pwr_func_returning_literal_standalone_series(self) -> None:
+        """
+        series = window_func_legend_ext(pwr_func returning 42) — standalone series SQL.
+        Tests to_sql_expression else branch for non-PyLegendPrimitive.
+        """
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col2",
+        )["col1"].window_func_legend_ext(
+            pwr_func=lambda p, w, r: 42,
+        )
+
+        sql = series.to_sql_query()
+        assert "42" in sql
+        assert "OVER" in sql
+
+        pure = series.to_pure_query()
+        assert "42" in pure

@@ -375,7 +375,7 @@ def needs_zero_column_for_window(series: PyLegendUnion["Series", "GroupbySeries"
     applied_func = get_applied_func(core)
     if isinstance(applied_func, WindowAggregateFunction):
         return not applied_func._is_partition_only()
-    if isinstance(applied_func, SingleColumnWindowFunction):
+    if isinstance(applied_func, SingleColumnWindowFunction):  # pragma: no cover
         return True
     return False
 

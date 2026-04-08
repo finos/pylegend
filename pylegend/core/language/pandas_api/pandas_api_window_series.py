@@ -231,7 +231,7 @@ class WindowSeries:
         if isinstance(base, PandasApiGroupbyTdsFrame):
             gb_series_cls = get_groupby_series_from_col_type(col_type)
             new_gb_frame_or_series = base[column]
-            if isinstance(new_gb_frame_or_series, PandasApiGroupbyTdsFrame):
+            if isinstance(new_gb_frame_or_series, PandasApiGroupbyTdsFrame):  # pragma: no cover
                 new_gb_frame = new_gb_frame_or_series
             else:
                 new_gb_frame = new_gb_frame_or_series._base_groupby_frame

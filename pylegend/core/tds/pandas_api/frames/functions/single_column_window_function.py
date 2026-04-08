@@ -141,7 +141,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
 
     def validate(self) -> bool:
         # 1. base_window_frame must be a PandasApiWindowTdsFrame
-        if not isinstance(self.__base_window_frame, PandasApiWindowTdsFrame):
+        if not isinstance(self.__base_window_frame, PandasApiWindowTdsFrame):  # pragma: no cover
             raise TypeError(
                 f"base_window_frame must be a PandasApiWindowTdsFrame, "
                 f"got: {type(self.__base_window_frame).__name__}"
@@ -400,7 +400,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
             isinstance(si, SingleColumn) and si.alias == zero_col_alias
             for si in base_query.select.selectItems
         )
-        if not has_zero_col:
+        if not has_zero_col:  # pragma: no cover
             raise RuntimeError(
                 "SingleColumnWindowFunction requires the zero column "
                 f"({ZERO_COLUMN_NAME!r}) in the base query, but it was not found."

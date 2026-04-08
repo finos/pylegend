@@ -29,7 +29,6 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
     PandasApiWindowFrame,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
-from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import PwrFunc, AggFunc
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -37,6 +36,7 @@ from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTd
 
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import PwrFunc, AggFunc
 
 ZERO_COLUMN_NAME = "__pylegend_zero_column__"
 
