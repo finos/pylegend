@@ -58,7 +58,7 @@ from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_core_series, \
-    has_window_function, get_pure_query_from_expr, get_series_from_col_type
+    has_window_function, needs_zero_column_for_window, get_pure_query_from_expr
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
@@ -125,9 +125,12 @@ def _get_new_series_for_column(
     col_type = column.get_type()
     col_name = column.get_name()
 
-    series_cls = get_series_from_col_type(col_type)
+    class_name = _COL_TYPE_TO_SERIES_CLASS_NAME.get(col_type)
+    if class_name is None:
+        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")  # pragma: no cover
+    cls = globals()[class_name]
 
-    new_series: Series = series_cls(base_frame, col_name)
+    new_series: Series = cls(base_frame, col_name)
     if applied_function_frame is not None:
         new_series._filtered_frame = applied_function_frame
     return new_series
@@ -264,6 +267,19 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.get_base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
+
+        # If the series needs the zero column, inject it into base_query
+        # and wrap in a sub-query so PARTITION BY can reference it.
+        if needs_zero_column_for_window(self):
+            from pylegend.core.sql.metamodel import IntegerLiteral
+            from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+            base_query.select.selectItems.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                    expression=IntegerLiteral(0),
+                )
+            )
+            base_query = create_sub_query(base_query, config, "root")
 
         full_sql_expr = self.to_sql_expression({'c': base_query}, config)
 
@@ -545,7 +561,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def window_frame_legend_ext(
             self,
-            frame_spec: "FrameSpec",
+            frame_spec: PyLegendOptional["FrameSpec"] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":

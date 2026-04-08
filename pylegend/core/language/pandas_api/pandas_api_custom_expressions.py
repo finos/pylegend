@@ -164,6 +164,31 @@ class PandasApiPartialFrame(PyLegendPartialFrame):
     ) -> PyLegendFloat:
         return PyLegendFloat(PandasApiPercentRankExpression(self, window, row))
 
+    def first(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow",
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiFirstRow
+        return PandasApiFirstRow(self, window, row)
+
+    def last(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow",
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiLastRow
+        return PandasApiLastRow(self, window, row)
+
+    def nth(
+            self,
+            window: "PandasApiWindowReference",
+            row: "PandasApiTdsRow",
+            offset: int,
+    ) -> "PandasApiTdsRow":
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiNthRow
+        return PandasApiNthRow(self, window, row, offset)
+
     def lead(
             self,
             row: "PandasApiTdsRow",

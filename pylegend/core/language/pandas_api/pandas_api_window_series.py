@@ -14,6 +14,7 @@
 
 
 from pylegend._typing import (
+    PyLegendOptional,
     PyLegendUnion,
     TYPE_CHECKING,
 )
@@ -179,3 +180,159 @@ class WindowSeries:
             raise NotImplementedError(
                 f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
             )
+
+    def window_func_legend_ext(
+            self,
+            pwr_func: "PwrFunc",
+            agg_func: "PyLegendOptional[AggFunc]" = None,
+    ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        PyLegend extension (not present in pandas).
+
+        Apply a custom single-column window function to the selected
+        column using the given ``pwr_func`` and optional ``agg_func``.
+
+        Parameters
+        ----------
+        pwr_func:
+            A callable ``(p, w, r) -> primitive`` that describes how to
+            compute the window value for the column.
+        agg_func:
+            An optional callable ``(collection) -> primitive`` for an
+            additional aggregation step.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame,
+        )
+        from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+
+        column = self._column_name
+        base = self._window_frame._base_frame
+        base_frame_unwrapped = self._window_frame.base_frame()
+
+        applied_function_frame = PandasApiAppliedFunctionTdsFrame(
+            SingleColumnWindowFunction(
+                base_window_frame=self._window_frame,
+                pwr_func=pwr_func,
+                agg_func=agg_func,
+            )
+        )
+
+        result_columns = applied_function_frame.columns()
+        assert len(result_columns) == 1, (
+            "WindowSeries.window_func_legend_ext() should produce exactly one result column"
+        )
+        col_type = result_columns[0].get_type()
+
+        if isinstance(base, PandasApiGroupbyTdsFrame):
+            gb_series_cls = get_groupby_series_from_col_type(col_type)
+            new_gb_frame_or_series = base[column]
+            if isinstance(new_gb_frame_or_series, PandasApiGroupbyTdsFrame):
+                new_gb_frame = new_gb_frame_or_series
+            else:
+                new_gb_frame = new_gb_frame_or_series._base_groupby_frame
+            return gb_series_cls(new_gb_frame, applied_function_frame)  # type: ignore
+        else:
+            series_cls = get_series_from_col_type(col_type)
+            new_series = series_cls(base_frame_unwrapped, column)
+            new_series._filtered_frame = applied_function_frame
+            return new_series  # type: ignore
+
+    def first(self) -> PyLegendUnion["Series", "GroupbySeries"]:
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+            PandasApiPartialFrame,
+            PandasApiWindowReference,
+        )
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+        column = self._column_name
+
+        def pwr_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+                _col: str = column,
+        ) -> "PyLegendPrimitiveOrPythonPrimitive":
+            return p.first(w, r)[_col]
+
+        return self.window_func_legend_ext(pwr_func=pwr_func)
+
+    def last(self) -> PyLegendUnion["Series", "GroupbySeries"]:
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+            PandasApiPartialFrame,
+            PandasApiWindowReference,
+        )
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+        column = self._column_name
+
+        def pwr_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+                _col: str = column,
+        ) -> "PyLegendPrimitiveOrPythonPrimitive":
+            return p.last(w, r)[_col]
+
+        return self.window_func_legend_ext(pwr_func=pwr_func)
+
+    def shift(
+            self,
+            periods: int = 1,
+            freq: PyLegendOptional[str] = None,
+            axis: int = 0,
+            fill_value: PyLegendOptional[object] = None,
+            suffix: PyLegendOptional[str] = None,
+    ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        if freq is not None:
+            raise NotImplementedError(
+                f"The 'freq' argument of the shift function is not supported, but got: freq={freq!r}"
+            )
+        if axis not in [0, "index"]:
+            raise NotImplementedError(
+                f"The 'axis' argument of the shift function must be 0 or 'index', but got: axis={axis!r}"
+            )
+        if fill_value is not None:
+            raise NotImplementedError(
+                f"The 'fill_value' argument of the shift function is not supported, but got: fill_value={fill_value!r}"
+            )
+        if suffix is not None:
+            raise NotImplementedError(
+                f"The 'suffix' argument of the shift function is not supported for WindowSeries, but got: suffix={suffix!r}"
+            )
+        if not isinstance(periods, int):
+            raise NotImplementedError(
+                "The 'periods' argument of the shift function must be an int for WindowSeries."
+            )
+
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+            PandasApiPartialFrame,
+            PandasApiWindowReference,
+        )
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+        column = self._column_name
+
+        if periods > 0:
+            def pwr_func(
+                    p: PandasApiPartialFrame,
+                    w: PandasApiWindowReference,
+                    r: PandasApiTdsRow,
+                    _col: str = column,
+                    _periods: int = periods,
+            ) -> "PyLegendPrimitiveOrPythonPrimitive":
+                return p.lag(r, _periods)[_col]
+        else:
+            def pwr_func(
+                    p: PandasApiPartialFrame,
+                    w: PandasApiWindowReference,
+                    r: PandasApiTdsRow,
+                    _col: str = column,
+                    _periods: int = -periods,
+            ) -> "PyLegendPrimitiveOrPythonPrimitive":
+                return p.lead(r, _periods)[_col]
+
+        return self.window_func_legend_ext(pwr_func=pwr_func)

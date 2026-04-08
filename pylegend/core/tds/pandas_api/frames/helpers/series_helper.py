@@ -296,13 +296,17 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
     from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
     from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
     from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import SingleColumnWindowFunction
 
     if series.expr is not None:
         core_series = assert_and_find_core_series(series.expr)
         assert core_series is not None
         return has_window_function(core_series)
 
-    considered_window_functions = [RankFunction, WindowAggregateFunction, TwoColumnWindowFunction, ZScoreWindowFunction]
+    considered_window_functions = [
+        RankFunction, WindowAggregateFunction, TwoColumnWindowFunction,
+        ZScoreWindowFunction, SingleColumnWindowFunction,
+    ]
 
     if isinstance(series, Series):
         applied_func = series.get_filtered_frame().get_applied_function()
@@ -317,10 +321,11 @@ def has_window_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> boo
 
 
 def has_window_aggregate_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
-    """Check if the series (or its core) uses a WindowAggregateFunction (not RankFunction)."""
+    """Check if the series (or its core) uses a WindowAggregateFunction or SingleColumnWindowFunction (not RankFunction)."""
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import SingleColumnWindowFunction
 
     core: PyLegendUnion[Series, GroupbySeries] = series
     if series.expr is not None:
@@ -329,7 +334,7 @@ def has_window_aggregate_function(series: PyLegendUnion["Series", "GroupbySeries
             return False  # pragma: no cover
         core = found
 
-    return isinstance(get_applied_func(core), WindowAggregateFunction)
+    return isinstance(get_applied_func(core), (WindowAggregateFunction, SingleColumnWindowFunction))
 
 
 def has_aggregate_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
@@ -349,14 +354,16 @@ def has_aggregate_function(series: PyLegendUnion["Series", "GroupbySeries"]) -> 
 
 
 def needs_zero_column_for_window(series: PyLegendUnion["Series", "GroupbySeries"]) -> bool:
-    """Check if the series uses a WindowAggregateFunction that requires the zero column.
+    """Check if the series uses a WindowAggregateFunction or SingleColumnWindowFunction that requires the zero column.
 
     Partition-only windows (from transform()) do NOT need the zero column.
     Only expanding/rolling windows need it.
+    SingleColumnWindowFunction always needs the zero column (never partition-only).
     """
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import SingleColumnWindowFunction
 
     core: PyLegendUnion[Series, GroupbySeries] = series
     if series.expr is not None:
@@ -368,6 +375,8 @@ def needs_zero_column_for_window(series: PyLegendUnion["Series", "GroupbySeries"
     applied_func = get_applied_func(core)
     if isinstance(applied_func, WindowAggregateFunction):
         return not applied_func._is_partition_only()
+    if isinstance(applied_func, SingleColumnWindowFunction):
+        return True
     return False
 
 
@@ -442,6 +451,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
     from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
     from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
     from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import SingleColumnWindowFunction
 
     col_name = series.columns()[0].get_name()
     full_expr = series.expr
@@ -461,7 +471,7 @@ def get_pure_query_from_expr(series: PyLegendUnion["Series", "GroupbySeries"], c
                 function_expr = c[1].to_pure_expression(config)
                 temp_name = escape_column_name(col_name + temp_column_name_suffix)
                 extend = f"->extend({window_expr}, ~{temp_name}:{generate_pure_lambda('p,w,r', function_expr)})"
-            elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction)):
+            elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction, SingleColumnWindowFunction)):
                 assert has_window_func is False
                 has_window_func = True
                 extend_strs = applied_func.build_pure_extend_strs(temp_column_name_suffix, config)

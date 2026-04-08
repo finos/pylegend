@@ -206,3 +206,116 @@ class PandasApiWindowTdsFrame:
         )
 
     agg = aggregate
+
+    def window_func_legend_ext(
+            self,
+            pwr_func: "PwrFunc",
+            agg_func: "PyLegendOptional[AggFunc]" = None,
+    ) -> PandasApiBaseTdsFrame:
+        """
+        PyLegend extension (not present in pandas).
+
+        Apply a custom single-column window function to all columns in
+        the frame using the given ``pwr_func`` and optional ``agg_func``.
+
+        Parameters
+        ----------
+        pwr_func:
+            A callable ``(p, w, r) -> primitive`` that describes how to
+            compute the window value for each column.
+        agg_func:
+            An optional callable ``(collection) -> primitive`` for an
+            additional aggregation step.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame,
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+
+        return PandasApiAppliedFunctionTdsFrame(
+            SingleColumnWindowFunction(
+                base_window_frame=self,
+                pwr_func=pwr_func,
+                agg_func=agg_func,
+            )
+        )
+
+    def first(self, numeric_only: bool = False) -> PandasApiBaseTdsFrame:
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+            PandasApiPartialFrame,
+            PandasApiWindowReference,
+        )
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+        if numeric_only:
+            from pylegend.core.language.shared.primitives.number import PyLegendNumber
+            tds_row = PandasApiTdsRow.from_tds_frame("row", self.base_frame())
+
+            # Determine which columns to keep: grouping columns + numeric columns
+            grouping_names = set(self.get_partition_columns())
+            numeric_columns = [
+                col for col in self.base_frame().columns()
+                if isinstance(tds_row[col.get_name()], PyLegendNumber)
+            ]
+            keep_names = list(grouping_names) + [
+                col.get_name() for col in numeric_columns
+                if col.get_name() not in grouping_names
+            ]
+
+            # Apply first() per numeric column on the original base frame
+            frame = self.base_frame()
+            for col in numeric_columns:
+                col_name = col.get_name()
+                frame[col_name] = self[col_name].first()
+
+            # Then filter to only grouping + numeric columns
+            return frame.filter(items=keep_names)
+
+        def pwr_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+        ) -> "PyLegendPrimitiveOrPythonPrimitive":
+            return p.first(w, r)
+
+        return self.window_func_legend_ext(pwr_func=pwr_func)
+
+    def last(self, numeric_only: bool = False) -> PandasApiBaseTdsFrame:
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+            PandasApiPartialFrame,
+            PandasApiWindowReference,
+        )
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+        if numeric_only:
+            from pylegend.core.language.shared.primitives.number import PyLegendNumber
+            tds_row = PandasApiTdsRow.from_tds_frame("row", self.base_frame())
+
+            grouping_names = set(self.get_partition_columns())
+            numeric_columns = [
+                col for col in self.base_frame().columns()
+                if isinstance(tds_row[col.get_name()], PyLegendNumber)
+            ]
+            keep_names = list(grouping_names) + [
+                col.get_name() for col in numeric_columns
+                if col.get_name() not in grouping_names
+            ]
+
+            frame = self.base_frame()
+            for col in numeric_columns:
+                col_name = col.get_name()
+                frame[col_name] = self[col_name].last()
+
+            return frame.filter(items=keep_names)
+
+        def pwr_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+        ) -> "PyLegendPrimitiveOrPythonPrimitive":
+            return p.last(w, r)
+
+        return self.window_func_legend_ext(pwr_func=pwr_func)
+
