@@ -63,16 +63,6 @@ from pylegend.core.tds.tds_frame import (
 )
 
 __all__: PyLegendSequence[str] = [
-    "PyLegendCustomPrimitive",
-    "PyLegendCustomBoolean",
-    "PyLegendCustomString",
-    "PyLegendCustomNumber",
-    "PyLegendCustomInteger",
-    "PyLegendCustomFloat",
-    "PyLegendCustomDecimal",
-    "PyLegendCustomDate",
-    "PyLegendCustomDateTime",
-    "PyLegendCustomStrictDate",
     "PyLegendSortDirection",
     "PyLegendSortInfo",
     "PyLegendDurationUnit",
@@ -90,59 +80,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendCumeDistExpression",
     "PyLegendNtileExpression",
 ]
-
-
-# ---------------------------------------------------------------------------
-# Primitive wrappers
-# ---------------------------------------------------------------------------
-
-class PyLegendCustomPrimitive(PyLegendPrimitive, metaclass=ABCMeta):
-    pass
-
-
-class PyLegendCustomBoolean(PyLegendCustomPrimitive, PyLegendBoolean):
-    def __init__(self, expr: PyLegendBoolean):
-        PyLegendBoolean.__init__(self, expr.value())
-
-
-class PyLegendCustomString(PyLegendCustomPrimitive, PyLegendString):
-    def __init__(self, expr: PyLegendString):
-        PyLegendString.__init__(self, expr.value())
-
-
-class PyLegendCustomNumber(PyLegendCustomPrimitive, PyLegendNumber):
-    def __init__(self, expr: PyLegendNumber):
-        PyLegendNumber.__init__(self, expr.value())
-
-
-class PyLegendCustomInteger(PyLegendCustomPrimitive, PyLegendInteger):
-    def __init__(self, expr: PyLegendInteger):
-        PyLegendInteger.__init__(self, expr.value())
-
-
-class PyLegendCustomFloat(PyLegendCustomPrimitive, PyLegendFloat):
-    def __init__(self, expr: PyLegendFloat):
-        PyLegendFloat.__init__(self, expr.value())
-
-
-class PyLegendCustomDecimal(PyLegendCustomPrimitive, PyLegendDecimal):
-    def __init__(self, expr: PyLegendDecimal):
-        PyLegendDecimal.__init__(self, expr.value())  # pragma: no cover
-
-
-class PyLegendCustomDate(PyLegendCustomPrimitive, PyLegendDate):
-    def __init__(self, expr: PyLegendDate):
-        PyLegendDate.__init__(self, expr.value())
-
-
-class PyLegendCustomDateTime(PyLegendCustomPrimitive, PyLegendDateTime):
-    def __init__(self, expr: PyLegendDateTime):
-        PyLegendDateTime.__init__(self, expr.value())
-
-
-class PyLegendCustomStrictDate(PyLegendCustomPrimitive, PyLegendStrictDate):
-    def __init__(self, expr: PyLegendStrictDate):
-        PyLegendStrictDate.__init__(self, expr.value())
 
 
 # ---------------------------------------------------------------------------
