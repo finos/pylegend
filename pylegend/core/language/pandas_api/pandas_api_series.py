@@ -58,7 +58,7 @@ from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_core_series, \
-    has_window_function, needs_zero_column_for_window, get_pure_query_from_expr
+    has_window_function, needs_zero_column_for_window, get_pure_query_from_expr, get_series_from_col_type
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
@@ -125,12 +125,9 @@ def _get_new_series_for_column(
     col_type = column.get_type()
     col_name = column.get_name()
 
-    class_name = _COL_TYPE_TO_SERIES_CLASS_NAME.get(col_type)
-    if class_name is None:
-        raise ValueError(f"Unsupported column type '{col_type}' for column '{col_name}'")  # pragma: no cover
-    cls = globals()[class_name]
+    series_cls = get_series_from_col_type(col_type)
 
-    new_series: Series = cls(base_frame, col_name)
+    new_series: Series = series_cls(base_frame, col_name)
     if applied_function_frame is not None:
         new_series._filtered_frame = applied_function_frame
     return new_series
