@@ -663,3 +663,179 @@ class TestFirstOnWindowSeries:
         expected_pure = dedent(expected_pure).strip()
         assert frame.to_pure_query() == expected_pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+
+class TestNoFrameSpecWindowFunction:
+    """Tests for window_frame_legend_ext with frame_spec=None (no frame clause)."""
+
+    @pytest.fixture(autouse=True)
+    def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        self.legend_client = LegendClient(
+            host="localhost",
+            port=legend_test_server["engine_port"],
+            secure_http=False
+        )
+
+    def test_no_frame_spec_on_base_frame_first(self) -> None:
+        """window_frame_legend_ext(order_by=...) with no frame_spec omits ROWS BETWEEN in SQL and Pure."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["first_col1"] = frame.window_frame_legend_ext(
+            order_by="col2",
+        )["col1"].first()
+
+        sql = frame.to_sql_query()
+        # Should have OVER clause with ORDER BY but NO ROWS BETWEEN
+        assert "OVER" in sql
+        assert "ORDER BY" in sql
+        assert "ROWS BETWEEN" not in sql
+        assert "RANGE BETWEEN" not in sql
+
+        expected_sql = '''
+            SELECT
+                "root"."col1" AS "col1",
+                "root"."col2" AS "col2",
+                "root"."first_col1__pylegend_olap_column__" AS "first_col1"
+            FROM
+                (
+                    SELECT
+                        "root"."col1" AS "col1",
+                        "root"."col2" AS "col2",
+                        first_value("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2") AS "first_col1__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert sql == expected_sql
+
+        pure = frame.to_pure_query()
+        # Pure should have over(...) with no rows() or range()
+        assert "rows(" not in pure
+        assert "range(" not in pure
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)]), ~col1__pylegend_olap_column__:{p,w,r | $p->first($w, $r).col1})
+              ->project(~[col1:c|$c.col1, col2:c|$c.col2, first_col1:c|$c.col1__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert pure == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_no_frame_spec_on_groupby_frame_first(self) -> None:
+        """groupby.window_frame_legend_ext(order_by=...) with no frame_spec omits ROWS BETWEEN in SQL and Pure."""
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("score"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["first_val"] = frame.groupby("grp").window_frame_legend_ext(
+            order_by="score",
+        )["val"].first()
+
+        sql = frame.to_sql_query()
+        assert "OVER" in sql
+        assert "ORDER BY" in sql
+        assert "PARTITION BY" in sql
+        assert "ROWS BETWEEN" not in sql
+        assert "RANGE BETWEEN" not in sql
+
+        expected_sql = '''
+            SELECT
+                "root"."grp" AS "grp",
+                "root"."val" AS "val",
+                "root"."score" AS "score",
+                "root"."first_val__pylegend_olap_column__" AS "first_val"
+            FROM
+                (
+                    SELECT
+                        "root"."grp" AS "grp",
+                        "root"."val" AS "val",
+                        "root"."score" AS "score",
+                        first_value("root"."val") OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."score") AS "first_val__pylegend_olap_column__"
+                    FROM
+                        (
+                            SELECT
+                                "root".grp AS "grp",
+                                "root".val AS "val",
+                                "root".score AS "score",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
+                ) AS "root"
+        '''  # noqa: E501
+        expected_sql = dedent(expected_sql).strip()
+        assert sql == expected_sql
+
+        pure = frame.to_pure_query()
+        assert "rows(" not in pure
+        assert "range(" not in pure
+
+        expected_pure = '''
+            #Table(test_schema.test_table)#
+              ->extend(~__pylegend_zero_column__:{r|0})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~score)]), ~val__pylegend_olap_column__:{p,w,r | $p->first($w, $r).val})
+              ->project(~[grp:c|$c.grp, val:c|$c.val, score:c|$c.score, first_val:c|$c.val__pylegend_olap_column__])
+        '''  # noqa: E501
+        expected_pure = dedent(expected_pure).strip()
+        assert pure == expected_pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
+
+    def test_no_frame_spec_multi_column_on_base_frame(self) -> None:
+        """window_frame_legend_ext(order_by=...).first() with no frame_spec on all columns."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        applied = frame.window_frame_legend_ext(
+            order_by="col1",
+        ).first()
+
+        sql = applied.to_sql_query()
+        assert "ROWS BETWEEN" not in sql
+        assert "RANGE BETWEEN" not in sql
+
+        pure = applied.to_pure_query()
+        assert "rows(" not in pure
+        assert "range(" not in pure
+        assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
+
+    def test_no_frame_spec_shift_on_base_frame(self) -> None:
+        """window_frame_legend_ext(order_by=...).shift() with no frame_spec (lag)."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        frame["lag_col1"] = frame.window_frame_legend_ext(
+            order_by="col1",
+        )["col1"].shift(periods=1)
+
+        sql = frame.to_sql_query()
+        assert "lag(" in sql
+        assert "ROWS BETWEEN" not in sql
+        assert "RANGE BETWEEN" not in sql
+
+        pure = frame.to_pure_query()
+        assert "rows(" not in pure
+        assert "range(" not in pure
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure

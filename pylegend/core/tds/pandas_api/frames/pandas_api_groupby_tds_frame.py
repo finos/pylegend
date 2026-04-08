@@ -558,7 +558,7 @@ class PandasApiGroupbyTdsFrame:
 
     def window_frame_legend_ext(
             self,
-            frame_spec: "FrameSpec",
+            frame_spec: PyLegendOptional["FrameSpec"] = None,
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "PandasApiWindowTdsFrame":
@@ -573,6 +573,7 @@ class PandasApiGroupbyTdsFrame:
         ----------
         frame_spec:
             A ``RowsBetween`` or ``RangeBetween`` specification object.
+            ``None`` means no frame clause (just PARTITION BY + ORDER BY).
         order_by:
             Column name(s) to use for ORDER BY within the window.
         ascending:
@@ -581,7 +582,7 @@ class PandasApiGroupbyTdsFrame:
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
         from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
 
-        if not isinstance(frame_spec, FrameSpecCls):
+        if frame_spec is not None and not isinstance(frame_spec, FrameSpecCls):
             raise TypeError(
                 f"frame_spec must be a RowsBetween or RangeBetween, got {type(frame_spec).__name__}"
             )

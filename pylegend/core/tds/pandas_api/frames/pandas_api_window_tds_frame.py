@@ -30,7 +30,7 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 
 if TYPE_CHECKING:
@@ -68,7 +68,7 @@ class PandasApiWindowTdsFrame:
     _base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
     _order_by: PyLegendOptional[PyLegendList[str]]
     _ascending: PyLegendList[bool]
-    _frame_spec: FrameSpec
+    _frame_spec: PyLegendOptional[FrameSpec]
     _partition_only: bool
 
     def __init__(
@@ -80,7 +80,7 @@ class PandasApiWindowTdsFrame:
             partition_only: bool = False,
     ) -> None:
         self._base_frame = base_frame
-        self._frame_spec = frame_spec if frame_spec is not None else RowsBetween(None, None)
+        self._frame_spec = frame_spec
         self._partition_only = partition_only
 
         # Normalize order_by to Optional[List[str]]
@@ -173,10 +173,11 @@ class PandasApiWindowTdsFrame:
                 for col, asc in zip(self._order_by, self._ascending)
             ]
 
-        start = self._frame_spec.build_start_bound()
-        end = self._frame_spec.build_end_bound()
-
-        window_frame = PandasApiWindowFrame(self._frame_spec.frame_mode, start, end)
+        window_frame: PyLegendOptional[PandasApiWindowFrame] = None
+        if self._frame_spec is not None:
+            start = self._frame_spec.build_start_bound()
+            end = self._frame_spec.build_end_bound()
+            window_frame = PandasApiWindowFrame(self._frame_spec.frame_mode, start, end)
 
         return PandasApiWindow(
             partition_by=partition_by,
