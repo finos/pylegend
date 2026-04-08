@@ -61,6 +61,9 @@ __all__: PyLegendSequence[str] = [
     "VarianceSampleExpression",
     "VariancePopulationExpression",
     "JoinStringsExpression",
+    "CorrExpression",
+    "CovarPopulationExpression",
+    "CovarSampleExpression",
     "FirstDayOfYearExpression",
     "FirstDayOfQuarterExpression",
     "FirstDayOfMonthExpression",
@@ -506,6 +509,56 @@ class VariancePopulationExpression(Expression):
         self.value = value
 
 
+class MedianExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="medianExpression")
+        self.value = value
+
+
+class ModeExpression(Expression):
+    value: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+    ) -> None:
+        super().__init__(_type="modeExpression")
+        self.value = value
+
+
+class PercentileContExpression(Expression):
+    value: "Expression"
+    percentile: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        percentile: "Expression",
+    ) -> None:
+        super().__init__(_type="percentileContExpression")
+        self.value = value
+        self.percentile = percentile
+
+
+class PercentileDiscExpression(Expression):
+    value: "Expression"
+    percentile: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        percentile: "Expression",
+    ) -> None:
+        super().__init__(_type="percentileDiscExpression")
+        self.value = value
+        self.percentile = percentile
+
+
 class JoinStringsExpression(Expression):
     value: "Expression"
     other: "Expression"
@@ -516,6 +569,48 @@ class JoinStringsExpression(Expression):
         other: "Expression",
     ) -> None:
         super().__init__(_type="joinStringsExpression")
+        self.value = value
+        self.other = other
+
+
+class CorrExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression",
+    ) -> None:
+        super().__init__(_type="corrExpression")
+        self.value = value
+        self.other = other
+
+
+class CovarPopulationExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression",
+    ) -> None:
+        super().__init__(_type="covarPopulationExpression")
+        self.value = value
+        self.other = other
+
+
+class CovarSampleExpression(Expression):
+    value: "Expression"
+    other: "Expression"
+
+    def __init__(
+        self,
+        value: "Expression",
+        other: "Expression",
+    ) -> None:
+        super().__init__(_type="covarSampleExpression")
         self.value = value
         self.other = other
 

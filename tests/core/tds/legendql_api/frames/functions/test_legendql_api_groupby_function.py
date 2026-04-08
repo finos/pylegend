@@ -968,12 +968,12 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()}]
+                ~['Std Dev Sample':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()}])')
+                '->groupBy(~[col2], ~[\'Std Dev Sample\':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_std_dev_agg(self) -> None:
         columns = [
@@ -1002,12 +1002,12 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()}]
+                ~['Std Dev':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()}])')
+                '->groupBy(~[col2], ~[\'Std Dev\':{r | $r.col1}:{c | $c->stdDevSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_std_dev_population_agg(self) -> None:
         columns = [
@@ -1036,12 +1036,12 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()}]
+                ~['Std Dev Population':{r | $r.col1}:{c | $c->stdDevPopulation()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()}])')
+                '->groupBy(~[col2], ~[\'Std Dev Population\':{r | $r.col1}:{c | $c->stdDevPopulation()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_sample_agg(self) -> None:
         columns = [
@@ -1070,12 +1070,12 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()}]
+                ~['Variance Sample':{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()}])')
+                '->groupBy(~[col2], ~[\'Variance Sample\':{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_agg(self) -> None:
         columns = [
@@ -1104,12 +1104,12 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}]
+                ~[Variance:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()}])')
+                '->groupBy(~[col2], ~[Variance:{r | $r.col1}:{c | $c->varianceSample()->cast(@Float)}])')
 
     def test_query_gen_group_by_variance_population_agg(self) -> None:
         columns = [
@@ -1138,12 +1138,12 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
             #Table(test_schema.test_table)#
               ->groupBy(
                 ~[col2],
-                ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()}]
+                ~['Variance Population':{r | $r.col1}:{c | $c->variancePopulation()->cast(@Float)}]
               )'''
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#'
-                '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()}])')
+                '->groupBy(~[col2], ~[\'Variance Population\':{r | $r.col1}:{c | $c->variancePopulation()->cast(@Float)}])')
 
     def test_query_gen_group_by_string_max_agg(self) -> None:
         columns = [

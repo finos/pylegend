@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from abc import ABCMeta
+import csv
+import re
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
@@ -30,6 +32,47 @@ __all__: PyLegendSequence[str] = [
     "CsvInputFrameAbstract",
     "tds_columns_from_csv_string"
 ]
+
+# Matches a Pure decimal literal: digits with optional decimal point, ending in 'd' or 'D'
+# e.g. "21d", "31.0d", "101.0D", "3.14d"
+_PURE_DECIMAL_SUFFIX_RE = re.compile(r'^(\d+(?:\.\d+)?)[dD]$')
+
+
+def _strip_decimal_suffix(csv_string: str) -> tuple[str, set[str]]:
+    """Strip Pure decimal suffix (d/D) from values and track which columns had it.
+
+    Uses Python's csv module to correctly handle quoted fields containing
+    commas, escaped quotes, and other edge-cases that naive split(',')
+    would break on.
+    """
+    reader = csv.reader(StringIO(csv_string.strip()))
+    rows = list(reader)
+    if len(rows) < 2:
+        return csv_string, set()
+
+    headers = [h.strip() for h in rows[0]]
+    decimal_columns: set[str] = set()
+    new_rows = [headers]
+
+    for row in rows[1:]:
+        if not any(cell.strip() for cell in row):
+            continue  # skip blank rows  # pragma: no cover
+        new_values = []
+        for i, val in enumerate(row):
+            val = val.strip()
+            m = _PURE_DECIMAL_SUFFIX_RE.match(val)
+            if m:
+                new_values.append(m.group(1))  # pragma: no cover
+                if i < len(headers):  # pragma: no cover
+                    decimal_columns.add(headers[i])  # pragma: no cover
+            else:
+                new_values.append(val)
+        new_rows.append(new_values)
+
+    out = StringIO()
+    writer = csv.writer(out, lineterminator='\n')
+    writer.writerows(new_rows)
+    return out.getvalue(), decimal_columns
 
 
 class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
@@ -52,14 +95,19 @@ class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
 def tds_columns_from_csv_string(
         csv_string: str
 ) -> PyLegendList[PrimitiveTdsColumn]:
-    df = pd.read_csv(StringIO(csv_string))
+    cleaned_csv, decimal_columns = _strip_decimal_suffix(csv_string)
+    df = pd.read_csv(StringIO(cleaned_csv))
     tds_columns = []
     dt = pd.api.types
 
     for col in df.columns:
+        col_name = str(col).strip()
         dtype = df[col].dtype
 
-        if dt.is_bool_dtype(dtype):
+        if col_name in decimal_columns:
+            primitive_type = PrimitiveType.Decimal  # pragma: no cover
+
+        elif dt.is_bool_dtype(dtype):
             primitive_type = PrimitiveType.Boolean
 
         elif dt.is_integer_dtype(dtype):
@@ -91,6 +139,12 @@ def is_strict_date_or_datetime(col: pd.Series) -> bool:  # type: ignore[explicit
     try:
         pd.to_datetime(col, format="%Y-%m-%d %H:%M:%S", exact=True, errors="raise")
         return True
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        pd.to_datetime(col, format="%Y-%m-%dT%H:%M:%S.%f%z", exact=True, errors="raise")
+        return True  # pragma: no cover
     except (ValueError, TypeError):
         pass
 

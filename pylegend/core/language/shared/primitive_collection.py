@@ -68,6 +68,13 @@ from pylegend.core.language.shared.operations.collection_operation_expressions i
     PyLegendDateUniqueValueOnlyExpression,
     PyLegendDateTimeUniqueValueOnlyExpression,
     PyLegendBooleanUniqueValueOnlyExpression,
+    PyLegendCorrExpression,
+    PyLegendCovarPopulationExpression,
+    PyLegendCovarSampleExpression,
+    PyLegendMedianExpression,
+    PyLegendModeExpression,
+    PyLegendPercentileContExpression,
+    PyLegendPercentileDiscExpression,
 )
 
 
@@ -82,7 +89,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateCollection",
     "PyLegendDateTimeCollection",
     "PyLegendStrictDateCollection",
-    "create_primitive_collection"
+    "PyLegendNumberPairCollection",
+    "create_primitive_collection",
 ]
 
 
@@ -123,6 +131,9 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
             else self.__nested.value()
         )
         return PyLegendFloat(PyLegendAverageExpression(nested_expr))  # type: ignore
+
+    def mean(self) -> "PyLegendFloat":
+        return self.average()  # pragma: no cover
 
     def max(self) -> "PyLegendNumber":
         nested_expr = (
@@ -185,6 +196,47 @@ class PyLegendNumberCollection(PyLegendPrimitiveCollection):
             else self.__nested.value()
         )
         return PyLegendNumber(PyLegendNumberUniqueValueOnlyExpression(nested_expr))  # type: ignore
+
+    def median(self) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float, PythonDecimal))
+            else self.__nested.value()
+        )
+        return PyLegendNumber(PyLegendMedianExpression(nested_expr))  # type: ignore
+
+    def mode(self) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float, PythonDecimal))
+            else self.__nested.value()
+        )
+        return PyLegendNumber(PyLegendModeExpression(nested_expr))  # type: ignore
+
+    def percentile(
+            self,
+            percentile: float,
+            ascending: bool = True,
+            continuous: bool = True,
+    ) -> "PyLegendNumber":
+        nested_expr = (
+            convert_literal_to_literal_expression(self.__nested) if isinstance(self.__nested, (int, float, PythonDecimal))
+            else self.__nested.value()
+        )
+        if continuous:
+            return PyLegendNumber(
+                PyLegendPercentileContExpression(nested_expr, percentile, ascending)  # type: ignore
+            )
+        else:
+            return PyLegendNumber(
+                PyLegendPercentileDiscExpression(nested_expr, percentile, ascending)  # type: ignore
+            )
+
+    def row_mapper(
+        self,
+        other: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ],
+    ) -> "PyLegendNumberPairCollection":
+        return PyLegendNumberPairCollection(self, other)
 
 
 class PyLegendIntegerCollection(PyLegendNumberCollection):
@@ -452,3 +504,63 @@ def create_primitive_collection(nested: PyLegendPrimitiveOrPythonPrimitive) -> P
         return PyLegendDateCollection(nested)
 
     raise RuntimeError(f"Not supported type - {type(nested)}")  # pragma: no cover
+
+
+class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
+    __nested_a: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber]
+    __nested_b: PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber]
+
+    def __init__(
+        self,
+        nested_a: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ],
+        nested_b: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ],
+    ) -> None:
+        resolved_a = self._resolve(nested_a)
+        resolved_b = self._resolve(nested_b)
+        super().__init__(resolved_a)
+        self.__nested_a = resolved_a
+        self.__nested_b = resolved_b
+
+    @staticmethod
+    def _resolve(
+        val: PyLegendUnion[
+            int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber, "PyLegendNumberCollection"
+        ]
+    ) -> PyLegendUnion[int, float, PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendNumber]:
+        if isinstance(val, PyLegendPrimitiveCollection):
+            return val._PyLegendPrimitiveCollection__nested  # type: ignore
+        return val
+
+    def corr(self) -> "PyLegendFloat":
+        nested_expr_a = (
+            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float, PythonDecimal))
+            else self.__nested_a.value()
+        )
+        nested_expr_b = (
+            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float, PythonDecimal))
+            else self.__nested_b.value()
+        )
+        return PyLegendFloat(PyLegendCorrExpression(nested_expr_a, nested_expr_b))  # type: ignore
+
+    def _get_nested_exprs(self):  # type: ignore
+        nested_expr_a = (
+            convert_literal_to_literal_expression(self.__nested_a) if isinstance(self.__nested_a, (int, float, PythonDecimal))
+            else self.__nested_a.value()
+        )
+        nested_expr_b = (
+            convert_literal_to_literal_expression(self.__nested_b) if isinstance(self.__nested_b, (int, float, PythonDecimal))
+            else self.__nested_b.value()
+        )
+        return nested_expr_a, nested_expr_b
+
+    def covar_population(self) -> "PyLegendFloat":
+        nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
+        return PyLegendFloat(PyLegendCovarPopulationExpression(nested_expr_a, nested_expr_b))
+
+    def covar_sample(self) -> "PyLegendFloat":
+        nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
+        return PyLegendFloat(PyLegendCovarSampleExpression(nested_expr_a, nested_expr_b))

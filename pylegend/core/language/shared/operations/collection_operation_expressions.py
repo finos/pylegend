@@ -50,7 +50,14 @@ from pylegend.core.sql.metamodel_extension import (
     StdDevPopulationExpression,
     VarianceSampleExpression,
     VariancePopulationExpression,
+    CorrExpression,
+    CovarPopulationExpression,
+    CovarSampleExpression,
     JoinStringsExpression,
+    MedianExpression,
+    ModeExpression,
+    PercentileContExpression,
+    PercentileDiscExpression,
 )
 
 
@@ -90,6 +97,13 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDecimalMinExpression",
     "PyLegendDecimalSumExpression",
     "PyLegendDecimalUniqueValueOnlyExpression",
+    "PyLegendCorrExpression",
+    "PyLegendCovarPopulationExpression",
+    "PyLegendCovarSampleExpression",
+    "PyLegendMedianExpression",
+    "PyLegendModeExpression",
+    "PyLegendPercentileContExpression",
+    "PyLegendPercentileDiscExpression",
 ]
 
 
@@ -396,7 +410,7 @@ class PyLegendStdDevSampleExpression(PyLegendUnaryExpression, PyLegendExpression
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("stdDevSample", [op_expr])
+        return generate_pure_functional_call("stdDevSample", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -420,7 +434,7 @@ class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpres
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("stdDevPopulation", [op_expr])
+        return generate_pure_functional_call("stdDevPopulation", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -444,7 +458,7 @@ class PyLegendVarianceSampleExpression(PyLegendUnaryExpression, PyLegendExpressi
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("varianceSample", [op_expr])
+        return generate_pure_functional_call("varianceSample", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -468,7 +482,7 @@ class PyLegendVariancePopulationExpression(PyLegendUnaryExpression, PyLegendExpr
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
-        return generate_pure_functional_call("variancePopulation", [op_expr])
+        return generate_pure_functional_call("variancePopulation", [op_expr]) + "->cast(@Float)"
 
     def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
@@ -477,6 +491,128 @@ class PyLegendVariancePopulationExpression(PyLegendUnaryExpression, PyLegendExpr
             operand,
             PyLegendVariancePopulationExpression.__to_sql_func,
             PyLegendVariancePopulationExpression.__to_pure_func
+        )
+
+
+class PyLegendMedianExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MedianExpression(value=expression)
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("median", [op_expr]) + "->cast(@Float)"
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendMedianExpression.__to_sql_func,
+            PyLegendMedianExpression.__to_pure_func
+        )
+
+
+class PyLegendModeExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return ModeExpression(value=expression)
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("mode", [op_expr])
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendModeExpression.__to_sql_func,
+            PyLegendModeExpression.__to_pure_func
+        )
+
+
+class PyLegendPercentileContExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+    """PERCENTILE_CONT — continuous interpolation percentile."""
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn, percentile: float, ascending: bool = True) -> None:
+        self._percentile = percentile
+        self._ascending = ascending
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            self._to_sql_func,
+            self._to_pure_func,
+        )
+
+    def _to_sql_func(
+            self,
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        from pylegend.core.sql.metamodel import DoubleLiteral
+        if not self._ascending:
+            raise NotImplementedError(  # pragma: no cover
+                "SQL generation for PyLegendPercentileContExpression with ascending=False "
+                "is not supported"
+            )
+        return PercentileContExpression(value=expression, percentile=DoubleLiteral(value=self._percentile))
+
+    def _to_pure_func(self, op_expr: str, config: FrameToPureConfig) -> str:
+        asc_str = "true" if self._ascending else "false"
+        return (
+            generate_pure_functional_call(
+                "percentile", [op_expr, str(self._percentile), asc_str, "true"]
+            ) + "->cast(@Float)"
+        )
+
+
+class PyLegendPercentileDiscExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
+    """PERCENTILE_DISC — discrete (nearest-rank) percentile."""
+
+    def __init__(self, operand: PyLegendExpressionNumberReturn, percentile: float, ascending: bool = True) -> None:
+        self._percentile = percentile
+        self._ascending = ascending
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            self._to_sql_func,
+            self._to_pure_func,
+        )
+
+    def _to_sql_func(
+            self,
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        from pylegend.core.sql.metamodel import DoubleLiteral
+        if not self._ascending:
+            raise NotImplementedError(  # pragma: no cover
+                "SQL generation for PyLegendPercentileDiscExpression with ascending=False "
+                "is not supported"
+            )
+        return PercentileDiscExpression(value=expression, percentile=DoubleLiteral(value=self._percentile))
+
+    def _to_pure_func(self, op_expr: str, config: FrameToPureConfig) -> str:
+        asc_str = "true" if self._ascending else "false"
+        return (
+            generate_pure_functional_call(
+                "percentile", [op_expr, str(self._percentile), asc_str, "false"]
+            ) + "->cast(@Float)"
         )
 
 
@@ -811,3 +947,81 @@ class PyLegendDecimalUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpression
     def __init__(self, operand: PyLegendExpressionDecimalReturn) -> None:
         PyLegendExpressionDecimalReturn.__init__(self)
         PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
+
+
+class PyLegendCorrExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CorrExpression(value=expression1, other=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("corr", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendCorrExpression.__to_sql_func,
+            PyLegendCorrExpression.__to_pure_func
+        )
+
+
+class PyLegendCovarPopulationExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CovarPopulationExpression(value=expression1, other=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("covarPopulation", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendCovarPopulationExpression.__to_sql_func,
+            PyLegendCovarPopulationExpression.__to_pure_func
+        )
+
+
+class PyLegendCovarSampleExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return CovarSampleExpression(value=expression1, other=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("covarSample", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendCovarSampleExpression.__to_sql_func,
+            PyLegendCovarSampleExpression.__to_pure_func
+        )

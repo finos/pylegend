@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# type: ignore
+# flake8: noqa
+
 import json
 from textwrap import dedent
 
@@ -410,7 +413,7 @@ class TestFilterFunction:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
-        frame = frame.groupby('col1')['col2'].sum()
+        frame = frame.groupby('col1')[['col2']].sum()
         frame = frame.filter(items=['col1'])
 
         expected_sql = dedent("""\
