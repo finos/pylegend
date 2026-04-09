@@ -1169,6 +1169,33 @@ class TestSeriesPureQueryWithArithmetic:
         assert "5" in pure
         assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == pure
 
+    def test_groupby_series_to_sql_query_with_arithmetic_single_column_window(self) -> None:
+        """
+        series = frame.groupby('grp').window_frame_legend_ext(...)['val'].first() + 5
+        series.to_sql_query() exercises the needs_zero_column_for_window path
+        in GroupbySeries.to_sql_query_object.
+        """
+        columns = [
+            PrimitiveTdsColumn.string_column("grp"),
+            PrimitiveTdsColumn.integer_column("val"),
+            PrimitiveTdsColumn.float_column("score"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        series = frame.groupby("grp").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="score",
+        )["val"].first() + 5
+
+        sql = series.to_sql_query()
+        assert "first_value" in sql
+        assert "OVER" in sql
+        assert "__pylegend_zero_column__" in sql
+        assert "5" in sql
+
+        pure = series.to_pure_query()
+        assert generate_pure_query_and_compile(series, FrameToPureConfig(), self.legend_client) == pure
+
 
 class TestAggFuncPaths:
     """Tests for SingleColumnWindowFunction with an agg_func provided."""
