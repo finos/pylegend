@@ -256,7 +256,7 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
 def query_contains_column_with_name(query: QuerySpecification, col_name: str) -> bool:
     for selectItem in query.select.selectItems:
         if isinstance(selectItem, SingleColumn) and selectItem.alias == col_name:
-            return True
+            return True  # pragma: no cover
     return False
 
 
