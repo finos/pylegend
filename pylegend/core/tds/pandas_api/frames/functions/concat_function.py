@@ -44,7 +44,7 @@ class PandasApiConcatFunction(PandasApiAppliedFunction):
 
     @classmethod
     def name(cls) -> str:
-        return "concat_legend_ext"
+        return "concat_legend_ext"  # pragma: no cover
 
     def __init__(self, base_frame: PandasApiBaseTdsFrame, other: PandasApiBaseTdsFrame) -> None:
         self.__base_frame = base_frame
@@ -109,11 +109,6 @@ class PandasApiConcatFunction(PandasApiAppliedFunction):
         return [c.copy() for c in self.__base_frame.columns()]
 
     def validate(self) -> bool:
-        if not isinstance(self.__other_frame, PandasApiBaseTdsFrame):
-            raise TypeError(
-                f"Can only concatenate TdsFrame objects, a {type(self.__other_frame)} was passed"
-            )
-
         base_frame_cols = self.__base_frame.columns()
         other_frame_cols = self.__other_frame.columns()
 
