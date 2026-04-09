@@ -204,7 +204,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
-        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+        # Normalize non-callable values (e.g. direct Series/GroupbySeries) into lambdas,
+        # matching pandas DataFrame.assign() behavior which accepts both callables and values.
+        normalized = {}
+        for key, value in kwargs.items():
+            if callable(value):
+                normalized[key] = value
+            else:
+                normalized[key] = lambda row, _v=value: _v  # pragma: no cover
+        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=normalized))
 
     def filter(
             self,
@@ -710,6 +718,28 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         else:
             return merged
 
+    def concat_legend_ext(
+            self,
+            other: "PandasApiBaseTdsFrame",
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Concatenate this frame with another frame vertically (UNION ALL).
+        Both frames must have compatible schemas (same column names and types).
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.concat_function import (
+            PandasApiConcatFunction
+        )
+        if not isinstance(other, PandasApiBaseTdsFrame):
+            raise TypeError(
+                f"concat_legend_ext expects a PandasApiBaseTdsFrame, got: {type(other).__name__}"
+            )
+        return PandasApiAppliedFunctionTdsFrame(PandasApiConcatFunction(self, other))
+
     def join(
             self,
             other: "PandasApiTdsFrame",
@@ -1042,6 +1072,57 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             na_option=na_option,
             ascending=ascending,
             pct=pct
+        ))
+
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution of each column, equivalent to
+        SQL ``CUME_DIST() OVER (ORDER BY col)`` and Pure
+        ``cumulativeDistribution``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='cume_dist',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+        ))
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket of each column, equivalent to
+        SQL ``NTILE(n) OVER (ORDER BY col)`` and Pure ``ntile``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='ntile',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+            num_buckets=num_buckets,
         ))
 
     def shift(

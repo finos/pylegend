@@ -58,6 +58,9 @@ from pylegend.core.sql.metamodel_extension import (
     ModeExpression,
     PercentileContExpression,
     PercentileDiscExpression,
+    WavgExpression,
+    MaxByExpression,
+    MinByExpression,
 )
 
 
@@ -104,6 +107,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendModeExpression",
     "PyLegendPercentileContExpression",
     "PyLegendPercentileDiscExpression",
+    "PyLegendWavgExpression",
+    "PyLegendMaxByExpression",
+    "PyLegendMinByExpression",
 ]
 
 
@@ -1024,4 +1030,82 @@ class PyLegendCovarSampleExpression(PyLegendBinaryExpression, PyLegendExpression
             operand2,
             PyLegendCovarSampleExpression.__to_sql_func,
             PyLegendCovarSampleExpression.__to_pure_func
+        )
+
+
+class PyLegendWavgExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return WavgExpression(value=expression1, weight=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("wavg", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpressionNumberReturn, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionFloatReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendWavgExpression.__to_sql_func,
+            PyLegendWavgExpression.__to_pure_func
+        )
+
+
+class PyLegendMaxByExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MaxByExpression(value=expression1, by=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("maxBy", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendMaxByExpression.__to_sql_func,
+            PyLegendMaxByExpression.__to_pure_func
+        )
+
+
+class PyLegendMinByExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression1: Expression,
+            expression2: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return MinByExpression(value=expression1, by=expression2)
+
+    @staticmethod
+    def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
+        return generate_pure_functional_call("minBy", [op1_expr, op2_expr])
+
+    def __init__(self, operand1: PyLegendExpression, operand2: PyLegendExpressionNumberReturn) -> None:
+        PyLegendExpressionNumberReturn.__init__(self)
+        PyLegendBinaryExpression.__init__(
+            self,
+            operand1,
+            operand2,
+            PyLegendMinByExpression.__to_sql_func,
+            PyLegendMinByExpression.__to_pure_func
         )

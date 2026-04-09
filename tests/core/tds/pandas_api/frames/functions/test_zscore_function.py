@@ -52,7 +52,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.string_column("name"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by="grp")["id"].zscore()
+        zs = frame.groupby(by="grp")["id"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         expected_sql = dedent('''\
             SELECT
@@ -79,7 +79,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.integer_column("grp"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by="grp")["val"].zscore()
+        zs = frame.groupby(by="grp")["val"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         expected_sql = dedent('''\
             SELECT
@@ -107,7 +107,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.string_column("name"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by="grp")["id"].zscore()
+        zs = frame.groupby(by="grp")["id"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -124,7 +124,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.string_column("name"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by="grp")["id"].zscore()
+        zs = frame.groupby(by="grp")["id"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -140,7 +140,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.integer_column("grp"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by="grp")["val"].zscore()
+        zs = frame.groupby(by="grp")["val"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -159,7 +159,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.integer_column("grp2"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by=["grp1", "grp2"])["val"].zscore()
+        zs = frame.groupby(by=["grp1", "grp2"])["val"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         sql = assigned.to_sql_query(FrameToSqlConfig())
         assert "PARTITION BY \"root\".grp1, \"root\".grp2" in sql
@@ -174,7 +174,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.integer_column("grp2"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by=["grp1", "grp2"])["val"].zscore()
+        zs = frame.groupby(by=["grp1", "grp2"])["val"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         assert generate_pure_query_and_compile(assigned, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -213,7 +213,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.integer_column("grp"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        result = frame.groupby(by="grp")["id"].zscore()
+        result = frame.groupby(by="grp")["id"].zscore_legend_ext()
         assert isinstance(result, FloatGroupbySeries)
 
     # ── Column type inference ─────────────────────────────────────────────
@@ -225,7 +225,7 @@ class TestZScoreFunctionQueryGeneration:
             PrimitiveTdsColumn.integer_column("grp"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
-        zs = frame.groupby(by="grp")["id"].zscore()
+        zs = frame.groupby(by="grp")["id"].zscore_legend_ext()
         assigned = frame.assign(zScore=lambda r: zs)
         col_names = [c.get_name() for c in assigned.columns()]
         col_types = [c.get_type() for c in assigned.columns()]
@@ -244,7 +244,7 @@ class TestZScoreEndToEnd:
     def test_e2e_zscore_window(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         """Broadcast zScore per firm back to every row via assign."""
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
-        zs = frame.groupby("Firm/Legal Name")["Age"].zscore()
+        zs = frame.groupby("Firm/Legal Name")["Age"].zscore_legend_ext()
         frame["Age ZScore"] = zs
 
         # Firm X has ages: [23, 22, 12, 22]
