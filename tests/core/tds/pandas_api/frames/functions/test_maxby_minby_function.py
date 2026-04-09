@@ -48,7 +48,7 @@ class TestMaxByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"name": lambda c: c.row_mapper(c).max_by()}
+            {"name": lambda c: c.row_mapper(c).max_by_legend_ext()}
         )
         expected_sql = '''\
             SELECT
@@ -70,7 +70,7 @@ class TestMaxByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"name": lambda c: c.row_mapper(c).max_by()}
+            {"name": lambda c: c.row_mapper(c).max_by_legend_ext()}
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -84,7 +84,7 @@ class TestMaxByFunctionQueryGeneration:
         from pylegend.core.language.shared.literal_expressions import PyLegendFloatLiteralExpression
         val = PyLegendFloat(PyLegendFloatLiteralExpression(1.0))
         pair = val.row_mapper(2.0)
-        result = pair.max_by()
+        result = pair.max_by_legend_ext()
         assert isinstance(result, PyLegendNumber)
 
     def test_max_by_window_sql_generation(self) -> None:
@@ -95,7 +95,7 @@ class TestMaxByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        frame["newCol"] = gb["name"].max_by(gb["employeeNumber"])
+        frame["newCol"] = gb["name"].max_by_legend_ext(gb["employeeNumber"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -122,7 +122,7 @@ class TestMaxByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        frame["newCol"] = gb["name"].max_by(gb["employeeNumber"])
+        frame["newCol"] = gb["name"].max_by_legend_ext(gb["employeeNumber"])
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~name__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.name, $r.employeeNumber)}:y | $y->meta::pure::functions::math::maxBy())'
@@ -158,7 +158,7 @@ class TestMinByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"name": lambda c: c.row_mapper(c).min_by()}
+            {"name": lambda c: c.row_mapper(c).min_by_legend_ext()}
         )
         expected_sql = '''\
             SELECT
@@ -180,7 +180,7 @@ class TestMinByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"name": lambda c: c.row_mapper(c).min_by()}
+            {"name": lambda c: c.row_mapper(c).min_by_legend_ext()}
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -194,7 +194,7 @@ class TestMinByFunctionQueryGeneration:
         from pylegend.core.language.shared.literal_expressions import PyLegendFloatLiteralExpression
         val = PyLegendFloat(PyLegendFloatLiteralExpression(1.0))
         pair = val.row_mapper(2.0)
-        result = pair.min_by()
+        result = pair.min_by_legend_ext()
         assert isinstance(result, PyLegendNumber)
 
     def test_min_by_window_sql_generation(self) -> None:
@@ -205,7 +205,7 @@ class TestMinByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        frame["newCol"] = gb["name"].min_by(gb["employeeNumber"])
+        frame["newCol"] = gb["name"].min_by_legend_ext(gb["employeeNumber"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -232,7 +232,7 @@ class TestMinByFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        frame["newCol"] = gb["name"].min_by(gb["employeeNumber"])
+        frame["newCol"] = gb["name"].min_by_legend_ext(gb["employeeNumber"])
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~name__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.name, $r.employeeNumber)}:y | $y->meta::pure::functions::math::minBy())'
@@ -261,7 +261,7 @@ class TestMaxByMinByFunctionEndToEnd:
         """maxBy(Quantity, Quantity) grouped by Product/Name — returns the max Quantity per group."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
-            {"Quantity": lambda c: c.row_mapper(c).max_by()}
+            {"Quantity": lambda c: c.row_mapper(c).max_by_legend_ext()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Product/Name", "Quantity"]
@@ -277,7 +277,7 @@ class TestMaxByMinByFunctionEndToEnd:
         """minBy(Quantity, Quantity) grouped by Product/Name — returns the min Quantity per group."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
-            {"Quantity": lambda c: c.row_mapper(c).min_by()}
+            {"Quantity": lambda c: c.row_mapper(c).min_by_legend_ext()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Product/Name", "Quantity"]
@@ -293,7 +293,7 @@ class TestMaxByMinByFunctionEndToEnd:
         """maxBy(Quantity, Quantity) across all rows — returns the single max Quantity."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.aggregate(
-            {"Quantity": lambda c: c.row_mapper(c).max_by()}
+            {"Quantity": lambda c: c.row_mapper(c).max_by_legend_ext()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Quantity"]
@@ -305,7 +305,7 @@ class TestMaxByMinByFunctionEndToEnd:
         """minBy(Quantity, Quantity) across all rows — returns the single min Quantity."""
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.aggregate(
-            {"Quantity": lambda c: c.row_mapper(c).min_by()}
+            {"Quantity": lambda c: c.row_mapper(c).min_by_legend_ext()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Quantity"]
