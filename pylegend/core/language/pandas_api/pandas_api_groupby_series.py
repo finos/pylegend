@@ -717,8 +717,10 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
         """
         return self._two_col_window_func(weights, "wavg")
 
-    def zscore(self) -> "FloatGroupbySeries":
+    def zscore_legend_ext(self) -> "FloatGroupbySeries":
         """Compute the z-score within each group: (x - mean) / stddev_pop.
+
+        PyLegend extension (not present in pandas).
 
         Equivalent to Pure ``zScore($p, $w, $r, ~col)`` which computes
         ``(eval(col, row) - average(partition, window, row, col)) / stdDevPopulation(partition, window, row, col)``.
