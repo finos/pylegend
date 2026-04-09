@@ -612,7 +612,7 @@ class TestFirstOnWindowSeries:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_nth_assign_on_groupby_frame(self) -> None:
-        """frame['nth_val'] = frame.groupby('grp').window_frame_legend_ext(...)['val'].window_func_legend_ext(lambda p,w,r: p.nth(w,r,2)['val'])"""
+        """frame['nth_val'] = frame.groupby('grp').window_frame_legend_ext(...)['val'].window_extend_legend_ext(lambda p,w,r: p.nth(w,r,2)['val'])"""
         columns = [
             PrimitiveTdsColumn.string_column("grp"),
             PrimitiveTdsColumn.integer_column("val"),
@@ -624,7 +624,7 @@ class TestFirstOnWindowSeries:
             frame_spec=frame.rows_between(),
             order_by="score",
             ascending=False,
-        )["val"].window_func_legend_ext(pwr_func=lambda p, w, r: p.nth(w, r, 2)["val"])
+        )["val"].window_extend_legend_ext(pwr_func=lambda p, w, r: p.nth(w, r, 2)["val"])
 
         expected_sql = '''
             SELECT
@@ -1067,13 +1067,13 @@ class TestLastOnWindowTdsFrame:
 
 
 class TestWindowFuncLegendExtOnGroupbySeries:
-    """Tests for window_func_legend_ext on GroupbySeries returning GroupbySeries."""
+    """Tests for window_extend_legend_ext on GroupbySeries returning GroupbySeries."""
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_groupby_series_window_func_legend_ext_returns_groupby_series(self) -> None:
+    def test_groupby_series_window_extend_legend_ext_returns_groupby_series(self) -> None:
         """
         frame.groupby('grp')['val'].window_frame_legend_ext(...).first()
         should return a GroupbySeries.
@@ -1096,7 +1096,7 @@ class TestWindowFuncLegendExtOnGroupbySeries:
         sql = series.to_sql_query()
         assert "first_value" in sql
 
-    def test_series_window_func_legend_ext_returns_series(self) -> None:
+    def test_series_window_extend_legend_ext_returns_series(self) -> None:
         """
         frame['val'].window_frame_legend_ext(...).first()
         should return a Series.
@@ -1204,9 +1204,9 @@ class TestAggFuncPaths:
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_window_func_legend_ext_with_agg_func(self) -> None:
+    def test_window_extend_legend_ext_with_agg_func(self) -> None:
         """
-        Use window_func_legend_ext on WindowSeries with both pwr_func and agg_func.
+        Use window_extend_legend_ext on WindowSeries with both pwr_func and agg_func.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -1220,7 +1220,7 @@ class TestAggFuncPaths:
         )["col1"]
 
         # Use pwr_func that references a column and agg_func that sums the collection
-        series = ws.window_func_legend_ext(
+        series = ws.window_extend_legend_ext(
             pwr_func=lambda p, w, r: r["col1"],
             agg_func=lambda c: c.sum(),
         )
@@ -1234,7 +1234,7 @@ class TestAggFuncPaths:
 
     def test_window_tds_frame_func_legend_ext_with_agg_func(self) -> None:
         """
-        Use window_func_legend_ext on WindowTdsFrame with both pwr_func and agg_func.
+        Use window_extend_legend_ext on WindowTdsFrame with both pwr_func and agg_func.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -1248,7 +1248,7 @@ class TestAggFuncPaths:
         )
 
         # pwr_func returning a single column primitive (r["col1"]), with sum agg
-        applied = wf.window_func_legend_ext(
+        applied = wf.window_extend_legend_ext(
             pwr_func=lambda p, w, r: r["col1"],
             agg_func=lambda c: c.sum(),
         )
@@ -1262,7 +1262,7 @@ class TestAggFuncPaths:
 
     def test_assign_with_agg_func_single_column_window(self) -> None:
         """
-        frame['new'] = frame.window_frame_legend_ext(...)['col'].window_func_legend_ext(pwr_func, agg_func)
+        frame['new'] = frame.window_frame_legend_ext(...)['col'].window_extend_legend_ext(pwr_func, agg_func)
         Tests the agg_func path through assign_function to_sql and to_pure.
         """
         columns = [
@@ -1274,7 +1274,7 @@ class TestAggFuncPaths:
         frame["sum_col1"] = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="col2",
-        )["col1"].window_func_legend_ext(
+        )["col1"].window_extend_legend_ext(
             pwr_func=lambda p, w, r: r["col1"],
             agg_func=lambda c: c.sum(),
         )
@@ -1297,7 +1297,7 @@ class TestPythonLiteralPwrFunc:
 
     def test_pwr_func_returning_literal_single_column(self) -> None:
         """
-        window_func_legend_ext with pwr_func returning a raw int (42).
+        window_extend_legend_ext with pwr_func returning a raw int (42).
         Tests the else branch for non-PyLegendPrimitive in to_sql, to_pure, to_sql_expression, build_pure_extend_strs.
         """
         columns = [
@@ -1310,7 +1310,7 @@ class TestPythonLiteralPwrFunc:
         frame["const"] = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="col2",
-        )["col1"].window_func_legend_ext(
+        )["col1"].window_extend_legend_ext(
             pwr_func=lambda p, w, r: 42,
         )
 
@@ -1323,7 +1323,7 @@ class TestPythonLiteralPwrFunc:
 
     def test_pwr_func_returning_literal_standalone_series(self) -> None:
         """
-        series = window_func_legend_ext(pwr_func returning 42) — standalone series SQL.
+        series = window_extend_legend_ext(pwr_func returning 42) — standalone series SQL.
         Tests to_sql_expression else branch for non-PyLegendPrimitive.
         """
         columns = [
@@ -1335,7 +1335,7 @@ class TestPythonLiteralPwrFunc:
         series = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="col2",
-        )["col1"].window_func_legend_ext(
+        )["col1"].window_extend_legend_ext(
             pwr_func=lambda p, w, r: 42,
         )
 
@@ -1957,7 +1957,7 @@ class TestWindowFuncWorkflows:
 
     def test_custom_pwr_func_nth_on_window_series(self) -> None:
         """
-        WindowSeries.window_func_legend_ext with p.nth for the 3rd row.
+        WindowSeries.window_extend_legend_ext with p.nth for the 3rd row.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("id"),
@@ -1968,7 +1968,7 @@ class TestWindowFuncWorkflows:
         series = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="id",
-        )["val"].window_func_legend_ext(
+        )["val"].window_extend_legend_ext(
             pwr_func=lambda p, w, r: p.nth(w, r, 3)["val"],
         )
 
@@ -1981,7 +1981,7 @@ class TestWindowFuncWorkflows:
 
     def test_custom_pwr_func_lead_on_window_series(self) -> None:
         """
-        WindowSeries.window_func_legend_ext with p.lead for 2 rows ahead.
+        WindowSeries.window_extend_legend_ext with p.lead for 2 rows ahead.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("id"),
@@ -1992,7 +1992,7 @@ class TestWindowFuncWorkflows:
         frame["lead2"] = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="id",
-        )["val"].window_func_legend_ext(
+        )["val"].window_extend_legend_ext(
             pwr_func=lambda p, w, r: p.lead(r, 2)["val"],
         )
 
@@ -2006,7 +2006,7 @@ class TestWindowFuncWorkflows:
 
     def test_custom_pwr_func_lag_on_window_series(self) -> None:
         """
-        WindowSeries.window_func_legend_ext with p.lag for 3 rows behind.
+        WindowSeries.window_extend_legend_ext with p.lag for 3 rows behind.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("id"),
@@ -2017,7 +2017,7 @@ class TestWindowFuncWorkflows:
         frame["lag3"] = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="id",
-        )["val"].window_func_legend_ext(
+        )["val"].window_extend_legend_ext(
             pwr_func=lambda p, w, r: p.lag(r, 3)["val"],
         )
 
@@ -2033,7 +2033,7 @@ class TestWindowFuncWorkflows:
 
     def test_nth_multi_column_on_window_tds_frame(self) -> None:
         """
-        WindowTdsFrame.window_func_legend_ext with p.nth across all columns.
+        WindowTdsFrame.window_extend_legend_ext with p.nth across all columns.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("a"),
@@ -2044,7 +2044,7 @@ class TestWindowFuncWorkflows:
         applied = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="a",
-        ).window_func_legend_ext(
+        ).window_extend_legend_ext(
             pwr_func=lambda p, w, r: p.nth(w, r, 5),
         )
 
@@ -2060,7 +2060,7 @@ class TestWindowFuncWorkflows:
     def test_shift_multi_column_on_window_tds_frame(self) -> None:
         """
         WindowTdsFrame-level shift (lag) across all columns.
-        shift() is on WindowSeries, but a TdsFrame-level lag via window_func_legend_ext
+        shift() is on WindowSeries, but a TdsFrame-level lag via window_extend_legend_ext
         can be done with a pwr_func that returns the lag TdsRow.
         """
         columns = [
@@ -2072,7 +2072,7 @@ class TestWindowFuncWorkflows:
         applied = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="a",
-        ).window_func_legend_ext(
+        ).window_extend_legend_ext(
             pwr_func=lambda p, w, r: p.lag(r, 1),
         )
 

@@ -210,7 +210,7 @@ class PandasApiWindowTdsFrame:
 
     agg = aggregate
 
-    def window_func_legend_ext(
+    def window_extend_legend_ext(
             self,
             pwr_func: "PwrFunc",
             agg_func: "PyLegendOptional[AggFunc]" = None,
@@ -283,7 +283,7 @@ class PandasApiWindowTdsFrame:
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.first(w, r)  # type: ignore[return-value]
 
-        return self.window_func_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(pwr_func=pwr_func)
 
     def last(self, numeric_only: bool = False) -> PandasApiTdsFrame:
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
@@ -320,4 +320,4 @@ class PandasApiWindowTdsFrame:
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.last(w, r)  # type: ignore[return-value]
 
-        return self.window_func_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(pwr_func=pwr_func)

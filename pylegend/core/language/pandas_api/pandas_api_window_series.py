@@ -182,7 +182,7 @@ class WindowSeries:
                 f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}"
             )
 
-    def window_func_legend_ext(
+    def window_extend_legend_ext(
             self,
             pwr_func: "PwrFunc",
             agg_func: "PyLegendOptional[AggFunc]" = None,
@@ -224,7 +224,7 @@ class WindowSeries:
 
         result_columns = applied_function_frame.columns()
         assert len(result_columns) == 1, (
-            "WindowSeries.window_func_legend_ext() should produce exactly one result column"
+            "WindowSeries.window_extend_legend_ext() should produce exactly one result column"
         )
         col_type = result_columns[0].get_type()
 
@@ -259,7 +259,7 @@ class WindowSeries:
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.first(w, r)[_col]
 
-        return self.window_func_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(pwr_func=pwr_func)
 
     def last(self) -> PyLegendUnion["Series", "GroupbySeries"]:
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
@@ -278,7 +278,7 @@ class WindowSeries:
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.last(w, r)[_col]
 
-        return self.window_func_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(pwr_func=pwr_func)
 
     def shift(
             self,
@@ -336,4 +336,4 @@ class WindowSeries:
             ) -> "PyLegendPrimitiveOrPythonPrimitive":
                 return p.lead(r, _periods)[_col]
 
-        return self.window_func_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(pwr_func=pwr_func)
