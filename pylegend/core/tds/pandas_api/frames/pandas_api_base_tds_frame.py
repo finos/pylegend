@@ -211,7 +211,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             if callable(value):
                 normalized[key] = value
             else:
-                normalized[key] = lambda row, _v=value: _v
+                normalized[key] = lambda row, _v=value: _v  # pragma: no cover
         return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=normalized))
 
     def filter(
