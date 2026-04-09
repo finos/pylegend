@@ -48,12 +48,12 @@ class TestWavgFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"quantity": lambda c: c.row_mapper(c).wavg()}
+            {"quantity": lambda c: c.row_mapper(c).wavg_legend_ext()}
         )
         expected_sql = '''\
             SELECT
                 "root".grp AS "grp",
-                (SUM("root".quantity * "root".quantity) / SUM("root".quantity)) AS "quantity"
+                (SUM("root".quantity * "root".quantity) * 1.0 / SUM("root".quantity)) AS "quantity"
             FROM
                 test_schema.test_table AS "root"
             GROUP BY
@@ -70,7 +70,7 @@ class TestWavgFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.groupby(by="grp").aggregate(
-            {"quantity": lambda c: c.row_mapper(c).wavg()}
+            {"quantity": lambda c: c.row_mapper(c).wavg_legend_ext()}
         )
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
@@ -85,11 +85,11 @@ class TestWavgFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         frame = frame.aggregate(
-            {"quantity": lambda c: c.row_mapper(c).wavg()}
+            {"quantity": lambda c: c.row_mapper(c).wavg_legend_ext()}
         )
         expected_sql = '''\
             SELECT
-                (SUM("root".quantity * "root".quantity) / SUM("root".quantity)) AS "quantity"
+                (SUM("root".quantity * "root".quantity) * 1.0 / SUM("root".quantity)) AS "quantity"
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
@@ -99,7 +99,7 @@ class TestWavgFunctionQueryGeneration:
         from pylegend.core.language.shared.literal_expressions import PyLegendFloatLiteralExpression
         val = PyLegendFloat(PyLegendFloatLiteralExpression(1.0))
         pair = val.row_mapper(2.0)
-        result = pair.wavg()
+        result = pair.wavg_legend_ext()
         assert isinstance(result, PyLegendFloat)
 
     def test_wavg_window_sql_generation(self) -> None:
@@ -110,7 +110,7 @@ class TestWavgFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        frame["newCol"] = gb["quantity"].wavg(gb["weight"])
+        frame["newCol"] = gb["quantity"].wavg_legend_ext(gb["weight"])
         expected_sql = '''\
             SELECT
                 "root"."id" AS "id",
@@ -123,7 +123,7 @@ class TestWavgFunctionQueryGeneration:
                         "root".id AS "id",
                         "root".quantity AS "quantity",
                         "root".weight AS "weight",
-                        (SUM("root".quantity * "root".weight) / SUM("root".weight)) OVER (PARTITION BY "root".id) AS "newCol__pylegend_olap_column__"
+                        (SUM("root".quantity * "root".weight) * 1.0 / SUM("root".weight)) OVER (PARTITION BY "root".id) AS "newCol__pylegend_olap_column__"
                     FROM
                         test_schema.test_table AS "root"
                 ) AS "root"'''
@@ -137,7 +137,7 @@ class TestWavgFunctionQueryGeneration:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         gb = frame.groupby(by="id")
-        frame["newCol"] = gb["quantity"].wavg(gb["weight"])
+        frame["newCol"] = gb["quantity"].wavg_legend_ext(gb["weight"])
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#'
             '->extend(over(~[id], []), ~quantity__pylegend_olap_column__:{p,w,r | meta::pure::functions::math::mathUtility::rowMapper($r.quantity, $r.weight)}:y | $y->meta::pure::functions::math::wavg()->cast(@Float))'
@@ -156,7 +156,7 @@ class TestWavgFunctionQueryGeneration:
             weight=StringLiteral(value="col2", quoted=False)
         )
         result = ext.process_wavg_expression(expr, SqlToStringConfig(format_=SqlToStringFormat()))
-        assert result == "(SUM('col1' * 'col2') / SUM('col2'))"
+        assert result == "(SUM('col1' * 'col2') * 1.0 / SUM('col2'))"
 
 
 class TestWavgFunctionEndToEnd:
@@ -169,7 +169,7 @@ class TestWavgFunctionEndToEnd:
         """
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.groupby("Product/Name").aggregate(
-            {"Quantity": lambda c: c.row_mapper(c).wavg()}
+            {"Quantity": lambda c: c.row_mapper(c).wavg_legend_ext()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Product/Name", "Quantity"]
@@ -188,7 +188,7 @@ class TestWavgFunctionEndToEnd:
         """
         frame: PandasApiTdsFrame = simple_trade_service_frame_pandas_api(legend_test_server["engine_port"])
         frame = frame.aggregate(
-            {"Quantity": lambda c: c.row_mapper(c).wavg()}
+            {"Quantity": lambda c: c.row_mapper(c).wavg_legend_ext()}
         )
         res = json.loads(frame.execute_frame_to_string())["result"]
         assert res["columns"] == ["Quantity"]
