@@ -1074,7 +1074,7 @@ class TestRankFunctionEndtoEnd:
         assert json.loads(res)["result"] == expected
 
     @pytest.mark.skip(reason="window functions not currently supported within function call")
-    def test_e2e_arithmetic_with_series(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+    def test_e2e_arithmetic_with_series(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:  # pragma: no cover
         frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
         series = frame["First Name"].rank() - 1  
