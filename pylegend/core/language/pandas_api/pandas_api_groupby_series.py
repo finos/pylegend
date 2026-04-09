@@ -564,18 +564,28 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
         return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
 
-    def max_by(
+    def max_by_legend_ext(
             self,
             by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
                               "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Return the value corresponding to the maximum of *by* within each group.
+        """
         return self._generic_two_col_window_func(by, "max_by")
 
-    def min_by(
+    def min_by_legend_ext(
             self,
             by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
                               "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Return the value corresponding to the minimum of *by* within each group.
+        """
         return self._generic_two_col_window_func(by, "min_by")
 
     def _generic_two_col_window_func(
@@ -695,11 +705,16 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                 f"Only ddof=0 (population) and ddof=1 (sample) are supported in cov function, but got: ddof={ddof}"
             )
 
-    def wavg(
+    def wavg_legend_ext(
             self,
             weights: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
                                    "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the weighted average within each group.
+        """
         return self._two_col_window_func(weights, "wavg")
 
     def zscore(self) -> "FloatGroupbySeries":
