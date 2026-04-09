@@ -2087,6 +2087,37 @@ class TestWindowFuncWorkflows:
         assert "lag($r, 1).b" in pure
         assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
 
+    def test_first_on_frame_with_existing_zero_column(self) -> None:
+        """Test first() when the frame already contains a __pylegend_zero_column__ column."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("__pylegend_zero_column__"),
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+
+        # Apply first() on a frame that already has the zero column
+        frame["first_col1"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="col2",
+        )["col1"].first()
+
+        sql = frame.to_sql_query()
+        # The generated SQL should correctly use the existing zero column
+        assert "first_value" in sql
+        assert "__pylegend_zero_column__" in sql
+        # Verify we don't have duplicate zero columns in PARTITION BY
+        partition_by_matches = sql.count('PARTITION BY "root"."__pylegend_zero_column__"')
+        assert partition_by_matches >= 1, "Should reference the zero column in PARTITION BY"
+
+        pure = frame.to_pure_query()
+        # Verify Pure expression uses the zero column correctly
+        assert "~__pylegend_zero_column__" in pure
+        assert "first_value" in sql or "first" in pure
+
+        # Compile and verify it works
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
+
 
 class TestSingleColumnWindowFunctionEndToEnd:
     """End-to-end tests for single-column window functions with real legend server."""
