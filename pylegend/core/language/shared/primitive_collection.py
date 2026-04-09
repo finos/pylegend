@@ -568,14 +568,14 @@ class PyLegendNumberPairCollection(PyLegendPrimitiveCollection):
         nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
         return PyLegendFloat(PyLegendCovarSampleExpression(nested_expr_a, nested_expr_b))
 
-    def wavg(self) -> "PyLegendFloat":
+    def wavg_legend_ext(self) -> "PyLegendFloat":
         nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
         return PyLegendFloat(PyLegendWavgExpression(nested_expr_a, nested_expr_b))
 
-    def max_by(self) -> "PyLegendNumber":
+    def max_by_legend_ext(self) -> "PyLegendNumber":
         nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
         return PyLegendNumber(PyLegendMaxByExpression(nested_expr_a, nested_expr_b))
 
-    def min_by(self) -> "PyLegendNumber":
+    def min_by_legend_ext(self) -> "PyLegendNumber":
         nested_expr_a, nested_expr_b = self._get_nested_exprs()  # type: ignore
         return PyLegendNumber(PyLegendMinByExpression(nested_expr_a, nested_expr_b))
