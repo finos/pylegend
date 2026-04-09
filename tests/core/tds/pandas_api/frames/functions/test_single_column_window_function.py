@@ -15,6 +15,7 @@
 # type: ignore
 # flake8: noqa
 
+import json
 from textwrap import dedent
 
 import pytest
@@ -29,6 +30,7 @@ from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
+from tests.test_helpers.test_legend_service_frames import simple_relation_person_service_frame_pandas_api
 
 
 class TestFirstOnWindowSeries:
@@ -2084,3 +2086,133 @@ class TestWindowFuncWorkflows:
         assert "lag($r, 1).a" in pure
         assert "lag($r, 1).b" in pure
         assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == pure
+
+
+class TestSingleColumnWindowFunctionEndToEnd:
+    """End-to-end tests for single-column window functions with real legend server."""
+
+    def test_e2e_first_on_base_frame(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Test first() on base frame with real execution."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["FirstAge"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="Age",
+        )["Age"].first()
+
+        # All ages are the minimum age when sorted by Age (12), then first value
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "FirstAge"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", 12]},
+                {"values": ["John", "Johnson", 22, "Firm X", 12]},
+                {"values": ["John", "Hill", 12, "Firm X", 12]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", 12]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", 12]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", 12]},
+                {"values": ["David", "Harris", 35, "Firm C", 12]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_last_on_base_frame(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Test last() on base frame with real execution."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["LastAge"] = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="Age",
+        )["Age"].last()
+
+        # All ages are the maximum age when sorted by Age (35), then last value
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "LastAge"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", 35]},
+                {"values": ["John", "Johnson", 22, "Firm X", 35]},
+                {"values": ["John", "Hill", 12, "Firm X", 35]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", 35]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", 35]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", 35]},
+                {"values": ["David", "Harris", 35, "Firm C", 35]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_shift_lead_on_base_frame(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Test shift(periods=1) which is lead(1) on base frame."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["NextAge"] = frame.window_frame_legend_ext(
+            order_by="Age",
+        )["Age"].shift(periods=-1)
+
+        # Ages ordered: 12, 22, 22, 23, 32, 34, 35
+        # Lead(1): 22, 22, 23, 32, 34, 35, NULL
+        expected = {
+            'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name', 'NextAge'],
+            'rows': [
+                {'values': ['Peter', 'Smith', 23, 'Firm X', 32]},
+                {'values': ['John', 'Johnson', 22, 'Firm X', 22]},
+                {'values': ['John', 'Hill', 12, 'Firm X', 22]},
+                {'values': ['Anthony', 'Allen', 22, 'Firm X', 23]},
+                {'values': ['Fabrice', 'Roberts', 34, 'Firm A', 35]},
+                {'values': ['Oliver', 'Hill', 32, 'Firm B', 34]},
+                {'values': ['David', 'Harris', 35, 'Firm C', None]}
+            ]
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_groupby_first_on_grouped_frame(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Test first() on groupby().window_frame_legend_ext() with real execution."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["FirstAgeInFirm"] = frame.groupby("Firm/Legal Name").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="Age",
+        )["Age"].first()
+
+        # Firm X ages ordered: 12, 22, 22, 23 => first is 12
+        # Firm A (34) => first is 34
+        # Firm B (32) => first is 32
+        # Firm C (35) => first is 35
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "FirstAgeInFirm"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", 12]},
+                {"values": ["John", "Johnson", 22, "Firm X", 12]},
+                {"values": ["John", "Hill", 12, "Firm X", 12]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", 12]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", 34]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", 32]},
+                {"values": ["David", "Harris", 35, "Firm C", 35]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
+
+    def test_e2e_groupby_last_on_grouped_frame(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
+        """Test last() on groupby().window_frame_legend_ext() with real execution."""
+        frame: PandasApiTdsFrame = simple_relation_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame["LastAgeInFirm"] = frame.groupby("Firm/Legal Name").window_frame_legend_ext(
+            frame_spec=frame.rows_between(),
+            order_by="Age",
+        )["Age"].last()
+
+        # Firm X ages ordered: 12, 22, 22, 23 => last is 23
+        # Firm A (34) => last is 34
+        # Firm B (32) => last is 32
+        # Firm C (35) => last is 35
+        expected = {
+            "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name", "LastAgeInFirm"],
+            "rows": [
+                {"values": ["Peter", "Smith", 23, "Firm X", 23]},
+                {"values": ["John", "Johnson", 22, "Firm X", 23]},
+                {"values": ["John", "Hill", 12, "Firm X", 23]},
+                {"values": ["Anthony", "Allen", 22, "Firm X", 23]},
+                {"values": ["Fabrice", "Roberts", 34, "Firm A", 34]},
+                {"values": ["Oliver", "Hill", 32, "Firm B", 32]},
+                {"values": ["David", "Harris", 35, "Firm C", 35]},
+            ],
+        }
+        res = frame.execute_frame_to_string()
+        assert json.loads(res)["result"] == expected
