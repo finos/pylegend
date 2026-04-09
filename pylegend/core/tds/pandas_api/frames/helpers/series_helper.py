@@ -35,7 +35,7 @@ from pylegend.core.language.shared.expression import PyLegendExpression
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
-    from pylegend.core.sql.metamodel import Expression
+    from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleColumn
     from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunction
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
@@ -251,6 +251,13 @@ def add_primitive_methods(cls: Type[T]) -> Type[T]:
         setattr(cls, name, make_wrapper(original_func))
 
     return cls
+
+
+def query_contains_column_with_name(query: QuerySpecification, col_name: str) -> bool:
+    for selectItem in query.select.selectItems:
+        if isinstance(selectItem, SingleColumn) and selectItem.alias == col_name:
+            return True
+    return False
 
 
 def assert_and_find_core_series(expr: PyLegendExpression) -> PyLegendOptional[PyLegendUnion["Series", "GroupbySeries"]]:

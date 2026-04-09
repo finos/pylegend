@@ -62,7 +62,7 @@ from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function,
     needs_zero_column_for_window,
-    get_pure_query_from_expr, get_groupby_series_from_col_type,
+    get_pure_query_from_expr, get_groupby_series_from_col_type, query_contains_column_with_name,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -237,9 +237,12 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         # If the series needs the zero column, inject it into base_query
         # and wrap in a sub-query so PARTITION BY can reference it.
-        if needs_zero_column_for_window(self):
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+        if (
+            needs_zero_column_for_window(self)
+            and not query_contains_column_with_name(base_query, db_extension.quote_identifier(ZERO_COLUMN_NAME))
+        ):
             from pylegend.core.sql.metamodel import IntegerLiteral
-            from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
             base_query.select.selectItems.append(
                 SingleColumn(
                     alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
