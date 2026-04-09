@@ -1385,7 +1385,7 @@ class SqlToStringDbExtension:
     def process_wavg_expression(self, expr: WavgExpression, config: SqlToStringConfig) -> str:
         val = self.process_expression(expr.value, config)
         wt = self.process_expression(expr.weight, config)
-        return f"(SUM({val} * {wt}) / SUM({wt}))"
+        return f"(SUM({val} * {wt}) * 1.0 / SUM({wt}))"
 
     def process_max_by_expression(self, expr: MaxByExpression, config: SqlToStringConfig) -> str:
         val = self.process_expression(expr.value, config)
