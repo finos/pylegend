@@ -16,6 +16,7 @@ from pylegend.core.request.service_client import (
     ServiceClient,
     RequestMethod
 )
+import json
 from pylegend.core.request.response_reader import ResponseReader
 from pylegend.core.request.auth import AuthScheme, LocalhostEmptyAuthScheme
 from pylegend._typing import (
@@ -55,9 +56,9 @@ class LegendClient(ServiceClient):
     ) -> PyLegendSequence[TdsColumn]:
         response = super()._execute_service(
             method=RequestMethod.POST,
-            path="sql/v1/execution/getSchemaFromQueryString",
-            data=sql,
-            headers={"Content-Type": "text/plain"},
+            path="sql/v1/execution/schema",
+            data=json.dumps({"sql": sql}),
+            headers={"Content-Type": "application/json"},
             stream=False
         )
         response_text: str = response.text
@@ -70,9 +71,9 @@ class LegendClient(ServiceClient):
     ) -> ResponseReader:
         iter_content = super()._execute_service(
             method=RequestMethod.POST,
-            path="sql/v1/execution/executeQueryString",
-            data=sql,
-            headers={"Content-Type": "text/plain"},
+            path="sql/v1/execution/execute",
+            data=json.dumps({"sql": sql}),
+            headers={"Content-Type": "application/json"},
             stream=True
         ).iter_content(chunk_size=chunk_size)
         return ResponseReader(iter_content)

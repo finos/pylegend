@@ -22,6 +22,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionIntegerReturn,
     PyLegendExpressionBooleanReturn,
+    PyLegendExpressionStringReturn,
     PyLegendExpression
 )
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
@@ -34,12 +35,12 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification,
+    FunctionCall,
+    QualifiedName,
 )
 from pylegend.core.sql.metamodel import (
     CurrentTime,
     CurrentTimeType,
-    Cast,
-    ColumnType,
     ComparisonExpression,
     ComparisonOperator,
 )
@@ -68,6 +69,7 @@ from pylegend.core.sql.metamodel_extension import (
     DateTimeBucketExpression,
     DateType,
 )
+from enum import Enum
 
 
 __all__: PyLegendSequence[str] = [
@@ -100,7 +102,23 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateAdjustExpression",
     "PyLegendDateDiffExpression",
     "PyLegendDateTimeBucketExpression",
+    "PyLegendPreviousDayOfWeekExpression",
+    "PyLegendMostRecentDayOfWeekExpression",
+    "DurationUnit"
 ]
+
+
+class DurationUnit(Enum):
+    YEARS = 1
+    MONTHS = 2
+    WEEKS = 3
+    DAYS = 4
+    HOURS = 5
+    MINUTES = 6
+    SECONDS = 7
+    MILLISECONDS = 8
+    MICROSECONDS = 9
+    NANOSECONDS = 10
 
 
 class PyLegendFirstDayOfYearExpression(PyLegendUnaryExpression, PyLegendExpressionDateReturn):
@@ -651,7 +669,13 @@ class PyLegendDatePartExpression(PyLegendUnaryExpression, PyLegendExpressionStri
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
-        return Cast(expression, ColumnType(name="DATE", parameters=[]))
+        return FunctionCall(
+            name=QualifiedName(parts=["DATE"]),
+            distinct=False,
+            arguments=[expression],
+            filter_=None,
+            window=None
+        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -870,4 +894,66 @@ class PyLegendDateTimeBucketExpression(PyLegendNaryExpression, PyLegendExpressio
             PyLegendDateTimeBucketExpression.__to_pure_func,
             non_nullable=True,
             operands_non_nullable_flags=[True, True, True]
+        )
+
+
+class PyLegendMostRecentDayOfWeekExpression(PyLegendUnaryExpression, PyLegendExpressionStrictDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["core_most_recent_day_of_week"]),
+            distinct=False,
+            arguments=[expression, CurrentTime(type_=CurrentTimeType.TIMESTAMP, precision=None)],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return f"mostRecentDayOfWeek(DayOfWeek.{op_expr})"
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStrictDateReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendMostRecentDayOfWeekExpression.__to_sql_func,
+            PyLegendMostRecentDayOfWeekExpression.__to_pure_func,
+            non_nullable=True
+        )
+
+
+class PyLegendPreviousDayOfWeekExpression(PyLegendUnaryExpression, PyLegendExpressionStrictDateReturn):
+
+    @staticmethod
+    def __to_sql_func(
+            expression: Expression,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return FunctionCall(
+            name=QualifiedName(parts=["core_previous_day_of_week"]),
+            distinct=False,
+            arguments=[expression, CurrentTime(type_=CurrentTimeType.TIMESTAMP, precision=None)],
+            filter_=None,
+            window=None
+        )
+
+    @staticmethod
+    def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
+        return f"previousDayOfWeek(DayOfWeek.{op_expr})"
+
+    def __init__(self, operand: PyLegendExpressionStringReturn) -> None:
+        PyLegendExpressionStrictDateReturn.__init__(self)
+        PyLegendUnaryExpression.__init__(
+            self,
+            operand,
+            PyLegendPreviousDayOfWeekExpression.__to_sql_func,
+            PyLegendPreviousDayOfWeekExpression.__to_pure_func,
+            non_nullable=True
         )

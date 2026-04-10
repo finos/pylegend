@@ -121,6 +121,14 @@ class PyLegendString(PyLegendPrimitive):
         )
 
     @grammar_method
+    def string_contains(self, other: str) -> PyLegendBoolean:
+        return self.contains(other)
+
+    @grammar_method
+    def equals(self, other: PyLegendUnion[str, "PyLegendString"]) -> PyLegendBoolean:
+        return self.__eq__(other)
+
+    @grammar_method
     def upper(self) -> "PyLegendString":
         return PyLegendString(PyLegendStringUpperExpression(self.__value))
 

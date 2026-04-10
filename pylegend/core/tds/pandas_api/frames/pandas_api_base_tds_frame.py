@@ -21,6 +21,8 @@ from typing import IO, TYPE_CHECKING, overload
 
 from typing_extensions import Concatenate
 
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type
+
 try:
     from typing import ParamSpec
 except Exception:
@@ -70,8 +72,10 @@ from pylegend.extensions.tds.result_handler import (
 )
 
 if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween, RangeBetween
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+    from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
     from pylegend.core.tds.pandas_api.frames.functions.iloc import PandasApiIlocIndexer
     from pylegend.core.tds.pandas_api.frames.functions.loc import PandasApiLocIndexer
     from pylegend.core.tds.cast_helpers import CastTarget
@@ -127,37 +131,9 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             for col in self.__columns:
                 if col.get_name() == key:
                     col_type = col.get_type()
-                    if col_type == "Boolean":
-                        from pylegend.core.language.pandas_api.pandas_api_series import \
-                            BooleanSeries  # pragma: no cover
-                        return BooleanSeries(self, key)  # pragma: no cover (Boolean column not supported in PURE)
-                    elif col_type in ("String", "Varchar"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import StringSeries
-                        return StringSeries(self, key)
-                    elif col_type == "Number":  # pragma: no cover
-                        from pylegend.core.language.pandas_api.pandas_api_series import NumberSeries
-                        return NumberSeries(self, key)
-                    elif col_type in ("Integer", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
-                                      "Int", "UInt", "BigInt", "UBigInt"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import IntegerSeries
-                        return IntegerSeries(self, key)
-                    elif col_type in ("Float", "Float4", "Double"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import FloatSeries
-                        return FloatSeries(self, key)
-                    elif col_type in ("Decimal", "Numeric"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import DecimalSeries
-                        return DecimalSeries(self, key)
-                    elif col_type == "Date":
-                        from pylegend.core.language.pandas_api.pandas_api_series import DateSeries
-                        return DateSeries(self, key)
-                    elif col_type in ("DateTime", "Timestamp"):
-                        from pylegend.core.language.pandas_api.pandas_api_series import DateTimeSeries
-                        return DateTimeSeries(self, key)
-                    elif col_type == "StrictDate":
-                        from pylegend.core.language.pandas_api.pandas_api_series import StrictDateSeries
-                        return StrictDateSeries(self, key)
-                    else:
-                        raise ValueError(f"Unsupported column type '{col_type}' for column '{key}'")  # pragma: no cover
+                    series_cls = get_series_from_col_type(col_type)
+                    return series_cls(self, key)
+
             raise KeyError(f"['{key}'] not in index")
 
         elif isinstance(key, list):
@@ -228,7 +204,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
-        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+        # Normalize non-callable values (e.g. direct Series/GroupbySeries) into lambdas,
+        # matching pandas DataFrame.assign() behavior which accepts both callables and values.
+        normalized = {}
+        for key, value in kwargs.items():
+            if callable(value):
+                normalized[key] = value
+            else:
+                normalized[key] = lambda row, _v=value: _v  # pragma: no cover
+        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=normalized))
 
     def filter(
             self,
@@ -520,6 +504,158 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             dropna=dropna
         )
 
+    def expanding(
+            self,
+            min_periods: int = 1,
+            axis: PyLegendUnion[int, str] = 0,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+
+        if min_periods != 1:
+            raise NotImplementedError(
+                f"The expanding function is only supported for min_periods=1, but got: min_periods={min_periods!r}"
+            )
+        if axis not in [0, "index"]:
+            raise NotImplementedError(
+                f'The expanding function is only supported for axis=0 or axis="index", but got: axis={axis!r}'
+            )
+        if method is not None:
+            raise NotImplementedError(
+                f"The expanding function does not support the 'method' parameter, but got: method={method!r}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            frame_spec=RowsBetween(None, 0),
+            ascending=ascending,
+        )
+
+    def rolling(
+            self,
+            window: int,
+            min_periods: PyLegendOptional[int] = None,
+            center: bool = False,
+            win_type: PyLegendOptional[str] = None,
+            on: PyLegendOptional[str] = None,
+            axis: PyLegendUnion[int, str] = 0,
+            closed: PyLegendOptional[str] = None,
+            step: PyLegendOptional[int] = None,
+            method: PyLegendOptional[str] = None,
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+
+        if min_periods is not None and min_periods != 1:
+            raise NotImplementedError(
+                f"The rolling function is only supported for min_periods=1 or None, but got: min_periods={min_periods!r}"
+            )
+        if center is not False:
+            raise NotImplementedError(
+                f"The rolling function does not support center=True, but got: center={center!r}"
+            )
+        if win_type is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'win_type' parameter, but got: win_type={win_type!r}"
+            )
+        if on is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'on' parameter, but got: on={on!r}"
+            )
+        if axis not in [0, "index"]:
+            raise NotImplementedError(  # pragma: no cover
+                f'The rolling function is only supported for axis=0 or axis="index", but got: axis={axis!r}'
+            )
+        if closed is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'closed' parameter, but got: closed={closed!r}"
+            )
+        if step is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'step' parameter, but got: step={step!r}"
+            )
+        if method is not None:
+            raise NotImplementedError(
+                f"The rolling function does not support the 'method' parameter, but got: method={method!r}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            frame_spec=RowsBetween(-(window - 1), 0),
+            ascending=ascending,
+        )
+
+    def window_frame_legend_ext(
+            self,
+            frame_spec: "FrameSpec",
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Create a custom window specification with explicit control over the
+        window frame (ROWS BETWEEN or RANGE BETWEEN).
+
+        Parameters
+        ----------
+        frame_spec:
+            A ``RowsBetween`` or ``RangeBetween`` specification object.
+        order_by:
+            Column name(s) to use for ORDER BY within the window.
+            ``None`` means no explicit ordering (a fallback will be chosen automatically).
+        ascending:
+            Sort direction(s) for the ORDER BY columns.  ``True`` (default)
+            means ascending.  Can be a single ``bool`` or a ``list[bool]``
+            whose length matches the number of ``order_by`` columns.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
+
+        if not isinstance(frame_spec, FrameSpecCls):
+            raise TypeError(  # pragma: no cover
+                f"frame_spec must be a RowsBetween or RangeBetween, got {type(frame_spec).__name__}"
+            )
+
+        return PandasApiWindowTdsFrame(
+            base_frame=self,
+            order_by=order_by,
+            frame_spec=frame_spec,
+            ascending=ascending,
+        )
+
+    def rows_between(self, start: PyLegendOptional[int] = None, end: PyLegendOptional[int] = None) -> "RowsBetween":
+        """Create a ROWS BETWEEN frame specification."""
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+        return RowsBetween(start, end)
+
+    def range_between(
+            self,
+            start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            *,
+            duration_start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_start_unit: PyLegendOptional[str] = None,
+            duration_end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_end_unit: PyLegendOptional[str] = None,
+    ) -> "RangeBetween":
+        """Create a RANGE BETWEEN frame specification."""
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RangeBetween
+        return RangeBetween(
+            start, end,
+            duration_start=duration_start,
+            duration_start_unit=duration_start_unit,
+            duration_end=duration_end,
+            duration_end_unit=duration_end_unit,
+        )
+
     def merge(
             self,
             other: "PandasApiTdsFrame",
@@ -581,6 +717,28 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             )
         else:
             return merged
+
+    def concat_legend_ext(
+            self,
+            other: "PandasApiBaseTdsFrame",
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Concatenate this frame with another frame vertically (UNION ALL).
+        Both frames must have compatible schemas (same column names and types).
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.concat_function import (
+            PandasApiConcatFunction
+        )
+        if not isinstance(other, PandasApiBaseTdsFrame):
+            raise TypeError(
+                f"concat_legend_ext expects a PandasApiBaseTdsFrame, got: {type(other).__name__}"
+            )
+        return PandasApiAppliedFunctionTdsFrame(PandasApiConcatFunction(self, other))
 
     def join(
             self,
@@ -914,6 +1072,57 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             na_option=na_option,
             ascending=ascending,
             pct=pct
+        ))
+
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution of each column, equivalent to
+        SQL ``CUME_DIST() OVER (ORDER BY col)`` and Pure
+        ``cumulativeDistribution``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='cume_dist',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+        ))
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket of each column, equivalent to
+        SQL ``NTILE(n) OVER (ORDER BY col)`` and Pure ``ntile``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='ntile',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+            num_buckets=num_buckets,
         ))
 
     def shift(

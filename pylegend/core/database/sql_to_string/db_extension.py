@@ -118,6 +118,13 @@ from pylegend.core.sql.metamodel_extension import (
     StdDevPopulationExpression,
     VarianceSampleExpression,
     VariancePopulationExpression,
+    CorrExpression,
+    CovarPopulationExpression,
+    CovarSampleExpression,
+    MedianExpression,
+    ModeExpression,
+    PercentileContExpression,
+    PercentileDiscExpression,
     JoinStringsExpression,
     FirstDayOfYearExpression,
     FirstDayOfQuarterExpression,
@@ -146,6 +153,9 @@ from pylegend.core.sql.metamodel_extension import (
     DateDiffExpression,
     DateTimeBucketExpression,
     DateType,
+    WavgExpression,
+    MaxByExpression,
+    MinByExpression,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -423,6 +433,26 @@ def expression_processor(
         return extension.process_variance_sample_expression(expression, config)
     elif isinstance(expression, VariancePopulationExpression):
         return extension.process_variance_population_expression(expression, config)
+    elif isinstance(expression, CorrExpression):
+        return extension.process_corr_expression(expression, config)
+    elif isinstance(expression, CovarPopulationExpression):
+        return extension.process_covar_population_expression(expression, config)
+    elif isinstance(expression, CovarSampleExpression):
+        return extension.process_covar_sample_expression(expression, config)
+    elif isinstance(expression, WavgExpression):
+        return extension.process_wavg_expression(expression, config)
+    elif isinstance(expression, MaxByExpression):
+        return extension.process_max_by_expression(expression, config)
+    elif isinstance(expression, MinByExpression):
+        return extension.process_min_by_expression(expression, config)
+    elif isinstance(expression, MedianExpression):
+        return extension.process_median_expression(expression, config)
+    elif isinstance(expression, ModeExpression):
+        return extension.process_mode_expression(expression, config)
+    elif isinstance(expression, PercentileContExpression):
+        return extension.process_percentile_cont_expression(expression, config)
+    elif isinstance(expression, PercentileDiscExpression):
+        return extension.process_percentile_disc_expression(expression, config)
     elif isinstance(expression, JoinStringsExpression):
         return extension.process_join_strings_expression(expression, config)
     elif isinstance(expression, FirstDayOfYearExpression):
@@ -1342,6 +1372,48 @@ class SqlToStringDbExtension:
 
     def process_variance_population_expression(self, expr: VariancePopulationExpression, config: SqlToStringConfig) -> str:
         return f"VAR_POP({self.process_expression(expr.value, config)})"
+
+    def process_corr_expression(self, expr: CorrExpression, config: SqlToStringConfig) -> str:
+        return f"CORR({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_covar_population_expression(self, expr: CovarPopulationExpression, config: SqlToStringConfig) -> str:
+        return f"COVAR_POP({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_covar_sample_expression(self, expr: CovarSampleExpression, config: SqlToStringConfig) -> str:
+        return f"COVAR_SAMP({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_wavg_expression(self, expr: WavgExpression, config: SqlToStringConfig) -> str:
+        val = self.process_expression(expr.value, config)
+        wt = self.process_expression(expr.weight, config)
+        return f"(SUM({val} * {wt}) * 1.0 / SUM({wt}))"
+
+    def process_max_by_expression(self, expr: MaxByExpression, config: SqlToStringConfig) -> str:
+        val = self.process_expression(expr.value, config)
+        by = self.process_expression(expr.by, config)
+        return f"MAX_BY({val}, {by})"
+
+    def process_min_by_expression(self, expr: MinByExpression, config: SqlToStringConfig) -> str:
+        val = self.process_expression(expr.value, config)
+        by = self.process_expression(expr.by, config)
+        return f"MIN_BY({val}, {by})"
+
+    def process_median_expression(self, expr: MedianExpression, config: SqlToStringConfig) -> str:
+        return f"PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY {self.process_expression(expr.value, config)})"
+
+    def process_mode_expression(self, expr: ModeExpression, config: SqlToStringConfig) -> str:
+        return f"MODE() WITHIN GROUP (ORDER BY {self.process_expression(expr.value, config)})"
+
+    def process_percentile_cont_expression(self, expr: PercentileContExpression, config: SqlToStringConfig) -> str:
+        return (
+            f"PERCENTILE_CONT({self.process_expression(expr.percentile, config)}) "
+            f"WITHIN GROUP (ORDER BY {self.process_expression(expr.value, config)})"
+        )
+
+    def process_percentile_disc_expression(self, expr: PercentileDiscExpression, config: SqlToStringConfig) -> str:
+        return (
+            f"PERCENTILE_DISC({self.process_expression(expr.percentile, config)}) "
+            f"WITHIN GROUP (ORDER BY {self.process_expression(expr.value, config)})"
+        )
 
     def process_join_strings_expression(self, expr: JoinStringsExpression, config: SqlToStringConfig) -> str:
         return f"STRING_AGG({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
