@@ -35,3 +35,5 @@ Pandas API
    pandas_series
    pandas_groupby_tds_frame
    pandas_groupby_series
+   pandas_window_tds_frame
+   pandas_window_series

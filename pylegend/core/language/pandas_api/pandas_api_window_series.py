@@ -30,15 +30,109 @@ if TYPE_CHECKING:
 
 class WindowSeries:
     """
-    Represents a single column selected on a window frame.
+    A single-column proxy on a window frame.
 
-    Created by ``__getitem__`` on a ``PandasApiWindowTdsFrame``, e.g.::
+    A ``WindowSeries`` is obtained by bracket-indexing a
+    :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame`
+    with a column name.  It can also be obtained by calling
+    ``expanding()``, ``rolling()``, or ``window_frame_legend_ext()``
+    directly on a
+    :class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
+    or
+    :class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`.
 
-        frame.expanding()["col"]
-        frame.groupby("grp").expanding()["col"]
+    Calling an aggregation method (``sum()``, ``mean()``, etc.) on a
+    ``WindowSeries`` returns a
+    :class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
+    (or a
+    :class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`
+    when the underlying window was created from a groupby).  The result
+    can then be assigned back to the parent frame.
 
-    Calling an aggregate (e.g. ``.sum()``, ``.mean()``) on this object produces
-    a ``Series`` (or ``GroupbySeries``) that can be assigned back to a frame column.
+    Obtaining a WindowSeries
+    -------------------------
+    .. code-block:: python
+
+        # Via bracket notation on a window frame
+        ws = frame.expanding(order_by="col")["col"]
+
+        # Via Series shortcut
+        ws = frame["col"].expanding(order_by="col")
+
+        # Grouped variant (returns GroupbySeries after aggregation)
+        ws = frame.groupby("grp")["val"].expanding(order_by="val")
+
+    Result type preservation
+    -------------------------
+    The type of the returned ``Series`` (or ``GroupbySeries``) matches
+    the column type.  For example, an integer column produces an
+    ``IntegerSeries`` after ``.sum()``, while ``count()`` always
+    returns an ``IntegerSeries`` regardless of the source column type.
+
+    Composing with arithmetic
+    -------------------------
+    The ``Series`` returned by a ``WindowSeries`` aggregation supports
+    arithmetic, so expressions like the following work:
+
+    .. code-block:: python
+
+        frame["shifted"] = frame["col"].expanding().sum() - 100
+        frame["ratio"]   = frame["a"].expanding().sum() / frame["b"].rolling(3).mean()
+
+    Multiple window assignments can be applied sequentially to the
+    same frame:
+
+    .. code-block:: python
+
+        frame["cumsum"]    = frame["col"].expanding().sum()
+        frame["roll_mean"] = frame["col2"].rolling(5, order_by="col2").mean()
+
+    See Also
+    --------
+    PandasApiWindowTdsFrame : The window frame that produces this.
+    Series : Non-grouped single-column proxy.
+    GroupbySeries : Grouped single-column proxy.
+    PandasApiTdsFrame.expanding : Create an expanding window on a frame.
+    PandasApiTdsFrame.rolling : Create a rolling window on a frame.
+
+    Notes
+    -----
+    **Differences from pandas:**
+
+    - A ``WindowSeries`` is **not** a data container.  It is an
+      expression builder that lazily constructs the SQL / Pure query.
+      No data is materialised until the result is executed.
+    - In pandas, ``Expanding['col']`` and ``Rolling['col']`` have
+      built-in convenience methods that return a ``Series``.  Here,
+      the same convenience methods are available (``sum()``,
+      ``mean()``, ``min()``, ``max()``, ``count()``, ``std()``,
+      ``var()``), plus a general ``aggregate()`` / ``agg()`` method.
+    - Extra ``*args`` / ``**kwargs`` on ``aggregate()`` are **not
+      supported**.
+    - The ``numeric_only`` parameter on convenience methods is **not
+      supported** and must be ``False``.
+
+    Examples
+    --------
+    .. ipython:: python
+
+        import pylegend
+        frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+        # Assign an expanding sum via WindowSeries
+        frame["Cumulative Sum"] = frame.expanding(
+            order_by="Order Id"
+        )["Order Id"].sum()
+        frame.head(5).to_pandas()
+
+        frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+        # Grouped expanding sum assigned back
+        frame["Group Cumsum"] = frame.groupby(
+            "Ship Name"
+        )["Order Id"].expanding(order_by="Order Id").sum()
+        frame.head(5).to_pandas()
+
     """
 
     _window_frame: PandasApiWindowTdsFrame
@@ -67,6 +161,74 @@ class WindowSeries:
         *args: PyLegendPrimitiveOrPythonPrimitive,
         **kwargs: PyLegendPrimitiveOrPythonPrimitive,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Apply a window aggregate to this single column.
+
+        Compute the window aggregate specified by ``func`` over the
+        window defined on this ``WindowSeries``.  The result is a
+        :class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
+        (or
+        :class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`
+        when the underlying window was created from a groupby) that
+        can be assigned back to a frame column.
+
+        Parameters
+        ----------
+        func : str, callable, list, or dict
+            Aggregation specification:
+
+            - ``str`` — a named aggregation (``'sum'``, ``'mean'``,
+              ``'min'``, ``'max'``, ``'count'``, ``'std'``, ``'var'``).
+            - ``callable`` — a function receiving a column proxy and
+              returning an aggregated value.
+            - ``list`` — a list of the above.
+            - ``dict`` — ``{column_name: agg_spec}``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+        *args
+            Not supported.
+        **kwargs
+            Not supported.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed aggregate
+            values.
+
+        See Also
+        --------
+        agg : Alias for ``aggregate``.
+        sum : Windowed sum convenience method.
+        mean : Windowed mean convenience method.
+        PandasApiWindowTdsFrame.aggregate : Window aggregate on
+            all columns.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``Expanding['col'].aggregate()`` and
+          ``Rolling['col'].aggregate()`` accept ``*args`` and
+          ``**kwargs`` forwarded to the aggregation function.  Here,
+          extra positional and keyword arguments are **not supported**.
+        - The result is always a single-column proxy (``Series`` or
+          ``GroupbySeries``), never a DataFrame.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Expanding sum on a single column
+            frame["Expanding Sum"] = frame.expanding(
+                order_by="Order Id"
+            )["Order Id"].aggregate("sum")
+            frame.head(5).to_pandas()
+
+        """
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame,
         )
@@ -108,13 +270,80 @@ class WindowSeries:
             new_series._filtered_frame = applied_function_frame
             return new_series
 
-    agg = aggregate
+    def agg(
+        self,
+        func: PyLegendAggInput,
+        axis: PyLegendUnion[int, str] = 0,
+        *args: PyLegendPrimitiveOrPythonPrimitive,
+        **kwargs: PyLegendPrimitiveOrPythonPrimitive,
+    ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Apply a window aggregate to this single column.
+
+        Alias for :meth:`aggregate`.  See ``aggregate`` for full
+        documentation.
+
+        See Also
+        --------
+        aggregate : Equivalent method (canonical name).
+        """
+        return self.aggregate(func, axis, *args, **kwargs)
 
     def sum(
         self,
         numeric_only: bool = False,
         min_count: int = 0,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Compute the windowed sum of this column.
+
+        Convenience method equivalent to ``aggregate('sum')`` on this
+        window series.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+        min_count : int, default 0
+            Must be ``0``. Non-zero values are not supported.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed sum values.
+
+        Raises
+        ------
+        NotImplementedError
+            If any parameter is set to an unsupported value.
+
+        See Also
+        --------
+        aggregate : General windowed aggregation.
+        mean : Windowed mean.
+        PandasApiTdsFrame.sum : Frame-level sum (no window).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``numeric_only`` and ``min_count`` are **not supported**
+          and must remain at their default values.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Expanding sum on a single column
+            frame["Expanding Sum"] = frame.expanding(
+                order_by="Order Id"
+            )["Order Id"].sum()
+            frame.head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in sum function.")
         if min_count != 0:
@@ -125,6 +354,53 @@ class WindowSeries:
         self,
         numeric_only: bool = False,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Compute the windowed mean of this column.
+
+        Convenience method equivalent to ``aggregate('mean')`` on this
+        window series.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed mean values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``numeric_only`` is ``True``.
+
+        See Also
+        --------
+        aggregate : General windowed aggregation.
+        sum : Windowed sum.
+        PandasApiTdsFrame.mean : Frame-level mean (no window).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``numeric_only`` is **not supported** and must be ``False``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Rolling mean with a window of 3
+            frame["Rolling Mean"] = frame.rolling(
+                3, order_by="Order Id"
+            )["Order Id"].mean()
+            frame.head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in mean function.")
         return self.aggregate("mean", 0)
@@ -133,6 +409,54 @@ class WindowSeries:
         self,
         numeric_only: bool = False,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Compute the windowed minimum of this column.
+
+        Convenience method equivalent to ``aggregate('min')`` on this
+        window series.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed minimum
+            values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``numeric_only`` is ``True``.
+
+        See Also
+        --------
+        aggregate : General windowed aggregation.
+        max : Windowed maximum.
+        PandasApiTdsFrame.min : Frame-level min (no window).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``numeric_only`` is **not supported** and must be ``False``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Expanding min on a single column
+            frame["Expanding Min"] = frame.expanding(
+                order_by="Order Id"
+            )["Order Id"].min()
+            frame.head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in min function.")
         return self.aggregate("min", 0)
@@ -141,11 +465,101 @@ class WindowSeries:
         self,
         numeric_only: bool = False,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Compute the windowed maximum of this column.
+
+        Convenience method equivalent to ``aggregate('max')`` on this
+        window series.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed maximum
+            values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``numeric_only`` is ``True``.
+
+        See Also
+        --------
+        aggregate : General windowed aggregation.
+        min : Windowed minimum.
+        PandasApiTdsFrame.max : Frame-level max (no window).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``numeric_only`` is **not supported** and must be ``False``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Expanding max on a single column
+            frame["Expanding Max"] = frame.expanding(
+                order_by="Order Id"
+            )["Order Id"].max()
+            frame.head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in max function.")
         return self.aggregate("max", 0)
 
     def count(self) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Compute the windowed count of non-null values for this column.
+
+        Convenience method equivalent to ``aggregate('count')`` on this
+        window series.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed count values.
+            The return type is always ``IntegerSeries`` (or its
+            ``GroupbySeries`` equivalent), regardless of the source
+            column's type.
+
+        See Also
+        --------
+        aggregate : General windowed aggregation.
+        sum : Windowed sum.
+        PandasApiTdsFrame.count : Frame-level count (no window).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The signature takes no parameters.  The pandas
+          ``Expanding.count()`` / ``Rolling.count()`` accept
+          ``numeric_only`` which is not supported here.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Expanding count on a single column
+            frame["Expanding Count"] = frame.expanding(
+                order_by="Order Id"
+            )["Order Id"].count()
+            frame.head(5).to_pandas()
+
+        """
         return self.aggregate("count", 0)
 
     def std(
@@ -153,6 +567,61 @@ class WindowSeries:
         ddof: int = 1,
         numeric_only: bool = False,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Compute the windowed standard deviation of this column.
+
+        Convenience method equivalent to ``aggregate('std')`` on this
+        window series.
+
+        Parameters
+        ----------
+        ddof : int, default 1
+            Degrees of freedom.  ``1`` for sample standard deviation
+            (``STDDEV_SAMP``), ``0`` for population standard deviation
+            (``STDDEV_POP``).
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed standard
+            deviation values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof`` is not ``0`` or ``1``, or if ``numeric_only``
+            is ``True``.
+
+        See Also
+        --------
+        aggregate : General windowed aggregation.
+        var : Windowed variance.
+        PandasApiTdsFrame.std : Frame-level std (no window).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only ``ddof=0`` (population) and ``ddof=1`` (sample) are
+          supported.  Other values raise ``NotImplementedError``.
+        - ``numeric_only`` is **not supported** and must be ``False``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Rolling standard deviation with a window of 3
+            frame["Rolling Std"] = frame.rolling(
+                3, order_by="Order Id"
+            )["Order Id"].std()
+            frame.head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
         if ddof == 1:
@@ -169,6 +638,61 @@ class WindowSeries:
         ddof: int = 1,
         numeric_only: bool = False,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Compute the windowed variance of this column.
+
+        Convenience method equivalent to ``aggregate('var')`` on this
+        window series.
+
+        Parameters
+        ----------
+        ddof : int, default 1
+            Degrees of freedom.  ``1`` for sample variance
+            (``VAR_SAMP``), ``0`` for population variance
+            (``VAR_POP``).
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the windowed variance
+            values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof`` is not ``0`` or ``1``, or if ``numeric_only``
+            is ``True``.
+
+        See Also
+        --------
+        aggregate : General windowed aggregation.
+        std : Windowed standard deviation.
+        PandasApiTdsFrame.var : Frame-level var (no window).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only ``ddof=0`` (population) and ``ddof=1`` (sample) are
+          supported.  Other values raise ``NotImplementedError``.
+        - ``numeric_only`` is **not supported** and must be ``False``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Rolling variance with a window of 3
+            frame["Rolling Var"] = frame.rolling(
+                3, order_by="Order Id"
+            )["Order Id"].var()
+            frame.head(5).to_pandas()
+
+        """
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
         if ddof == 1:
