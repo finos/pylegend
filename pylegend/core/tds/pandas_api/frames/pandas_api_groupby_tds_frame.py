@@ -282,6 +282,17 @@ class PandasApiGroupbyTdsFrame:
             A new TDS frame with one row per group and the aggregated
             columns.
 
+        Raises
+        ------
+        TypeError
+            If ``func`` is not a valid aggregation specification.
+        KeyError
+            If a column name in a dict-based ``func`` does not exist in
+            the frame.
+        NotImplementedError
+            If ``axis`` is not ``0`` / ``'index'``, or if extra
+            ``*args`` / ``**kwargs`` are passed.
+
         See Also
         --------
         agg : Alias for aggregate.
@@ -623,17 +634,19 @@ class PandasApiGroupbyTdsFrame:
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
         """
-        Compute the sample standard deviation within each group.
+        Compute the standard deviation within each group.
 
         Convenience method equivalent to ``aggregate('std')`` on the
-        groupby object. Uses ``ddof=1`` (sample standard deviation),
-        mapping to ``STDDEV_SAMP`` at the SQL level.
+        groupby object. Supports both ``ddof=1`` (sample, maps to
+        ``STDDEV_SAMP``) and ``ddof=0`` (population, maps to
+        ``STDDEV_POP``) at the SQL level.
 
         Parameters
         ----------
         ddof : int, default 1
-            Degrees of freedom. Must be ``1``. Population standard
-            deviation (``ddof=0``) is not supported.
+            Degrees of freedom. ``1`` for sample standard deviation
+            (``STDDEV_SAMP``), ``0`` for population standard deviation
+            (``STDDEV_POP``).
         engine : None
             Not supported. Must be ``None``.
         engine_kwargs : None
@@ -649,14 +662,24 @@ class PandasApiGroupbyTdsFrame:
         Raises
         ------
         NotImplementedError
-            If ``ddof != 1``, or if ``engine``, ``engine_kwargs``, or
-            ``numeric_only`` are set to unsupported values.
+            If ``ddof`` is not ``0`` or ``1``, or if ``engine``,
+            ``engine_kwargs``, or ``numeric_only`` are set to unsupported
+            values.
 
         See Also
         --------
         var : Compute group variances.
         aggregate : General grouped aggregation.
         PandasApiTdsFrame.std : Frame-level std (no grouping).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only ``ddof=0`` and ``ddof=1`` are supported. Other values
+          raise ``NotImplementedError``.
+        - ``engine``, ``engine_kwargs``, and ``numeric_only`` are
+          **not supported**.
 
         Examples
         --------
@@ -688,17 +711,18 @@ class PandasApiGroupbyTdsFrame:
         numeric_only: bool = False,
     ) -> "PandasApiTdsFrame":
         """
-        Compute the sample variance within each group.
+        Compute the variance within each group.
 
         Convenience method equivalent to ``aggregate('var')`` on the
-        groupby object. Uses ``ddof=1`` (sample variance), mapping
-        to ``VAR_SAMP`` at the SQL level.
+        groupby object. Supports both ``ddof=1`` (sample, maps to
+        ``VAR_SAMP``) and ``ddof=0`` (population, maps to ``VAR_POP``)
+        at the SQL level.
 
         Parameters
         ----------
         ddof : int, default 1
-            Degrees of freedom. Must be ``1``. Population variance
-            (``ddof=0``) is not supported.
+            Degrees of freedom. ``1`` for sample variance
+            (``VAR_SAMP``), ``0`` for population variance (``VAR_POP``).
         engine : None
             Not supported. Must be ``None``.
         engine_kwargs : None
@@ -714,14 +738,24 @@ class PandasApiGroupbyTdsFrame:
         Raises
         ------
         NotImplementedError
-            If ``ddof != 1``, or if ``engine``, ``engine_kwargs``, or
-            ``numeric_only`` are set to unsupported values.
+            If ``ddof`` is not ``0`` or ``1``, or if ``engine``,
+            ``engine_kwargs``, or ``numeric_only`` are set to unsupported
+            values.
 
         See Also
         --------
         std : Compute group standard deviations.
         aggregate : General grouped aggregation.
         PandasApiTdsFrame.var : Frame-level var (no grouping).
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only ``ddof=0`` and ``ddof=1`` are supported. Other values
+          raise ``NotImplementedError``.
+        - ``engine``, ``engine_kwargs``, and ``numeric_only`` are
+          **not supported**.
 
         Examples
         --------
@@ -785,10 +819,80 @@ class PandasApiGroupbyTdsFrame:
         return self.aggregate("count", 0)
 
     def median(self) -> "PandasApiTdsFrame":
+        """
+        Compute the median of each numeric column within each group.
+
+        Applies ``PERCENTILE_CONT(0.5)`` at the SQL level for each
+        numeric column. Non-numeric columns are excluded automatically.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        See Also
+        --------
+        mean : Compute group means.
+        aggregate : General grouped aggregation.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only numeric columns are included; non-numeric columns are
+          silently skipped.
+        - The pandas ``numeric_only`` parameter is not available; the
+          behaviour is always ``numeric_only=True``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].median().head(5).to_pandas()
+
+        """
         numeric_func_map = self._numeric_only_func_map("median")
         return self.aggregate(numeric_func_map, 0)
 
     def mode(self) -> "PandasApiTdsFrame":
+        """
+        Compute the mode of each numeric column within each group.
+
+        Returns the most frequently occurring value per numeric column
+        within each group. Maps to ``MODE()`` at the SQL level.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with one row per group.
+
+        See Also
+        --------
+        median : Compute group medians.
+        aggregate : General grouped aggregation.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only numeric columns are included; non-numeric columns are
+          silently skipped.
+        - Returns a single value per group (SQL ``MODE``). Pandas may
+          return multiple rows when there are ties.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].mode().head(5).to_pandas()
+
+        """
         numeric_func_map = self._numeric_only_func_map("mode")
         return self.aggregate(numeric_func_map, 0)
 

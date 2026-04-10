@@ -434,15 +434,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in std function, but got: {axis}")
         if skipna is not True:
             raise NotImplementedError("skipna=False is not currently supported in std function.")
-        if ddof != 1:
+        if ddof not in (0, 1):
             raise NotImplementedError(
-                f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: {ddof}")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
         if len(kwargs) > 0:
             raise NotImplementedError(
                 f"Additional keyword arguments not supported in std function: {list(kwargs.keys())}")
-        return self.aggregate("std", 0)
+        return self.aggregate("std" if ddof == 1 else "std_dev_population", 0)
 
     def var(
             self,
@@ -456,14 +456,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in var function, but got: {axis}")
         if skipna is not True:
             raise NotImplementedError("skipna=False is not currently supported in var function.")
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
         if len(kwargs) > 0:
             raise NotImplementedError(
                 f"Additional keyword arguments not supported in var function: {list(kwargs.keys())}")
-        return self.aggregate("var", 0)
+        return self.aggregate("var" if ddof == 1 else "variance_population", 0)
 
     def count(
             self,

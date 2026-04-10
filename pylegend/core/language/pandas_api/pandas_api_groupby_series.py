@@ -734,13 +734,14 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         numeric_only: bool = False,
     ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         """
-        Compute the sample standard deviation within each group.
+        Compute the standard deviation within each group.
 
         Parameters
         ----------
         ddof : int, default 1
-            Must be ``1`` (sample standard deviation). Other values
-            are not supported.
+            Degrees of freedom. ``1`` for sample standard deviation
+            (``STDDEV_SAMP``), ``0`` for population standard deviation
+            (``STDDEV_POP``).
         engine : str, optional
             Not supported. Must be ``None``.
         engine_kwargs : dict, optional
@@ -753,14 +754,21 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         PandasApiTdsFrame
             A frame with grouping columns and the standard deviation.
 
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof`` is not ``0`` or ``1``, or if ``engine``,
+            ``engine_kwargs``, or ``numeric_only`` are set to unsupported
+            values.
+
         Notes
         -----
         Equivalent to ``gseries.aggregate("std")``. Maps to SQL
-        ``STDDEV_SAMP()``.
+        ``STDDEV_SAMP()`` (ddof=1) or ``STDDEV_POP()`` (ddof=0).
 
-        **Differences from pandas:** only ``ddof=1`` is supported.
-        ``engine``, ``engine_kwargs``, and ``numeric_only`` are **not
-        supported**.
+        **Differences from pandas:** only ``ddof=0`` and ``ddof=1`` are
+        supported. ``engine``, ``engine_kwargs``, and ``numeric_only``
+        are **not supported**.
 
         Examples
         --------
@@ -792,13 +800,13 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         numeric_only: bool = False,
     ) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
         """
-        Compute the sample variance within each group.
+        Compute the variance within each group.
 
         Parameters
         ----------
         ddof : int, default 1
-            Must be ``1`` (sample variance). Other values are not
-            supported.
+            Degrees of freedom. ``1`` for sample variance
+            (``VAR_SAMP``), ``0`` for population variance (``VAR_POP``).
         engine : str, optional
             Not supported. Must be ``None``.
         engine_kwargs : dict, optional
@@ -811,14 +819,21 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         PandasApiTdsFrame
             A frame with grouping columns and the variance.
 
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof`` is not ``0`` or ``1``, or if ``engine``,
+            ``engine_kwargs``, or ``numeric_only`` are set to unsupported
+            values.
+
         Notes
         -----
         Equivalent to ``gseries.aggregate("var")``. Maps to SQL
-        ``VAR_SAMP()``.
+        ``VAR_SAMP()`` (ddof=1) or ``VAR_POP()`` (ddof=0).
 
-        **Differences from pandas:** only ``ddof=1`` is supported.
-        ``engine``, ``engine_kwargs``, and ``numeric_only`` are **not
-        supported**.
+        **Differences from pandas:** only ``ddof=0`` and ``ddof=1`` are
+        supported. ``engine``, ``engine_kwargs``, and ``numeric_only``
+        are **not supported**.
 
         Examples
         --------
@@ -873,22 +888,120 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         return self.aggregate("count", 0)
 
     def median(self) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
+        """
+        Compute the median within each group.
+
+        Maps to ``PERCENTILE_CONT(0.5)`` at the SQL level.
+
+        Returns
+        -------
+        PandasApiTdsFrame or GroupbySeries
+            Grouped median values.
+
+        See Also
+        --------
+        mean : Compute group means.
+        aggregate : General grouped aggregation.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].median().head(5).to_pandas()
+
+        """
         return self.aggregate("median", 0)
 
     def mode(self) -> PyLegendUnion["PandasApiTdsFrame", "GroupbySeries"]:
+        """
+        Compute the mode within each group.
+
+        Returns the most frequently occurring value per group.
+        Maps to ``MODE()`` at the SQL level.
+
+        Returns
+        -------
+        PandasApiTdsFrame or GroupbySeries
+            Grouped mode values.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Returns a single value per group. Pandas may return multiple
+          rows when there are ties.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].mode().head(5).to_pandas()
+
+        """
         return self.aggregate("mode", 0)
 
     def transform(  # type: ignore
             self,
             func: PyLegendUnion[str, PyLegendCallable[..., object]],
     ) -> "GroupbySeries":
-        """Apply a partition-only window aggregate (no frame bounds, no order by).
+        """
+        Apply a partition-only window aggregate and broadcast back to every row.
 
-        Equivalent to pandas ``groupby['col'].transform('func')``, which computes
-        the aggregate per group and broadcasts the result back to every row.
+        Equivalent to pandas ``groupby['col'].transform('func')``, which
+        computes the aggregate per group and broadcasts the result back
+        to every row.
 
         Generates SQL like ``FUNC(col) OVER (PARTITION BY ...)`` and
-        Pure like ``extend(over(~[grp]), ~col:{p,w,r | $r.col}:y | $y->func())``.
+        Pure like
+        ``extend(over(~[grp]), ~col:{p,w,r | $r.col}:y | $y->func())``.
+
+        Parameters
+        ----------
+        func : str or callable
+            The aggregation to apply within each partition. Accepts a
+            named aggregation string (``'sum'``, ``'mean'``, ``'min'``,
+            ``'max'``, ``'count'``, ``'std'``, ``'var'``) or a callable
+            that receives a ``WindowSeries`` and returns the result.
+
+        Returns
+        -------
+        GroupbySeries
+            A grouped series containing the broadcasted aggregate value
+            for each row within its group.
+
+        See Also
+        --------
+        aggregate : Reduce groups to a single row per group.
+        expanding : Expanding (cumulative) window on a grouped column.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The result keeps every row (same row count as the input),
+          matching pandas ``transform`` semantics.
+        - Only aggregation functions are supported as ``func``.
+          Arbitrary element-wise transforms (e.g. ``lambda x: x + 1``)
+          are **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Group Sum"] = frame.groupby(
+                "Ship Name"
+            )["Order Id"].transform("sum")
+            frame.head(5).to_pandas()
+
         """
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -1034,6 +1147,60 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
+        """
+        Create an expanding (cumulative) window on a single grouped column.
+
+        The grouping columns are automatically used as ``PARTITION BY``.
+        An expanding window includes all rows from the start of the
+        partition up to the current row.
+
+        Parameters
+        ----------
+        min_periods : int, default 1
+            Minimum number of observations required to produce a value.
+        method : str, optional
+            Not supported. Must be ``None``.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window.
+        ascending : bool or list of bool, default True
+            Sort direction(s) for ``order_by`` columns.
+
+        Returns
+        -------
+        WindowSeries
+            A window series on which aggregates (``sum``, ``mean``,
+            etc.) can be called.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``method`` is not ``None``.
+
+        See Also
+        --------
+        rolling : Fixed-size grouped sliding window.
+        window_frame_legend_ext : Custom window specification.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` and ``ascending`` are pylegend extensions not
+          present in pandas.
+        - ``method`` is **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].expanding(
+                order_by="Order Id"
+            ).sum().head(5).to_pandas()
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
         window_frame = self._base_groupby_frame.expanding(
@@ -1054,6 +1221,74 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
+        """
+        Create a fixed-size sliding window on a single grouped column.
+
+        The grouping columns are automatically used as ``PARTITION BY``.
+        A rolling window includes a fixed number of preceding rows for
+        each row within the partition.
+
+        Parameters
+        ----------
+        window : int
+            Size of the moving window (number of rows).
+        min_periods : int, optional
+            Minimum observations required. Defaults to ``window``.
+        center : bool, default False
+            Not supported. Must be ``False``.
+        win_type : str, optional
+            Not supported. Must be ``None``.
+        on : str, optional
+            Not supported. Must be ``None``.
+        closed : str, optional
+            Not supported. Must be ``None``.
+        step : int, optional
+            Not supported. Must be ``None``.
+        method : str, optional
+            Not supported. Must be ``None``.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window.
+        ascending : bool or list of bool, default True
+            Sort direction(s) for ``order_by`` columns.
+
+        Returns
+        -------
+        WindowSeries
+            A window series on which aggregates (``sum``, ``mean``,
+            etc.) can be called.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``center``, ``win_type``, ``on``, ``closed``, ``step``,
+            or ``method`` are set to non-default values.
+
+        See Also
+        --------
+        expanding : Expanding (cumulative) grouped window.
+        window_frame_legend_ext : Custom window specification.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` and ``ascending`` are pylegend extensions not
+          present in pandas.
+        - ``center``, ``win_type``, ``on``, ``closed``, ``step``, and
+          ``method`` are **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.groupby("Ship Name")["Order Id"].rolling(
+                window=3, order_by="Order Id"
+            ).mean().head(5).to_pandas()
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
         window_frame = self._base_groupby_frame.rolling(
@@ -1070,11 +1305,63 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
         """
-        PyLegend extension (not present in pandas).
+        Create a custom window specification on a single grouped column.
 
-        Create a custom window specification with explicit control over the
-        window frame on a single column.  When called on a groupby series
-        the grouping columns are automatically used as PARTITION BY.
+        **PyLegend extension** — not present in pandas.
+
+        The grouping columns are automatically used as ``PARTITION BY``.
+        The ``frame_spec`` argument controls the ``ROWS BETWEEN`` or
+        ``RANGE BETWEEN`` clause.
+
+        Parameters
+        ----------
+        frame_spec : RowsBetween or RangeBetween
+            A window-frame specification created via
+            :meth:`~PandasApiBaseTdsFrame.rows_between` or
+            :meth:`~PandasApiBaseTdsFrame.range_between`.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window.
+        ascending : bool or list of bool, default True
+            Sort direction(s) for ``order_by`` columns.
+
+        Returns
+        -------
+        WindowSeries
+            A window series on which aggregates can be called.
+
+        Raises
+        ------
+        TypeError
+            If ``frame_spec`` is not a ``RowsBetween`` or ``RangeBetween``.
+
+        See Also
+        --------
+        expanding : Cumulative grouped window.
+        rolling : Fixed-size grouped sliding window.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. It is a pylegend
+          extension for fine-grained control over the SQL
+          ``ROWS BETWEEN`` / ``RANGE BETWEEN`` clause.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            from pylegend.core.language.pandas_api.pandas_api_frame_spec import (
+                RowsBetween,
+            )
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            spec = RowsBetween(-2, 0)
+            frame.groupby("Ship Name")["Order Id"].window_frame_legend_ext(
+                spec, order_by="Order Id"
+            ).sum().head(5).to_pandas()
+
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
@@ -1088,9 +1375,48 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ascending: bool = True,
     ) -> "GroupbySeries":
         """
-        PyLegend extension (not present in pandas).
-
         Compute the cumulative distribution within each group.
+
+        **PyLegend extension** — not present in pandas.
+
+        Maps to SQL ``CUME_DIST() OVER (PARTITION BY ... ORDER BY col)``
+        and Pure ``cumulativeDistribution``.
+
+        Parameters
+        ----------
+        ascending : bool, default True
+            Whether to order in ascending direction.
+
+        Returns
+        -------
+        FloatGroupbySeries
+            A grouped series containing cumulative distribution values
+            (floats between 0 and 1).
+
+        See Also
+        --------
+        rank : Compute grouped ranks.
+        ntile_legend_ext : Assign rows to numbered buckets.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. ``CUME_DIST`` is
+          exposed as a pylegend extension.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["CumeDist"] = frame.groupby(
+                "Ship Name"
+            )["Order Id"].cume_dist_legend_ext()
+            frame.head(5).to_pandas()
+
         """
         applied_function_frame = self._base_groupby_frame.cume_dist_legend_ext(ascending=ascending)
         assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
@@ -1102,9 +1428,49 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ascending: bool = True,
     ) -> "GroupbySeries":
         """
-        PyLegend extension (not present in pandas).
+        Assign rows to numbered buckets within each group.
 
-        Compute the NTILE bucket within each group.
+        **PyLegend extension** — not present in pandas.
+
+        Maps to SQL ``NTILE(n) OVER (PARTITION BY ... ORDER BY col)``
+        and Pure ``ntile``.
+
+        Parameters
+        ----------
+        num_buckets : int
+            Number of buckets to distribute rows into.
+        ascending : bool, default True
+            Whether to order in ascending direction.
+
+        Returns
+        -------
+        IntegerGroupbySeries
+            A grouped series containing bucket numbers (1-based).
+
+        See Also
+        --------
+        rank : Compute grouped ranks.
+        cume_dist_legend_ext : Cumulative distribution within groups.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. ``NTILE`` is
+          exposed as a pylegend extension.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Quartile"] = frame.groupby(
+                "Ship Name"
+            )["Order Id"].ntile_legend_ext(4)
+            frame.head(5).to_pandas()
+
         """
         applied_function_frame = self._base_groupby_frame.ntile_legend_ext(
             num_buckets=num_buckets, ascending=ascending,
@@ -1118,9 +1484,45 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                               "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
         """
-        PyLegend extension (not present in pandas).
+        Return the value of this column at the row where ``by`` is maximised, per group.
 
-        Return the value corresponding to the maximum of *by* within each group.
+        **PyLegend extension** — not present in pandas.
+
+        Parameters
+        ----------
+        by : NumberGroupbySeries or IntegerGroupbySeries or FloatGroupbySeries or DecimalGroupbySeries
+            A numeric grouped series whose maximum determines which
+            row's value is returned.
+
+        Returns
+        -------
+        FloatGroupbySeries
+            The value of this column at the max of ``by`` within each group.
+
+        See Also
+        --------
+        min_by : Value at the row where ``by`` is minimised.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. It is a pylegend
+          extension backed by a two-column window function.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            grp = frame.groupby("Ship Name")
+            frame["Max Order By Id"] = grp["Order Id"].max_by(
+                grp["Order Id"]
+            )
+            frame.head(5).to_pandas()
+
         """
         return self._generic_two_col_window_func(by, "max_by")
 
@@ -1130,9 +1532,45 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
                               "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
         """
-        PyLegend extension (not present in pandas).
+        Return the value of this column at the row where ``by`` is minimised, per group.
 
-        Return the value corresponding to the minimum of *by* within each group.
+        **PyLegend extension** — not present in pandas.
+
+        Parameters
+        ----------
+        by : NumberGroupbySeries or IntegerGroupbySeries or FloatGroupbySeries or DecimalGroupbySeries
+            A numeric grouped series whose minimum determines which
+            row's value is returned.
+
+        Returns
+        -------
+        FloatGroupbySeries
+            The value of this column at the min of ``by`` within each group.
+
+        See Also
+        --------
+        max_by : Value at the row where ``by`` is maximised.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. It is a pylegend
+          extension backed by a two-column window function.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            grp = frame.groupby("Ship Name")
+            frame["Min Order By Id"] = grp["Order Id"].min_by(
+                grp["Order Id"]
+            )
+            frame.head(5).to_pandas()
+
         """
         return self._generic_two_col_window_func(by, "min_by")
 
@@ -1236,6 +1674,34 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
             other: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
                                  "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
+        """
+        Compute the correlation between this column and ``other`` within each group.
+
+        **PyLegend extension** — not present in standard pandas ``GroupBy``.
+
+        Parameters
+        ----------
+        other : NumberGroupbySeries or IntegerGroupbySeries or FloatGroupbySeries or DecimalGroupbySeries
+            The second grouped column to correlate with.
+
+        Returns
+        -------
+        FloatGroupbySeries
+            Pearson correlation coefficient per group.
+
+        See Also
+        --------
+        cov : Grouped covariance.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent** on
+          ``DataFrameGroupBy``. It is a pylegend extension backed by
+          a two-column window function.
+
+        """
         return self._two_col_window_func(other, "corr")
 
     def cov(
@@ -1244,6 +1710,39 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                                  "DecimalGroupbySeries"],
             ddof: int = 1,
     ) -> "FloatGroupbySeries":
+        """
+        Compute the covariance between this column and ``other`` within each group.
+
+        Parameters
+        ----------
+        other : NumberGroupbySeries or IntegerGroupbySeries or FloatGroupbySeries or DecimalGroupbySeries
+            The second grouped column.
+        ddof : {{0, 1}}, default 1
+            ``1`` for sample covariance (``COVAR_SAMP``), ``0`` for
+            population covariance (``COVAR_POP``).
+
+        Returns
+        -------
+        FloatGroupbySeries
+            Covariance per group.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof`` is not ``0`` or ``1``.
+
+        See Also
+        --------
+        corr : Grouped correlation.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only ``ddof=0`` and ``ddof=1`` are supported. Other values
+          raise ``NotImplementedError``.
+
+        """
         if ddof == 1:
             return self._two_col_window_func(other, "covar_sample")
         elif ddof == 0:
@@ -1259,21 +1758,64 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                                    "DecimalGroupbySeries"]
     ) -> "FloatGroupbySeries":
         """
-        PyLegend extension (not present in pandas).
-
         Compute the weighted average within each group.
+
+        **PyLegend extension** — not present in pandas.
+
+        Parameters
+        ----------
+        weights : NumberGroupbySeries or IntegerGroupbySeries or FloatGroupbySeries or DecimalGroupbySeries
+            A numeric grouped series supplying the weight for each row.
+
+        Returns
+        -------
+        FloatGroupbySeries
+            Weighted average per group.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. Weighted average
+          is exposed as a pylegend extension.
+
+        See Also
+        --------
+        mean : Unweighted grouped mean.
+        corr : Grouped correlation.
+
         """
         return self._two_col_window_func(weights, "wavg")
 
     def zscore_legend_ext(self) -> "FloatGroupbySeries":
-        """Compute the z-score within each group: (x - mean) / stddev_pop.
+        """
+        Compute the z-score within each group.
 
-        PyLegend extension (not present in pandas).
+        **PyLegend extension** — not present in pandas.
 
-        Equivalent to Pure ``zScore($p, $w, $r, ~col)`` which computes
-        ``(eval(col, row) - average(partition, window, row, col)) / stdDevPopulation(partition, window, row, col)``.
+        Calculates ``(x - mean) / stddev_pop`` for each row within its
+        group. Equivalent to Pure ``zScore($p, $w, $r, ~col)``.
 
-        Returns a ``FloatGroupbySeries`` suitable for assignment via ``frame.assign()``.
+        Returns
+        -------
+        FloatGroupbySeries
+            Z-score values per group, suitable for assignment via
+            ``frame["col"] = ...``.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. Z-score
+          computation is exposed as a pylegend extension.
+        - Uses population standard deviation (``STDDEV_POP``), not
+          sample standard deviation.
+
+        See Also
+        --------
+        std : Grouped standard deviation.
+        mean : Grouped mean.
+
         """
         from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
 

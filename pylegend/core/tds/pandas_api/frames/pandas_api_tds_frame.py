@@ -14,6 +14,7 @@
 
 from abc import abstractmethod
 from datetime import date, datetime
+from decimal import Decimal as PythonDecimal
 from io import StringIO
 from typing import IO, TYPE_CHECKING
 
@@ -47,6 +48,7 @@ from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween, RangeBetween
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -1164,6 +1166,68 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
+        """
+        Create an expanding window frame for window-aggregate computations.
+
+        An expanding window includes all rows from the start of the partition
+        up to the current row. This is useful for running totals, running
+        averages, and similar cumulative calculations.
+
+        Parameters
+        ----------
+        min_periods : int, default 1
+            Minimum number of observations in the window required to have a
+            value; otherwise, result is ``null``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+        method : str, optional
+            Must be ``None`` or ``'python'``.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window. Required for
+            deterministic results.
+        ascending : bool or list of bool, default True
+            Sort order for the ``order_by`` columns.
+
+        Returns
+        -------
+        PandasApiWindowTdsFrame
+            A window frame on which window aggregates (``sum``, ``mean``,
+            ``min``, ``max``, etc.) can be called.
+
+        See Also
+        --------
+        rolling : Fixed-size sliding window.
+        groupby : Group rows before applying window functions.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``axis`` is not ``0``, ``method`` is not ``None`` or
+            ``'python'``, or ``min_periods`` is less than ``1``.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` and ``ascending`` are pylegend extensions not
+          present in pandas. They control the ``ORDER BY`` clause
+          inside the SQL ``OVER(...)`` window specification.
+        - ``axis=1`` is **not supported**.
+        - ``method='table'`` is **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Running sum of Order Id ordered by Order Id
+            frame.filter(items=["Order Id"]).expanding(
+                order_by="Order Id"
+            ).sum().head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -1181,6 +1245,82 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
     ) -> "PandasApiWindowTdsFrame":
+        """
+        Create a fixed-size sliding window frame for window-aggregate computations.
+
+        A rolling window includes a fixed number of preceding rows (and
+        optionally the current row) for each row, enabling moving averages,
+        moving sums, and similar calculations.
+
+        Parameters
+        ----------
+        window : int
+            Size of the moving window (number of rows).
+        min_periods : int, optional
+            Minimum number of observations in the window required to have a
+            value. Defaults to ``window``.
+        center : bool, default False
+            Not supported. Must be ``False``.
+        win_type : str, optional
+            Not supported. Must be ``None``.
+        on : str, optional
+            Not supported. Must be ``None``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+        closed : str, optional
+            Not supported. Must be ``None``.
+        step : int, optional
+            Not supported. Must be ``None``.
+        method : str, optional
+            Must be ``None`` or ``'python'``.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window. Required for
+            deterministic results.
+        ascending : bool or list of bool, default True
+            Sort order for the ``order_by`` columns.
+
+        Returns
+        -------
+        PandasApiWindowTdsFrame
+            A window frame on which window aggregates (``sum``, ``mean``,
+            ``min``, ``max``, etc.) can be called.
+
+        See Also
+        --------
+        expanding : Expanding (cumulative) window.
+        groupby : Group rows before applying window functions.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``center``, ``win_type``, ``on``, ``closed``, or ``step``
+            are set to non-default values. Also raised if ``axis`` is not
+            ``0`` or ``method`` is not ``None`` / ``'python'``.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` and ``ascending`` are pylegend extensions not
+          present in pandas. They control the ``ORDER BY`` clause
+          inside the SQL ``OVER(...)`` window specification.
+        - ``center``, ``win_type``, ``on``, ``closed``, ``step`` are
+          **not supported**.
+        - ``axis=1`` is **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # 3-row moving average of Order Id ordered by Order Id
+            frame.filter(items=["Order Id"]).rolling(
+                window=3, order_by="Order Id"
+            ).mean().head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -1439,11 +1579,11 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         """
-        Compute the sample standard deviation of each column.
+        Compute the standard deviation of each column.
 
-        Convenience method equivalent to ``aggregate('std')``. Returns a
-        single-row TDS frame with the sample standard deviation
-        (``ddof=1``) of every column.
+        Convenience method equivalent to ``aggregate('std')`` (ddof=1) or
+        ``aggregate('std_dev_population')`` (ddof=0). Returns a single-row
+        TDS frame with the standard deviation of every column.
 
         Parameters
         ----------
@@ -1452,9 +1592,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         skipna : bool, default True
             Must be ``True``. ``False`` is not supported.
         ddof : int, default 1
-            Degrees of freedom. Must be ``1`` (sample standard
-            deviation). Population standard deviation (``ddof=0``)
-            is not supported.
+            Degrees of freedom. ``1`` for sample standard deviation
+            (``STDDEV_SAMP``), ``0`` for population standard deviation
+            (``STDDEV_POP``).
         numeric_only : bool, default False
             Must be ``False``. ``True`` is not supported.
         **kwargs
@@ -1468,8 +1608,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Raises
         ------
         NotImplementedError
-            If any parameter is set to an unsupported value,
-            including ``ddof != 1``.
+            If ``ddof`` is not ``0`` or ``1``, or if any other
+            parameter is set to an unsupported value.
 
         See Also
         --------
@@ -1481,11 +1621,10 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         -----
         **Differences from pandas:**
 
-        - Only ``ddof=1`` (sample standard deviation) is supported.
-          ``ddof=0`` (population standard deviation) raises
-          ``NotImplementedError``.
-        - Internally delegates to ``aggregate('std')``, which maps to
-          ``STDDEV_SAMP`` at the SQL level.
+        - Only ``ddof=0`` and ``ddof=1`` are supported.
+        - Internally delegates to ``aggregate('std')`` (ddof=1, maps to
+          ``STDDEV_SAMP``) or ``aggregate('std_dev_population')``
+          (ddof=0, maps to ``STDDEV_POP``).
 
         Examples
         --------
@@ -1510,11 +1649,11 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
         """
-        Compute the sample variance of each column.
+        Compute the variance of each column.
 
-        Convenience method equivalent to ``aggregate('var')``. Returns a
-        single-row TDS frame with the sample variance (``ddof=1``) of
-        every column.
+        Convenience method equivalent to ``aggregate('var')`` (ddof=1) or
+        ``aggregate('variance_population')`` (ddof=0). Returns a single-row
+        TDS frame with the variance of every column.
 
         Parameters
         ----------
@@ -1523,8 +1662,9 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         skipna : bool, default True
             Must be ``True``. ``False`` is not supported.
         ddof : int, default 1
-            Degrees of freedom. Must be ``1`` (sample variance).
-            Population variance (``ddof=0``) is not supported.
+            Degrees of freedom. ``1`` for sample variance
+            (``VAR_SAMP``), ``0`` for population variance
+            (``VAR_POP``).
         numeric_only : bool, default False
             Must be ``False``. ``True`` is not supported.
         **kwargs
@@ -1538,8 +1678,8 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         Raises
         ------
         NotImplementedError
-            If any parameter is set to an unsupported value,
-            including ``ddof != 1``.
+            If ``ddof`` is not ``0`` or ``1``, or if any other
+            parameter is set to an unsupported value.
 
         See Also
         --------
@@ -1551,10 +1691,10 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         -----
         **Differences from pandas:**
 
-        - Only ``ddof=1`` (sample variance) is supported. ``ddof=0``
-          (population variance) raises ``NotImplementedError``.
-        - Internally delegates to ``aggregate('var')``, which maps to
-          ``VAR_SAMP`` at the SQL level.
+        - Only ``ddof=0`` and ``ddof=1`` are supported.
+        - Internally delegates to ``aggregate('var')`` (ddof=1, maps to
+          ``VAR_SAMP``) or ``aggregate('variance_population')``
+          (ddof=0, maps to ``VAR_POP``).
 
         Examples
         --------
@@ -2327,6 +2467,378 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         pass  # pragma: no cover
 
     @abstractmethod
+    def window_frame_legend_ext(
+            self,
+            frame_spec: "FrameSpec",
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        """
+        Create a custom window specification with explicit frame bounds.
+
+        **PyLegend extension** — not present in pandas.
+
+        Provides fine-grained control over the ``ROWS BETWEEN`` or
+        ``RANGE BETWEEN`` clause used by window-aggregate computations.
+
+        Parameters
+        ----------
+        frame_spec : RowsBetween or RangeBetween
+            A window-frame specification created via
+            :meth:`rows_between` or :meth:`range_between`.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window. ``None`` means no
+            explicit ordering (a fallback will be chosen automatically).
+        ascending : bool or list of bool, default True
+            Sort direction(s) for the ``order_by`` columns.
+
+        Returns
+        -------
+        PandasApiWindowTdsFrame
+            A window frame on which window aggregates (``sum``, ``mean``,
+            ``min``, ``max``, etc.) can be called.
+
+        Raises
+        ------
+        TypeError
+            If ``frame_spec`` is not a ``RowsBetween`` or ``RangeBetween``.
+
+        See Also
+        --------
+        expanding : Expanding (cumulative) window.
+        rolling : Fixed-size sliding window.
+        rows_between : Create a ``ROWS BETWEEN`` specification.
+        range_between : Create a ``RANGE BETWEEN`` specification.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. It is a pylegend
+          extension for explicit control over the SQL window frame.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            from pylegend.core.language.pandas_api.pandas_api_frame_spec import (
+                RowsBetween,
+            )
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            spec = RowsBetween(-2, 0)
+            frame.filter(items=["Order Id"]).window_frame_legend_ext(
+                spec, order_by="Order Id"
+            ).sum().head(5).to_pandas()
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def rows_between(
+            self,
+            start: PyLegendOptional[int] = None,
+            end: PyLegendOptional[int] = None,
+    ) -> "RowsBetween":
+        """
+        Create a ``ROWS BETWEEN`` window-frame specification.
+
+        **PyLegend extension** — not present in pandas.
+
+        Sign convention (same as legendQL):
+
+        - ``None`` → UNBOUNDED (PRECEDING for *start*, FOLLOWING for *end*)
+        - Negative → PRECEDING (e.g. ``-3`` → ``3 PRECEDING``)
+        - ``0`` → CURRENT ROW
+        - Positive → FOLLOWING (e.g. ``2`` → ``2 FOLLOWING``)
+
+        Parameters
+        ----------
+        start : int, optional
+            Lower bound of the frame. ``None`` means unbounded preceding.
+        end : int, optional
+            Upper bound of the frame. ``None`` means unbounded following.
+
+        Returns
+        -------
+        RowsBetween
+            A frame specification to pass to :meth:`window_frame_legend_ext`.
+
+        Raises
+        ------
+        ValueError
+            If ``start`` is greater than ``end``.
+
+        See Also
+        --------
+        range_between : Create a ``RANGE BETWEEN`` specification.
+        window_frame_legend_ext : Apply a custom window specification.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. It is a pylegend
+          extension for constructing SQL ``ROWS BETWEEN`` clauses.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # 3-row trailing window (current row and 2 preceding)
+            spec = frame.rows_between(-2, 0)
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def range_between(
+            self,
+            start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal]] = None,
+            *,
+            duration_start: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_start_unit: PyLegendOptional[str] = None,
+            duration_end: PyLegendOptional[PyLegendUnion[int, float, PythonDecimal, str]] = None,
+            duration_end_unit: PyLegendOptional[str] = None,
+    ) -> "RangeBetween":
+        """
+        Create a ``RANGE BETWEEN`` window-frame specification.
+
+        **PyLegend extension** — not present in pandas.
+
+        Supports two calling styles:
+
+        **Simple numeric bounds** (same sign convention as
+        :meth:`rows_between`)::
+
+            range_between(start=-100, end=0)
+            # → RANGE BETWEEN 100 PRECEDING AND CURRENT ROW
+
+        **Duration-based bounds** (for date/time ``ORDER BY`` columns)::
+
+            range_between(
+                duration_start=-1, duration_start_unit="DAYS",
+                duration_end=1, duration_end_unit="MONTHS",
+            )
+
+        Parameters
+        ----------
+        start : int, float, or Decimal, optional
+            Lower bound of the range. ``None`` means unbounded preceding.
+        end : int, float, or Decimal, optional
+            Upper bound of the range. ``None`` means unbounded following.
+        duration_start : int, float, Decimal, or str, optional
+            Duration-based lower bound. Pass ``"unbounded"`` for
+            unbounded preceding.
+        duration_start_unit : str, optional
+            Time unit for ``duration_start`` (e.g. ``"DAYS"``,
+            ``"MONTHS"``).
+        duration_end : int, float, Decimal, or str, optional
+            Duration-based upper bound.
+        duration_end_unit : str, optional
+            Time unit for ``duration_end``.
+
+        Returns
+        -------
+        RangeBetween
+            A frame specification to pass to :meth:`window_frame_legend_ext`.
+
+        Raises
+        ------
+        ValueError
+            If positional bounds and duration bounds are mixed, or if
+            ``start`` is greater than ``end``.
+
+        See Also
+        --------
+        rows_between : Create a ``ROWS BETWEEN`` specification.
+        window_frame_legend_ext : Apply a custom window specification.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. It is a pylegend
+          extension for constructing SQL ``RANGE BETWEEN`` clauses.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Numeric range: 100 preceding to current row
+            spec = frame.range_between(-100, 0)
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        Compute the cumulative distribution of each column.
+
+        **PyLegend extension** — not present in pandas.
+
+        Maps to SQL ``CUME_DIST() OVER (ORDER BY col)`` and Pure
+        ``cumulativeDistribution``.
+
+        Parameters
+        ----------
+        ascending : bool, default True
+            Whether to order in ascending direction.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with cumulative distribution values
+            (floats between 0 and 1) replacing every column.
+
+        See Also
+        --------
+        rank : Compute column ranks.
+        ntile_legend_ext : Assign rows to numbered buckets.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. ``CUME_DIST`` is
+          exposed as a pylegend extension.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.filter(
+                items=["Order Id"]
+            ).cume_dist_legend_ext().head(5).to_pandas()
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        Assign rows to numbered buckets for each column.
+
+        **PyLegend extension** — not present in pandas.
+
+        Maps to SQL ``NTILE(n) OVER (ORDER BY col)`` and Pure ``ntile``.
+
+        Parameters
+        ----------
+        num_buckets : int
+            Number of buckets to distribute rows into.
+        ascending : bool, default True
+            Whether to order in ascending direction.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with integer bucket numbers (1-based)
+            replacing every column.
+
+        See Also
+        --------
+        rank : Compute column ranks.
+        cume_dist_legend_ext : Cumulative distribution.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. ``NTILE`` is
+          exposed as a pylegend extension.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.filter(
+                items=["Order Id"]
+            ).ntile_legend_ext(4).head(5).to_pandas()
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def concat_legend_ext(
+            self,
+            other: "PandasApiTdsFrame",
+    ) -> "PandasApiTdsFrame":
+        """
+        Concatenate this frame with another frame vertically.
+
+        **PyLegend extension** — not present in pandas.
+
+        Produces a SQL ``UNION ALL`` of the two frames. Both frames must
+        have compatible schemas (same column names and types).
+
+        Parameters
+        ----------
+        other : PandasApiTdsFrame
+            The frame to concatenate below this one.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame whose rows are the rows of ``self`` followed
+            by the rows of ``other``.
+
+        Raises
+        ------
+        TypeError
+            If ``other`` is not a ``PandasApiBaseTdsFrame``.
+
+        See Also
+        --------
+        merge : SQL join of two frames.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``pd.concat`` is a top-level function that accepts
+          a list of DataFrames. Here, ``concat_legend_ext`` is a method
+          on a ``PandasApiTdsFrame`` and only supports vertical
+          concatenation (``UNION ALL``) of two frames with the same
+          schema.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            top = frame.head(3)
+            bottom = frame.head(3)
+            top.concat_legend_ext(bottom).to_pandas()
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
     def shift(
             self,
             order_by: PyLegendUnion[str, PyLegendSequence[str]],
@@ -2425,6 +2937,52 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             periods: int = 1,
             axis: PyLegendUnion[int, str] = 0
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the first discrete difference of each column.
+
+        Calculates ``value - lag(value, periods)`` for each numeric
+        column, using the SQL ``LAG`` window function.
+
+        Parameters
+        ----------
+        order_by : str or list of str
+            Column(s) that define row ordering. **Required** (pylegend
+            extension).
+        periods : int, default 1
+            Number of periods to compute the difference over.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with differenced values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``axis`` is not ``0`` / ``'index'``.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` is **required** and is a pylegend extension.
+        - ``axis=1`` is **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # First difference of Order Id
+            frame.filter(items=["Order Id"]).diff(
+                order_by="Order Id"
+            ).head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -2435,6 +2993,54 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             freq: PyLegendOptional[PyLegendUnion[str, int]] = None,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> "PandasApiTdsFrame":
+        """
+        Compute the fractional change between the current and a prior row.
+
+        Calculates ``(value - lag(value, periods)) / lag(value, periods)``
+        for each numeric column.
+
+        Parameters
+        ----------
+        order_by : str or list of str
+            Column(s) that define row ordering. **Required** (pylegend
+            extension).
+        periods : int or list of int, default 1
+            Number of periods to compute the percentage change over.
+        freq : str or int, optional
+            Not supported. Must be ``None``.
+        **kwargs
+            Not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with percentage-change values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``freq`` or ``**kwargs`` are set to unsupported values.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` is **required** and is a pylegend extension.
+        - ``freq`` is **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Percentage change of Order Id
+            frame.filter(items=["Order Id"]).pct_change(
+                order_by="Order Id"
+            ).head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -2446,6 +3052,50 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             memory_usage: PyLegendOptional[PyLegendUnion[bool, str]] = None,
             show_counts: PyLegendOptional[bool] = None
     ) -> None:
+        """
+        Print a concise summary of the TDS frame.
+
+        Displays the column names and their data types. This is a
+        lightweight alternative to running a query — it uses only
+        the metadata already available on the frame.
+
+        Parameters
+        ----------
+        verbose : bool, optional
+            Not supported. Ignored.
+        buf : IO[str] or StringIO, optional
+            Not supported. Output always goes to stdout.
+        max_cols : int, optional
+            Not supported. Ignored.
+        memory_usage : bool or str, optional
+            Not supported. Ignored.
+        show_counts : bool, optional
+            Not supported. Ignored.
+
+        Returns
+        -------
+        None
+            Prints to stdout; returns nothing.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only column names and types are shown.
+        - ``memory_usage``, ``verbose``, ``buf``, ``max_cols``, and
+          ``show_counts`` are accepted for API compatibility but
+          **ignored**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame.info()
+
+        """
         pass  # pragma: no cover
 
     @abstractmethod
@@ -2457,4 +3107,54 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             inplace: bool = False,
             ignore_index: bool = False
     ) -> "PandasApiTdsFrame":
+        """
+        Remove duplicate rows.
+
+        Returns a new TDS frame with duplicate rows removed, optionally
+        considering only a subset of columns for identifying duplicates.
+
+        Parameters
+        ----------
+        subset : str or list of str, optional
+            Column label or list of labels to consider for identifying
+            duplicates. If ``None``, all columns are used.
+        keep : {{'first'}}, default 'first'
+            Must be ``'first'``. Only keeping the first occurrence is
+            supported.
+        inplace : bool, default False
+            Must be ``False``. In-place modification is not supported.
+        ignore_index : bool, default False
+            Must be ``False``. Not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with duplicates removed.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``keep`` is not ``'first'``, or ``inplace`` / ``ignore_index``
+            are ``True``.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Only ``keep='first'`` is supported. ``'last'`` and ``False``
+          are **not supported**.
+        - ``inplace=True`` and ``ignore_index=True`` are **not supported**.
+        - Generates SQL ``SELECT DISTINCT ON ...`` or equivalent.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Remove rows with duplicate Ship Name
+            frame.drop_duplicates(subset=["Ship Name"]).head(5).to_pandas()
+
+        """
         pass  # pragma: no cover
