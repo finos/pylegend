@@ -20,7 +20,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
-from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import PwrFunc, AggFunc
+from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import ValueFunc, AggFunc
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type, \
     get_groupby_series_from_col_type
 from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -184,18 +184,18 @@ class WindowSeries:
 
     def window_extend_legend_ext(
             self,
-            pwr_func: "PwrFunc",
+            value_func: "ValueFunc",
             agg_func: "PyLegendOptional[AggFunc]" = None,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
         """
         PyLegend extension (not present in pandas).
 
         Apply a custom single-column window function to the selected
-        column using the given ``pwr_func`` and optional ``agg_func``.
+        column using the given ``value_func`` and optional ``agg_func``.
 
         Parameters
         ----------
-        pwr_func:
+        value_func:
             A callable ``(p, w, r) -> primitive`` that describes how to
             compute the window value for the column.
         agg_func:
@@ -217,7 +217,7 @@ class WindowSeries:
         applied_function_frame = PandasApiAppliedFunctionTdsFrame(
             SingleColumnWindowFunction(
                 base_window_frame=self._window_frame,
-                pwr_func=pwr_func,
+                value_func=value_func,
                 agg_func=agg_func,
             )
         )
@@ -251,7 +251,7 @@ class WindowSeries:
 
         column = self._column_name
 
-        def pwr_func(
+        def value_func(
                 p: PandasApiPartialFrame,
                 w: PandasApiWindowReference,
                 r: PandasApiTdsRow,
@@ -259,7 +259,7 @@ class WindowSeries:
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.first(w, r)[_col]
 
-        return self.window_extend_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(value_func=value_func)
 
     def last(self) -> PyLegendUnion["Series", "GroupbySeries"]:
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
@@ -270,7 +270,7 @@ class WindowSeries:
 
         column = self._column_name
 
-        def pwr_func(
+        def value_func(
                 p: PandasApiPartialFrame,
                 w: PandasApiWindowReference,
                 r: PandasApiTdsRow,
@@ -278,7 +278,7 @@ class WindowSeries:
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.last(w, r)[_col]
 
-        return self.window_extend_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(value_func=value_func)
 
     def shift(
             self,
@@ -309,16 +309,41 @@ class WindowSeries:
                 "The 'periods' argument of the shift function must be an int for WindowSeries."
             )
 
+        import copy
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
             PandasApiPartialFrame,
             PandasApiWindowReference,
         )
         from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 
+        # lag/lead window functions do not support a frame clause.
+        # Ensure frame_spec is either None or RowsBetween(None, None) (the default),
+        # then use a copy of the window frame with frame_spec=None
+        frame_spec = self._window_frame._frame_spec
+        if frame_spec is None:
+            shift_window_series = self
+        elif (isinstance(frame_spec, RowsBetween)
+              and frame_spec._start is None
+              and frame_spec._end is None):
+            # Default RowsBetween(None, None) or manually put - make a shallow copy with frame_spec=None
+            copied_window_frame = copy.copy(self._window_frame)
+            copied_window_frame._frame_spec = None
+            shift_window_series = WindowSeries(
+                window_frame=copied_window_frame,
+                column_name=self._column_name,
+            )
+        else:
+            raise ValueError(
+                "The shift function (lag/lead) does not support a window frame clause. "
+                "frame_spec must be None or RowsBetween(None, None), "
+                f"but got: {frame_spec!r}"
+            )
+
         column = self._column_name
 
         if periods > 0:
-            def pwr_func(
+            def value_func(
                     p: PandasApiPartialFrame,
                     w: PandasApiWindowReference,
                     r: PandasApiTdsRow,
@@ -327,7 +352,7 @@ class WindowSeries:
             ) -> "PyLegendPrimitiveOrPythonPrimitive":
                 return p.lag(r, _periods)[_col]
         else:
-            def pwr_func(
+            def value_func(
                     p: PandasApiPartialFrame,
                     w: PandasApiWindowReference,
                     r: PandasApiTdsRow,
@@ -336,4 +361,4 @@ class WindowSeries:
             ) -> "PyLegendPrimitiveOrPythonPrimitive":
                 return p.lead(r, _periods)[_col]
 
-        return self.window_extend_legend_ext(pwr_func=pwr_func)
+        return shift_window_series.window_extend_legend_ext(value_func=value_func)

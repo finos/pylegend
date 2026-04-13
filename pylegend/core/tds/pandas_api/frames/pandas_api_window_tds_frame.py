@@ -30,13 +30,13 @@ from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import PwrFunc, AggFunc
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import ValueFunc, AggFunc
 
 ZERO_COLUMN_NAME = "__pylegend_zero_column__"
 
@@ -77,7 +77,7 @@ class PandasApiWindowTdsFrame:
             self,
             base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            frame_spec: PyLegendOptional[FrameSpec] = None,
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
             partition_only: bool = False,
     ) -> None:
@@ -212,18 +212,18 @@ class PandasApiWindowTdsFrame:
 
     def window_extend_legend_ext(
             self,
-            pwr_func: "PwrFunc",
+            value_func: "ValueFunc",
             agg_func: "PyLegendOptional[AggFunc]" = None,
     ) -> PandasApiBaseTdsFrame:
         """
         PyLegend extension (not present in pandas).
 
         Apply a custom single-column window function to all columns in
-        the frame using the given ``pwr_func`` and optional ``agg_func``.
+        the frame using the given ``value_func`` and optional ``agg_func``.
 
         Parameters
         ----------
-        pwr_func:
+        value_func:
             A callable ``(p, w, r) -> primitive`` that describes how to
             compute the window value for each column.
         agg_func:
@@ -240,7 +240,7 @@ class PandasApiWindowTdsFrame:
         return PandasApiAppliedFunctionTdsFrame(
             SingleColumnWindowFunction(
                 base_window_frame=self,
-                pwr_func=pwr_func,
+                value_func=value_func,
                 agg_func=agg_func,
             )
         )
@@ -276,14 +276,14 @@ class PandasApiWindowTdsFrame:
             # Then filter to only grouping + numeric columns
             return frame.filter(items=keep_names)
 
-        def pwr_func(
+        def value_func(
                 p: PandasApiPartialFrame,
                 w: PandasApiWindowReference,
                 r: PandasApiTdsRow,
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.first(w, r)  # type: ignore[return-value]
 
-        return self.window_extend_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(value_func=value_func)
 
     def last(self, numeric_only: bool = False) -> PandasApiTdsFrame:
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
@@ -313,11 +313,11 @@ class PandasApiWindowTdsFrame:
 
             return frame.filter(items=keep_names)
 
-        def pwr_func(
+        def value_func(
                 p: PandasApiPartialFrame,
                 w: PandasApiWindowReference,
                 r: PandasApiTdsRow,
         ) -> "PyLegendPrimitiveOrPythonPrimitive":
             return p.last(w, r)  # type: ignore[return-value]
 
-        return self.window_extend_legend_ext(pwr_func=pwr_func)
+        return self.window_extend_legend_ext(value_func=value_func)

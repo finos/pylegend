@@ -53,6 +53,7 @@ __all__: PyLegendSequence[str] = [
     "find_window_expression",
     "split_window_from_arithmetic",
     "convert_aggregate_series_to_window_aggregate_series",
+    "get_groupby_series_from_col_type",
 ]
 
 T = TypeVar("T")

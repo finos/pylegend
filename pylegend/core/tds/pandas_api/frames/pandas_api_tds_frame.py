@@ -39,6 +39,7 @@ from pylegend.core.language import (
     PyLegendPrimitive,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
@@ -47,7 +48,6 @@ from pylegend.core.language.shared.tds_row import AbstractTdsRow
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -248,7 +248,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
     @abstractmethod
     def window_frame_legend_ext(
             self,
-            frame_spec: PyLegendOptional["FrameSpec"] = None,
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "PandasApiWindowTdsFrame":

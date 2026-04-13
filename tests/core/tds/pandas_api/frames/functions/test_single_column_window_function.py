@@ -228,7 +228,7 @@ class TestFirstOnWindowSeries:
         assert series.to_pure_query() == expected_pure
 
     def test_first_multi_column_on_base_frame(self) -> None:
-        """Apply first() to all columns via pwr_func returning a full TdsRow."""
+        """Apply first() to all columns via value_func returning a full TdsRow."""
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.float_column("col2"),
@@ -280,7 +280,7 @@ class TestFirstOnWindowSeries:
         assert generate_pure_query_and_compile(applied, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_first_multi_column_on_groupby_frame(self) -> None:
-        """Apply first() to all columns via pwr_func returning a full TdsRow, with groupby."""
+        """Apply first() to all columns via value_func returning a full TdsRow, with groupby."""
         columns = [
             PrimitiveTdsColumn.string_column("grp"),
             PrimitiveTdsColumn.integer_column("val"),
@@ -455,7 +455,7 @@ class TestFirstOnWindowSeries:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == expected_pure
 
     def test_last_multi_column_on_groupby_frame(self) -> None:
-        """Apply last() to all columns via pwr_func returning a full TdsRow, with groupby."""
+        """Apply last() to all columns via value_func returning a full TdsRow, with groupby."""
         columns = [
             PrimitiveTdsColumn.string_column("grp"),
             PrimitiveTdsColumn.integer_column("val"),
@@ -536,7 +536,7 @@ class TestFirstOnWindowSeries:
                     SELECT
                         "root"."col1" AS "col1",
                         "root"."col2" AS "col2",
-                        lag("root"."col1", 1) OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2" ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS "lag_col1__pylegend_olap_column__"
+                        lag("root"."col1", 1) OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col2") AS "lag_col1__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -554,7 +554,7 @@ class TestFirstOnWindowSeries:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)], rows(unbounded(), unbounded())), ~col1__pylegend_olap_column__:{p,w,r | $p->lag($r, 1).col1})
+              ->extend(over(~[__pylegend_zero_column__], [ascending(~col2)]), ~col1__pylegend_olap_column__:{p,w,r | $p->lag($r, 1).col1})
               ->project(~[col1:c|$c.col1, col2:c|$c.col2, lag_col1:c|$c.col1__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -571,7 +571,6 @@ class TestFirstOnWindowSeries:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         frame["lead_val"] = frame.groupby("grp").window_frame_legend_ext(
-            frame_spec=frame.rows_between(-2, 2),
             order_by="score",
         )["val"].shift(periods=-1)
 
@@ -587,7 +586,7 @@ class TestFirstOnWindowSeries:
                         "root"."grp" AS "grp",
                         "root"."val" AS "val",
                         "root"."score" AS "score",
-                        lead("root"."val", 1) OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."score" ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS "lead_val__pylegend_olap_column__"
+                        lead("root"."val", 1) OVER (PARTITION BY "root"."grp", "root"."__pylegend_zero_column__" ORDER BY "root"."score") AS "lead_val__pylegend_olap_column__"
                     FROM
                         (
                             SELECT
@@ -606,7 +605,7 @@ class TestFirstOnWindowSeries:
         expected_pure = '''
             #Table(test_schema.test_table)#
               ->extend(~__pylegend_zero_column__:{r|0})
-              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~score)], rows(minus(2), 2)), ~val__pylegend_olap_column__:{p,w,r | $p->lead($r, 1).val})
+              ->extend(over(~[grp, __pylegend_zero_column__], [ascending(~score)]), ~val__pylegend_olap_column__:{p,w,r | $p->lead($r, 1).val})
               ->project(~[grp:c|$c.grp, val:c|$c.val, score:c|$c.score, lead_val:c|$c.val__pylegend_olap_column__])
         '''  # noqa: E501
         expected_pure = dedent(expected_pure).strip()
@@ -626,7 +625,7 @@ class TestFirstOnWindowSeries:
             frame_spec=frame.rows_between(),
             order_by="score",
             ascending=False,
-        )["val"].window_extend_legend_ext(pwr_func=lambda p, w, r: p.nth(w, r, 2)["val"])
+        )["val"].window_extend_legend_ext(value_func=lambda p, w, r: p.nth(w, r, 2)["val"])
 
         expected_sql = '''
             SELECT
@@ -687,6 +686,7 @@ class TestNoFrameSpecWindowFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         frame["first_col1"] = frame.window_frame_legend_ext(
+            frame_spec=None,
             order_by="col2",
         )["col1"].first()
 
@@ -747,6 +747,7 @@ class TestNoFrameSpecWindowFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         frame["first_val"] = frame.groupby("grp").window_frame_legend_ext(
+            frame_spec=None,
             order_by="score",
         )["val"].first()
 
@@ -808,6 +809,7 @@ class TestNoFrameSpecWindowFunction:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         applied = frame.window_frame_legend_ext(
+            frame_spec=None,
             order_by="col1",
         ).first()
 
@@ -854,8 +856,8 @@ class TestSingleColumnWindowFunctionValidation:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
         return frame
 
-    def test_validate_pwr_func_not_callable(self) -> None:
-        """validate() raises TypeError when pwr_func is not callable."""
+    def test_validate_value_func_not_callable(self) -> None:
+        """validate() raises TypeError when value_func is not callable."""
         from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
             SingleColumnWindowFunction,
         )
@@ -870,13 +872,13 @@ class TestSingleColumnWindowFunctionValidation:
 
         func = SingleColumnWindowFunction(
             base_window_frame=window_frame,
-            pwr_func="not_callable",  # type: ignore
+            value_func="not_callable",  # type: ignore
         )
-        with pytest.raises(TypeError, match="pwr_func must be callable"):
+        with pytest.raises(TypeError, match="value_func must be callable"):
             func.validate()
 
-    def test_validate_pwr_func_wrong_param_count(self) -> None:
-        """validate() raises TypeError when pwr_func has wrong number of required params."""
+    def test_validate_value_func_wrong_param_count(self) -> None:
+        """validate() raises TypeError when value_func has wrong number of required params."""
         from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
             SingleColumnWindowFunction,
         )
@@ -891,9 +893,9 @@ class TestSingleColumnWindowFunctionValidation:
 
         func = SingleColumnWindowFunction(
             base_window_frame=window_frame,
-            pwr_func=lambda a, b: a,  # type: ignore
+            value_func=lambda a, b: a,  # type: ignore
         )
-        with pytest.raises(TypeError, match="pwr_func must accept exactly 3 positional parameters"):
+        with pytest.raises(TypeError, match="value_func must accept exactly 3 positional parameters"):
             func.validate()
 
     def test_validate_agg_func_not_callable(self) -> None:
@@ -912,7 +914,7 @@ class TestSingleColumnWindowFunctionValidation:
 
         func = SingleColumnWindowFunction(
             base_window_frame=window_frame,
-            pwr_func=lambda p, w, r: p.first(w, r)["col1"],
+            value_func=lambda p, w, r: p.first(w, r)["col1"],
             agg_func="not_callable",  # type: ignore
         )
         with pytest.raises(TypeError, match="agg_func must be callable or None"):
@@ -934,7 +936,7 @@ class TestSingleColumnWindowFunctionValidation:
 
         func = SingleColumnWindowFunction(
             base_window_frame=window_frame,
-            pwr_func=lambda p, w, r: p.first(w, r)["col1"],
+            value_func=lambda p, w, r: p.first(w, r)["col1"],
             agg_func=lambda a, b: a,  # type: ignore
         )
         with pytest.raises(TypeError, match="agg_func must accept exactly 1 positional parameter"):
@@ -953,7 +955,7 @@ class TestSingleColumnWindowFunctionValidation:
         with pytest.raises(AttributeError):
             SingleColumnWindowFunction(
                 base_window_frame=frame,  # type: ignore
-                pwr_func=lambda p, w, r: p.first(w, r)["col1"],
+                value_func=lambda p, w, r: p.first(w, r)["col1"],
             )
 
 
@@ -995,6 +997,61 @@ class TestWindowSeriesShiftValidation:
         ws = self._make_window_series()
         with pytest.raises(NotImplementedError, match="'periods' argument.*must be an int"):
             ws.shift(periods=1.5)  # type: ignore
+
+    def test_shift_with_custom_rows_between_raises(self) -> None:
+        """shift() should raise ValueError when frame_spec is a non-default RowsBetween."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame.window_frame_legend_ext(
+            frame_spec=frame.rows_between(-2, 2),
+            order_by="col1",
+        )["col1"]
+        with pytest.raises(ValueError, match="does not support a window frame clause"):
+            ws.shift(periods=1)
+
+    def test_shift_with_range_between_raises(self) -> None:
+        """shift() should raise ValueError when frame_spec is RangeBetween."""
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        ws = frame.window_frame_legend_ext(
+            frame_spec=frame.range_between(-1, 1),
+            order_by="col1",
+        )["col1"]
+        with pytest.raises(ValueError, match="does not support a window frame clause"):
+            ws.shift(periods=1)
+
+    def test_shfit_does_not_mutate_original_window_frame(self) -> None:
+        """Calling shift() should not modify the original window frame's frame_spec."""
+        from pylegend.core.language.pandas_api.pandas_api_frame_spec import RowsBetween
+
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.float_column("col2"),
+        ]
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
+        window_frame = frame.window_frame_legend_ext(
+            order_by="col1",
+        )
+        # Default frame_spec is RowsBetween(None, None)
+        original_spec = window_frame._frame_spec
+        assert isinstance(original_spec, RowsBetween)
+        assert original_spec._start is None
+        assert original_spec._end is None
+
+        # Call shift - should strip frame_spec via shallow copy, not mutate original
+        _ = window_frame["col1"].shift(periods=1)
+
+        # Original window frame should still have RowsBetween(None, None)
+        assert window_frame._frame_spec is original_spec
+        assert isinstance(window_frame._frame_spec, RowsBetween)
+        assert window_frame._frame_spec._start is None
+        assert window_frame._frame_spec._end is None
 
 
 class TestLastOnWindowTdsFrame:
@@ -1208,7 +1265,7 @@ class TestAggFuncPaths:
 
     def test_window_extend_legend_ext_with_agg_func(self) -> None:
         """
-        Use window_extend_legend_ext on WindowSeries with both pwr_func and agg_func.
+        Use window_extend_legend_ext on WindowSeries with both value_func and agg_func.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -1221,9 +1278,9 @@ class TestAggFuncPaths:
             order_by="col2",
         )["col1"]
 
-        # Use pwr_func that references a column and agg_func that sums the collection
+        # Use value_func that references a column and agg_func that sums the collection
         series = ws.window_extend_legend_ext(
-            pwr_func=lambda p, w, r: r["col1"],
+            value_func=lambda p, w, r: r["col1"],
             agg_func=lambda c: c.sum(),
         )
 
@@ -1236,7 +1293,7 @@ class TestAggFuncPaths:
 
     def test_window_tds_frame_func_legend_ext_with_agg_func(self) -> None:
         """
-        Use window_extend_legend_ext on WindowTdsFrame with both pwr_func and agg_func.
+        Use window_extend_legend_ext on WindowTdsFrame with both value_func and agg_func.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -1249,9 +1306,9 @@ class TestAggFuncPaths:
             order_by="col2",
         )
 
-        # pwr_func returning a single column primitive (r["col1"]), with sum agg
+        # value_func returning a single column primitive (r["col1"]), with sum agg
         applied = wf.window_extend_legend_ext(
-            pwr_func=lambda p, w, r: r["col1"],
+            value_func=lambda p, w, r: r["col1"],
             agg_func=lambda c: c.sum(),
         )
 
@@ -1264,7 +1321,7 @@ class TestAggFuncPaths:
 
     def test_assign_with_agg_func_single_column_window(self) -> None:
         """
-        frame['new'] = frame.window_frame_legend_ext(...)['col'].window_extend_legend_ext(pwr_func, agg_func)
+        frame['new'] = frame.window_frame_legend_ext(...)['col'].window_extend_legend_ext(value_func, agg_func)
         Tests the agg_func path through assign_function to_sql and to_pure.
         """
         columns = [
@@ -1277,7 +1334,7 @@ class TestAggFuncPaths:
             frame_spec=frame.rows_between(),
             order_by="col2",
         )["col1"].window_extend_legend_ext(
-            pwr_func=lambda p, w, r: r["col1"],
+            value_func=lambda p, w, r: r["col1"],
             agg_func=lambda c: c.sum(),
         )
 
@@ -1290,16 +1347,16 @@ class TestAggFuncPaths:
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
 
 
-class TestPythonLiteralPwrFunc:
-    """Tests for pwr_func returning a raw Python literal (not a PyLegendPrimitive)."""
+class TestPythonLiteralValueFunc:
+    """Tests for value_func returning a raw Python literal (not a PyLegendPrimitive)."""
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_pwr_func_returning_literal_single_column(self) -> None:
+    def test_value_func_returning_literal_single_column(self) -> None:
         """
-        window_extend_legend_ext with pwr_func returning a raw int (42).
+        window_extend_legend_ext with value_func returning a raw int (42).
         Tests the else branch for non-PyLegendPrimitive in to_sql, to_pure, to_sql_expression, build_pure_extend_strs.
         """
         columns = [
@@ -1308,12 +1365,12 @@ class TestPythonLiteralPwrFunc:
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        # pwr_func returns raw int 42, not a PyLegendPrimitive
+        # value_func returns raw int 42, not a PyLegendPrimitive
         frame["const"] = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="col2",
         )["col1"].window_extend_legend_ext(
-            pwr_func=lambda p, w, r: 42,
+            value_func=lambda p, w, r: 42,
         )
 
         sql = frame.to_sql_query()
@@ -1323,9 +1380,9 @@ class TestPythonLiteralPwrFunc:
         pure = frame.to_pure_query()
         assert "42" in pure
 
-    def test_pwr_func_returning_literal_standalone_series(self) -> None:
+    def test_value_func_returning_literal_standalone_series(self) -> None:
         """
-        series = window_extend_legend_ext(pwr_func returning 42) — standalone series SQL.
+        series = window_extend_legend_ext(value_func returning 42) — standalone series SQL.
         Tests to_sql_expression else branch for non-PyLegendPrimitive.
         """
         columns = [
@@ -1338,7 +1395,7 @@ class TestPythonLiteralPwrFunc:
             frame_spec=frame.rows_between(),
             order_by="col2",
         )["col1"].window_extend_legend_ext(
-            pwr_func=lambda p, w, r: 42,
+            value_func=lambda p, w, r: 42,
         )
 
         sql = series.to_sql_query()
@@ -1955,9 +2012,9 @@ class TestWindowFuncWorkflows:
         pure = series.to_pure_query()
         assert "lead($r, 2)" in pure
 
-    # ── Custom pwr_func patterns ─────────────────────────────────────────
+    # ── Custom value_func patterns ─────────────────────────────────────────
 
-    def test_custom_pwr_func_nth_on_window_series(self) -> None:
+    def test_custom_value_func_nth_on_window_series(self) -> None:
         """
         WindowSeries.window_extend_legend_ext with p.nth for the 3rd row.
         """
@@ -1971,7 +2028,7 @@ class TestWindowFuncWorkflows:
             frame_spec=frame.rows_between(),
             order_by="id",
         )["val"].window_extend_legend_ext(
-            pwr_func=lambda p, w, r: p.nth(w, r, 3)["val"],
+            value_func=lambda p, w, r: p.nth(w, r, 3)["val"],
         )
 
         sql = series.to_sql_query()
@@ -1981,7 +2038,7 @@ class TestWindowFuncWorkflows:
         pure = series.to_pure_query()
         assert "nth($w, $r, 3)" in pure
 
-    def test_custom_pwr_func_lead_on_window_series(self) -> None:
+    def test_custom_value_func_lead_on_window_series(self) -> None:
         """
         WindowSeries.window_extend_legend_ext with p.lead for 2 rows ahead.
         """
@@ -1995,7 +2052,7 @@ class TestWindowFuncWorkflows:
             frame_spec=frame.rows_between(),
             order_by="id",
         )["val"].window_extend_legend_ext(
-            pwr_func=lambda p, w, r: p.lead(r, 2)["val"],
+            value_func=lambda p, w, r: p.lead(r, 2)["val"],
         )
 
         sql = frame.to_sql_query()
@@ -2006,7 +2063,7 @@ class TestWindowFuncWorkflows:
         assert "lead($r, 2)" in pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
 
-    def test_custom_pwr_func_lag_on_window_series(self) -> None:
+    def test_custom_value_func_lag_on_window_series(self) -> None:
         """
         WindowSeries.window_extend_legend_ext with p.lag for 3 rows behind.
         """
@@ -2020,7 +2077,7 @@ class TestWindowFuncWorkflows:
             frame_spec=frame.rows_between(),
             order_by="id",
         )["val"].window_extend_legend_ext(
-            pwr_func=lambda p, w, r: p.lag(r, 3)["val"],
+            value_func=lambda p, w, r: p.lag(r, 3)["val"],
         )
 
         sql = frame.to_sql_query()
@@ -2047,7 +2104,7 @@ class TestWindowFuncWorkflows:
             frame_spec=frame.rows_between(),
             order_by="a",
         ).window_extend_legend_ext(
-            pwr_func=lambda p, w, r: p.nth(w, r, 5),
+            value_func=lambda p, w, r: p.nth(w, r, 5),
         )
 
         sql = applied.to_sql_query()
@@ -2063,7 +2120,7 @@ class TestWindowFuncWorkflows:
         """
         WindowTdsFrame-level shift (lag) across all columns.
         shift() is on WindowSeries, but a TdsFrame-level lag via window_extend_legend_ext
-        can be done with a pwr_func that returns the lag TdsRow.
+        can be done with a value_func that returns the lag TdsRow.
         """
         columns = [
             PrimitiveTdsColumn.integer_column("a"),
@@ -2075,7 +2132,7 @@ class TestWindowFuncWorkflows:
             frame_spec=frame.rows_between(),
             order_by="a",
         ).window_extend_legend_ext(
-            pwr_func=lambda p, w, r: p.lag(r, 1),
+            value_func=lambda p, w, r: p.lag(r, 1),
         )
 
         sql = applied.to_sql_query()

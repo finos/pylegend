@@ -55,7 +55,7 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
 from pylegend.core.tds.abstract.function_helpers import tds_column_for_primitive
 
 # Type alias for the p,w,r-mapper lambda: (p, w, r) -> primitive
-PwrFunc = PyLegendCallable[
+ValueFunc = PyLegendCallable[
     [PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow],
     PyLegendPrimitiveOrPythonPrimitive,
 ]
@@ -70,7 +70,7 @@ AggFunc = PyLegendCallable[
 class SingleColumnWindowFunction(PandasApiAppliedFunction):
 
     __base_window_frame: PandasApiWindowTdsFrame
-    __pwr_func: PwrFunc
+    __value_func: ValueFunc
     __agg_func: PyLegendOptional[AggFunc]
     __window: PandasApiWindow
 
@@ -81,11 +81,11 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
     def __init__(
             self,
             base_window_frame: PandasApiWindowTdsFrame,
-            pwr_func: PwrFunc,
+            value_func: ValueFunc,
             agg_func: PyLegendOptional[AggFunc] = None,
     ) -> None:
         self.__base_window_frame = base_window_frame
-        self.__pwr_func = pwr_func
+        self.__value_func = value_func
         self.__agg_func = agg_func
 
         self.__window = self.__base_window_frame.construct_window()
@@ -105,7 +105,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
         window_ref = PandasApiWindowReference(window=self.__window, var_name="w")
 
-        result = self.__pwr_func(partial_frame, window_ref, tds_row)
+        result = self.__value_func(partial_frame, window_ref, tds_row)
 
         def _apply_agg(
                 primitive: PyLegendPrimitiveOrPythonPrimitive,
@@ -115,7 +115,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
             from pylegend.core.language.shared.primitive_collection import create_primitive_collection
             return self.__agg_func(create_primitive_collection(primitive))
 
-        # If pwr_func returned a TdsRow (e.g. p.first(w, r)), expand to all columns
+        # If value_func returned a TdsRow (e.g. p.first(w, r)), expand to all columns
         if isinstance(result, PandasApiTdsRow):
             columns: PyLegendList[TdsColumn] = []
             for col in self.base_frame().columns():
@@ -123,7 +123,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
                 columns.append(tds_column_for_primitive(col.get_name(), col_result))
             return columns
 
-        # pwr_func returned a single primitive (e.g. p.first(w, r)["col"])
+        # value_func returned a single primitive (e.g. p.first(w, r)["col"])
         result = _apply_agg(result)
 
         # Derive the column name from the underlying column expression when possible.
@@ -147,22 +147,22 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
                 f"got: {type(self.__base_window_frame).__name__}"
             )
 
-        # 2. pwr_func must be callable with exactly 3 parameters
-        if not callable(self.__pwr_func):
+        # 2. value_func must be callable with exactly 3 parameters
+        if not callable(self.__value_func):
             raise TypeError(
-                f"pwr_func must be callable, got: {type(self.__pwr_func).__name__}"
+                f"value_func must be callable, got: {type(self.__value_func).__name__}"
             )
-        pwr_sig = inspect.signature(self.__pwr_func)
-        pwr_params = [
-            p for p in pwr_sig.parameters.values()
+        value_sig = inspect.signature(self.__value_func)
+        value_params = [
+            p for p in value_sig.parameters.values()
             if p.default is inspect.Parameter.empty
             and p.kind not in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
         ]
-        if len(pwr_params) != 3:
+        if len(value_params) != 3:
             raise TypeError(
-                f"pwr_func must accept exactly 3 positional parameters "
+                f"value_func must accept exactly 3 positional parameters "
                 f"(PandasApiPartialFrame, PandasApiWindowReference, PandasApiTdsRow), "
-                f"got {len(pwr_params)} required parameter(s)"
+                f"got {len(value_params)} required parameter(s)"
             )
 
         # 3. agg_func, if provided, must be callable with exactly 1 parameter
@@ -206,24 +206,24 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
         # 3. Build the window (with zero column in partition)
         window = self.__base_window_frame.construct_window(include_zero_column=True)
 
-        # 4. Evaluate pwr_func to get the column expression(s)
+        # 4. Evaluate value_func to get the column expression(s)
         tds_row = PandasApiTdsRow.from_tds_frame("root", self.base_frame())
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
         window_ref = PandasApiWindowReference(window=self.__window, var_name="w")
 
-        pwr_result = self.__pwr_func(partial_frame, window_ref, tds_row)
+        value_result = self.__value_func(partial_frame, window_ref, tds_row)
 
         # Collect (col_name, sql_expression) pairs
         col_entries = []
 
-        if isinstance(pwr_result, PandasApiTdsRow):
-            # pwr_func returned a full row — expand to all base columns
+        if isinstance(value_result, PandasApiTdsRow):
+            # value_func returned a full row — expand to all base columns
             for col in self.base_frame().columns():
-                col_primitive = pwr_result[col.get_name()]
+                col_primitive = value_result[col.get_name()]
                 col_entries.append((col.get_name(), col_primitive))
         else:
-            col_name = self.__infer_column_name(pwr_result)
-            col_entries.append((col_name, pwr_result))  # type: ignore[arg-type]
+            col_name = self.__infer_column_name(value_result)
+            col_entries.append((col_name, value_result))  # type: ignore[arg-type]
 
         # 5. For each column, resolve the SQL expression (with optional agg),
         #    wrap in WindowExpression, and add with a temp alias
@@ -277,22 +277,22 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
     def to_pure(self, config: FrameToPureConfig) -> str:
         temp_column_name_suffix = "__pylegend_olap_column__"
 
-        # 1. Evaluate pwr_func to derive the column entries (same logic as to_sql / calculate_columns)
+        # 1. Evaluate value_func to derive the column entries (same logic as to_sql / calculate_columns)
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
         window_ref = PandasApiWindowReference(window=self.__window, var_name="w")
 
-        pwr_result = self.__pwr_func(partial_frame, window_ref, tds_row)
+        value_result = self.__value_func(partial_frame, window_ref, tds_row)
 
         # Collect (col_name, mapper_primitive) pairs
         col_entries = []
 
-        if isinstance(pwr_result, PandasApiTdsRow):
+        if isinstance(value_result, PandasApiTdsRow):
             for col in self.base_frame().columns():
-                col_entries.append((col.get_name(), pwr_result[col.get_name()]))
+                col_entries.append((col.get_name(), value_result[col.get_name()]))
         else:
-            col_name = self.__infer_column_name(pwr_result)
-            col_entries.append((col_name, pwr_result))  # type: ignore[arg-type]
+            col_name = self.__infer_column_name(value_result)
+            col_entries.append((col_name, value_result))  # type: ignore[arg-type]
 
         # 2. Build the window expression (with zero column)
         window_with_zero = self.__base_window_frame.construct_window(include_zero_column=True)
@@ -371,12 +371,12 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
         frame_name = list(frame_name_to_base_query_map.keys())[0]
         base_query = frame_name_to_base_query_map[frame_name]
 
-        # Evaluate the pwr_func to get the SQL expression
+        # Evaluate the value_func to get the SQL expression
         tds_row = PandasApiTdsRow.from_tds_frame(frame_name, self.base_frame())
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
         window_ref = PandasApiWindowReference(window=self.__window, var_name="w")
 
-        result = self.__pwr_func(partial_frame, window_ref, tds_row)
+        result = self.__value_func(partial_frame, window_ref, tds_row)
 
         if isinstance(result, PyLegendPrimitive):
             col_sql_expr = result.to_sql_expression(frame_name_to_base_query_map, config)
@@ -424,18 +424,18 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
         # 1. Always prepend the zero column extend
         result.append(f"->extend(~{escape_column_name(ZERO_COLUMN_NAME)}:{{r|0}})")
 
-        # 2. Evaluate the pwr_func to get the mapper Pure expression
+        # 2. Evaluate the value_func to get the mapper Pure expression
         tds_row = PandasApiTdsRow.from_tds_frame("r", self.base_frame())
         partial_frame = PandasApiPartialFrame(base_frame=self.base_frame(), var_name="p")
         window_ref = PandasApiWindowReference(window=self.__window, var_name="w")
 
-        pwr_result = self.__pwr_func(partial_frame, window_ref, tds_row)
+        value_result = self.__value_func(partial_frame, window_ref, tds_row)
 
-        if isinstance(pwr_result, PyLegendPrimitive):
-            mapper_expr = pwr_result.to_pure_expression(config)
+        if isinstance(value_result, PyLegendPrimitive):
+            mapper_expr = value_result.to_pure_expression(config)
         else:
             mapper_expr = (
-                convert_literal_to_literal_expression(pwr_result)
+                convert_literal_to_literal_expression(value_result)
                 .to_pure_expression(config)
             )
 
@@ -443,7 +443,7 @@ class SingleColumnWindowFunction(PandasApiAppliedFunction):
         agg_part = ""
         if self.__agg_func is not None:
             from pylegend.core.language.shared.primitive_collection import create_primitive_collection
-            collection = create_primitive_collection(pwr_result)
+            collection = create_primitive_collection(value_result)
             agg_result = self.__agg_func(collection)
             agg_expr = agg_result.to_pure_expression(config).replace(mapper_expr, "$c")
             agg_part = f":{generate_pure_lambda('c', agg_expr)}"

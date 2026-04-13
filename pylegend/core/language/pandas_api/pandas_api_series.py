@@ -67,6 +67,7 @@ from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
 
 if TYPE_CHECKING:
@@ -562,7 +563,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def window_frame_legend_ext(
             self,
-            frame_spec: PyLegendOptional["FrameSpec"] = None,
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
