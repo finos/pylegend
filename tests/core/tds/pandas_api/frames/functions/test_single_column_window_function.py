@@ -571,6 +571,7 @@ class TestFirstOnWindowSeries:
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
         frame["lead_val"] = frame.groupby("grp").window_frame_legend_ext(
+            frame_spec=None,
             order_by="score",
         )["val"].shift(periods=-1)
 
