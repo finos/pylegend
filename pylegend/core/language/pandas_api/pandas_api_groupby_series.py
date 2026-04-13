@@ -25,6 +25,7 @@ from pylegend._typing import (
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.pandas_api.pandas_api_series import (
     SupportsToPureExpression,
     SupportsToSqlExpression
@@ -61,7 +62,8 @@ from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function,
-    get_pure_query_from_expr, get_groupby_series_from_col_type,
+    needs_zero_column_for_window,
+    get_pure_query_from_expr, get_groupby_series_from_col_type, query_contains_column_with_name,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -72,7 +74,6 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
@@ -233,6 +234,22 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.get_base_frame().base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
+
+        # If the series needs the zero column, inject it into base_query
+        # and wrap in a sub-query so PARTITION BY can reference it.
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+        if (
+            needs_zero_column_for_window(self)
+            and not query_contains_column_with_name(base_query, db_extension.quote_identifier(ZERO_COLUMN_NAME))
+        ):
+            from pylegend.core.sql.metamodel import IntegerLiteral
+            base_query.select.selectItems.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                    expression=IntegerLiteral(0),
+                )
+            )
+            base_query = create_sub_query(base_query, config, "root")
 
         full_sql_expr = self.to_sql_expression({'c': base_query}, config)
 
@@ -517,7 +534,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def window_frame_legend_ext(
             self,
-            frame_spec: "FrameSpec",
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
