@@ -25,6 +25,7 @@ from pylegend._typing import (
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.pandas_api.pandas_api_series import (
     SupportsToPureExpression,
     SupportsToSqlExpression
@@ -71,10 +72,8 @@ from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
-from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
