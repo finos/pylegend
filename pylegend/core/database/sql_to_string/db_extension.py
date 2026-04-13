@@ -153,6 +153,9 @@ from pylegend.core.sql.metamodel_extension import (
     DateDiffExpression,
     DateTimeBucketExpression,
     DateType,
+    WavgExpression,
+    MaxByExpression,
+    MinByExpression,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -436,6 +439,12 @@ def expression_processor(
         return extension.process_covar_population_expression(expression, config)
     elif isinstance(expression, CovarSampleExpression):
         return extension.process_covar_sample_expression(expression, config)
+    elif isinstance(expression, WavgExpression):
+        return extension.process_wavg_expression(expression, config)
+    elif isinstance(expression, MaxByExpression):
+        return extension.process_max_by_expression(expression, config)
+    elif isinstance(expression, MinByExpression):
+        return extension.process_min_by_expression(expression, config)
     elif isinstance(expression, MedianExpression):
         return extension.process_median_expression(expression, config)
     elif isinstance(expression, ModeExpression):
@@ -1372,6 +1381,21 @@ class SqlToStringDbExtension:
 
     def process_covar_sample_expression(self, expr: CovarSampleExpression, config: SqlToStringConfig) -> str:
         return f"COVAR_SAMP({self.process_expression(expr.value, config)}, {self.process_expression(expr.other, config)})"
+
+    def process_wavg_expression(self, expr: WavgExpression, config: SqlToStringConfig) -> str:
+        val = self.process_expression(expr.value, config)
+        wt = self.process_expression(expr.weight, config)
+        return f"(SUM({val} * {wt}) * 1.0 / SUM({wt}))"
+
+    def process_max_by_expression(self, expr: MaxByExpression, config: SqlToStringConfig) -> str:
+        val = self.process_expression(expr.value, config)
+        by = self.process_expression(expr.by, config)
+        return f"MAX_BY({val}, {by})"
+
+    def process_min_by_expression(self, expr: MinByExpression, config: SqlToStringConfig) -> str:
+        val = self.process_expression(expr.value, config)
+        by = self.process_expression(expr.by, config)
+        return f"MIN_BY({val}, {by})"
 
     def process_median_expression(self, expr: MedianExpression, config: SqlToStringConfig) -> str:
         return f"PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY {self.process_expression(expr.value, config)})"
