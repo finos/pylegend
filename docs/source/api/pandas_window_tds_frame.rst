@@ -26,3 +26,18 @@ aggregate
 ~~~~~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame.aggregate
+
+first
+~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame.first
+
+last
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame.last
+
+window_extend_legend_ext
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame.window_extend_legend_ext

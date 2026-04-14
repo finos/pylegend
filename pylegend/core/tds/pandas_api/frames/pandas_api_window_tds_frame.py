@@ -50,8 +50,11 @@ class PandasApiWindowTdsFrame:
     or a
     :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame`.
     Calling an aggregate (e.g. ``.aggregate('sum')``) on this object produces
-    a new TDS frame whose columns contain the windowed values.  Alternatively,
-    use bracket notation to select a single column first and obtain a
+    a new TDS frame whose columns contain the windowed values.  The
+    ``first()``, ``last()``, and ``window_extend_legend_ext()`` methods
+    are also available for positional and custom window operations.
+    Alternatively, use bracket notation to select a single column first
+    and obtain a
     :class:`~pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries`.
 
     Obtaining a PandasApiWindowTdsFrame
@@ -67,6 +70,12 @@ class PandasApiWindowTdsFrame:
         # Custom window bounds (pylegend extension)
         window = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(-3, 3),
+            order_by="col",
+        )
+
+        # No frame clause — only PARTITION BY / ORDER BY
+        window = frame.window_frame_legend_ext(
+            frame_spec=None,
             order_by="col",
         )
 
@@ -103,10 +112,14 @@ class PandasApiWindowTdsFrame:
         Column name(s) to use for ``ORDER BY`` within the window.
         ``None`` means no explicit ordering (the first column of the
         base frame is used as a fallback).
-    frame_spec : RowsBetween or RangeBetween, optional
+    frame_spec : RowsBetween, RangeBetween, or None
         A ``FrameSpec`` describing the window frame bounds.  Defaults
-        to ``ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING``
-        when ``None``.
+        to ``RowsBetween(None, None)`` (i.e.
+        ``ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING``).
+        Pass ``None`` to omit the frame clause entirely, producing a
+        window with only ``PARTITION BY`` / ``ORDER BY``.  This is
+        required for functions like ``shift()`` (lag/lead) which do
+        not accept a frame clause.
     ascending : bool or list of bool, default True
         Sort direction(s) for the ``ORDER BY`` columns.  ``True``
         means ascending.  Can be a single ``bool`` (applied to all
@@ -119,6 +132,9 @@ class PandasApiWindowTdsFrame:
     PandasApiTdsFrame.rolling : Create a rolling window.
     PandasApiTdsFrame.window_frame_legend_ext : Create a custom window.
     WindowSeries : Single-column proxy on a window frame.
+    first : First value in the window for every column.
+    last : Last value in the window for every column.
+    window_extend_legend_ext : Custom single-column window function.
 
     Notes
     -----
@@ -392,19 +408,66 @@ class PandasApiWindowTdsFrame:
             agg_func: "PyLegendOptional[AggFunc]" = None,
     ) -> PandasApiBaseTdsFrame:
         """
-        PyLegend extension (not present in pandas).
+        Apply a custom window function to all columns in the frame.
 
-        Apply a custom single-column window function to all columns in
-        the frame using the given ``value_func`` and optional ``agg_func``.
+        **PyLegend extension** — not present in pandas.
+
+        Compute a user-defined window expression over every non-grouping
+        column.  The ``value_func`` receives three arguments —
+        a :class:`PandasApiPartialFrame` (``p``), a
+        :class:`PandasApiWindowReference` (``w``), and a
+        :class:`PandasApiTdsRow` (``r``) — and must return either a
+        single primitive (processed per-column) or a
+        :class:`PandasApiTdsRow` (expanded to all columns).
 
         Parameters
         ----------
-        value_func:
-            A callable ``(p, w, r) -> primitive`` that describes how to
-            compute the window value for each column.
-        agg_func:
-            An optional callable ``(collection) -> primitive`` for an
-            additional aggregation step.
+        value_func : callable
+            ``(p, w, r) -> primitive | PandasApiTdsRow``.
+
+            Common patterns:
+
+            - ``lambda p, w, r: p.first(w, r)``  — first value
+              (returns ``PandasApiTdsRow`` → applies to all columns).
+            - ``lambda p, w, r: p.last(w, r)``   — last value.
+            - ``lambda p, w, r: p.nth(w, r, 3)`` — nth value.
+            - ``lambda p, w, r: p.lag(r, 1)``    — lag (previous row).
+            - ``lambda p, w, r: p.lead(r, 2)``   — lead (future row).
+            - ``lambda p, w, r: r["col"]``        — raw column ref
+              (combined with ``agg_func``).
+        agg_func : callable or None, default None
+            ``(collection) -> primitive``.  If provided, an additional
+            aggregation step (e.g. ``lambda c: c.sum()``) is applied
+            on top of the ``value_func`` result.
+
+        Returns
+        -------
+        PandasApiBaseTdsFrame
+            A new TDS frame with the window function applied to every
+            column.
+
+        See Also
+        --------
+        WindowSeries.window_extend_legend_ext :
+            Same operation scoped to a single column.
+        first : Convenience wrapper using ``p.first(w, r)``.
+        last : Convenience wrapper using ``p.last(w, r)``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # nth-value across all columns
+            frame.filter(items=["Order Id"]).window_frame_legend_ext(
+                frame_spec=frame.rows_between(),
+                order_by="Order Id",
+            ).window_extend_legend_ext(
+                value_func=lambda p, w, r: p.nth(w, r, 3),
+            ).head(5).to_pandas()
+
         """
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame,
@@ -422,6 +485,52 @@ class PandasApiWindowTdsFrame:
         )
 
     def first(self, numeric_only: bool = False) -> PandasApiTdsFrame:
+        """
+        Return the first value in the window for every column.
+
+        Generates ``first_value(col) OVER (...)`` for each column.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            If ``True``, apply ``first_value`` only to numeric columns
+            and retain grouping columns.  Non-numeric, non-grouping
+            columns are dropped from the result.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new frame whose columns contain the first value within
+            the window.
+
+        See Also
+        --------
+        last : Last value in the window.
+        WindowSeries.first : Single-column version.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``first()`` is a **pylegend extension**.  In pandas, there
+          is no ``Expanding.first()`` or ``Rolling.first()``.
+        - When ``numeric_only=True``, the implementation applies
+          ``first()`` per numeric column individually, then filters.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # First Order Id across the entire sorted window
+            frame.filter(items=["Order Id"]).window_frame_legend_ext(
+                frame_spec=frame.rows_between(),
+                order_by="Order Id",
+            ).first().head(5).to_pandas()
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
             PandasApiPartialFrame,
             PandasApiWindowReference,
@@ -462,6 +571,52 @@ class PandasApiWindowTdsFrame:
         return self.window_extend_legend_ext(value_func=value_func)
 
     def last(self, numeric_only: bool = False) -> PandasApiTdsFrame:
+        """
+        Return the last value in the window for every column.
+
+        Generates ``last_value(col) OVER (...)`` for each column.
+
+        Parameters
+        ----------
+        numeric_only : bool, default False
+            If ``True``, apply ``last_value`` only to numeric columns
+            and retain grouping columns.  Non-numeric, non-grouping
+            columns are dropped from the result.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new frame whose columns contain the last value within
+            the window.
+
+        See Also
+        --------
+        first : First value in the window.
+        WindowSeries.last : Single-column version.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``last()`` is a **pylegend extension**.  In pandas, there
+          is no ``Expanding.last()`` or ``Rolling.last()``.
+        - When ``numeric_only=True``, the implementation applies
+          ``last()`` per numeric column individually, then filters.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Last Order Id across the entire sorted window
+            frame.filter(items=["Order Id"]).window_frame_legend_ext(
+                frame_spec=frame.rows_between(),
+                order_by="Order Id",
+            ).last().head(5).to_pandas()
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
             PandasApiPartialFrame,
             PandasApiWindowReference,

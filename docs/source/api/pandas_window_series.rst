@@ -32,6 +32,16 @@ count
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries.count
 
+first
+~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries.first
+
+last
+~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries.last
+
 max
 ~~~
 
@@ -47,6 +57,11 @@ min
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries.min
 
+shift
+~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries.shift
+
 std
 ~~~
 
@@ -61,3 +76,8 @@ var
 ~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries.var
+
+window_extend_legend_ext
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries.window_extend_legend_ext

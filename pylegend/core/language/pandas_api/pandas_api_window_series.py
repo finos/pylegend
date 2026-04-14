@@ -48,8 +48,10 @@ class WindowSeries:
     :class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
     (or a
     :class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`
-    when the underlying window was created from a groupby).  The result
-    can then be assigned back to the parent frame.
+    when the underlying window was created from a groupby).  Positional
+    window functions (``first()``, ``last()``, ``shift()``) and the
+    general-purpose ``window_extend_legend_ext()`` are also available.
+    The result can then be assigned back to the parent frame.
 
     Obtaining a WindowSeries
     -------------------------
@@ -108,7 +110,10 @@ class WindowSeries:
       built-in convenience methods that return a ``Series``.  Here,
       the same convenience methods are available (``sum()``,
       ``mean()``, ``min()``, ``max()``, ``count()``, ``std()``,
-      ``var()``), plus a general ``aggregate()`` / ``agg()`` method.
+      ``var()``), plus positional window methods (``first()``,
+      ``last()``, ``shift()``), and a general ``aggregate()`` /
+      ``agg()`` method.  ``window_extend_legend_ext()`` is available
+      for fully custom window expressions.
     - Extra ``*args`` / ``**kwargs`` on ``aggregate()`` are **not
       supported**.
     - The ``numeric_only`` parameter on convenience methods is **not
@@ -712,19 +717,66 @@ class WindowSeries:
             agg_func: "PyLegendOptional[AggFunc]" = None,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
         """
-        PyLegend extension (not present in pandas).
+        Apply a custom window function to this single column.
 
-        Apply a custom single-column window function to the selected
-        column using the given ``value_func`` and optional ``agg_func``.
+        **PyLegend extension** — not present in pandas.
+
+        Compute a user-defined window expression for the selected column.
+        The ``value_func`` receives three arguments —
+        a :class:`PandasApiPartialFrame` (``p``), a
+        :class:`PandasApiWindowReference` (``w``), and a
+        :class:`PandasApiTdsRow` (``r``) — and must return a single
+        primitive.  The result is a ``Series`` (or ``GroupbySeries``)
+        that can be assigned back to the parent frame.
 
         Parameters
         ----------
-        value_func:
-            A callable ``(p, w, r) -> primitive`` that describes how to
-            compute the window value for the column.
-        agg_func:
-            An optional callable ``(collection) -> primitive`` for an
-            additional aggregation step.
+        value_func : callable
+            ``(p, w, r) -> primitive``.
+
+            Common patterns:
+
+            - ``lambda p, w, r: p.first(w, r)["col"]``  — first value.
+            - ``lambda p, w, r: p.last(w, r)["col"]``   — last value.
+            - ``lambda p, w, r: p.nth(w, r, 3)["col"]`` — nth value.
+            - ``lambda p, w, r: p.lag(r, 1)["col"]``    — lag.
+            - ``lambda p, w, r: p.lead(r, 2)["col"]``   — lead.
+            - ``lambda p, w, r: r["col"]``               — raw column
+              ref (combined with ``agg_func``).
+        agg_func : callable or None, default None
+            ``(collection) -> primitive``.  If provided, an additional
+            aggregation step (e.g. ``lambda c: c.sum()``) is applied
+            on top of the ``value_func`` result.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the window function result.
+
+        See Also
+        --------
+        PandasApiWindowTdsFrame.window_extend_legend_ext :
+            Same operation applied to all columns.
+        first : Convenience wrapper using ``p.first(w, r)["col"]``.
+        last : Convenience wrapper using ``p.last(w, r)["col"]``.
+        shift : Convenience wrapper for lag/lead.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # nth-value of a single column
+            frame["Nth Order"] = frame.window_frame_legend_ext(
+                frame_spec=frame.rows_between(),
+                order_by="Order Id",
+            )["Order Id"].window_extend_legend_ext(
+                value_func=lambda p, w, r: p.nth(w, r, 3)["Order Id"],
+            )
+            frame.head(5).to_pandas()
+
         """
         from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
             PandasApiAppliedFunctionTdsFrame,
@@ -767,6 +819,47 @@ class WindowSeries:
             return new_series
 
     def first(self) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Return the first value in the window for this column.
+
+        Generates ``first_value(col) OVER (...)`` in SQL.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the first value within
+            the window for every row.
+
+        See Also
+        --------
+        last : Last value in the window.
+        PandasApiWindowTdsFrame.first : All-column version.
+        shift : Lag/lead by N rows.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``first()`` is a **pylegend extension**.  There is no
+          ``Expanding['col'].first()`` or ``Rolling['col'].first()``
+          in pandas.
+        - Internally delegates to ``window_extend_legend_ext`` with
+          ``value_func = lambda p, w, r: p.first(w, r)["col"]``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["First Order"] = frame.window_frame_legend_ext(
+                frame_spec=frame.rows_between(),
+                order_by="Order Id",
+            )["Order Id"].first()
+            frame.head(5).to_pandas()
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
             PandasApiPartialFrame,
             PandasApiWindowReference,
@@ -786,6 +879,45 @@ class WindowSeries:
         return self.window_extend_legend_ext(value_func=value_func)
 
     def last(self) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Return the last value in the window for this column.
+
+        Generates ``last_value(col) OVER (...)`` in SQL.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the last value within
+            the window for every row.
+
+        See Also
+        --------
+        first : First value in the window.
+        PandasApiWindowTdsFrame.last : All-column version.
+        shift : Lag/lead by N rows.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``last()`` is a **pylegend extension**.  There is no
+          ``Expanding['col'].last()`` or ``Rolling['col'].last()``
+          in pandas.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Last Order"] = frame.window_frame_legend_ext(
+                frame_spec=frame.rows_between(),
+                order_by="Order Id",
+            )["Order Id"].last()
+            frame.head(5).to_pandas()
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
             PandasApiPartialFrame,
             PandasApiWindowReference,
@@ -812,6 +944,94 @@ class WindowSeries:
             fill_value: PyLegendOptional[object] = None,
             suffix: PyLegendOptional[str] = None,
     ) -> PyLegendUnion["Series", "GroupbySeries"]:
+        """
+        Shift (lag or lead) this column by N rows within the window.
+
+        Generates ``lag(col, N)`` for positive ``periods`` and
+        ``lead(col, N)`` for non-positive ``periods`` in SQL.
+
+        Because lag/lead SQL functions do not accept a frame clause,
+        ``shift()`` automatically strips the ``frame_spec`` when it is
+        the default ``RowsBetween(None, None)`` or ``None``.  If a
+        non-default frame spec (e.g. ``rows_between(-2, 2)``) is set,
+        a ``ValueError`` is raised.
+
+        Parameters
+        ----------
+        periods : int, default 1
+            Number of rows to shift.
+
+            - ``periods = 1`` - ``lag`` (look backward).
+            - ``periods = -1`` - ``lead`` (look forward), with
+              offset ``abs(periods)``.
+            - ``periods = 0`` → ``lead(col, 0)`` (current row).
+        freq : str or None, default None
+            **Not supported.**  Raises ``NotImplementedError``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+        fill_value : object or None, default None
+            **Not supported.**  Raises ``NotImplementedError``.
+        suffix : str or None, default None
+            **Not supported.**  Raises ``NotImplementedError``.
+
+        Returns
+        -------
+        Series or GroupbySeries
+            A single-column proxy containing the shifted values.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``freq``, ``fill_value``, ``suffix`` is not ``None``,
+            ``axis`` is not ``0``, or ``periods`` is not an ``int``.
+        ValueError
+            If the window has a non-default ``frame_spec`` (only
+            ``RowsBetween(None, None)`` or ``None`` are permitted).
+
+        See Also
+        --------
+        first : First value in the window.
+        last : Last value in the window.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``Series.shift()`` accepts ``freq``,
+          ``fill_value``, and ``suffix``, none of which are supported
+          here.
+        - ``shift()`` does **not** mutate the original window frame.
+          Internally it creates a shallow copy with
+          ``frame_spec=None`` so that the generated SQL omits the
+          ``ROWS BETWEEN`` / ``RANGE BETWEEN`` clause.
+
+        **Edge cases:**
+
+        - ``shift(periods=0)`` generates ``lead(col, 0)``, which
+          returns the current row's value (identity operation).
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Previous row's Order Id (lag by 1)
+            frame["Prev Order"] = frame.window_frame_legend_ext(
+                order_by="Order Id",
+            )["Order Id"].shift(periods=1)
+            frame.head(5).to_pandas()
+
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Next row's Order Id (lead by 1)
+            frame["Next Order"] = frame.window_frame_legend_ext(
+                order_by="Order Id",
+            )["Order Id"].shift(periods=-1)
+            frame.head(5).to_pandas()
+
+        """
         if freq is not None:
             raise NotImplementedError(
                 f"The 'freq' argument of the shift function is not supported, but got: freq={freq!r}"
@@ -828,7 +1048,7 @@ class WindowSeries:
             raise NotImplementedError(
                 f"The 'suffix' argument of the shift function is not supported for WindowSeries, but got: suffix={suffix!r}"
             )
-        if not isinstance(periods, int):
+        if not (isinstance(periods, int) and periods not in [-1, 1]):
             raise NotImplementedError(
                 "The 'periods' argument of the shift function must be an int for WindowSeries."
             )
