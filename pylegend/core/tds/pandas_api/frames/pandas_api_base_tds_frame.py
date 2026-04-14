@@ -53,6 +53,7 @@ from pylegend.core.language import (
     PyLegendBoolean,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
@@ -72,7 +73,7 @@ from pylegend.extensions.tds.result_handler import (
 )
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween, RangeBetween
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import RangeBetween
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -204,7 +205,15 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             PandasApiAppliedFunctionTdsFrame
         )
         from pylegend.core.tds.pandas_api.frames.functions.assign_function import AssignFunction
-        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=kwargs))
+        # Normalize non-callable values (e.g. direct Series/GroupbySeries) into lambdas,
+        # matching pandas DataFrame.assign() behavior which accepts both callables and values.
+        normalized = {}
+        for key, value in kwargs.items():
+            if callable(value):
+                normalized[key] = value
+            else:
+                normalized[key] = lambda row, _v=value: _v  # pragma: no cover
+        return PandasApiAppliedFunctionTdsFrame(AssignFunction(self, col_definitions=normalized))
 
     def filter(
             self,
@@ -586,7 +595,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def window_frame_legend_ext(
             self,
-            frame_spec: "FrameSpec",
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "PandasApiWindowTdsFrame":
@@ -600,6 +609,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
         ----------
         frame_spec:
             A ``RowsBetween`` or ``RangeBetween`` specification object.
+            ``None`` means no frame clause (just PARTITION BY + ORDER BY).
         order_by:
             Column name(s) to use for ORDER BY within the window.
             ``None`` means no explicit ordering (a fallback will be chosen automatically).
@@ -609,9 +619,8 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             whose length matches the number of ``order_by`` columns.
         """
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
-        from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
 
-        if not isinstance(frame_spec, FrameSpecCls):
+        if frame_spec is not None and not isinstance(frame_spec, FrameSpec):
             raise TypeError(  # pragma: no cover
                 f"frame_spec must be a RowsBetween or RangeBetween, got {type(frame_spec).__name__}"
             )
@@ -709,6 +718,28 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             )
         else:
             return merged
+
+    def concat_legend_ext(
+            self,
+            other: "PandasApiBaseTdsFrame",
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Concatenate this frame with another frame vertically (UNION ALL).
+        Both frames must have compatible schemas (same column names and types).
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.concat_function import (
+            PandasApiConcatFunction
+        )
+        if not isinstance(other, PandasApiBaseTdsFrame):
+            raise TypeError(
+                f"concat_legend_ext expects a PandasApiBaseTdsFrame, got: {type(other).__name__}"
+            )
+        return PandasApiAppliedFunctionTdsFrame(PandasApiConcatFunction(self, other))
 
     def join(
             self,
@@ -1042,6 +1073,57 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
             na_option=na_option,
             ascending=ascending,
             pct=pct
+        ))
+
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution of each column, equivalent to
+        SQL ``CUME_DIST() OVER (ORDER BY col)`` and Pure
+        ``cumulativeDistribution``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='cume_dist',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+        ))
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket of each column, equivalent to
+        SQL ``NTILE(n) OVER (ORDER BY col)`` and Pure ``ntile``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='ntile',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+            num_buckets=num_buckets,
         ))
 
     def shift(

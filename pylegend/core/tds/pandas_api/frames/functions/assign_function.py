@@ -46,6 +46,7 @@ from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunc
 from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
 from pylegend.core.tds.pandas_api.frames.functions.window_aggregate_function import WindowAggregateFunction
 from pylegend.core.tds.pandas_api.frames.functions.zscore_window_function import ZScoreWindowFunction
+from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import SingleColumnWindowFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     has_window_function,
     has_window_aggregate_function,
@@ -228,7 +229,10 @@ class AssignFunction(PandasApiAppliedFunction):
                         target_col_name = c[0] + temp_column_name_suffix
                         extend = f"->extend({window_expr}, ~{target_col_name}:{generate_pure_lambda('p,w,r', function_expr)})"
                         extend_exprs.append(extend)
-                    elif isinstance(applied_func, (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction)):
+                    elif isinstance(
+                        applied_func,
+                        (TwoColumnWindowFunction, WindowAggregateFunction, ZScoreWindowFunction, SingleColumnWindowFunction)
+                    ):
                         extend_exprs.extend(
                             applied_func.build_pure_extend_strs(temp_column_name_suffix, config)
                         )

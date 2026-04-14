@@ -63,6 +63,7 @@ class RankFunction(PandasApiAppliedFunction):
     __na_option: str
     __ascending: bool
     __pct: bool
+    __num_buckets: PyLegendOptional[int]
 
     __column_expression_and_window_tuples: PyLegendList[
         PyLegendTuple[
@@ -83,7 +84,8 @@ class RankFunction(PandasApiAppliedFunction):
             numeric_only: bool,
             na_option: str,
             ascending: bool,
-            pct: bool
+            pct: bool,
+            num_buckets: PyLegendOptional[int] = None,
     ) -> None:
         self.__base_frame = base_frame
         self.__axis = axis
@@ -92,6 +94,7 @@ class RankFunction(PandasApiAppliedFunction):
         self.__na_option = na_option
         self.__ascending = ascending
         self.__pct = pct
+        self.__num_buckets = num_buckets
 
     def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         temp_column_name_suffix = "__pylegend_olap_column__"
@@ -209,7 +212,7 @@ class RankFunction(PandasApiAppliedFunction):
             valid_column_types_for_numeric_only = ["Integer", "Float", "Number"]
             if self.__numeric_only and col.get_type() not in valid_column_types_for_numeric_only:
                 return None
-            if self.__pct:
+            if self.__pct or self.__method == 'cume_dist':
                 new_col = PrimitiveTdsColumn.float_column(col.get_name())
             else:
                 new_col = PrimitiveTdsColumn.integer_column(col.get_name())
@@ -245,7 +248,7 @@ class RankFunction(PandasApiAppliedFunction):
                 f"The 'axis' parameter of the rank function must be 0 or 'index', but got: axis={self.__axis!r}"
             )
 
-        valid_methods: set[str] = {'min', 'first', 'dense'}
+        valid_methods: set[str] = {'min', 'first', 'dense', 'cume_dist', 'ntile'}
         if self.__method not in valid_methods:
             raise NotImplementedError(
                 f"The 'method' parameter of the rank function must be one of {sorted(list(valid_methods))!r},"
@@ -256,6 +259,13 @@ class RankFunction(PandasApiAppliedFunction):
                 "The 'pct=True' parameter of the rank function is only supported with method='min',"
                 f" but got: method={self.__method!r}."
             )
+
+        if self.__method == 'ntile':
+            if self.__num_buckets is None or self.__num_buckets < 1:
+                raise ValueError(
+                    f"The 'num_buckets' parameter must be >= 1 for ntile, "
+                    f"but got: num_buckets={self.__num_buckets!r}"
+                )
 
         valid_na_options = {'bottom'}
         if self.__na_option not in valid_na_options:
@@ -313,6 +323,25 @@ class RankFunction(PandasApiAppliedFunction):
                 r: PandasApiTdsRow,
             ) -> PyLegendPrimitive:
                 return p.dense_rank(w, r)
+
+        elif self.__method == 'cume_dist':
+            def lambda_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+            ) -> PyLegendPrimitive:
+                return p.cume_dist(w, r)
+
+        elif self.__method == 'ntile':
+            _num_buckets = self.__num_buckets
+            assert _num_buckets is not None
+
+            def lambda_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+            ) -> PyLegendPrimitive:
+                return p.ntile(r, _num_buckets)
 
         else:
             raise ValueError(

@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
@@ -27,6 +28,7 @@ from pylegend._typing import (
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
 from pylegend.core.language.shared.expression import (
@@ -58,7 +60,8 @@ from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.functions.filter import PandasApiFilterFunction
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import add_primitive_methods, assert_and_find_core_series, \
-    has_window_function, get_pure_query_from_expr, get_series_from_col_type
+    has_window_function, needs_zero_column_for_window, get_pure_query_from_expr, get_series_from_col_type, \
+    query_contains_column_with_name
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
@@ -69,7 +72,6 @@ from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
@@ -264,6 +266,22 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.get_base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
+
+        # If the series needs the zero column, inject it into base_query
+        # and wrap in a sub-query so PARTITION BY can reference it.
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+        if (
+            needs_zero_column_for_window(self)
+            and not query_contains_column_with_name(base_query, db_extension.quote_identifier(ZERO_COLUMN_NAME))
+        ):
+            from pylegend.core.sql.metamodel import IntegerLiteral
+            base_query.select.selectItems.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                    expression=IntegerLiteral(0),
+                )
+            )
+            base_query = create_sub_query(base_query, config, "root")
 
         full_sql_expr = self.to_sql_expression({'c': base_query}, config)
 
@@ -545,7 +563,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def window_frame_legend_ext(
             self,
-            frame_spec: "FrameSpec",
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
@@ -561,6 +579,62 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame_spec=frame_spec, order_by=order_by, ascending=ascending
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "Series":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution of this column.
+        """
+        new_series: Series = FloatSeries(self._filtered_frame, self.columns()[0].get_name())
+        new_series._base_frame = self._base_frame
+
+        applied_function_frame = self._filtered_frame.cume_dist_legend_ext(ascending=ascending)
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+
+        new_series._filtered_frame = applied_function_frame
+        return new_series
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "Series":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket of this column.
+        """
+        new_series: Series = IntegerSeries(self._filtered_frame, self.columns()[0].get_name())
+        new_series._base_frame = self._base_frame
+
+        applied_function_frame = self._filtered_frame.ntile_legend_ext(
+            num_buckets=num_buckets, ascending=ascending,
+        )
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+
+        new_series._filtered_frame = applied_function_frame
+        return new_series
+
+    def concat_legend_ext(
+            self,
+            other: "Series",
+    ) -> "Series":
+        """
+        PyLegend extension (not present in pandas).
+
+        Concatenate this series with another series vertically (UNION ALL).
+        Both series must have compatible schemas (same column name and type).
+        """
+        concat_frame = self._filtered_frame.concat_legend_ext(other._filtered_frame)
+        assert isinstance(concat_frame, PandasApiAppliedFunctionTdsFrame)
+
+        col = concat_frame.columns()[0]
+        new_series = _get_new_series_for_column(self._base_frame, col, concat_frame)
+        return new_series
 
 
 @add_primitive_methods

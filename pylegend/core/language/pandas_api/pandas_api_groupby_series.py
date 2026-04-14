@@ -25,6 +25,7 @@ from pylegend._typing import (
 )
 from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.pandas_api.pandas_api_series import (
     SupportsToPureExpression,
     SupportsToSqlExpression
@@ -61,7 +62,8 @@ from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
     assert_and_find_core_series,
     add_primitive_methods, has_window_function,
-    get_pure_query_from_expr, get_groupby_series_from_col_type,
+    needs_zero_column_for_window,
+    get_pure_query_from_expr, get_groupby_series_from_col_type, query_contains_column_with_name,
 )
 from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
@@ -72,7 +74,6 @@ from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
 from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
@@ -233,6 +234,22 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         db_extension = config.sql_to_string_generator().get_db_extension()
         base_query = self.get_base_frame().base_frame().to_sql_query_object(config)
         col_name = self.columns()[0].get_name()
+
+        # If the series needs the zero column, inject it into base_query
+        # and wrap in a sub-query so PARTITION BY can reference it.
+        from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import ZERO_COLUMN_NAME
+        if (
+            needs_zero_column_for_window(self)
+            and not query_contains_column_with_name(base_query, db_extension.quote_identifier(ZERO_COLUMN_NAME))
+        ):
+            from pylegend.core.sql.metamodel import IntegerLiteral
+            base_query.select.selectItems.append(
+                SingleColumn(
+                    alias=db_extension.quote_identifier(ZERO_COLUMN_NAME),
+                    expression=IntegerLiteral(0),
+                )
+            )
+            base_query = create_sub_query(base_query, config, "root")
 
         full_sql_expr = self.to_sql_expression({'c': base_query}, config)
 
@@ -517,7 +534,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
     def window_frame_legend_ext(
             self,
-            frame_spec: "FrameSpec",
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
@@ -534,6 +551,89 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame_spec=frame_spec, order_by=order_by, ascending=ascending
         )
         return WindowSeries(window_frame=window_frame, column_name=self.columns()[0].get_name())
+
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "GroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution within each group.
+        """
+        applied_function_frame = self._base_groupby_frame.cume_dist_legend_ext(ascending=ascending)
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+        return FloatGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "GroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket within each group.
+        """
+        applied_function_frame = self._base_groupby_frame.ntile_legend_ext(
+            num_buckets=num_buckets, ascending=ascending,
+        )
+        assert isinstance(applied_function_frame, PandasApiAppliedFunctionTdsFrame)
+        return IntegerGroupbySeries(self._base_groupby_frame, applied_function_frame)
+
+    def max_by_legend_ext(
+            self,
+            by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                              "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Return the value corresponding to the maximum of *by* within each group.
+        """
+        return self._generic_two_col_window_func(by, "max_by")
+
+    def min_by_legend_ext(
+            self,
+            by: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                              "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Return the value corresponding to the minimum of *by* within each group.
+        """
+        return self._generic_two_col_window_func(by, "min_by")
+
+    def _generic_two_col_window_func(
+            self,
+            other: "GroupbySeries",
+            func_type: str,
+    ) -> "FloatGroupbySeries":
+        from pylegend.core.tds.pandas_api.frames.functions.two_column_window_function import TwoColumnWindowFunction
+
+        selected_a = self._base_groupby_frame.get_selected_columns()
+        assert selected_a is not None and len(selected_a) == 1, (
+            f"{func_type}() requires exactly one column selected on self"
+        )
+        col_name_a = selected_a[0].get_name()
+
+        selected_b = other._base_groupby_frame.get_selected_columns()
+        assert selected_b is not None and len(selected_b) == 1, (
+            f"{func_type}() requires exactly one column selected on other"
+        )
+        col_name_b = selected_b[0].get_name()
+
+        applied_function_frame = PandasApiAppliedFunctionTdsFrame(TwoColumnWindowFunction(
+            base_frame=self._base_groupby_frame,
+            col_name_a=col_name_a,
+            col_name_b=col_name_b,
+            result_col_name=col_name_a,
+            func_type=func_type,
+        ))
+        # Late-bind to avoid forward reference — FloatGroupbySeries is defined later in this module
+        from pylegend.core.language.pandas_api.pandas_api_groupby_series import FloatGroupbySeries as _Float
+        return _Float(self._base_groupby_frame, applied_function_frame)
 
 
 @add_primitive_methods
@@ -622,8 +722,22 @@ class NumberGroupbySeries(GroupbySeries, PyLegendNumber, PyLegendExpressionNumbe
                 f"Only ddof=0 (population) and ddof=1 (sample) are supported in cov function, but got: ddof={ddof}"
             )
 
-    def zscore(self) -> "FloatGroupbySeries":
+    def wavg_legend_ext(
+            self,
+            weights: PyLegendUnion["NumberGroupbySeries", "IntegerGroupbySeries", "FloatGroupbySeries",
+                                   "DecimalGroupbySeries"]
+    ) -> "FloatGroupbySeries":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the weighted average within each group.
+        """
+        return self._two_col_window_func(weights, "wavg")
+
+    def zscore_legend_ext(self) -> "FloatGroupbySeries":
         """Compute the z-score within each group: (x - mean) / stddev_pop.
+
+        PyLegend extension (not present in pandas).
 
         Equivalent to Pure ``zScore($p, $w, $r, ~col)`` which computes
         ``(eval(col, row) - average(partition, window, row, col)) / stdDevPopulation(partition, window, row, col)``.

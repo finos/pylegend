@@ -24,13 +24,13 @@ from pylegend._typing import (
     TYPE_CHECKING,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_groupby_series_from_col_type
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec
     from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -420,6 +420,58 @@ class PandasApiGroupbyTdsFrame:
             pct=pct
         ))
 
+    def cume_dist_legend_ext(
+            self,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the cumulative distribution within each group, equivalent to
+        SQL ``CUME_DIST() OVER (PARTITION BY ... ORDER BY col)`` and Pure
+        ``cumulativeDistribution``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='cume_dist',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+        ))
+
+    def ntile_legend_ext(
+            self,
+            num_buckets: int,
+            ascending: bool = True,
+    ) -> "PandasApiTdsFrame":
+        """
+        PyLegend extension (not present in pandas).
+
+        Compute the NTILE bucket within each group, equivalent to
+        SQL ``NTILE(n) OVER (PARTITION BY ... ORDER BY col)`` and Pure
+        ``ntile``.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.rank_function import RankFunction
+        return PandasApiAppliedFunctionTdsFrame(RankFunction(
+            base_frame=self,
+            axis=0,
+            method='ntile',
+            numeric_only=False,
+            na_option='bottom',
+            ascending=ascending,
+            pct=False,
+            num_buckets=num_buckets,
+        ))
+
     def shift(
             self,
             order_by: PyLegendUnion[str, PyLegendSequence[str]],
@@ -558,7 +610,7 @@ class PandasApiGroupbyTdsFrame:
 
     def window_frame_legend_ext(
             self,
-            frame_spec: "FrameSpec",
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "PandasApiWindowTdsFrame":
@@ -573,15 +625,15 @@ class PandasApiGroupbyTdsFrame:
         ----------
         frame_spec:
             A ``RowsBetween`` or ``RangeBetween`` specification object.
+            ``None`` means no frame clause (just PARTITION BY + ORDER BY).
         order_by:
             Column name(s) to use for ORDER BY within the window.
         ascending:
             Sort direction(s) for the ORDER BY columns.
         """
         from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
-        from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec as FrameSpecCls
 
-        if not isinstance(frame_spec, FrameSpecCls):
+        if frame_spec is not None and not isinstance(frame_spec, FrameSpec):
             raise TypeError(
                 f"frame_spec must be a RowsBetween or RangeBetween, got {type(frame_spec).__name__}"
             )
