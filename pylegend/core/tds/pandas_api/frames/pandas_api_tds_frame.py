@@ -40,6 +40,7 @@ from pylegend.core.language import (
     PyLegendPrimitive,
 )
 from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
 from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
@@ -1321,6 +1322,15 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             ).mean().head(5).to_pandas()
 
         """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def window_frame_legend_ext(
+            self,
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "PandasApiWindowTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod

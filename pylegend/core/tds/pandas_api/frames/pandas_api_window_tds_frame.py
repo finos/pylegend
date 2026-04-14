@@ -32,9 +32,11 @@ from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive
 from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
 from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
 from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
 
 if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import ValueFunc, AggFunc
 
 ZERO_COLUMN_NAME = "__pylegend_zero_column__"
 
@@ -160,19 +162,19 @@ class PandasApiWindowTdsFrame:
     _base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
     _order_by: PyLegendOptional[PyLegendList[str]]
     _ascending: PyLegendList[bool]
-    _frame_spec: FrameSpec
+    _frame_spec: PyLegendOptional[FrameSpec]
     _partition_only: bool
 
     def __init__(
             self,
             base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame],
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            frame_spec: PyLegendOptional[FrameSpec] = None,
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
             ascending: PyLegendUnion[bool, PyLegendSequence[bool]] = True,
             partition_only: bool = False,
     ) -> None:
         self._base_frame = base_frame
-        self._frame_spec = frame_spec if frame_spec is not None else RowsBetween(None, None)
+        self._frame_spec = frame_spec
         self._partition_only = partition_only
 
         # Normalize order_by to Optional[List[str]]
@@ -265,10 +267,11 @@ class PandasApiWindowTdsFrame:
                 for col, asc in zip(self._order_by, self._ascending)
             ]
 
-        start = self._frame_spec.build_start_bound()
-        end = self._frame_spec.build_end_bound()
-
-        window_frame = PandasApiWindowFrame(self._frame_spec.frame_mode, start, end)
+        window_frame: PyLegendOptional[PandasApiWindowFrame] = None
+        if self._frame_spec is not None:
+            start = self._frame_spec.build_start_bound()
+            end = self._frame_spec.build_end_bound()
+            window_frame = PandasApiWindowFrame(self._frame_spec.frame_mode, start, end)
 
         return PandasApiWindow(
             partition_by=partition_by,
@@ -382,3 +385,115 @@ class PandasApiWindowTdsFrame:
         aggregate : Equivalent method (canonical name).
         """
         return self.aggregate(func, axis, *args, **kwargs)
+
+    def window_extend_legend_ext(
+            self,
+            value_func: "ValueFunc",
+            agg_func: "PyLegendOptional[AggFunc]" = None,
+    ) -> PandasApiBaseTdsFrame:
+        """
+        PyLegend extension (not present in pandas).
+
+        Apply a custom single-column window function to all columns in
+        the frame using the given ``value_func`` and optional ``agg_func``.
+
+        Parameters
+        ----------
+        value_func:
+            A callable ``(p, w, r) -> primitive`` that describes how to
+            compute the window value for each column.
+        agg_func:
+            An optional callable ``(collection) -> primitive`` for an
+            additional aggregation step.
+        """
+        from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import (
+            PandasApiAppliedFunctionTdsFrame,
+        )
+        from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import (
+            SingleColumnWindowFunction,
+        )
+
+        return PandasApiAppliedFunctionTdsFrame(
+            SingleColumnWindowFunction(
+                base_window_frame=self,
+                value_func=value_func,
+                agg_func=agg_func,
+            )
+        )
+
+    def first(self, numeric_only: bool = False) -> PandasApiTdsFrame:
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+            PandasApiPartialFrame,
+            PandasApiWindowReference,
+        )
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+        if numeric_only:
+            from pylegend.core.language.shared.primitives.number import PyLegendNumber
+            tds_row = PandasApiTdsRow.from_tds_frame("row", self.base_frame())
+
+            # Determine which columns to keep: grouping columns + numeric columns
+            grouping_names = set(self.get_partition_columns())
+            numeric_columns = [
+                col for col in self.base_frame().columns()
+                if isinstance(tds_row[col.get_name()], PyLegendNumber)
+            ]
+            keep_names = list(grouping_names) + [
+                col.get_name() for col in numeric_columns
+                if col.get_name() not in grouping_names
+            ]
+
+            # Apply first() per numeric column on the original base frame
+            frame = self.base_frame()
+            for col in numeric_columns:
+                col_name = col.get_name()
+                frame[col_name] = self[col_name].first()
+
+            # Then filter to only grouping + numeric columns
+            return frame.filter(items=keep_names)
+
+        def value_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+        ) -> "PyLegendPrimitiveOrPythonPrimitive":
+            return p.first(w, r)  # type: ignore[return-value]
+
+        return self.window_extend_legend_ext(value_func=value_func)
+
+    def last(self, numeric_only: bool = False) -> PandasApiTdsFrame:
+        from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+            PandasApiPartialFrame,
+            PandasApiWindowReference,
+        )
+        from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+
+        if numeric_only:
+            from pylegend.core.language.shared.primitives.number import PyLegendNumber
+            tds_row = PandasApiTdsRow.from_tds_frame("row", self.base_frame())
+
+            grouping_names = set(self.get_partition_columns())
+            numeric_columns = [
+                col for col in self.base_frame().columns()
+                if isinstance(tds_row[col.get_name()], PyLegendNumber)
+            ]
+            keep_names = list(grouping_names) + [
+                col.get_name() for col in numeric_columns
+                if col.get_name() not in grouping_names
+            ]
+
+            frame = self.base_frame()
+            for col in numeric_columns:
+                col_name = col.get_name()
+                frame[col_name] = self[col_name].last()
+
+            return frame.filter(items=keep_names)
+
+        def value_func(
+                p: PandasApiPartialFrame,
+                w: PandasApiWindowReference,
+                r: PandasApiTdsRow,
+        ) -> "PyLegendPrimitiveOrPythonPrimitive":
+            return p.last(w, r)  # type: ignore[return-value]
+
+        return self.window_extend_legend_ext(value_func=value_func)

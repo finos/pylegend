@@ -195,15 +195,16 @@ class TestGroupbyWindowFrameLegendExtErrors:
         assert "frame_spec must be a RowsBetween or RangeBetween, got str" in str(v.value)
 
     def test_groupby_window_frame_legend_ext_with_none(self) -> None:
+        """window_frame_legend_ext() on groupby frame accepts frame_spec=None (no frame clause)."""
         columns = [
             PrimitiveTdsColumn.string_column("grp"),
             PrimitiveTdsColumn.integer_column("val"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        with pytest.raises(TypeError) as v:
-            frame.groupby("grp").window_frame_legend_ext(frame_spec=None)  # type: ignore
-        assert "frame_spec must be a RowsBetween or RangeBetween, got NoneType" in str(v.value)
+        # None is now valid — should not raise
+        wf = frame.groupby("grp").window_frame_legend_ext(frame_spec=None)
+        assert wf is not None
 
 
 class TestRollingErrors:
@@ -1379,9 +1380,16 @@ class TestWindowSeries:
             FROM
                 (
                     SELECT
-                        SUM("root".col1) OVER (ORDER BY "root".col1 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__"
+                        SUM("root"."col1") OVER (PARTITION BY "root"."__pylegend_zero_column__" ORDER BY "root"."col1" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS "col1__pylegend_olap_column__"
                     FROM
-                        test_schema.test_table AS "root"
+                        (
+                            SELECT
+                                "root".col1 AS "col1",
+                                "root".col2 AS "col2",
+                                0 AS "__pylegend_zero_column__"
+                            FROM
+                                test_schema.test_table AS "root"
+                        ) AS "root"
                 ) AS "root"
         '''  # noqa: E501
         expected_series_sql = dedent(expected_series_sql).strip()
@@ -2541,16 +2549,16 @@ class TestWindowFrameLegendExtErrors:
         assert "frame_spec must be a RowsBetween or RangeBetween, got str" in str(v.value)
 
     def test_base_frame_window_frame_legend_ext_with_none(self) -> None:
-        """window_frame_legend_ext() on base frame raises TypeError for frame_spec=None."""
+        """window_frame_legend_ext() on base frame accepts frame_spec=None (no frame clause)."""
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
             PrimitiveTdsColumn.float_column("col2"),
         ]
         frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(["test_schema", "test_table"], columns)
 
-        with pytest.raises(TypeError) as v:
-            frame.window_frame_legend_ext(frame_spec=None)  # type: ignore
-        assert "frame_spec must be a RowsBetween or RangeBetween, got NoneType" in str(v.value)
+        # None is now valid — should not raise
+        wf = frame.window_frame_legend_ext(frame_spec=None)
+        assert wf is not None
 
     def test_base_frame_window_frame_legend_ext_with_integer(self) -> None:
         """window_frame_legend_ext() on base frame raises TypeError for integer frame_spec."""
