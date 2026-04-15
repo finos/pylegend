@@ -1131,7 +1131,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
             frame["Order Id"].expanding(
                 order_by="Order Id"
-            ).sum().head(5).to_pandas()
+            ).sum().to_pandas().head(5)
 
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -1224,7 +1224,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
             frame["Order Id"].rolling(
                 window=3, order_by="Order Id"
-            ).mean().head(5).to_pandas()
+            ).mean().to_pandas().head(5)
 
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -1297,7 +1297,7 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             spec = RowsBetween(-2, 0)
             frame["Order Id"].window_frame_legend_ext(
                 spec, order_by="Order Id"
-            ).sum().head(5).to_pandas()
+            ).sum().to_pandas().head(5)
 
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -1458,13 +1458,13 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
         Examples
         --------
-        .. ipython:: python
+        .. ipython:: python`
 
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            s1 = frame["Order Id"].head(3)
-            s2 = frame["Order Id"].head(3)
+            s1 = frame.head(3)["Order Id"]
+            s2 = frame.head(3)["Order Id"]
             s1.concat_legend_ext(s2).to_pandas()
 
         """

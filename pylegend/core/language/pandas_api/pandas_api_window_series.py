@@ -1048,9 +1048,9 @@ class WindowSeries:
             raise NotImplementedError(
                 f"The 'suffix' argument of the shift function is not supported for WindowSeries, but got: suffix={suffix!r}"
             )
-        if not (isinstance(periods, int) and periods not in [-1, 1]):
+        if not isinstance(periods, int) or abs(periods) > 1:
             raise NotImplementedError(
-                "The 'periods' argument of the shift function must be an int for WindowSeries."
+                "The 'periods' argument of the shift function must be an int (1 or -1) for WindowSeries."
             )
 
         import copy

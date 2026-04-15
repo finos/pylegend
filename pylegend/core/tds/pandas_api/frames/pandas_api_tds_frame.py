@@ -1226,7 +1226,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             # Running sum of Order Id ordered by Order Id
             frame.filter(items=["Order Id"]).expanding(
                 order_by="Order Id"
-            ).sum().head(5).to_pandas()
+            ).aggregate("sum").head(5).to_pandas()
 
         """
         pass  # pragma: no cover
@@ -1319,7 +1319,7 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             # 3-row moving average of Order Id ordered by Order Id
             frame.filter(items=["Order Id"]).rolling(
                 window=3, order_by="Order Id"
-            ).mean().head(5).to_pandas()
+            ).aggregate("mean").head(5).to_pandas()
 
         """
         pass  # pragma: no cover

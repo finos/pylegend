@@ -204,7 +204,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
         frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
         # Grouped aggregation via GroupbySeries
-        frame.groupby("Ship Name")["Order Id"].sum().head().to_pandas()
+        frame.groupby("Ship Name")["Order Id"].sum().to_pandas().head()
 
         frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
@@ -483,7 +483,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             # Single named aggregation
             frame.groupby("Ship Name")["Order Id"].aggregate(
                 "sum"
-            ).head(5).to_pandas()
+            ).to_pandas().head(5)
 
             # Multiple aggregations
             frame.groupby("Ship Name")["Order Id"].aggregate(
@@ -571,7 +571,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].sum().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].sum().to_pandas().head(5)
 
         """
         if numeric_only is not False:
@@ -622,7 +622,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].mean().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].mean().to_pandas().head(5)
 
         """
         if numeric_only is not False:
@@ -675,7 +675,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].min().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].min().to_pandas().head(5)
 
         """
         if numeric_only is not False:
@@ -730,7 +730,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].max().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].max().to_pandas().head(5)
 
         """
         if numeric_only is not False:
@@ -794,7 +794,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].std().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].std().to_pandas().head(5)
 
         """
         if ddof not in (0, 1):
@@ -859,7 +859,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].var().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].var().to_pandas().head(5)
 
         """
         if ddof not in (0, 1):
@@ -899,7 +899,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].count().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].count().to_pandas().head(5)
 
         """
         return self.aggregate("count", 0)
@@ -927,7 +927,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].median().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].median().to_pandas().head(5)
 
         """
         return self.aggregate("median", 0)
@@ -958,7 +958,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame.groupby("Ship Name")["Order Id"].mode().head(5).to_pandas()
+            frame.groupby("Ship Name")["Order Id"].mode().to_pandas().head(5)
 
         """
         return self.aggregate("mode", 0)
@@ -1215,7 +1215,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
             frame.groupby("Ship Name")["Order Id"].expanding(
                 order_by="Order Id"
-            ).sum().head(5).to_pandas()
+            ).sum().to_pandas().head(5)
 
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -1303,7 +1303,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
 
             frame.groupby("Ship Name")["Order Id"].rolling(
                 window=3, order_by="Order Id"
-            ).mean().head(5).to_pandas()
+            ).mean().to_pandas().head(5)
 
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -1377,7 +1377,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             spec = RowsBetween(-2, 0)
             frame.groupby("Ship Name")["Order Id"].window_frame_legend_ext(
                 spec, order_by="Order Id"
-            ).sum().head(5).to_pandas()
+            ).sum().to_pandas().head()
 
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
@@ -1535,7 +1535,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
             grp = frame.groupby("Ship Name")
-            frame["Max Order By Id"] = grp["Order Id"].max_by(
+            frame["Max Order By Id"] = grp["Order Id"].max_by_legend_ext(
                 grp["Order Id"]
             )
             frame.head(5).to_pandas()
@@ -1583,7 +1583,7 @@ class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
             grp = frame.groupby("Ship Name")
-            frame["Min Order By Id"] = grp["Order Id"].min_by(
+            frame["Min Order By Id"] = grp["Order Id"].min_by_legend_ext(
                 grp["Order Id"]
             )
             frame.head(5).to_pandas()
