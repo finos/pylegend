@@ -35,6 +35,16 @@ count
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.count
 
+cume_dist_legend_ext
+~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.cume_dist_legend_ext
+
+expanding
+~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.expanding
+
 max
 ~~~
 
@@ -45,15 +55,35 @@ mean
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.mean
 
+median
+~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.median
+
 min
 ~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.min
 
+mode
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.mode
+
+ntile_legend_ext
+~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.ntile_legend_ext
+
 rank
 ~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.rank
+
+rolling
+~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.rolling
 
 shift
 ~~~~~
@@ -74,3 +104,8 @@ var
 ~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.var
+
+window_frame_legend_ext
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.window_frame_legend_ext

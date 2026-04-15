@@ -38,20 +38,45 @@ assign
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.assign
 
+cast
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.cast
+
+concat_legend_ext
+~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.concat_legend_ext
+
 count
 ~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.count
+
+cume_dist_legend_ext
+~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.cume_dist_legend_ext
 
 drop
 ~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.drop
 
+drop_duplicates
+~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.drop_duplicates
+
 dropna
 ~~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.dropna
+
+expanding
+~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.expanding
 
 fillna
 ~~~~~~
@@ -85,6 +110,11 @@ iloc
 
 .. autoproperty:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.iloc
 
+info
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.info
+
 join
 ~~~~
 
@@ -115,15 +145,35 @@ min
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.min
 
+ntile_legend_ext
+~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.ntile_legend_ext
+
 rank
 ~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rank
 
+range_between
+~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.range_between
+
 rename
 ~~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rename
+
+rolling
+~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rolling
+
+rows_between
+~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rows_between
 
 shape
 ~~~~~
@@ -159,3 +209,8 @@ var
 ~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.var
+
+window_frame_legend_ext
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.window_frame_legend_ext

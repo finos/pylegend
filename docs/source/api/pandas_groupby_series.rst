@@ -27,10 +27,30 @@ aggregate
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.aggregate
 
+corr
+~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.corr
+
 count
 ~~~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.count
+
+cov
+~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.cov
+
+cume_dist_legend_ext
+~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.cume_dist_legend_ext
+
+expanding
+~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.expanding
 
 max
 ~~~
@@ -42,15 +62,35 @@ mean
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.mean
 
+median
+~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.median
+
 min
 ~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.min
 
+mode
+~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.mode
+
+ntile_legend_ext
+~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.ntile_legend_ext
+
 rank
 ~~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.rank
+
+rolling
+~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.rolling
 
 std
 ~~~
@@ -62,7 +102,27 @@ sum
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.sum
 
+transform
+~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.transform
+
 var
 ~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.var
+
+wavg_legend_ext
+~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.wavg_legend_ext
+
+window_frame_legend_ext
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.window_frame_legend_ext
+
+zscore_legend_ext
+~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.zscore_legend_ext

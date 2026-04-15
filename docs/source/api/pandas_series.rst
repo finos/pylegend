@@ -27,10 +27,25 @@ aggregate
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.aggregate
 
+concat_legend_ext
+~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.concat_legend_ext
+
 count
 ~~~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.count
+
+cume_dist_legend_ext
+~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.cume_dist_legend_ext
+
+expanding
+~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.expanding
 
 max
 ~~~
@@ -47,10 +62,20 @@ min
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.min
 
+ntile_legend_ext
+~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.ntile_legend_ext
+
 rank
 ~~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.rank
+
+rolling
+~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.rolling
 
 std
 ~~~
@@ -66,3 +91,8 @@ var
 ~~~
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.var
+
+window_frame_legend_ext
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automethod:: pylegend.core.language.pandas_api.pandas_api_series.Series.window_frame_legend_ext

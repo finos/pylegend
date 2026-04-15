@@ -46,6 +46,7 @@ from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
+from pylegend.core.tds.cast_helpers import CastTarget
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 if TYPE_CHECKING:
@@ -153,6 +154,97 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             frame.assign(
                 **{"Ship Name": lambda x: x.get_string("Ship Name").upper()}
             ).head(3).to_pandas()
+
+        """
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def cast(
+            self,
+            column_type_map: PyLegendDict[str, CastTarget]
+    ) -> "PandasApiTdsFrame":
+        """
+        Change the declared type of one or more columns.
+
+        Return a new TDS frame whose column metadata reflects the
+        requested type changes. The underlying data is not transformed
+        in SQL (no ``CAST`` expression is emitted); instead a Pure
+        ``->cast(...)`` clause is appended so that the Legend Engine
+        re-interprets the column under the target type.
+
+        A cast is allowed only when the source and target types share a
+        **subclass relationship** in the PyLegend type hierarchy. For
+        example, ``Integer → BigInt`` is valid because ``BigInt`` is a
+        sub-type of ``Integer``, but ``String → Integer`` is not.
+
+        Parameters
+        ----------
+        column_type_map : dict of str → CastTarget
+            A mapping from column name to the desired target type.
+            Values are produced by the helpers in
+            :mod:`pylegend.core.language.type_factory` — for example
+            ``tf.bigint()``, ``tf.varchar(200)``, ``tf.numeric(10, 2)``.
+            An empty dict is valid and returns a copy of the frame with
+            unchanged columns.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A new TDS frame with the cast column metadata. The original
+            frame is never mutated.
+
+        Raises
+        ------
+        ValueError
+            If a column name in *column_type_map* does not exist in the
+            frame, or if the source-to-target conversion is not allowed
+            (the types do not share a subclass relationship).
+        TypeError
+            If the target column is a non-primitive column (e.g. an
+            ``EnumTdsColumn``). Only ``PrimitiveTdsColumn`` columns can
+            be cast.
+
+        See Also
+        --------
+        assign : Add or overwrite columns with computed values.
+        rename : Rename columns without changing their types.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - Pandas ``DataFrame.astype()`` converts **data values** in
+          memory. ``cast`` changes only the **declared column type** in
+          the query metadata; no SQL ``CAST`` expression is generated.
+        - The allowed conversions follow the Legend type hierarchy, not
+          Python/NumPy dtype-coercion rules.
+        - Parameterised types such as ``Varchar(200)`` and
+          ``Numeric(10, 2)`` are supported through the
+          ``type_factory`` helpers and are reflected in the generated
+          Pure ``->cast(...)`` clause.
+
+        Cross-branch casts (e.g. ``Integer → Float``,
+        ``String → Boolean``) raise ``ValueError``.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            from pylegend.core.language import type_factory as tf
+
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Widen an integer column to BigInt
+            casted = frame.cast({"Order Id": tf.bigint()})
+            casted.head(3).to_pandas()
+
+            # Cast multiple columns at once
+            casted = frame.cast({
+                "Order Id": tf.bigint(),
+                "Ship Name": tf.varchar(200),
+            })
+            casted.head(3).to_pandas()
 
         """
         pass  # pragma: no cover
