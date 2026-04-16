@@ -1426,6 +1426,15 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
         pass  # pragma: no cover
 
     @abstractmethod
+    def window_frame_legend_ext(
+            self,
+            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
+            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
+            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
+    ) -> "PandasApiWindowTdsFrame":
+        pass  # pragma: no cover
+
+    @abstractmethod
     def sum(
             self,
             axis: PyLegendUnion[int, str] = 0,
