@@ -841,7 +841,7 @@ class PyLegendNumberLog10Expression(PyLegendUnaryExpression, PyLegendExpressionN
             config: FrameToSqlConfig
     ) -> Expression:
         return FunctionCall(
-            name=QualifiedName(parts=["LOG10"]),
+            name=QualifiedName(parts=["LOG"]),
             distinct=False,
             arguments=[expression],
             filter_=None,
