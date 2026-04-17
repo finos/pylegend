@@ -224,8 +224,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["midnight"] = frame["Shipped Date"].first_hour_of_day()
-            frame[["Shipped Date", "midnight"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES").timedelta(22, "SECONDS")
+            frame["midnight"] = frame["ts"].first_hour_of_day()
+            frame[["ts", "midnight"]].head(3).to_pandas()
 
         """
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -248,8 +249,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["hr_start"] = frame["Shipped Date"].first_minute_of_hour()
-            frame[["Shipped Date", "hr_start"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES").timedelta(22, "SECONDS")
+            frame["hr_start"] = frame["ts"].first_minute_of_hour()
+            frame[["ts", "hr_start"]].head(3).to_pandas()
 
         """
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -272,8 +274,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["min_start"] = frame["Shipped Date"].first_second_of_minute()
-            frame[["Shipped Date", "min_start"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES").timedelta(22, "SECONDS")
+            frame["min_start"] = frame["ts"].first_second_of_minute()
+            frame[["ts", "min_start"]].head(3).to_pandas()
 
         """
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -296,8 +299,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["sec_start"] = frame["Shipped Date"].first_millisecond_of_second()
-            frame[["Shipped Date", "sec_start"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES").timedelta(22, "SECONDS")
+            frame["sec_start"] = frame["ts"].first_millisecond_of_second()
+            frame[["ts", "sec_start"]].head(3).to_pandas()
 
         """
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
@@ -385,8 +389,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["hr"] = frame["Shipped Date"].hour()
-            frame[["Shipped Date", "hr"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES").timedelta(22, "SECONDS")
+            frame["hr"] = frame["ts"].hour()
+            frame[["ts", "hr"]].head(3).to_pandas()
 
         """
         return PyLegendInteger(PyLegendHourExpression(self.__value))
@@ -407,8 +412,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["min"] = frame["Shipped Date"].minute()
-            frame[["Shipped Date", "min"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES").timedelta(22, "SECONDS")
+            frame["min"] = frame["ts"].minute()
+            frame[["ts", "min"]].head(3).to_pandas()
 
         """
         return PyLegendInteger(PyLegendMinuteExpression(self.__value))
@@ -429,8 +435,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["sec"] = frame["Shipped Date"].second()
-            frame[["Shipped Date", "sec"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES").timedelta(22, "SECONDS")
+            frame["sec"] = frame["ts"].second()
+            frame[["ts", "sec"]].head(3).to_pandas()
 
         """
         return PyLegendInteger(PyLegendSecondExpression(self.__value))
@@ -561,8 +568,9 @@ class PyLegendDate(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["dt"] = frame["Shipped Date"].date_part()
-            frame[["Shipped Date", "dt"]].head(3).to_pandas()
+            frame["ts"] = frame["Shipped Date"].first_hour_of_day().timedelta(14, "HOURS").timedelta(35, "MINUTES")
+            frame["dt"] = frame["ts"].date_part()
+            frame[["ts", "dt"]].head(3).to_pandas()
 
         """
         from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
