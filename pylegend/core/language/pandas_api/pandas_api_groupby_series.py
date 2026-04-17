@@ -12,84 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from textwrap import dedent
-import pandas as pd
-from pylegend._typing import (
-    TYPE_CHECKING,
-    PyLegendCallable,
-    PyLegendDict,
-    PyLegendOptional,
-    PyLegendSequence,
-    PyLegendTypeVar,
-    PyLegendUnion
-)
-from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
-from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
-from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
-from pylegend.core.language.pandas_api.pandas_api_series import (
-    SupportsToPureExpression,
-    SupportsToSqlExpression
-)
-from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
-from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
-from pylegend.core.language.shared.expression import (
-    PyLegendExpressionBooleanReturn,
-    PyLegendExpressionDateReturn,
-    PyLegendExpressionDateTimeReturn,
-    PyLegendExpressionFloatReturn,
-    PyLegendExpressionDecimalReturn,
-    PyLegendExpressionIntegerReturn,
-    PyLegendExpressionNumberReturn,
-    PyLegendExpressionStrictDateReturn,
-    PyLegendExpressionStringReturn,
-    PyLegendExpression,
-)
-from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
-from pylegend.core.language.shared.primitives.date import PyLegendDate
-from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
-from pylegend.core.language.shared.primitives.float import PyLegendFloat
-from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
-from pylegend.core.language.shared.primitives.integer import PyLegendInteger
-from pylegend.core.language.shared.primitives.number import PyLegendNumber
-from pylegend.core.language.shared.primitives.primitive import (
-    PyLegendPrimitive,
-    PyLegendPrimitiveOrPythonPrimitive
-)
-from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
-from pylegend.core.language.shared.primitives.string import PyLegendString
-from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleColumn, QualifiedNameReference, QualifiedName
-from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
-    assert_and_find_core_series,
-    add_primitive_methods, has_window_function,
-    needs_zero_column_for_window,
-    get_pure_query_from_expr, get_groupby_series_from_col_type, query_contains_column_with_name,
-)
-from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
-from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
-from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
-from pylegend.core.tds.sql_query_helpers import create_sub_query
-from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
-from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
-
-if TYPE_CHECKING:
-    from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-
-__all__: PyLegendSequence[str] = [
-    "GroupbySeries",
-    "BooleanGroupbySeries",
-    "StringGroupbySeries",
-    "NumberGroupbySeries",
-    "IntegerGroupbySeries",
-    "FloatGroupbySeries",
-    "DateGroupbySeries",
-    "DateTimeGroupbySeries",
-    "DecimalGroupbySeries",
-    "StrictDateGroupbySeries",
-]
-
 """
 A single-column proxy within a grouped context.
 
@@ -206,6 +128,84 @@ Examples
     frame.head(5).to_pandas()
 
 """
+
+from textwrap import dedent
+import pandas as pd
+from pylegend._typing import (
+    TYPE_CHECKING,
+    PyLegendCallable,
+    PyLegendDict,
+    PyLegendOptional,
+    PyLegendSequence,
+    PyLegendTypeVar,
+    PyLegendUnion
+)
+from pylegend.core.database.sql_to_string import SqlToStringConfig, SqlToStringFormat
+from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
+from pylegend.core.language.pandas_api.pandas_api_series import (
+    SupportsToPureExpression,
+    SupportsToSqlExpression
+)
+from pylegend.core.language.pandas_api.pandas_api_tds_row import PandasApiTdsRow
+from pylegend.core.language.shared.column_expressions import PyLegendColumnExpression
+from pylegend.core.language.shared.expression import (
+    PyLegendExpressionBooleanReturn,
+    PyLegendExpressionDateReturn,
+    PyLegendExpressionDateTimeReturn,
+    PyLegendExpressionFloatReturn,
+    PyLegendExpressionDecimalReturn,
+    PyLegendExpressionIntegerReturn,
+    PyLegendExpressionNumberReturn,
+    PyLegendExpressionStrictDateReturn,
+    PyLegendExpressionStringReturn,
+    PyLegendExpression,
+)
+from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
+from pylegend.core.language.shared.primitives.date import PyLegendDate
+from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
+from pylegend.core.language.shared.primitives.float import PyLegendFloat
+from pylegend.core.language.shared.primitives.decimal import PyLegendDecimal
+from pylegend.core.language.shared.primitives.integer import PyLegendInteger
+from pylegend.core.language.shared.primitives.number import PyLegendNumber
+from pylegend.core.language.shared.primitives.primitive import (
+    PyLegendPrimitive,
+    PyLegendPrimitiveOrPythonPrimitive
+)
+from pylegend.core.language.shared.primitives.strictdate import PyLegendStrictDate
+from pylegend.core.language.shared.primitives.string import PyLegendString
+from pylegend.core.sql.metamodel import Expression, QuerySpecification, SingleColumn, QualifiedNameReference, QualifiedName
+from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import (
+    assert_and_find_core_series,
+    add_primitive_methods, has_window_function,
+    needs_zero_column_for_window,
+    get_pure_query_from_expr, get_groupby_series_from_col_type, query_contains_column_with_name,
+)
+from pylegend.core.tds.pandas_api.frames.pandas_api_applied_function_tds_frame import PandasApiAppliedFunctionTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+from pylegend.core.tds.result_handler import ResultHandler, ToStringResultHandler
+from pylegend.core.tds.sql_query_helpers import create_sub_query
+from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.extensions.tds.result_handler import PandasDfReadConfig, ToPandasDfResultHandler
+
+if TYPE_CHECKING:
+    from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+
+__all__: PyLegendSequence[str] = [
+    "GroupbySeries",
+    "BooleanGroupbySeries",
+    "StringGroupbySeries",
+    "NumberGroupbySeries",
+    "IntegerGroupbySeries",
+    "FloatGroupbySeries",
+    "DateGroupbySeries",
+    "DateTimeGroupbySeries",
+    "DecimalGroupbySeries",
+    "StrictDateGroupbySeries",
+]
 
 R = PyLegendTypeVar('R')
 

@@ -12,23 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from pylegend._typing import (
-    PyLegendOptional,
-    PyLegendUnion,
-    TYPE_CHECKING,
-)
-from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
-from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
-from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import ValueFunc, AggFunc
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type, \
-    get_groupby_series_from_col_type
-from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
-
-if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_series import Series
-    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
-
 """
 A single-column proxy on a window frame.
 
@@ -139,6 +122,22 @@ Examples
     frame.head(5).to_pandas()
 
 """
+
+from pylegend._typing import (
+    PyLegendOptional,
+    PyLegendUnion,
+    TYPE_CHECKING,
+)
+from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import ValueFunc, AggFunc
+from pylegend.core.tds.pandas_api.frames.helpers.series_helper import get_series_from_col_type, \
+    get_groupby_series_from_col_type
+from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
+
+if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_series import Series
+    from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
 
 class WindowSeries:

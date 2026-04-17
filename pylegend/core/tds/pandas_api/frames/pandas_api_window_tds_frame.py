@@ -12,34 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-
-from pylegend._typing import (
-    PyLegendList,
-    PyLegendOptional,
-    PyLegendSequence,
-    PyLegendUnion,
-    TYPE_CHECKING,
-)
-from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
-from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
-    PandasApiSortDirection,
-    PandasApiSortInfo,
-    PandasApiWindow,
-    PandasApiWindowFrame,
-)
-from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
-from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
-from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
-from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
-from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-
-if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
-    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import ValueFunc, AggFunc
-
-ZERO_COLUMN_NAME = "__pylegend_zero_column__"
-
 """
 Represents a window specification over a base frame.
 
@@ -172,6 +144,34 @@ Examples
     frame.head(5).to_pandas()
 
 """
+
+import copy
+
+from pylegend._typing import (
+    PyLegendList,
+    PyLegendOptional,
+    PyLegendSequence,
+    PyLegendUnion,
+    TYPE_CHECKING,
+)
+from pylegend.core.language.pandas_api.pandas_api_aggregate_specification import PyLegendAggInput
+from pylegend.core.language.pandas_api.pandas_api_custom_expressions import (
+    PandasApiSortDirection,
+    PandasApiSortInfo,
+    PandasApiWindow,
+    PandasApiWindowFrame,
+)
+from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitiveOrPythonPrimitive
+from pylegend.core.tds.pandas_api.frames.pandas_api_base_tds_frame import PandasApiBaseTdsFrame
+from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween
+from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
+from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+
+if TYPE_CHECKING:
+    from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
+    from pylegend.core.tds.pandas_api.frames.functions.single_column_window_function import ValueFunc, AggFunc
+
+ZERO_COLUMN_NAME = "__pylegend_zero_column__"
 
 
 class PandasApiWindowTdsFrame:
