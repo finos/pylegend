@@ -41,7 +41,6 @@ Core Language
    core_language_strictdate_collection
    core_language_datetime
    core_language_datetime_collection
-   core_language_number_pair_collection
 
 LegendQL API
 ------------
