@@ -63,16 +63,6 @@ ascii
 
 .. automethod:: pylegend.core.language.shared.primitives.string.PyLegendString.ascii
 
-b64decode
-~~~~~~~~~
-
-.. automethod:: pylegend.core.language.shared.primitives.string.PyLegendString.b64decode
-
-b64encode
-~~~~~~~~~
-
-.. automethod:: pylegend.core.language.shared.primitives.string.PyLegendString.b64encode
-
 coalesce
 ~~~~~~~~
 
