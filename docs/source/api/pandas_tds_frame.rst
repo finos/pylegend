@@ -150,15 +150,15 @@ ntile_legend_ext
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.ntile_legend_ext
 
-rank
-~~~~
-
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rank
-
 range_between
 ~~~~~~~~~~~~~
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.range_between
+
+rank
+~~~~
+
+.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame.rank
 
 rename
 ~~~~~~
