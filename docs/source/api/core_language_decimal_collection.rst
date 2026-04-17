@@ -58,11 +58,6 @@ min
 
 .. automethod:: pylegend.core.language.shared.primitive_collection.PyLegendDecimalCollection.min
 
-mode
-~~~~
-
-.. automethod:: pylegend.core.language.shared.primitive_collection.PyLegendNumberCollection.mode
-
 percentile
 ~~~~~~~~~~
 

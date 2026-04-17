@@ -65,11 +65,6 @@ min
 
 .. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.min
 
-mode
-~~~~
-
-.. automethod:: pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame.mode
-
 ntile_legend_ext
 ~~~~~~~~~~~~~~~~
 

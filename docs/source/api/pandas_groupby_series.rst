@@ -72,11 +72,6 @@ min
 
 .. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.min
 
-mode
-~~~~
-
-.. automethod:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries.mode
-
 ntile_legend_ext
 ~~~~~~~~~~~~~~~~
 
