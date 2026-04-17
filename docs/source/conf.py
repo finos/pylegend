@@ -110,8 +110,8 @@ html_theme_options = {
     'logo_name': True,
     'logo_text_align': "center",
     "show_powered_by": False,
-    "page_width": "1200px",
-    "sidebar_width": "300px",
+    "page_width": "1280px",
+    "sidebar_width": "380px",
     "font_size": "17px",
     "fixed_sidebar": "true",
 }
