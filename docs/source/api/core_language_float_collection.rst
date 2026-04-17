@@ -15,8 +15,10 @@
 PyLegendFloatCollection
 =======================
 
-.. autoclass:: pylegend.core.language.shared.primitive_collection.PyLegendFloatCollection
-   :no-members:
+``PyLegendFloatCollection`` overrides ``max``, ``min``, ``sum``, and
+``distinct_value`` to return ``PyLegendFloat`` instead of
+``PyLegendNumber``.  All other aggregation methods are inherited from
+:class:`~pylegend.core.language.shared.primitive_collection.PyLegendNumberCollection`.
 
 average
 ~~~~~~~

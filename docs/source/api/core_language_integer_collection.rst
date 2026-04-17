@@ -15,8 +15,10 @@
 PyLegendIntegerCollection
 =========================
 
-.. autoclass:: pylegend.core.language.shared.primitive_collection.PyLegendIntegerCollection
-   :no-members:
+``PyLegendIntegerCollection`` overrides ``max``, ``min``, ``sum``, and
+``distinct_value`` to return ``PyLegendInteger`` instead of
+``PyLegendNumber``.  All other aggregation methods are inherited from
+:class:`~pylegend.core.language.shared.primitive_collection.PyLegendNumberCollection`.
 
 average
 ~~~~~~~

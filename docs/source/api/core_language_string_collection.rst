@@ -15,8 +15,10 @@
 PyLegendStringCollection
 ========================
 
-.. autoclass:: pylegend.core.language.shared.primitive_collection.PyLegendStringCollection
-   :no-members:
+``PyLegendStringCollection`` provides ``max``, ``min``,
+``join`` / ``join_strings``, and ``distinct_value`` aggregations
+for string columns.  Inherits ``count`` and ``distinct_count``
+from :class:`~pylegend.core.language.shared.primitive_collection.PyLegendPrimitiveCollection`.
 
 count
 ~~~~~

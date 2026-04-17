@@ -15,8 +15,15 @@
 PyLegendNumberCollection
 ========================
 
-.. autoclass:: pylegend.core.language.shared.primitive_collection.PyLegendNumberCollection
-   :no-members:
+``PyLegendNumberCollection`` provides aggregate operations for
+numeric columns: ``sum``, ``min``, ``max``, ``average`` / ``mean``,
+standard deviation, variance, ``median``, ``percentile``,
+and ``distinct_value``.  It also supports ``row_mapper`` for
+creating paired collections used in correlation and covariance
+calculations.
+
+Inherits ``count`` and ``distinct_count`` from
+:class:`~pylegend.core.language.shared.primitive_collection.PyLegendPrimitiveCollection`.
 
 average
 ~~~~~~~

@@ -15,8 +15,10 @@
 PyLegendDateCollection
 ======================
 
-.. autoclass:: pylegend.core.language.shared.primitive_collection.PyLegendDateCollection
-   :no-members:
+``PyLegendDateCollection`` provides ``max``, ``min``, and
+``distinct_value`` aggregations for date columns.  Inherits
+``count`` and ``distinct_count`` from
+:class:`~pylegend.core.language.shared.primitive_collection.PyLegendPrimitiveCollection`.
 
 count
 ~~~~~

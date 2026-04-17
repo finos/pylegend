@@ -15,8 +15,11 @@
 PyLegendBooleanCollection
 =========================
 
-.. autoclass:: pylegend.core.language.shared.primitive_collection.PyLegendBooleanCollection
-   :no-members:
+``PyLegendBooleanCollection`` is used when a boolean column
+participates in an aggregation context (e.g. inside
+``groupby().agg()``).  It inherits ``count`` and ``distinct_count``
+from :class:`~pylegend.core.language.shared.primitive_collection.PyLegendPrimitiveCollection`
+and adds ``distinct_value``.
 
 count
 ~~~~~

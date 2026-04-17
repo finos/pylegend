@@ -15,8 +15,10 @@
 PyLegendStrictDateCollection
 ============================
 
-.. autoclass:: pylegend.core.language.shared.primitive_collection.PyLegendStrictDateCollection
-   :no-members:
+``PyLegendStrictDateCollection`` overrides ``max``, ``min``, and
+``distinct_value`` to return ``PyLegendStrictDate``.  Inherits
+``count`` and ``distinct_count`` from
+:class:`~pylegend.core.language.shared.primitive_collection.PyLegendDateCollection`.
 
 count
 ~~~~~
