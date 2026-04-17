@@ -655,7 +655,7 @@ class PyLegendDate(PyLegendPrimitive):
             from datetime import date
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["lag"] = frame["Shipped Date"].diff(date(1996, 7, 1), "DAYS")
+            frame["lag"] = frame["Order Date"].diff(frame["Shipped Date"], "DAYS")
             frame[["Shipped Date", "lag"]].head(3).to_pandas()
 
         """

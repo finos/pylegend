@@ -666,7 +666,7 @@ class PyLegendString(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["date_str"] = frame["Shipped Date"].to_string()
+            frame["date_str"] = frame["Shipped Date"].to_string() + " 00:00:00"
             frame["parsed_dt"] = frame["date_str"].parse_datetime()
             frame[["date_str", "parsed_dt"]].head(3).to_pandas()
 
@@ -1152,7 +1152,7 @@ class PyLegendString(PyLegendPrimitive):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame[frame["Ship Name"].full_match("Around.*")].head(3).to_pandas()
+            frame[frame["Ship Name"].full_match("Around%")].head(3).to_pandas()
 
         """
         PyLegendString.__validate_param_to_be_str_or_str_expr(pattern, "full_match parameter")
