@@ -15,7 +15,8 @@
 Pandas Window TDS Frame
 ========================
 
-.. autoclass:: pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame
+.. automodule:: pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame
+   :no-members:
 
 agg
 ~~~

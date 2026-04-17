@@ -90,6 +90,123 @@ __all__: PyLegendSequence[str] = [
     "StrictDateGroupbySeries",
 ]
 
+"""
+A single-column proxy within a grouped context.
+
+A ``GroupbySeries`` is the grouped counterpart of
+:class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`.
+It represents one column of a
+:class:`~pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame`
+and is obtained by bracket-indexing a groupby object with a
+**single** column name.
+
+Obtaining a GroupbySeries
+-------------------------
+Use bracket notation on a ``PandasApiGroupbyTdsFrame``:
+
+.. code-block:: python
+
+    grouped = frame.groupby("group_col")
+    gseries = grouped["value_col"]   # -> GroupbySeries
+
+Passing a **list** of column names returns a narrowed
+``PandasApiGroupbyTdsFrame`` instead (not a ``GroupbySeries``):
+
+.. code-block:: python
+
+    grouped[["col_a", "col_b"]]  # -> PandasApiGroupbyTdsFrame
+
+The returned subclass matches the column type, following the
+same mapping as ``Series``.
+For example, an integer column becomes an IntegerGroupbySeries.
+
+Operations
+----------
+A ``GroupbySeries`` **must** have an applied function (such as
+an aggregation or ``rank()``) before it can be executed or
+assigned. Attempting to call ``to_sql_query()`` on a bare
+``GroupbySeries`` without an applied function raises
+``RuntimeError``.
+
+Typical usage patterns:
+
+- **Grouped aggregation** — call an aggregation method directly:
+
+  .. code-block:: python
+
+      frame.groupby("grp")["val"].sum()
+      frame.groupby("grp")["val"].aggregate(["sum", "mean"])
+
+- **Grouped rank** — call ``rank()`` to get a window-ranked
+  ``GroupbySeries`` that can be assigned back:
+
+  .. code-block:: python
+
+      frame["ranked"] = frame.groupby("grp")["val"].rank()
+
+Assigning back to the frame
+---------------------------
+A ``GroupbySeries`` (with an applied function like ``rank()``)
+can be assigned back to the parent
+:class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`
+using bracket assignment:
+
+.. code-block:: python
+
+    frame["new_col"] = frame.groupby("grp")["val"].rank()
+
+The assignment **must** target the same frame that was grouped.
+
+See Also
+--------
+Series : The non-grouped single-column proxy.
+PandasApiGroupbyTdsFrame : The groupby object that produces this.
+PandasApiTdsFrame.groupby : Create a groupby object.
+
+Notes
+-----
+**Differences from pandas:**
+
+- A ``GroupbySeries`` is **not** iterable and does not support
+  direct data access. It is an expression builder that lazily
+  constructs the query.
+- Applying functions on a **computed** ``GroupbySeries`` expression is
+  **not supported**. For example,
+  ``(frame.groupby('grp')['col'] + 5).sum()`` raises
+  ``NotImplementedError``. Instead, do
+  ``frame.groupby('grp')['col'].sum() + 5``.
+- Only **one** function call is allowed per expression.
+  To combine multiple, use separate assignment steps.
+- A bare ``GroupbySeries`` (without an aggregation or window
+  function) **cannot be executed**. You must call an operation
+  such as ``sum()``, ``rank()``, etc. first.
+
+Examples
+--------
+.. ipython:: python
+
+    import pylegend
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Grouped aggregation via GroupbySeries
+    frame.groupby("Ship Name")["Order Id"].sum().to_pandas().head()
+
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Assign a grouped rank back to the frame
+    frame["Order Rank"] = frame.groupby("Ship Name")["Order Id"].rank()
+    frame.head(5).to_pandas()
+
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Arithmetic with a grouped rank
+    frame["Grouped Rank"] = frame.groupby(
+        "Ship Name"
+    )["Order Id"].rank()
+    frame.head(5).to_pandas()
+
+"""
+
 R = PyLegendTypeVar('R')
 
 
@@ -105,122 +222,6 @@ def _get_new_groupby_series_for_column(
 
 
 class GroupbySeries(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
-    """
-    A single-column proxy within a grouped context.
-
-    A ``GroupbySeries`` is the grouped counterpart of
-    :class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`.
-    It represents one column of a
-    :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame`
-    and is obtained by bracket-indexing a groupby object with a
-    **single** column name.
-
-    Obtaining a GroupbySeries
-    -------------------------
-    Use bracket notation on a ``PandasApiGroupbyTdsFrame``:
-
-    .. code-block:: python
-
-        grouped = frame.groupby("group_col")
-        gseries = grouped["value_col"]   # -> GroupbySeries
-
-    Passing a **list** of column names returns a narrowed
-    ``PandasApiGroupbyTdsFrame`` instead (not a ``GroupbySeries``):
-
-    .. code-block:: python
-
-        grouped[["col_a", "col_b"]]  # -> PandasApiGroupbyTdsFrame
-
-    The returned subclass matches the column type, following the
-    same mapping as ``Series``.
-    For example, an integer column becomes an IntegerGroupbySeries.
-
-    Operations
-    ----------
-    A ``GroupbySeries`` **must** have an applied function (such as
-    an aggregation or ``rank()``) before it can be executed or
-    assigned. Attempting to call ``to_sql_query()`` on a bare
-    ``GroupbySeries`` without an applied function raises
-    ``RuntimeError``.
-
-    Typical usage patterns:
-
-    - **Grouped aggregation** — call an aggregation method directly:
-
-      .. code-block:: python
-
-          frame.groupby("grp")["val"].sum()
-          frame.groupby("grp")["val"].aggregate(["sum", "mean"])
-
-    - **Grouped rank** — call ``rank()`` to get a window-ranked
-      ``GroupbySeries`` that can be assigned back:
-
-      .. code-block:: python
-
-          frame["ranked"] = frame.groupby("grp")["val"].rank()
-
-    Assigning back to the frame
-    ---------------------------
-    A ``GroupbySeries`` (with an applied function like ``rank()``)
-    can be assigned back to the parent
-    :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`
-    using bracket assignment:
-
-    .. code-block:: python
-
-        frame["new_col"] = frame.groupby("grp")["val"].rank()
-
-    The assignment **must** target the same frame that was grouped.
-
-    See Also
-    --------
-    Series : The non-grouped single-column proxy.
-    PandasApiGroupbyTdsFrame : The groupby object that produces this.
-    PandasApiTdsFrame.groupby : Create a groupby object.
-
-    Notes
-    -----
-    **Differences from pandas:**
-
-    - A ``GroupbySeries`` is **not** iterable and does not support
-      direct data access. It is an expression builder that lazily
-      constructs the query.
-    - Applying functions on a **computed** ``GroupbySeries`` expression is
-      **not supported**. For example,
-      ``(frame.groupby('grp')['col'] + 5).sum()`` raises
-      ``NotImplementedError``. Instead, do
-      ``frame.groupby('grp')['col'].sum() + 5``.
-    - Only **one** function call is allowed per expression.
-      To combine multiple, use separate assignment steps.
-    - A bare ``GroupbySeries`` (without an aggregation or window
-      function) **cannot be executed**. You must call an operation
-      such as ``sum()``, ``rank()``, etc. first.
-
-    Examples
-    --------
-    .. ipython:: python
-
-        import pylegend
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Grouped aggregation via GroupbySeries
-        frame.groupby("Ship Name")["Order Id"].sum().to_pandas().head()
-
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Assign a grouped rank back to the frame
-        frame["Order Rank"] = frame.groupby("Ship Name")["Order Id"].rank()
-        frame.head(5).to_pandas()
-
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Arithmetic with a grouped rank
-        frame["Grouped Rank"] = frame.groupby(
-            "Ship Name"
-        )["Order Id"].rank()
-        frame.head(5).to_pandas()
-
-    """
     _base_groupby_frame: PandasApiGroupbyTdsFrame
     _applied_function_frame: PyLegendOptional[PandasApiAppliedFunctionTdsFrame]
 

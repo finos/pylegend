@@ -15,7 +15,8 @@
 Pandas Series
 =============
 
-.. autoclass:: pylegend.core.language.pandas_api.pandas_api_series.Series
+.. automodule:: pylegend.core.language.pandas_api.pandas_api_series
+   :no-members:
 
 agg
 ~~~

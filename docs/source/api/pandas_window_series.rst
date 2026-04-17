@@ -15,7 +15,8 @@
 Pandas Window Series
 ====================
 
-.. autoclass:: pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries
+.. automodule:: pylegend.core.language.pandas_api.pandas_api_window_series
+   :no-members:
 
 agg
 ~~~

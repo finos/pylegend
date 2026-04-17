@@ -90,6 +90,115 @@ __all__: PyLegendSequence[str] = [
     "SupportsToPureExpression",
 ]
 
+"""
+A single-column proxy for a :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`.
+
+A ``Series`` is conceptually similar to a ``pandas.Series``: it
+represents one column of a frame and supports element-wise
+arithmetic, string methods, date-part extraction, and other
+transformations.
+
+Obtaining a Series
+------------------
+Use bracket notation on a ``PandasApiTdsFrame``.
+The returned subclass matches the column type.
+For example, an integer column becomes an IntegerSeries.
+
+Transformations
+---------------
+A ``Series`` supports the same operator overloads as the
+underlying primitive type.  For example, an ``IntegerSeries``
+supports ``+``, ``-``, ``*``, ``/``, ``%``, comparisons, etc.
+A ``StringSeries`` supports ``.upper()``, ``.lower()``,
+``.len()``, ``.startswith()``, ``.contains()``,
+``.replace()``, concatenation with ``+``, etc.
+A ``DateTimeSeries`` supports ``.year()``, ``.month()``,
+``.day()``, etc.
+
+Transforming a ``Series`` produces a **new** ``Series`` with
+an updated expression tree — the original column is never
+mutated.
+
+Assigning back to the frame
+---------------------------
+Use bracket assignment (``__setitem__``) to write a ``Series``
+back into the frame — either overwriting an existing column or
+creating a new one.
+
+Constants (``int``, ``float``, ``str``, ``bool``, ``date``,
+``datetime``) and callables (``lambda``) are also accepted on the
+right-hand side.
+
+.. important::
+
+    A ``Series`` can only be assigned to the **same frame** it was
+    derived from.  Assigning a ``Series`` from a different frame
+    raises ``ValueError``.
+
+Window functions on a Series
+----------------------------
+Certain window functions such as ``rank()`` can be called on a
+``Series``.  The result is a new ``Series`` whose values are the
+window-function output for that column.
+
+Series with applied functions (aggregations or window functions)
+can also be combined with arithmetic in the
+same assignment, but only **one** function call is allowed
+per expression.  If multiple function calls are needed,
+split them into separate steps.
+
+See Also
+--------
+PandasApiTdsFrame : The parent frame class.
+PandasApiGroupbyTdsFrame : Groupby object (returns
+    ``GroupbySeries`` when bracket-indexed).
+
+Notes
+-----
+**Differences from pandas:**
+
+- A ``Series`` is **not** a first-class data container. It is an
+  expression builder that lazily constructs the query. No data
+  is materialised until ``execute_frame_to_string()`` or
+  ``to_pandas()`` is called.
+- Cross-frame assignment is **not allowed**. In pandas you can
+  freely assign a Series from one DataFrame to another (alignment
+  happens on the index); here the Series must originate from the
+  **same** frame instance. If you need cross-frame assignment, use join or merge.
+- Applying a function on a computed series expression is **not
+  supported** in certain cases. For example,
+  ``(frame['col'] + 5).rank()`` raises ``NotImplementedError``.
+  Instead, do ``frame['col'].rank() + 5``.
+
+Examples
+--------
+.. ipython:: python
+
+    import pylegend
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Retrieve a column as a Series
+    series = frame["Order Id"]
+    type(series).__name__
+
+    # Arithmetic on a Series (returns a new Series)
+    doubled = frame["Order Id"] * 2
+    doubled.to_pandas().head()
+
+    # String methods on a StringSeries
+    upper_name = frame["Ship Name"].upper()
+    upper_name.to_pandas().head()
+
+    # Overwrite an existing column
+    frame["Ship Name"] = frame["Ship Name"].upper()
+    frame.head(5).to_pandas()
+
+    # Append a rank column via Series
+    frame["Order Rank"] = frame["Order Id"].rank()
+    frame.head(5).to_pandas()
+
+"""
+
 R = PyLegendTypeVar('R')
 
 
@@ -153,114 +262,6 @@ class SupportsToPureExpression(Protocol):
 
 @add_primitive_methods
 class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
-    """
-    A single-column proxy for a :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`.
-
-    A ``Series`` is conceptually similar to a ``pandas.Series``: it
-    represents one column of a frame and supports element-wise
-    arithmetic, string methods, date-part extraction, and other
-    transformations.
-
-    Obtaining a Series
-    ------------------
-    Use bracket notation on a ``PandasApiTdsFrame``.
-    The returned subclass matches the column type.
-    For example, an integer column becomes an IntegerSeries.
-
-    Transformations
-    ---------------
-    A ``Series`` supports the same operator overloads as the
-    underlying primitive type.  For example, an ``IntegerSeries``
-    supports ``+``, ``-``, ``*``, ``/``, ``%``, comparisons, etc.
-    A ``StringSeries`` supports ``.upper()``, ``.lower()``,
-    ``.len()``, ``.startswith()``, ``.contains()``,
-    ``.replace()``, concatenation with ``+``, etc.
-    A ``DateTimeSeries`` supports ``.year()``, ``.month()``,
-    ``.day()``, etc.
-
-    Transforming a ``Series`` produces a **new** ``Series`` with
-    an updated expression tree — the original column is never
-    mutated.
-
-    Assigning back to the frame
-    ---------------------------
-    Use bracket assignment (``__setitem__``) to write a ``Series``
-    back into the frame — either overwriting an existing column or
-    creating a new one.
-
-    Constants (``int``, ``float``, ``str``, ``bool``, ``date``,
-    ``datetime``) and callables (``lambda``) are also accepted on the
-    right-hand side.
-
-    .. important::
-
-        A ``Series`` can only be assigned to the **same frame** it was
-        derived from.  Assigning a ``Series`` from a different frame
-        raises ``ValueError``.
-
-    Window functions on a Series
-    ----------------------------
-    Certain window functions such as ``rank()`` can be called on a
-    ``Series``.  The result is a new ``Series`` whose values are the
-    window-function output for that column.
-
-    Series with applied functions (aggregations or window functions)
-    can also be combined with arithmetic in the
-    same assignment, but only **one** function call is allowed
-    per expression.  If multiple function calls are needed,
-    split them into separate steps.
-
-    See Also
-    --------
-    PandasApiTdsFrame : The parent frame class.
-    PandasApiGroupbyTdsFrame : Groupby object (returns
-        ``GroupbySeries`` when bracket-indexed).
-
-    Notes
-    -----
-    **Differences from pandas:**
-
-    - A ``Series`` is **not** a first-class data container. It is an
-      expression builder that lazily constructs the query. No data
-      is materialised until ``execute_frame_to_string()`` or
-      ``to_pandas()`` is called.
-    - Cross-frame assignment is **not allowed**. In pandas you can
-      freely assign a Series from one DataFrame to another (alignment
-      happens on the index); here the Series must originate from the
-      **same** frame instance. If you need cross-frame assignment, use join or merge.
-    - Applying a function on a computed series expression is **not
-      supported** in certain cases. For example,
-      ``(frame['col'] + 5).rank()`` raises ``NotImplementedError``.
-      Instead, do ``frame['col'].rank() + 5``.
-
-    Examples
-    --------
-    .. ipython:: python
-
-        import pylegend
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Retrieve a column as a Series
-        series = frame["Order Id"]
-        type(series).__name__
-
-        # Arithmetic on a Series (returns a new Series)
-        doubled = frame["Order Id"] * 2
-        doubled.to_pandas().head()
-
-        # String methods on a StringSeries
-        upper_name = frame["Ship Name"].upper()
-        upper_name.to_pandas().head()
-
-        # Overwrite an existing column
-        frame["Ship Name"] = frame["Ship Name"].upper()
-        frame.head(5).to_pandas()
-
-        # Append a rank column via Series
-        frame["Order Rank"] = frame["Order Id"].rank()
-        frame.head(5).to_pandas()
-
-    """
     def __init__(
             self, base_frame: "PandasApiBaseTdsFrame", column: str, expr: PyLegendOptional[PyLegendExpression] = None
     ) -> None:

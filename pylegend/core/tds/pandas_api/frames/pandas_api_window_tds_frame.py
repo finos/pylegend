@@ -40,140 +40,141 @@ if TYPE_CHECKING:
 
 ZERO_COLUMN_NAME = "__pylegend_zero_column__"
 
+"""
+Represents a window specification over a base frame.
+
+Created by ``expanding()``, ``rolling()``, or ``window_frame_legend_ext()``
+on a :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`
+or a
+:class:`~pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame`.
+Calling an aggregate (e.g. ``.aggregate('sum')``) on this object produces
+a new TDS frame whose columns contain the windowed values.  The
+``first()``, ``last()``, and ``window_extend_legend_ext()`` methods
+are also available for positional and custom window operations.
+Alternatively, use bracket notation to select a single column first
+and obtain a
+:class:`~pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries`.
+
+Obtaining a PandasApiWindowTdsFrame
+------------------------------------
+.. code-block:: python
+
+    # Expanding (cumulative) window — all rows up to current row
+    window = frame.expanding(order_by="col")
+
+    # Fixed-size sliding window — 5 preceding rows to current row
+    window = frame.rolling(5, order_by="col")
+
+    # Custom window bounds (pylegend extension)
+    window = frame.window_frame_legend_ext(
+        frame_spec=frame.rows_between(-3, 3),
+        order_by="col",
+    )
+
+    # No frame clause — only PARTITION BY / ORDER BY
+    window = frame.window_frame_legend_ext(
+        frame_spec=None,
+        order_by="col",
+    )
+
+When created from a groupby, the grouping columns are automatically
+used as ``PARTITION BY`` in the generated SQL:
+
+.. code-block:: python
+
+    window = frame.groupby("grp").expanding(order_by="val")
+    # SQL: ... PARTITION BY "grp", ... ORDER BY "val" ...
+
+Selecting a single column
+-------------------------
+Use bracket notation to narrow to one column before aggregating.
+This returns a
+:class:`~pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries`
+whose aggregate result can be assigned back to the parent frame:
+
+.. code-block:: python
+
+    frame["cumsum"] = frame.expanding(order_by="col")["col"].sum()
+
+Order-by resolution
+-------------------
+If no ``order_by`` is supplied when creating the window, the first
+column of the base frame is used as a fallback.  Providing an
+explicit ``order_by`` is recommended for deterministic results.
+
+Parameters
+----------
+base_frame :
+    The underlying frame or groupby frame.
+order_by : str, list of str, or None
+    Column name(s) to use for ``ORDER BY`` within the window.
+    ``None`` means no explicit ordering (the first column of the
+    base frame is used as a fallback).
+frame_spec : RowsBetween, RangeBetween, or None
+    A ``FrameSpec`` describing the window frame bounds.  Defaults
+    to ``RowsBetween(None, None)`` (i.e.
+    ``ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING``).
+    Pass ``None`` to omit the frame clause entirely, producing a
+    window with only ``PARTITION BY`` / ``ORDER BY``.  This is
+    required for functions like ``shift()`` (lag/lead) which do
+    not accept a frame clause.
+ascending : bool or list of bool, default True
+    Sort direction(s) for the ``ORDER BY`` columns.  ``True``
+    means ascending.  Can be a single ``bool`` (applied to all
+    columns) or a ``list[bool]`` whose length must match the
+    number of ``order_by`` columns.
+
+See Also
+--------
+PandasApiTdsFrame.expanding : Create an expanding window.
+PandasApiTdsFrame.rolling : Create a rolling window.
+PandasApiTdsFrame.window_frame_legend_ext : Create a custom window.
+WindowSeries : Single-column proxy on a window frame.
+first : First value in the window for every column.
+last : Last value in the window for every column.
+window_extend_legend_ext : Custom single-column window function.
+
+Notes
+-----
+**Differences from pandas:**
+
+- In pandas, ``Expanding`` and ``Rolling`` objects have built-in
+  convenience methods (``sum()``, ``mean()``, etc.) that return a
+  ``DataFrame``.  Here, the window frame object exposes only
+  ``aggregate()`` / ``agg()`` for multi-column use.  For
+  single-column convenience methods (``sum()``, ``mean()``, etc.),
+  use bracket notation to get a ``WindowSeries`` first.
+- When created from a groupby, the grouping columns are
+  **excluded** from the result columns (only the aggregated
+  value columns appear).
+- The ``order_by`` parameter is a pylegend extension.  In pandas,
+  window ordering relies on the implicit order of the DataFrame
+  index.
+- Extra ``*args`` / ``**kwargs`` on ``aggregate()`` are **not
+  supported**.
+
+Examples
+--------
+.. ipython:: python
+
+    import pylegend
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Multi-column expanding sum (returns a new frame)
+    frame.filter(
+        items=["Order Id"]
+    ).expanding(order_by="Order Id").aggregate("sum").head(5).to_pandas()
+
+    # Single-column rolling mean via WindowSeries, assigned back
+    frame["Rolling Mean"] = frame.rolling(
+        3, order_by="Order Id"
+    )["Order Id"].mean()
+    frame.head(5).to_pandas()
+
+"""
+
 
 class PandasApiWindowTdsFrame:
-    """
-    Represents a window specification over a base frame.
-
-    Created by ``expanding()``, ``rolling()``, or ``window_frame_legend_ext()``
-    on a :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`
-    or a
-    :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame.PandasApiGroupbyTdsFrame`.
-    Calling an aggregate (e.g. ``.aggregate('sum')``) on this object produces
-    a new TDS frame whose columns contain the windowed values.  The
-    ``first()``, ``last()``, and ``window_extend_legend_ext()`` methods
-    are also available for positional and custom window operations.
-    Alternatively, use bracket notation to select a single column first
-    and obtain a
-    :class:`~pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries`.
-
-    Obtaining a PandasApiWindowTdsFrame
-    ------------------------------------
-    .. code-block:: python
-
-        # Expanding (cumulative) window — all rows up to current row
-        window = frame.expanding(order_by="col")
-
-        # Fixed-size sliding window — 5 preceding rows to current row
-        window = frame.rolling(5, order_by="col")
-
-        # Custom window bounds (pylegend extension)
-        window = frame.window_frame_legend_ext(
-            frame_spec=frame.rows_between(-3, 3),
-            order_by="col",
-        )
-
-        # No frame clause — only PARTITION BY / ORDER BY
-        window = frame.window_frame_legend_ext(
-            frame_spec=None,
-            order_by="col",
-        )
-
-    When created from a groupby, the grouping columns are automatically
-    used as ``PARTITION BY`` in the generated SQL:
-
-    .. code-block:: python
-
-        window = frame.groupby("grp").expanding(order_by="val")
-        # SQL: ... PARTITION BY "grp", ... ORDER BY "val" ...
-
-    Selecting a single column
-    -------------------------
-    Use bracket notation to narrow to one column before aggregating.
-    This returns a
-    :class:`~pylegend.core.language.pandas_api.pandas_api_window_series.WindowSeries`
-    whose aggregate result can be assigned back to the parent frame:
-
-    .. code-block:: python
-
-        frame["cumsum"] = frame.expanding(order_by="col")["col"].sum()
-
-    Order-by resolution
-    -------------------
-    If no ``order_by`` is supplied when creating the window, the first
-    column of the base frame is used as a fallback.  Providing an
-    explicit ``order_by`` is recommended for deterministic results.
-
-    Parameters
-    ----------
-    base_frame :
-        The underlying frame or groupby frame.
-    order_by : str, list of str, or None
-        Column name(s) to use for ``ORDER BY`` within the window.
-        ``None`` means no explicit ordering (the first column of the
-        base frame is used as a fallback).
-    frame_spec : RowsBetween, RangeBetween, or None
-        A ``FrameSpec`` describing the window frame bounds.  Defaults
-        to ``RowsBetween(None, None)`` (i.e.
-        ``ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING``).
-        Pass ``None`` to omit the frame clause entirely, producing a
-        window with only ``PARTITION BY`` / ``ORDER BY``.  This is
-        required for functions like ``shift()`` (lag/lead) which do
-        not accept a frame clause.
-    ascending : bool or list of bool, default True
-        Sort direction(s) for the ``ORDER BY`` columns.  ``True``
-        means ascending.  Can be a single ``bool`` (applied to all
-        columns) or a ``list[bool]`` whose length must match the
-        number of ``order_by`` columns.
-
-    See Also
-    --------
-    PandasApiTdsFrame.expanding : Create an expanding window.
-    PandasApiTdsFrame.rolling : Create a rolling window.
-    PandasApiTdsFrame.window_frame_legend_ext : Create a custom window.
-    WindowSeries : Single-column proxy on a window frame.
-    first : First value in the window for every column.
-    last : Last value in the window for every column.
-    window_extend_legend_ext : Custom single-column window function.
-
-    Notes
-    -----
-    **Differences from pandas:**
-
-    - In pandas, ``Expanding`` and ``Rolling`` objects have built-in
-      convenience methods (``sum()``, ``mean()``, etc.) that return a
-      ``DataFrame``.  Here, the window frame object exposes only
-      ``aggregate()`` / ``agg()`` for multi-column use.  For
-      single-column convenience methods (``sum()``, ``mean()``, etc.),
-      use bracket notation to get a ``WindowSeries`` first.
-    - When created from a groupby, the grouping columns are
-      **excluded** from the result columns (only the aggregated
-      value columns appear).
-    - The ``order_by`` parameter is a pylegend extension.  In pandas,
-      window ordering relies on the implicit order of the DataFrame
-      index.
-    - Extra ``*args`` / ``**kwargs`` on ``aggregate()`` are **not
-      supported**.
-
-    Examples
-    --------
-    .. ipython:: python
-
-        import pylegend
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Multi-column expanding sum (returns a new frame)
-        frame.filter(
-            items=["Order Id"]
-        ).expanding(order_by="Order Id").aggregate("sum").head(5).to_pandas()
-
-        # Single-column rolling mean via WindowSeries, assigned back
-        frame["Rolling Mean"] = frame.rolling(
-            3, order_by="Order Id"
-        )["Order Id"].mean()
-        frame.head(5).to_pandas()
-
-    """
 
     _base_frame: PyLegendUnion[PandasApiBaseTdsFrame, PandasApiGroupbyTdsFrame]
     _order_by: PyLegendOptional[PyLegendList[str]]

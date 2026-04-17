@@ -29,118 +29,119 @@ if TYPE_CHECKING:
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
 
+"""
+A single-column proxy on a window frame.
+
+A ``WindowSeries`` is obtained by bracket-indexing a
+:class:`~pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame`
+with a column name.  It can also be obtained by calling
+``expanding()``, ``rolling()``, or ``window_frame_legend_ext()``
+directly on a
+:class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
+or
+:class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`.
+
+Calling an aggregation method (``sum()``, ``mean()``, etc.) on a
+``WindowSeries`` returns a
+:class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
+(or a
+:class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`
+when the underlying window was created from a groupby).  Positional
+window functions (``first()``, ``last()``, ``shift()``) and the
+general-purpose ``window_extend_legend_ext()`` are also available.
+The result can then be assigned back to the parent frame.
+
+Obtaining a WindowSeries
+-------------------------
+.. code-block:: python
+
+    # Via bracket notation on a window frame
+    ws = frame.expanding(order_by="col")["col"]
+
+    # Via Series shortcut
+    ws = frame["col"].expanding(order_by="col")
+
+    # Grouped variant (returns GroupbySeries after aggregation)
+    ws = frame.groupby("grp")["val"].expanding(order_by="val")
+
+Result type preservation
+-------------------------
+The type of the returned ``Series`` (or ``GroupbySeries``) matches
+the column type.  For example, an integer column produces an
+``IntegerSeries`` after ``.sum()``, while ``count()`` always
+returns an ``IntegerSeries`` regardless of the source column type.
+
+Composing with arithmetic
+-------------------------
+The ``Series`` returned by a ``WindowSeries`` aggregation supports
+arithmetic, so expressions like the following work:
+
+.. code-block:: python
+
+    frame["shifted"] = frame["col"].expanding().sum() - 100
+    frame["ratio"]   = frame["a"].expanding().sum() / frame["b"].rolling(3).mean()
+
+Multiple window assignments can be applied sequentially to the
+same frame:
+
+.. code-block:: python
+
+    frame["cumsum"]    = frame["col"].expanding().sum()
+    frame["roll_mean"] = frame["col2"].rolling(5, order_by="col2").mean()
+
+See Also
+--------
+PandasApiWindowTdsFrame : The window frame that produces this.
+Series : Non-grouped single-column proxy.
+GroupbySeries : Grouped single-column proxy.
+PandasApiTdsFrame.expanding : Create an expanding window on a frame.
+PandasApiTdsFrame.rolling : Create a rolling window on a frame.
+
+Notes
+-----
+**Differences from pandas:**
+
+- A ``WindowSeries`` is **not** a data container.  It is an
+  expression builder that lazily constructs the SQL / Pure query.
+  No data is materialised until the result is executed.
+- In pandas, ``Expanding['col']`` and ``Rolling['col']`` have
+  built-in convenience methods that return a ``Series``.  Here,
+  the same convenience methods are available (``sum()``,
+  ``mean()``, ``min()``, ``max()``, ``count()``, ``std()``,
+  ``var()``), plus positional window methods (``first()``,
+  ``last()``, ``shift()``), and a general ``aggregate()`` /
+  ``agg()`` method.  ``window_extend_legend_ext()`` is available
+  for fully custom window expressions.
+- Extra ``*args`` / ``**kwargs`` on ``aggregate()`` are **not
+  supported**.
+- The ``numeric_only`` parameter on convenience methods is **not
+  supported** and must be ``False``.
+
+Examples
+--------
+.. ipython:: python
+
+    import pylegend
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Assign an expanding sum via WindowSeries
+    frame["Cumulative Sum"] = frame.expanding(
+        order_by="Order Id"
+    )["Order Id"].sum()
+    frame.head(5).to_pandas()
+
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Grouped expanding sum assigned back
+    frame["Group Cumsum"] = frame.groupby(
+        "Ship Name"
+    )["Order Id"].expanding(order_by="Order Id").sum()
+    frame.head(5).to_pandas()
+
+"""
+
 
 class WindowSeries:
-    """
-    A single-column proxy on a window frame.
-
-    A ``WindowSeries`` is obtained by bracket-indexing a
-    :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame.PandasApiWindowTdsFrame`
-    with a column name.  It can also be obtained by calling
-    ``expanding()``, ``rolling()``, or ``window_frame_legend_ext()``
-    directly on a
-    :class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
-    or
-    :class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`.
-
-    Calling an aggregation method (``sum()``, ``mean()``, etc.) on a
-    ``WindowSeries`` returns a
-    :class:`~pylegend.core.language.pandas_api.pandas_api_series.Series`
-    (or a
-    :class:`~pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries`
-    when the underlying window was created from a groupby).  Positional
-    window functions (``first()``, ``last()``, ``shift()``) and the
-    general-purpose ``window_extend_legend_ext()`` are also available.
-    The result can then be assigned back to the parent frame.
-
-    Obtaining a WindowSeries
-    -------------------------
-    .. code-block:: python
-
-        # Via bracket notation on a window frame
-        ws = frame.expanding(order_by="col")["col"]
-
-        # Via Series shortcut
-        ws = frame["col"].expanding(order_by="col")
-
-        # Grouped variant (returns GroupbySeries after aggregation)
-        ws = frame.groupby("grp")["val"].expanding(order_by="val")
-
-    Result type preservation
-    -------------------------
-    The type of the returned ``Series`` (or ``GroupbySeries``) matches
-    the column type.  For example, an integer column produces an
-    ``IntegerSeries`` after ``.sum()``, while ``count()`` always
-    returns an ``IntegerSeries`` regardless of the source column type.
-
-    Composing with arithmetic
-    -------------------------
-    The ``Series`` returned by a ``WindowSeries`` aggregation supports
-    arithmetic, so expressions like the following work:
-
-    .. code-block:: python
-
-        frame["shifted"] = frame["col"].expanding().sum() - 100
-        frame["ratio"]   = frame["a"].expanding().sum() / frame["b"].rolling(3).mean()
-
-    Multiple window assignments can be applied sequentially to the
-    same frame:
-
-    .. code-block:: python
-
-        frame["cumsum"]    = frame["col"].expanding().sum()
-        frame["roll_mean"] = frame["col2"].rolling(5, order_by="col2").mean()
-
-    See Also
-    --------
-    PandasApiWindowTdsFrame : The window frame that produces this.
-    Series : Non-grouped single-column proxy.
-    GroupbySeries : Grouped single-column proxy.
-    PandasApiTdsFrame.expanding : Create an expanding window on a frame.
-    PandasApiTdsFrame.rolling : Create a rolling window on a frame.
-
-    Notes
-    -----
-    **Differences from pandas:**
-
-    - A ``WindowSeries`` is **not** a data container.  It is an
-      expression builder that lazily constructs the SQL / Pure query.
-      No data is materialised until the result is executed.
-    - In pandas, ``Expanding['col']`` and ``Rolling['col']`` have
-      built-in convenience methods that return a ``Series``.  Here,
-      the same convenience methods are available (``sum()``,
-      ``mean()``, ``min()``, ``max()``, ``count()``, ``std()``,
-      ``var()``), plus positional window methods (``first()``,
-      ``last()``, ``shift()``), and a general ``aggregate()`` /
-      ``agg()`` method.  ``window_extend_legend_ext()`` is available
-      for fully custom window expressions.
-    - Extra ``*args`` / ``**kwargs`` on ``aggregate()`` are **not
-      supported**.
-    - The ``numeric_only`` parameter on convenience methods is **not
-      supported** and must be ``False``.
-
-    Examples
-    --------
-    .. ipython:: python
-
-        import pylegend
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Assign an expanding sum via WindowSeries
-        frame["Cumulative Sum"] = frame.expanding(
-            order_by="Order Id"
-        )["Order Id"].sum()
-        frame.head(5).to_pandas()
-
-        frame = pylegend.samples.pandas_api.northwind_orders_frame()
-
-        # Grouped expanding sum assigned back
-        frame["Group Cumsum"] = frame.groupby(
-            "Ship Name"
-        )["Order Id"].expanding(order_by="Order Id").sum()
-        frame.head(5).to_pandas()
-
-    """
 
     _window_frame: PandasApiWindowTdsFrame
     _column_name: str

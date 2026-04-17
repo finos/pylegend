@@ -15,7 +15,8 @@
 Pandas Groupby Series
 =====================
 
-.. autoclass:: pylegend.core.language.pandas_api.pandas_api_groupby_series.GroupbySeries
+.. automodule:: pylegend.core.language.pandas_api.pandas_api_groupby_series
+   :no-members:
 
 agg
 ~~~
