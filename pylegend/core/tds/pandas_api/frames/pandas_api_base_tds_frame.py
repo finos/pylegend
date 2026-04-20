@@ -722,7 +722,7 @@ class PandasApiBaseTdsFrame(PandasApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
 
     def concat_legend_ext(
             self,
-            other: "PandasApiBaseTdsFrame",
+            other: "PandasApiTdsFrame",
     ) -> "PandasApiTdsFrame":
         """
         PyLegend extension (not present in pandas).
