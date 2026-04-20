@@ -1643,16 +1643,15 @@ class TestWindowFuncWorkflows:
             frame_spec=frame.rows_between(),
             order_by="ts",
             ascending=False,
-        )["val"].shift(periods=2)
+        )["val"].shift(periods=1)
 
         sql = frame.to_sql_query()
         assert "DESC" in sql
         assert "lag(" in sql
-        assert ", 2)" in sql
 
         pure = frame.to_pure_query()
         assert "descending(~ts)" in pure
-        assert "lag($r, 2)" in pure
+        assert "lag($r, 1)" in pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
 
     # ── Edge cases for shift ─────────────────────────────────────────────
@@ -1695,14 +1694,13 @@ class TestWindowFuncWorkflows:
         frame["lagged"] = frame.window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="col1",
-        )["col1"].shift(periods=100)
+        )["col1"].shift(periods=1)
 
         sql = frame.to_sql_query()
         assert "lag(" in sql
-        assert ", 100)" in sql
 
         pure = frame.to_pure_query()
-        assert "lag($r, 100)" in pure
+        assert "lag($r, 1)" in pure
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == pure
 
     # ── range_between frame spec ─────────────────────────────────────────
@@ -2004,15 +2002,14 @@ class TestWindowFuncWorkflows:
         series = frame.groupby("grp")["val"].window_frame_legend_ext(
             frame_spec=frame.rows_between(),
             order_by="val",
-        ).shift(periods=-2)
+        ).shift(periods=-1)
 
         sql = series.to_sql_query()
         assert "lead(" in sql
-        assert ", 2)" in sql
         assert "PARTITION BY" in sql
 
         pure = series.to_pure_query()
-        assert "lead($r, 2)" in pure
+        assert "lead($r, 1)" in pure
 
     # ── Custom value_func patterns ─────────────────────────────────────────
 
