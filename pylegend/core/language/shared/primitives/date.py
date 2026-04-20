@@ -228,7 +228,7 @@ class PyLegendDate(PyLegendPrimitive):
             frame["midnight"] = frame["ts"].first_hour_of_day()
             frame[["ts", "midnight"]].head(3).to_pandas()
 
-        """
+        """  # noqa: E501
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
         return PyLegendDateTime(PyLegendFirstHourOfDayExpression(self.__value))
 
@@ -253,7 +253,7 @@ class PyLegendDate(PyLegendPrimitive):
             frame["hr_start"] = frame["ts"].first_minute_of_hour()
             frame[["ts", "hr_start"]].head(3).to_pandas()
 
-        """
+        """  # noqa: E501
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
         return PyLegendDateTime(PyLegendFirstMinuteOfHourExpression(self.__value))
 
@@ -278,7 +278,7 @@ class PyLegendDate(PyLegendPrimitive):
             frame["min_start"] = frame["ts"].first_second_of_minute()
             frame[["ts", "min_start"]].head(3).to_pandas()
 
-        """
+        """  # noqa: E501
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
         return PyLegendDateTime(PyLegendFirstSecondOfMinuteExpression(self.__value))
 
@@ -303,7 +303,7 @@ class PyLegendDate(PyLegendPrimitive):
             frame["sec_start"] = frame["ts"].first_millisecond_of_second()
             frame[["ts", "sec_start"]].head(3).to_pandas()
 
-        """
+        """  # noqa: E501
         from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
         return PyLegendDateTime(PyLegendFirstMillisecondOfSecondExpression(self.__value))
 
@@ -393,7 +393,7 @@ class PyLegendDate(PyLegendPrimitive):
             frame["hr"] = frame["ts"].hour()
             frame[["ts", "hr"]].head(3).to_pandas()
 
-        """
+        """  # noqa: E501
         return PyLegendInteger(PyLegendHourExpression(self.__value))
 
     @grammar_method
@@ -416,7 +416,7 @@ class PyLegendDate(PyLegendPrimitive):
             frame["min"] = frame["ts"].minute()
             frame[["ts", "min"]].head(3).to_pandas()
 
-        """
+        """  # noqa: E501
         return PyLegendInteger(PyLegendMinuteExpression(self.__value))
 
     @grammar_method
@@ -439,7 +439,7 @@ class PyLegendDate(PyLegendPrimitive):
             frame["sec"] = frame["ts"].second()
             frame[["ts", "sec"]].head(3).to_pandas()
 
-        """
+        """  # noqa: E501
         return PyLegendInteger(PyLegendSecondExpression(self.__value))
 
     @grammar_method

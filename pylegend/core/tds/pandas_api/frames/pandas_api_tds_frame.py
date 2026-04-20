@@ -50,7 +50,7 @@ from pylegend.core.tds.cast_helpers import CastTarget
 from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 
 if TYPE_CHECKING:
-    from pylegend.core.language.pandas_api.pandas_api_frame_spec import FrameSpec, RowsBetween, RangeBetween
+    from pylegend.core.language.pandas_api.pandas_api_frame_spec import RangeBetween
     from pylegend.core.language.pandas_api.pandas_api_series import Series
     from pylegend.core.tds.pandas_api.frames.pandas_api_groupby_tds_frame import PandasApiGroupbyTdsFrame
     from pylegend.core.tds.pandas_api.frames.pandas_api_window_tds_frame import PandasApiWindowTdsFrame
@@ -1414,24 +1414,6 @@ class PandasApiTdsFrame(PyLegendTdsFrame):
             ).aggregate("mean").head(5).to_pandas()
 
         """
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def window_frame_legend_ext(
-            self,
-            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
-            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
-    ) -> "PandasApiWindowTdsFrame":
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def window_frame_legend_ext(
-            self,
-            frame_spec: PyLegendOptional[FrameSpec] = RowsBetween(None, None),
-            order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
-            ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
-    ) -> "PandasApiWindowTdsFrame":
         pass  # pragma: no cover
 
     @abstractmethod
