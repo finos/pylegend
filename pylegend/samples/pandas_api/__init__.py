@@ -13,11 +13,9 @@
 # limitations under the License.
 
 from pylegend._typing import PyLegendSequence
-from pylegend.samples import legendql_api
-from pylegend.samples import pandas_api
+from pylegend.samples.pandas_api.sample_frames import northwind_orders_frame
 
 
 __all__: PyLegendSequence[str] = [
-    "legendql_api",
-    "pandas_api",
+    "northwind_orders_frame",
 ]

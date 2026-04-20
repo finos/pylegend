@@ -42,41 +42,50 @@ def builder_inited_hook(app):
                         tree = ast.parse(content)
                     except Exception:
                         continue
-                    
-                    for node in ast.walk(tree):
-                        if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
-                            doc = ast.get_docstring(node)
-                            if doc and '.. ipython:: python' in doc:
-                                code_lines = []
-                                in_block = False
-                                for line in doc.split('\n'):
-                                    if '.. ipython:: python' in line:
-                                        in_block = True
-                                        continue
-                                    if in_block:
-                                        if not line.strip() and not code_lines:
-                                            continue
-                                        if not line.strip():
-                                            code_lines.append("")
-                                            continue
-                                            
-                                        if line.startswith('    '):
-                                            code_lines.append(line[4:])
-                                        elif line.startswith('\t'):
-                                            code_lines.append(line[1:])
-                                        else:
-                                            in_block = False
-                                            
-                                while code_lines and not code_lines[-1].strip():
-                                    code_lines.pop()
+
+                    def extract_ipython_blocks(node, parent_name=""):
+                        doc = ast.get_docstring(node)
+                        if not doc or '.. ipython:: python' not in doc:
+                            return
+                        
+                        code_lines = []
+                        in_block = False
+                        for line in doc.split('\n'):
+                            if '.. ipython:: python' in line:
+                                in_block = True
+                                continue
+                            if in_block:
+                                if not line.strip() and not code_lines:
+                                    continue
+                                if not line.strip():
+                                    code_lines.append("")
+                                    continue
                                     
-                                if code_lines:
-                                    tasks.append((node.name, code_lines))
+                                if line.startswith('    '):
+                                    code_lines.append(line[4:])
+                                elif line.startswith('\t'):
+                                    code_lines.append(line[1:])
+                                else:
+                                    in_block = False
                                     
+                        while code_lines and not code_lines[-1].strip():
+                            code_lines.pop()
+                            
+                        if code_lines:
+                            task_name = f"{parent_name}.{node.name}" if parent_name else node.name
+                            tasks.append((task_name, code_lines))
+
+                    for node in tree.body:
+                        if isinstance(node, ast.FunctionDef):
+                            extract_ipython_blocks(node)
+                        elif isinstance(node, ast.ClassDef):
+                            extract_ipython_blocks(node)
+                            for child in node.body:
+                                if isinstance(child, ast.FunctionDef):
+                                    extract_ipython_blocks(child, parent_name=node.name)
+
         if tasks:
             ep = ExecutePreprocessor(timeout=600)
-            
-            # Filter tasks: only run those that don't exist or have different source code
             tasks_to_run = []
             for name, code_lines in tasks:
                 nb_path = os.path.join(out_dir, f"{name}.ipynb")
@@ -189,7 +198,11 @@ def process_docstrings(app, what, name, obj, options, lines):
                 has_block = True
                 in_block = True
                 block_indent = len(line) - len(line.lstrip())
-                short_name = name.split('.')[-1]
+                if what in ('method', 'property', 'attribute'):
+                    short_name = ".".join(name.split('.')[-2:])
+                else:
+                    short_name = name.split('.')[-1]
+                    
                 indent = line[:block_indent]
                 
                 nb_path = os.path.join(app.config.dyn_notebook_dir, f"{short_name}.ipynb")

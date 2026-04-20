@@ -40,6 +40,20 @@ __all__: PyLegendSequence[str] = [
     "PyLegendStrictDate"
 ]
 
+"""
+Strict-date expression type in the PyLegend expression language.
+
+``PyLegendStrictDate`` represents a date-only value (no time component)
+within a PyLegend query.  It inherits every calendar-extraction,
+comparison, shifting, and differencing method from
+:class:`~pylegend.core.language.shared.primitives.date.PyLegendDate` and
+adds ``time_bucket`` for grouping dates into fixed-width buckets.
+
+Instances are produced when a column whose Legend type is ``StrictDate``
+is accessed on a TDS frame, or by calling :meth:`date_part` on a
+``PyLegendDate`` / ``PyLegendDateTime`` expression.
+"""
+
 
 class PyLegendStrictDate(PyLegendDate):
     __value: PyLegendExpressionStrictDateReturn
@@ -66,6 +80,43 @@ class PyLegendStrictDate(PyLegendDate):
             self,
             quantity: PyLegendUnion[int, "PyLegendInteger"],
             duration_unit: str) -> "PyLegendDate":
+        """
+        Group the date into fixed-width buckets.
+
+        Returns the start of the bucket that each date falls into.
+        Useful for time-series aggregation at a coarser granularity.
+
+        Parameters
+        ----------
+        quantity : int or PyLegendInteger
+            The width of each bucket expressed in *duration_unit*.
+        duration_unit : str
+            One of ``'YEARS'``, ``'MONTHS'``, ``'WEEKS'``, ``'DAYS'``
+            (case-insensitive).
+
+        Returns
+        -------
+        PyLegendDate
+            The bucket-start date.
+
+        Raises
+        ------
+        TypeError
+            If *quantity* is not an ``int`` or ``PyLegendInteger``.
+        ValueError
+            If *duration_unit* is not one of the supported units.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["bucket"] = frame["Shipped Date"].date_part().time_bucket(3, "MONTHS")
+            frame[["Shipped Date", "bucket"]].head(3).to_pandas()
+
+        """
         self.validate_param_to_be_int_or_int_expr(quantity, "time bucket quantity parameter")
         quantity_op = PyLegendIntegerLiteralExpression(quantity) if isinstance(quantity, int) else quantity.value()
         self.validate_strict_date_duration_unit_param(duration_unit)

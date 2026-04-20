@@ -41,6 +41,20 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateTime"
 ]
 
+"""
+DateTime expression type in the PyLegend expression language.
+
+``PyLegendDateTime`` represents a date-plus-time value within a PyLegend
+query.  It inherits every calendar-extraction, comparison, shifting, and
+differencing method from
+:class:`~pylegend.core.language.shared.primitives.date.PyLegendDate` and
+adds ``time_bucket`` for grouping timestamps into fixed-width buckets.
+
+Instances are produced when a column whose Legend type is ``DateTime`` is
+accessed on a TDS frame, or by calling time-related methods such as
+:meth:`first_hour_of_day` on a ``PyLegendDate`` expression.
+"""
+
 
 class PyLegendDateTime(PyLegendDate):
     __value: PyLegendExpressionDateTimeReturn
@@ -67,6 +81,47 @@ class PyLegendDateTime(PyLegendDate):
             self,
             quantity: PyLegendUnion[int, "PyLegendInteger"],
             duration_unit: str) -> "PyLegendDate":
+        """
+        Group the timestamp into fixed-width buckets.
+
+        Returns the start of the bucket that each timestamp falls into.
+        Useful for time-series aggregation at a coarser granularity.
+        Unlike :meth:`~pylegend.core.language.shared.primitives.strictdate.PyLegendStrictDate.time_bucket`,
+        this variant accepts all duration units supported by
+        ``PyLegendDate`` (including hours, minutes, seconds, etc.).
+
+        Parameters
+        ----------
+        quantity : int or PyLegendInteger
+            The width of each bucket expressed in *duration_unit*.
+        duration_unit : str
+            One of ``'YEARS'``, ``'MONTHS'``, ``'WEEKS'``, ``'DAYS'``,
+            ``'HOURS'``, ``'MINUTES'``, ``'SECONDS'``, ``'MILLISECONDS'``,
+            ``'MICROSECONDS'``, ``'NANOSECONDS'`` (case-insensitive).
+
+        Returns
+        -------
+        PyLegendDate
+            The bucket-start date/time.
+
+        Raises
+        ------
+        TypeError
+            If *quantity* is not an ``int`` or ``PyLegendInteger``.
+        ValueError
+            If *duration_unit* is not a recognised unit.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["bucket"] = frame["Shipped Date"].first_hour_of_day().time_bucket(6, "HOURS")
+            frame[["Shipped Date", "bucket"]].head(3).to_pandas()
+
+        """
         self.validate_param_to_be_int_or_int_expr(quantity, "time bucket quantity parameter")
         quantity_op = PyLegendIntegerLiteralExpression(quantity) if isinstance(quantity, int) else quantity.value()
         self.validate_duration_unit_param(duration_unit)

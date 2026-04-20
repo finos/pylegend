@@ -13,11 +13,22 @@
 # limitations under the License.
 
 from pylegend._typing import PyLegendSequence
-from pylegend.samples import legendql_api
-from pylegend.samples import pandas_api
+from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
+from pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame import (
+    PandasApiLegendServiceInputFrame
+)
+from pylegend.samples.local_legend_env import get_local_legend_env, NORTHWIND_PROJECT_COORDINATES
 
 
 __all__: PyLegendSequence[str] = [
-    "legendql_api",
-    "pandas_api",
+    "northwind_orders_frame",
 ]
+
+
+def northwind_orders_frame() -> PandasApiTdsFrame:
+    local_legend_env = get_local_legend_env()
+    return PandasApiLegendServiceInputFrame(
+        pattern="/allOrders",
+        project_coordinates=NORTHWIND_PROJECT_COORDINATES,
+        legend_client=local_legend_env.legend_client,
+    )

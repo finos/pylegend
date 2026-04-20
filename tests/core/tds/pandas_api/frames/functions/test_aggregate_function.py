@@ -226,12 +226,14 @@ class TestAggregateFunction:
         series = frame["col1"]
 
         with pytest.raises(NotImplementedError) as v:
-            frame.std(ddof=0)
-        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+            frame.std(ddof=2)
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: 2" \
+               in v.value.args[0]
 
         with pytest.raises(NotImplementedError) as v:
-            series.std(ddof=0)
-        assert "Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: 0" in v.value.args[0]
+            series.std(ddof=2)
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: 2" \
+               in v.value.args[0]
 
     def test_var_error_ddof_not_one(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1")]
@@ -240,11 +242,13 @@ class TestAggregateFunction:
 
         with pytest.raises(NotImplementedError) as v:
             frame.var(ddof=2)
-        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: 2" \
+               in v.value.args[0]
 
         with pytest.raises(NotImplementedError) as v:
             series.var(ddof=2)
-        assert "Only ddof=1 (Sample Variance) is supported in var function, but got: 2" in v.value.args[0]
+        assert "Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: 2" \
+               in v.value.args[0]
 
     def test_aggregate_simple_query_generation(self) -> None:
         columns = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.date_column("col2")]

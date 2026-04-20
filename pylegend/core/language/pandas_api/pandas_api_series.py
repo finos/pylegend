@@ -12,6 +12,115 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+A single-column proxy for a :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`.
+
+A ``Series`` is conceptually similar to a ``pandas.Series``: it
+represents one column of a frame and supports element-wise
+arithmetic, string methods, date-part extraction, and other
+transformations.
+
+**Obtaining a Series**
+
+Use bracket notation on a ``PandasApiTdsFrame``.
+The returned subclass matches the column type.
+For example, an integer column becomes an IntegerSeries.
+
+**Transformations**
+
+A ``Series`` supports the same operator overloads as the
+underlying primitive type.  For example, an ``IntegerSeries``
+supports ``+``, ``-``, ``*``, ``/``, ``%``, comparisons, etc.
+A ``StringSeries`` supports ``.upper()``, ``.lower()``,
+``.len()``, ``.startswith()``, ``.contains()``,
+``.replace()``, concatenation with ``+``, etc.
+A ``DateTimeSeries`` supports ``.year()``, ``.month()``,
+``.day()``, etc.
+
+Transforming a ``Series`` produces a **new** ``Series`` with
+an updated expression tree — the original column is never
+mutated.
+
+**Assigning back to the frame**
+
+Use bracket assignment (``__setitem__``) to write a ``Series``
+back into the frame — either overwriting an existing column or
+creating a new one.
+
+Constants (``int``, ``float``, ``str``, ``bool``, ``date``,
+``datetime``) and callables (``lambda``) are also accepted on the
+right-hand side.
+
+.. important::
+
+    A ``Series`` can only be assigned to the **same frame** it was
+    derived from.  Assigning a ``Series`` from a different frame
+    raises ``ValueError``.
+
+**Window functions on a Series**
+
+Certain window functions such as ``rank()`` can be called on a
+``Series``.  The result is a new ``Series`` whose values are the
+window-function output for that column.
+
+Series with applied functions (aggregations or window functions)
+can also be combined with arithmetic in the
+same assignment, but only **one** function call is allowed
+per expression.  If multiple function calls are needed,
+split them into separate steps.
+
+See Also
+--------
+PandasApiTdsFrame : The parent frame class.
+PandasApiGroupbyTdsFrame : Groupby object (returns
+    ``GroupbySeries`` when bracket-indexed).
+
+Notes
+-----
+**Differences from pandas:**
+
+- A ``Series`` is **not** a first-class data container. It is an
+  expression builder that lazily constructs the query. No data
+  is materialised until ``execute_frame_to_string()`` or
+  ``to_pandas()`` is called.
+- Cross-frame assignment is **not allowed**. In pandas you can
+  freely assign a Series from one DataFrame to another (alignment
+  happens on the index); here the Series must originate from the
+  **same** frame instance. If you need cross-frame assignment, use join or merge.
+- Applying a function on a computed series expression is **not
+  supported** in certain cases. For example,
+  ``(frame['col'] + 5).rank()`` raises ``NotImplementedError``.
+  Instead, do ``frame['col'].rank() + 5``.
+
+Examples
+--------
+.. ipython:: python
+
+    import pylegend
+    frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+    # Retrieve a column as a Series
+    series = frame["Order Id"]
+    type(series).__name__
+
+    # Arithmetic on a Series (returns a new Series)
+    doubled = frame["Order Id"] * 2
+    doubled.to_pandas().head()
+
+    # String methods on a StringSeries
+    upper_name = frame["Ship Name"].upper()
+    upper_name.to_pandas().head()
+
+    # Overwrite an existing column
+    frame["Ship Name"] = frame["Ship Name"].upper()
+    frame.head(5).to_pandas()
+
+    # Append a rank column via Series
+    frame["Order Rank"] = frame["Order Id"].rank()
+    frame.head(5).to_pandas()
+
+"""
+
 from textwrap import dedent
 from typing import TYPE_CHECKING, runtime_checkable, Protocol
 
@@ -328,6 +437,80 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Aggregate the Series using one or more operations.
+
+        Reduce the single column to one or more scalar values. The
+        result is returned as a single-row
+        :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`.
+
+        Parameters
+        ----------
+        func : str, callable, list, or dict
+            Aggregation specification:
+
+            - **str** — a named aggregation (``'sum'``, ``'mean'``,
+              ``'min'``, ``'max'``, ``'count'``, ``'std'``, ``'var'``,
+              plus aliases ``'len'``, ``'size'``).
+            - **callable** — a lambda receiving the Series and calling
+              one of its aggregation methods
+              (e.g. ``lambda x: x.sum()``).
+            - **list of str** — multiple named aggregations. Result
+              columns are named ``"agg(col_name)"``.
+            - **dict** — ``{column_name: agg_spec}``. Keys **must**
+              match the Series' column name.
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the aggregated value(s).
+
+        Raises
+        ------
+        NotImplementedError
+            If called on a computed Series expression
+            (e.g. ``(frame['col'] + 5).aggregate('sum')``). Assign the
+            expression to a column first, then aggregate.
+        ValueError
+            If a dict key does not match the Series' column name.
+
+        See Also
+        --------
+        agg : Alias for ``aggregate``.
+        sum : Sum of the column.
+        mean : Mean of the column.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``Series.aggregate`` can return a scalar, a
+          Series, or a DataFrame depending on the input. Here the
+          result is always a single-row ``PandasApiTdsFrame``.
+        - Aggregation on a **computed** Series expression is **not
+          supported**. Assign the expression to the frame first.
+        - When ``func`` is a dict, keys must exactly match the
+          Series' column name — no other column names are valid.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Single named aggregation
+            frame["Order Id"].aggregate("sum").to_pandas()
+
+            # Multiple aggregations via a list
+            frame["Order Id"].aggregate(["sum", "min", "max"]).to_pandas()
+
+            # Lambda aggregation
+            frame["Order Id"].aggregate(lambda x: x.count()).to_pandas()
+
+        """
         if self._expr is not None:  # pragma: no cover
             error_msg = '''
                 Applying aggregate function to a computed series expression is not supported yet.
@@ -355,6 +538,11 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             *args: PyLegendPrimitiveOrPythonPrimitive,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Alias for :meth:`aggregate`.
+
+        See :meth:`aggregate` for full documentation.
+        """
         return self.aggregate(func, axis, *args, **kwargs)
 
     def sum(
@@ -365,6 +553,45 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             min_count: int = 0,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Return the sum of the Series values.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        skipna : bool, default True
+            Must be ``True``. ``False`` is not supported (SQL
+            aggregation ignores nulls by default).
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+        min_count : int, default 0
+            Must be ``0``. Non-zero values are not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the sum.
+
+        Notes
+        -----
+        Equivalent to ``series.aggregate("sum")``.
+
+        **Differences from pandas:** returns a single-row
+        ``PandasApiTdsFrame`` instead of a scalar. ``skipna=False``,
+        ``numeric_only=True``, and ``min_count != 0`` are **not
+        supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].sum().to_pandas()
+
+        """
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in sum function, but got: {axis}")
         if skipna is not True:
@@ -386,6 +613,41 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Return the mean of the Series values.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        skipna : bool, default True
+            Must be ``True``. ``False`` is not supported.
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the mean.
+
+        Notes
+        -----
+        Equivalent to ``series.aggregate("mean")``. Maps to SQL
+        ``AVG()``.
+
+        **Differences from pandas:** returns a single-row
+        ``PandasApiTdsFrame`` instead of a scalar.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].mean().to_pandas()
+
+        """
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in mean function, but got: {axis}")
         if skipna is not True:
@@ -404,6 +666,41 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Return the minimum of the Series values.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        skipna : bool, default True
+            Must be ``True``. ``False`` is not supported.
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the minimum value.
+
+        Notes
+        -----
+        Equivalent to ``series.aggregate("min")``. Works on string
+        columns as well (lexicographic minimum).
+
+        **Differences from pandas:** returns a single-row
+        ``PandasApiTdsFrame`` instead of a scalar.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].min().to_pandas()
+
+        """
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in min function, but got: {axis}")
         if skipna is not True:
@@ -422,6 +719,41 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Return the maximum of the Series values.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        skipna : bool, default True
+            Must be ``True``. ``False`` is not supported.
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the maximum value.
+
+        Notes
+        -----
+        Equivalent to ``series.aggregate("max")``. Works on string
+        columns as well (lexicographic maximum).
+
+        **Differences from pandas:** returns a single-row
+        ``PandasApiTdsFrame`` instead of a scalar.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].max().to_pandas()
+
+        """
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in max function, but got: {axis}")
         if skipna is not True:
@@ -441,19 +773,67 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Return the standard deviation of the Series values.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        skipna : bool, default True
+            Must be ``True``. ``False`` is not supported.
+        ddof : int, default 1
+            Degrees of freedom. ``1`` for sample standard deviation
+            (``STDDEV_SAMP``), ``0`` for population standard deviation
+            (``STDDEV_POP``).
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the standard deviation.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof`` is not ``0`` or ``1``, or if ``skipna``,
+            ``numeric_only``, or ``**kwargs`` are set to unsupported
+            values.
+
+        Notes
+        -----
+        Equivalent to ``series.aggregate("std")`` (ddof=1) or
+        ``series.aggregate("std_dev_population")`` (ddof=0). Maps to
+        SQL ``STDDEV_SAMP()`` or ``STDDEV_POP()``.
+
+        **Differences from pandas:** returns a single-row
+        ``PandasApiTdsFrame`` instead of a scalar. Only ``ddof=0``
+        and ``ddof=1`` are supported.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].std().to_pandas()
+
+        """
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in std function, but got: {axis}")
         if skipna is not True:
             raise NotImplementedError("skipna=False is not currently supported in std function.")
-        if ddof != 1:
+        if ddof not in (0, 1):
             raise NotImplementedError(
-                f"Only ddof=1 (Sample Standard Deviation) is supported in std function, but got: {ddof}")
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in std function, but got: {ddof}")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in std function.")
         if len(kwargs) > 0:
             raise NotImplementedError(
                 f"Additional keyword arguments not supported in std function: {list(kwargs.keys())}")
-        return self.aggregate("std", 0)
+        return self.aggregate("std" if ddof == 1 else "std_dev_population", 0)
 
     def var(
             self,
@@ -463,18 +843,67 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Return the variance of the Series values.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        skipna : bool, default True
+            Must be ``True``. ``False`` is not supported.
+        ddof : int, default 1
+            Degrees of freedom. ``1`` for sample variance
+            (``VAR_SAMP``), ``0`` for population variance
+            (``VAR_POP``).
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the variance.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``ddof`` is not ``0`` or ``1``, or if ``skipna``,
+            ``numeric_only``, or ``**kwargs`` are set to unsupported
+            values.
+
+        Notes
+        -----
+        Equivalent to ``series.aggregate("var")`` (ddof=1) or
+        ``series.aggregate("variance_population")`` (ddof=0). Maps to
+        SQL ``VAR_SAMP()`` or ``VAR_POP()``.
+
+        **Differences from pandas:** returns a single-row
+        ``PandasApiTdsFrame`` instead of a scalar. Only ``ddof=0``
+        and ``ddof=1`` are supported.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].var().to_pandas()
+
+        """
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in var function, but got: {axis}")
         if skipna is not True:
             raise NotImplementedError("skipna=False is not currently supported in var function.")
-        if ddof != 1:
-            raise NotImplementedError(f"Only ddof=1 (Sample Variance) is supported in var function, but got: {ddof}")
+        if ddof not in (0, 1):
+            raise NotImplementedError(
+                f"Only ddof=0 (Population) and ddof=1 (Sample) are supported in var function, but got: {ddof}")
         if numeric_only is not False:
             raise NotImplementedError("numeric_only=True is not currently supported in var function.")
         if len(kwargs) > 0:
             raise NotImplementedError(
                 f"Additional keyword arguments not supported in var function: {list(kwargs.keys())}")
-        return self.aggregate("var", 0)
+        return self.aggregate("var" if ddof == 1 else "variance_population", 0)
 
     def count(
             self,
@@ -482,6 +911,39 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             numeric_only: bool = False,
             **kwargs: PyLegendPrimitiveOrPythonPrimitive
     ) -> PyLegendUnion["PandasApiTdsFrame", "Series"]:
+        """
+        Return the count of non-null values in the Series.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        numeric_only : bool, default False
+            Must be ``False``. ``True`` is not supported.
+
+        Returns
+        -------
+        PandasApiTdsFrame
+            A single-row frame with the count.
+
+        Notes
+        -----
+        Equivalent to ``series.aggregate("count")``. Maps to SQL
+        ``COUNT(column)``.
+
+        **Differences from pandas:** returns a single-row
+        ``PandasApiTdsFrame`` instead of a scalar integer.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].count().to_pandas()
+
+        """
         if axis not in [0, "index"]:
             raise NotImplementedError(f"The 'axis' parameter must be 0 or 'index' in count function, but got: {axis}")
         if numeric_only is not False:
@@ -500,6 +962,91 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ascending: bool = True,
             pct: bool = False
     ) -> "Series":
+        """
+        Compute the rank of values in this Series.
+
+        Return a new ``Series`` containing the rank of each value.
+        The result can be assigned back to the parent frame as a new
+        column, or executed directly as a standalone single-column
+        query.
+
+        Parameters
+        ----------
+        axis : {{0, 'index'}}, default 0
+            Must be ``0`` or ``'index'``.
+        method : {{'min', 'first', 'dense'}}, default 'min'
+            How to rank equal values:
+
+            - ``'min'`` : Lowest rank in the group of ties
+              (SQL ``RANK()``).
+            - ``'first'`` : Ranks by order of appearance
+              (SQL ``ROW_NUMBER()``).
+            - ``'dense'`` : Like ``'min'`` but no gaps
+              (SQL ``DENSE_RANK()``).
+        numeric_only : bool, default False
+            If ``True``, only rank numeric columns.
+        na_option : {{'bottom'}}, default 'bottom'
+            Only ``'bottom'`` is supported.
+        ascending : bool, default True
+            Whether to rank in ascending order.
+        pct : bool, default False
+            If ``True``, compute percentage ranks
+            (SQL ``PERCENT_RANK()``). Returns a ``FloatSeries``.
+            Only supported with ``method='min'``.
+
+        Returns
+        -------
+        Series
+            An ``IntegerSeries`` (or ``FloatSeries`` when
+            ``pct=True``) containing the ranks.
+
+        Raises
+        ------
+        NotImplementedError
+            If called on a computed Series expression
+            (e.g. ``(frame['col'] + 5).rank()``). Call ``rank()``
+            first, then apply arithmetic.
+            If ``method`` is not ``'min'``, ``'first'``, or
+            ``'dense'``.
+            If ``na_option`` is not ``'bottom'``.
+            If ``pct=True`` with a method other than ``'min'``.
+
+        See Also
+        --------
+        PandasApiTdsFrame.rank : Rank all columns of a frame.
+        PandasApiGroupbyTdsFrame.rank : Rank within groups.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - The ``'average'`` and ``'max'`` methods are **not
+          supported**.
+        - ``na_option`` only supports ``'bottom'``.
+        - ``pct=True`` is only supported with ``method='min'``.
+        - The result is a ``Series``, not a ``pandas.Series``.
+          It can be assigned to the frame or executed directly.
+        - Calling ``rank()`` on a **computed** Series expression is
+          **not supported**. Do the rank first, then apply
+          arithmetic: ``frame['col'].rank() + 5``.
+        - Only **one** window-function call is allowed per
+          expression. To combine multiple, use separate assignments.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            # Execute a ranked Series directly as a single-column query
+            frame["Order Id"].rank().to_pandas().head()
+
+            # Assign a rank column to the frame
+            frame["Order Rank"] = frame["Order Id"].rank()
+            frame.head(5).to_pandas()
+
+        """
         if self._expr is not None:  # pragma: no cover
             error_msg = '''
                 Applying rank function to a computed series expression is not supported yet.
@@ -531,6 +1078,63 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
+        """
+        Create an expanding (cumulative) window on this column.
+
+        An expanding window includes all rows from the start of the
+        frame up to the current row, enabling running totals, running
+        averages, and similar cumulative calculations on a single
+        column.
+
+        Parameters
+        ----------
+        min_periods : int, default 1
+            Minimum number of observations required to produce a value.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+        method : str, optional
+            Not supported. Must be ``None``.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window.
+        ascending : bool or list of bool, default True
+            Sort direction(s) for ``order_by`` columns.
+
+        Returns
+        -------
+        WindowSeries
+            A window series on which aggregates (``sum``, ``mean``,
+            etc.) can be called.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``axis`` is not ``0``, or ``method`` is not ``None``.
+
+        See Also
+        --------
+        rolling : Fixed-size sliding window on a column.
+        window_frame_legend_ext : Custom window specification.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` and ``ascending`` are pylegend extensions not
+          present in pandas.
+        - ``axis=1`` and ``method`` are **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].expanding(
+                order_by="Order Id"
+            ).sum().to_pandas().head(5)
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
         window_frame = self._base_frame.expanding(
@@ -552,6 +1156,78 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             order_by: PyLegendOptional[PyLegendUnion[str, PyLegendSequence[str]]] = None,
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
+        """
+        Create a fixed-size sliding window on this column.
+
+        A rolling window includes a fixed number of preceding rows for
+        each row, enabling moving averages, moving sums, and similar
+        calculations on a single column.
+
+        Parameters
+        ----------
+        window : int
+            Size of the moving window (number of rows).
+        min_periods : int, optional
+            Minimum observations required. Defaults to ``window``.
+        center : bool, default False
+            Not supported. Must be ``False``.
+        win_type : str, optional
+            Not supported. Must be ``None``.
+        on : str, optional
+            Not supported. Must be ``None``.
+        axis : {{0, 'index'}}, default 0
+            Only ``0`` / ``'index'`` is supported.
+        closed : str, optional
+            Not supported. Must be ``None``.
+        step : int, optional
+            Not supported. Must be ``None``.
+        method : str, optional
+            Not supported. Must be ``None``.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window.
+        ascending : bool or list of bool, default True
+            Sort direction(s) for ``order_by`` columns.
+
+        Returns
+        -------
+        WindowSeries
+            A window series on which aggregates (``sum``, ``mean``,
+            etc.) can be called.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``center``, ``win_type``, ``on``, ``closed``, ``step``,
+            or ``method`` are set to non-default values, or ``axis``
+            is not ``0``.
+
+        See Also
+        --------
+        expanding : Expanding (cumulative) window on a column.
+        window_frame_legend_ext : Custom window specification.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - ``order_by`` and ``ascending`` are pylegend extensions not
+          present in pandas.
+        - ``center``, ``win_type``, ``on``, ``closed``, ``step``, and
+          ``method`` are **not supported**.
+        - ``axis=1`` is **not supported**.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Order Id"].rolling(
+                window=3, order_by="Order Id"
+            ).mean().to_pandas().head(5)
+
+        """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
         window_frame = self._base_frame.rolling(
@@ -568,10 +1244,62 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ascending: PyLegendUnion[bool, "PyLegendSequence[bool]"] = True,
     ) -> "WindowSeries":
         """
-        PyLegend extension (not present in pandas).
+        Create a custom window specification on this column.
 
-        Create a custom window specification with explicit control over the
-        window frame on a single column.
+        **PyLegend extension** — not present in pandas.
+
+        The ``frame_spec`` argument controls the ``ROWS BETWEEN`` or
+        ``RANGE BETWEEN`` clause.
+
+        Parameters
+        ----------
+        frame_spec : RowsBetween or RangeBetween
+            A window-frame specification created via
+            :meth:`~PandasApiBaseTdsFrame.rows_between` or
+            :meth:`~PandasApiBaseTdsFrame.range_between`.
+        order_by : str or list of str, optional
+            Column(s) to order by within the window.
+        ascending : bool or list of bool, default True
+            Sort direction(s) for ``order_by`` columns.
+
+        Returns
+        -------
+        WindowSeries
+            A window series on which aggregates can be called.
+
+        Raises
+        ------
+        TypeError
+            If ``frame_spec`` is not a ``RowsBetween`` or ``RangeBetween``.
+
+        See Also
+        --------
+        expanding : Cumulative window on a column.
+        rolling : Fixed-size sliding window on a column.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. It is a pylegend
+          extension for fine-grained control over the SQL
+          ``ROWS BETWEEN`` / ``RANGE BETWEEN`` clause.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            from pylegend.core.language.pandas_api.pandas_api_frame_spec import (
+                RowsBetween,
+            )
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            spec = RowsBetween(-2, 0)
+            frame["Order Id"].window_frame_legend_ext(
+                spec, order_by="Order Id"
+            ).sum().to_pandas().head(5)
+
         """
         from pylegend.core.language.pandas_api.pandas_api_window_series import WindowSeries
 
@@ -585,9 +1313,46 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ascending: bool = True,
     ) -> "Series":
         """
-        PyLegend extension (not present in pandas).
-
         Compute the cumulative distribution of this column.
+
+        **PyLegend extension** — not present in pandas.
+
+        Maps to SQL ``CUME_DIST() OVER (ORDER BY col)`` and Pure
+        ``cumulativeDistribution``.
+
+        Parameters
+        ----------
+        ascending : bool, default True
+            Whether to order in ascending direction.
+
+        Returns
+        -------
+        FloatSeries
+            A series containing cumulative distribution values
+            (floats between 0 and 1).
+
+        See Also
+        --------
+        rank : Compute ranks.
+        ntile_legend_ext : Assign rows to numbered buckets.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. ``CUME_DIST`` is
+          exposed as a pylegend extension.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["CumeDist"] = frame["Order Id"].cume_dist_legend_ext()
+            frame.head(5).to_pandas()
+
         """
         new_series: Series = FloatSeries(self._filtered_frame, self.columns()[0].get_name())
         new_series._base_frame = self._base_frame
@@ -604,9 +1369,46 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             ascending: bool = True,
     ) -> "Series":
         """
-        PyLegend extension (not present in pandas).
+        Assign rows to numbered buckets based on this column's ordering.
 
-        Compute the NTILE bucket of this column.
+        **PyLegend extension** — not present in pandas.
+
+        Maps to SQL ``NTILE(n) OVER (ORDER BY col)`` and Pure ``ntile``.
+
+        Parameters
+        ----------
+        num_buckets : int
+            Number of buckets to distribute rows into.
+        ascending : bool, default True
+            Whether to order in ascending direction.
+
+        Returns
+        -------
+        IntegerSeries
+            A series containing bucket numbers (1-based).
+
+        See Also
+        --------
+        rank : Compute ranks.
+        cume_dist_legend_ext : Cumulative distribution.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - This method has **no pandas equivalent**. ``NTILE`` is
+          exposed as a pylegend extension.
+
+        Examples
+        --------
+        .. ipython:: python
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            frame["Quartile"] = frame["Order Id"].ntile_legend_ext(4)
+            frame.head(5).to_pandas()
+
         """
         new_series: Series = IntegerSeries(self._filtered_frame, self.columns()[0].get_name())
         new_series._base_frame = self._base_frame
@@ -624,10 +1426,48 @@ class Series(PyLegendColumnExpression, PyLegendPrimitive, BaseTdsFrame):
             other: "Series",
     ) -> "Series":
         """
-        PyLegend extension (not present in pandas).
+        Concatenate this series with another series vertically.
 
-        Concatenate this series with another series vertically (UNION ALL).
-        Both series must have compatible schemas (same column name and type).
+        **PyLegend extension** — not present in pandas.
+
+        Performs a ``UNION ALL`` of this series with ``other``. Both
+        series must have compatible schemas (same column name and type).
+
+        Parameters
+        ----------
+        other : Series
+            Another series with the same column name and type.
+
+        Returns
+        -------
+        Series
+            A new series containing rows from both series.
+
+        Raises
+        ------
+        ValueError
+            If the schemas of the two series are incompatible.
+
+        Notes
+        -----
+        **Differences from pandas:**
+
+        - In pandas, ``pd.concat`` is a top-level function. Here,
+          ``concat_legend_ext`` is a method on a ``Series`` and only
+          supports vertical concatenation (``UNION ALL``) of two
+          single-column series with the same schema.
+
+        Examples
+        --------
+        .. ipython:: python`
+
+            import pylegend
+            frame = pylegend.samples.pandas_api.northwind_orders_frame()
+
+            s1 = frame.head(3)["Order Id"]
+            s2 = frame.head(3)["Order Id"]
+            s1.concat_legend_ext(s2).to_pandas()
+
         """
         concat_frame = self._filtered_frame.concat_legend_ext(other._filtered_frame)
         assert isinstance(concat_frame, PandasApiAppliedFunctionTdsFrame)

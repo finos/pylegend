@@ -17,7 +17,48 @@ API Reference
 
 The reference guide consists detailed description of all user-facing APIs of ``pylegend`` library.
 
+Core Language
+-------------
+
+.. toctree::
+   :maxdepth: 4
+
+   core_language_boolean
+   core_language_boolean_collection
+   core_language_date
+   core_language_date_collection
+   core_language_datetime
+   core_language_datetime_collection
+   core_language_decimal
+   core_language_decimal_collection
+   core_language_float
+   core_language_float_collection
+   core_language_integer
+   core_language_integer_collection
+   core_language_number
+   core_language_number_collection
+   core_language_strictdate
+   core_language_strictdate_collection
+   core_language_string
+   core_language_string_collection
+
+LegendQL API
+------------
+
 .. toctree::
    :maxdepth: 4
 
    legendql_tds_frame
+
+Pandas API
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   pandas_tds_frame
+   pandas_series
+   pandas_groupby_tds_frame
+   pandas_groupby_series
+   pandas_window_tds_frame
+   pandas_window_series
