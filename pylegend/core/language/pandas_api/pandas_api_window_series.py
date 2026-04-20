@@ -293,7 +293,7 @@ class WindowSeries:
         --------
         aggregate : Equivalent method (canonical name).
         """
-        return self.aggregate(func, axis, *args, **kwargs)
+        return self.aggregate(func, axis, *args, **kwargs)  # pragma: no cover
 
     def sum(
         self,
