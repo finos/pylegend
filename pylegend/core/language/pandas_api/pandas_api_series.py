@@ -20,14 +20,14 @@ represents one column of a frame and supports element-wise
 arithmetic, string methods, date-part extraction, and other
 transformations.
 
-Obtaining a Series
-------------------
+**Obtaining a Series**
+
 Use bracket notation on a ``PandasApiTdsFrame``.
 The returned subclass matches the column type.
 For example, an integer column becomes an IntegerSeries.
 
-Transformations
----------------
+**Transformations**
+
 A ``Series`` supports the same operator overloads as the
 underlying primitive type.  For example, an ``IntegerSeries``
 supports ``+``, ``-``, ``*``, ``/``, ``%``, comparisons, etc.
@@ -41,8 +41,8 @@ Transforming a ``Series`` produces a **new** ``Series`` with
 an updated expression tree — the original column is never
 mutated.
 
-Assigning back to the frame
----------------------------
+**Assigning back to the frame**
+
 Use bracket assignment (``__setitem__``) to write a ``Series``
 back into the frame — either overwriting an existing column or
 creating a new one.
@@ -57,8 +57,8 @@ right-hand side.
     derived from.  Assigning a ``Series`` from a different frame
     raises ``ValueError``.
 
-Window functions on a Series
-----------------------------
+**Window functions on a Series**
+
 Certain window functions such as ``rank()`` can be called on a
 ``Series``.  The result is a new ``Series`` whose values are the
 window-function output for that column.

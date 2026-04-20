@@ -22,8 +22,8 @@ It represents one column of a
 and is obtained by bracket-indexing a groupby object with a
 **single** column name.
 
-Obtaining a GroupbySeries
--------------------------
+**Obtaining a GroupbySeries**
+
 Use bracket notation on a ``PandasApiGroupbyTdsFrame``:
 
 .. code-block:: python
@@ -42,8 +42,8 @@ The returned subclass matches the column type, following the
 same mapping as ``Series``.
 For example, an integer column becomes an IntegerGroupbySeries.
 
-Operations
-----------
+**Operations**
+
 A ``GroupbySeries`` **must** have an applied function (such as
 an aggregation or ``rank()``) before it can be executed or
 assigned. Attempting to call ``to_sql_query()`` on a bare
@@ -66,8 +66,8 @@ Typical usage patterns:
 
       frame["ranked"] = frame.groupby("grp")["val"].rank()
 
-Assigning back to the frame
----------------------------
+**Assigning back to the frame**
+
 A ``GroupbySeries`` (with an applied function like ``rank()``)
 can be assigned back to the parent
 :class:`~pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame.PandasApiTdsFrame`

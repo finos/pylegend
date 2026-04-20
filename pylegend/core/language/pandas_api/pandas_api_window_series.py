@@ -34,8 +34,8 @@ window functions (``first()``, ``last()``, ``shift()``) and the
 general-purpose ``window_extend_legend_ext()`` are also available.
 The result can then be assigned back to the parent frame.
 
-Obtaining a WindowSeries
--------------------------
+**Obtaining a WindowSeries**
+
 .. code-block:: python
 
     # Via bracket notation on a window frame
@@ -47,23 +47,22 @@ Obtaining a WindowSeries
     # Grouped variant (returns GroupbySeries after aggregation)
     ws = frame.groupby("grp")["val"].expanding(order_by="val")
 
-Result type preservation
--------------------------
+**Result type preservation**
+
 The type of the returned ``Series`` (or ``GroupbySeries``) matches
 the column type.  For example, an integer column produces an
 ``IntegerSeries`` after ``.sum()``, while ``count()`` always
 returns an ``IntegerSeries`` regardless of the source column type.
 
-Composing with arithmetic
--------------------------
+**Composing with arithmetic**
+
 The ``Series`` returned by a ``WindowSeries`` aggregation supports
 arithmetic, so expressions like the following work:
 
 .. code-block:: python
 
     frame["shifted"] = frame["col"].expanding().sum() - 100
-    frame["ratio"]   = frame["a"].expanding().sum() / frame["b"].rolling(3).mean()
-
+    frame["ratio"]   = frame["a"].expanding().sum() / frame["b"]
 Multiple window assignments can be applied sequentially to the
 same frame:
 
