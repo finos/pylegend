@@ -452,9 +452,9 @@ class TestPyLegendNumber:
 
     def test_number_log10_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_number("col2").log10()) == \
-               'LOG10("root".col2)'
+               'LOG("root".col2)'
         assert self.__generate_sql_string(lambda x: (x.get_number("col2") + x.get_number("col1")).log10()) == \
-               'LOG10(("root".col2 + "root".col1))'
+               'LOG(("root".col2 + "root".col1))'
         assert self.__generate_pure_string(lambda x: x.get_number("col2").log10()) == \
                'toOne($t.col2)->log10()'
         assert self.__generate_pure_string(lambda x: (x.get_number("col2") + x.get_number("col1")).log10()) == \
