@@ -30,14 +30,27 @@ __all__: PyLegendSequence[str] = [
     "PandasDfReadConfig"
 ]
 
-DATE_TYPES = ["StrictDate", "DateTime", "Date"]
+DATE_TYPES = ["StrictDate", "DateTime", "Date", "Timestamp"]
 
 COLUMN_TYPE_DTYPE_MAP = {
     "Boolean": "boolean",
     "Integer": "Int64",
     "Float": "Float64",
     "Number": "Float64",
-    "String": "object"
+    "String": "object",
+    "Decimal": "Float64",
+    "TinyInt": "Int8",
+    "UTinyInt": "UInt8",
+    "SmallInt": "Int16",
+    "USmallInt": "UInt16",
+    "Int": "Int32",
+    "UInt": "UInt32",
+    "BigInt": "Int64",
+    "UBigInt": "UInt64",
+    "Varchar": "object",
+    "Float4": "Float32",
+    "Double": "Float64",
+    "Numeric": "Float64",
 }
 
 
