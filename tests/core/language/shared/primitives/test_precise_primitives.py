@@ -458,20 +458,26 @@ class TestPandasResultHandlerPreciseTypes:
     """Tests that the ToPandasDfResultHandler correctly creates Series for Decimal and precise primitive types."""
 
     def test_decimal_column_series(self) -> None:
+        from decimal import Decimal as PythonDecimal
         from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
         col = PrimitiveTdsColumn.decimal_column("dec_col")
         series = ToPandasDfResultHandler._create_series([1.1, 2.2, 3.3], col, 0, 1)
         assert series.name == "dec_col"
-        assert series.dtype.name == "Float64"
-        assert list(series) == [1.1, 2.2, 3.3]
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.1")
+        assert series.iloc[1] == PythonDecimal("2.2")
+        assert series.iloc[2] == PythonDecimal("3.3")
 
     def test_decimal_column_with_none(self) -> None:
         from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
-        import pandas as pd
+        import numpy as np
+        from decimal import Decimal as PythonDecimal
         col = PrimitiveTdsColumn.decimal_column("dec_col")
         series = ToPandasDfResultHandler._create_series([1.5, None, 3.5], col, 0, 1)
-        assert series.dtype.name == "Float64"
-        assert pd.isna(series.iloc[1])
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.5")
+        assert np.isnan(series.iloc[1])
+        assert series.iloc[2] == PythonDecimal("3.5")
 
     def test_decimal_column_with_python_decimal(self) -> None:
         from decimal import Decimal as PythonDecimal
@@ -480,9 +486,9 @@ class TestPandasResultHandlerPreciseTypes:
         series = ToPandasDfResultHandler._create_series(
             [PythonDecimal("1.23"), PythonDecimal("4.56")], col, 0, 1
         )
-        assert series.dtype.name == "Float64"
-        assert abs(series.iloc[0] - 1.23) < 1e-10
-        assert abs(series.iloc[1] - 4.56) < 1e-10
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.23")
+        assert series.iloc[1] == PythonDecimal("4.56")
 
     @pytest.mark.parametrize("col_factory,expected_dtype", [
         (PrimitiveTdsColumn.tinyint_column, "Int8"),
@@ -514,11 +520,14 @@ class TestPandasResultHandlerPreciseTypes:
         assert series.dtype.name == expected_dtype
 
     def test_numeric_column_series(self) -> None:
+        from decimal import Decimal as PythonDecimal
         from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
         col = PrimitiveTdsColumn.numeric_column("num_col")
         series = ToPandasDfResultHandler._create_series([100.5, 200.5], col, 0, 1)
         assert series.name == "num_col"
-        assert series.dtype.name == "Float64"
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("100.5")
+        assert series.iloc[1] == PythonDecimal("200.5")
 
     def test_varchar_column_series(self) -> None:
         from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
@@ -671,6 +680,7 @@ class TestCastToPreciseTypesPandasResultHandler:
         assert list(series) == sample_data
 
     def test_cast_to_decimal(self) -> None:
+        from decimal import Decimal as PythonDecimal
         from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
         from pylegend.core.language import type_factory as tf
 
@@ -678,8 +688,8 @@ class TestCastToPreciseTypesPandasResultHandler:
         casted_columns = self._cast_columns(original_columns, {"amount": tf.decimal()})
 
         series = ToPandasDfResultHandler._create_series([10.5, 20.3, None], casted_columns[0], 0, 1)
-        assert series.dtype.name == "Float64"
-        assert series.iloc[0] == 10.5
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("10.5")
 
     def test_cast_to_decimal_with_python_decimal(self) -> None:
         from decimal import Decimal as PythonDecimal
@@ -692,10 +702,11 @@ class TestCastToPreciseTypesPandasResultHandler:
         series = ToPandasDfResultHandler._create_series(
             [PythonDecimal("1.23"), PythonDecimal("4.56")], casted_columns[0], 0, 1
         )
-        assert series.dtype.name == "Float64"
-        assert abs(series.iloc[0] - 1.23) < 1e-10
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.23")
 
     def test_cast_to_numeric(self) -> None:
+        from decimal import Decimal as PythonDecimal
         from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
         from pylegend.core.language import type_factory as tf
 
@@ -703,7 +714,8 @@ class TestCastToPreciseTypesPandasResultHandler:
         casted_columns = self._cast_columns(original_columns, {"amount": tf.numeric(10, 2)})
 
         series = ToPandasDfResultHandler._create_series([99.99, 100.01], casted_columns[0], 0, 1)
-        assert series.dtype.name == "Float64"
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("99.99")
 
     def test_cast_to_varchar(self) -> None:
         from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
