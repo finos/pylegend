@@ -15,6 +15,7 @@
 import ijson  # type: ignore
 import pandas as pd
 import numpy as np
+from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendSequence,
     TYPE_CHECKING
@@ -30,14 +31,28 @@ __all__: PyLegendSequence[str] = [
     "PandasDfReadConfig"
 ]
 
-DATE_TYPES = ["StrictDate", "DateTime", "Date"]
+DATE_TYPES = ["StrictDate", "DateTime", "Date", "Timestamp"]
+DECIMAL_TYPES = ["Decimal", "Numeric"]
 
 COLUMN_TYPE_DTYPE_MAP = {
     "Boolean": "boolean",
     "Integer": "Int64",
     "Float": "Float64",
     "Number": "Float64",
-    "String": "object"
+    "String": "object",
+    "Decimal": "object",
+    "TinyInt": "Int8",
+    "UTinyInt": "UInt8",
+    "SmallInt": "Int16",
+    "USmallInt": "UInt16",
+    "Int": "Int32",
+    "UInt": "UInt32",
+    "BigInt": "Int64",
+    "UBigInt": "UInt64",
+    "Varchar": "object",
+    "Float4": "Float32",
+    "Double": "Float64",
+    "Numeric": "object",
 }
 
 
@@ -145,5 +160,8 @@ class ToPandasDfResultHandler(ResultHandler[pd.DataFrame]):
 
         if column.get_type() in DATE_TYPES:
             series = pd.to_datetime(series, format="ISO8601")
+
+        if column.get_type() in DECIMAL_TYPES:
+            series = series.apply(lambda x: PythonDecimal(str(x)) if x is not np.nan else np.nan)  # type: ignore
 
         return series

@@ -454,6 +454,100 @@ class TestPreciseTimestampType:
         return expr
 
 
+class TestPandasResultHandlerPreciseTypes:
+    """Tests that the ToPandasDfResultHandler correctly creates Series for Decimal and precise primitive types."""
+
+    def test_decimal_column_series(self) -> None:
+        from decimal import Decimal as PythonDecimal
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        col = PrimitiveTdsColumn.decimal_column("dec_col")
+        series = ToPandasDfResultHandler._create_series([1.1, 2.2, 3.3], col, 0, 1)
+        assert series.name == "dec_col"
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.1")
+        assert series.iloc[1] == PythonDecimal("2.2")
+        assert series.iloc[2] == PythonDecimal("3.3")
+
+    def test_decimal_column_with_none(self) -> None:
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        import numpy as np
+        from decimal import Decimal as PythonDecimal
+        col = PrimitiveTdsColumn.decimal_column("dec_col")
+        series = ToPandasDfResultHandler._create_series([1.5, None, 3.5], col, 0, 1)
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.5")
+        assert np.isnan(series.iloc[1])
+        assert series.iloc[2] == PythonDecimal("3.5")
+
+    def test_decimal_column_with_python_decimal(self) -> None:
+        from decimal import Decimal as PythonDecimal
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        col = PrimitiveTdsColumn.decimal_column("dec_col")
+        series = ToPandasDfResultHandler._create_series(
+            [PythonDecimal("1.23"), PythonDecimal("4.56")], col, 0, 1
+        )
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.23")
+        assert series.iloc[1] == PythonDecimal("4.56")
+
+    @pytest.mark.parametrize("col_factory,expected_dtype", [
+        (PrimitiveTdsColumn.tinyint_column, "Int8"),
+        (PrimitiveTdsColumn.utinyint_column, "UInt8"),
+        (PrimitiveTdsColumn.smallint_column, "Int16"),
+        (PrimitiveTdsColumn.usmallint_column, "UInt16"),
+        (PrimitiveTdsColumn.int_column, "Int32"),
+        (PrimitiveTdsColumn.uint_column, "UInt32"),
+        (PrimitiveTdsColumn.bigint_column, "Int64"),
+        (PrimitiveTdsColumn.ubigint_column, "UInt64"),
+    ], ids=["TinyInt", "UTinyInt", "SmallInt", "USmallInt", "Int", "UInt", "BigInt", "UBigInt"])
+    def test_precise_integer_column_series(self, col_factory, expected_dtype) -> None:
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        col = col_factory("int_col")
+        series = ToPandasDfResultHandler._create_series([10, 20, 30], col, 0, 1)
+        assert series.name == "int_col"
+        assert series.dtype.name == expected_dtype
+        assert list(series) == [10, 20, 30]
+
+    @pytest.mark.parametrize("col_factory,expected_dtype", [
+        (PrimitiveTdsColumn.float4_column, "Float32"),
+        (PrimitiveTdsColumn.double_column, "Float64"),
+    ], ids=["Float4", "Double"])
+    def test_precise_float_column_series(self, col_factory, expected_dtype) -> None:
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        col = col_factory("float_col")
+        series = ToPandasDfResultHandler._create_series([1.1, 2.2, 3.3], col, 0, 1)
+        assert series.name == "float_col"
+        assert series.dtype.name == expected_dtype
+
+    def test_numeric_column_series(self) -> None:
+        from decimal import Decimal as PythonDecimal
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        col = PrimitiveTdsColumn.numeric_column("num_col")
+        series = ToPandasDfResultHandler._create_series([100.5, 200.5], col, 0, 1)
+        assert series.name == "num_col"
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("100.5")
+        assert series.iloc[1] == PythonDecimal("200.5")
+
+    def test_varchar_column_series(self) -> None:
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        col = PrimitiveTdsColumn.varchar_column("str_col")
+        series = ToPandasDfResultHandler._create_series(["a", "b", "c"], col, 0, 1)
+        assert series.name == "str_col"
+        assert series.dtype == "object"
+        assert list(series) == ["a", "b", "c"]
+
+    def test_timestamp_column_series(self) -> None:
+        import pandas as pd
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        col = PrimitiveTdsColumn.timestamp_column("ts_col")
+        series = ToPandasDfResultHandler._create_series(
+            ["2026-01-15T10:30:00.000000000", "2026-06-20T14:00:00.000000000"], col, 0, 1
+        )
+        assert series.name == "ts_col"
+        assert pd.api.types.is_datetime64_any_dtype(series)
+
+
 class TestPrecisePrimitiveDirectInstantiation:
     """Unit tests that directly instantiate precise primitives and call to_sql_expression."""
 
@@ -547,3 +641,128 @@ class TestPrecisePrimitiveDirectInstantiation:
             config=self.sql_to_string_config
         )
         assert result == '"root".col1'
+
+
+class TestCastToPreciseTypesPandasResultHandler:
+    """Verify that casting columns to precise/decimal types produces column metadata
+    that the ToPandasDfResultHandler can convert into pandas Series without errors."""
+
+    @staticmethod
+    def _cast_columns(original_columns, column_type_map):
+        from pylegend.core.tds.cast_helpers import validate_and_build_cast_columns
+        return validate_and_build_cast_columns(original_columns, column_type_map)
+
+    @pytest.mark.parametrize("cast_factory,col_factory,sample_data,expected_dtype", [
+        ("bigint", PrimitiveTdsColumn.integer_column, [1, 2, 3], "Int64"),
+        ("tinyint", PrimitiveTdsColumn.integer_column, [1, 2, 3], "Int8"),
+        ("utinyint", PrimitiveTdsColumn.integer_column, [1, 2, 3], "UInt8"),
+        ("smallint", PrimitiveTdsColumn.integer_column, [10, 20, 30], "Int16"),
+        ("usmallint", PrimitiveTdsColumn.integer_column, [10, 20, 30], "UInt16"),
+        ("int", PrimitiveTdsColumn.integer_column, [10, 20, 30], "Int32"),
+        ("uint", PrimitiveTdsColumn.integer_column, [10, 20, 30], "UInt32"),
+        ("ubigint", PrimitiveTdsColumn.integer_column, [10, 20, 30], "UInt64"),
+        ("float4", PrimitiveTdsColumn.float_column, [1.1, 2.2, 3.3], "Float32"),
+        ("double", PrimitiveTdsColumn.float_column, [1.1, 2.2, 3.3], "Float64"),
+    ], ids=[
+        "BigInt", "TinyInt", "UTinyInt", "SmallInt", "USmallInt",
+        "Int", "UInt", "UBigInt", "Float4", "Double",
+    ])
+    def test_cast_simple_precise_types(self, cast_factory, col_factory, sample_data, expected_dtype) -> None:
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        from pylegend.core.language import type_factory as tf
+
+        original_columns = [col_factory("col1")]
+        cast_target = getattr(tf, cast_factory)()
+        casted_columns = self._cast_columns(original_columns, {"col1": cast_target})
+
+        series = ToPandasDfResultHandler._create_series(sample_data, casted_columns[0], 0, 1)
+        assert series.dtype.name == expected_dtype
+        assert list(series) == sample_data
+
+    def test_cast_to_decimal(self) -> None:
+        from decimal import Decimal as PythonDecimal
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        from pylegend.core.language import type_factory as tf
+
+        original_columns = [PrimitiveTdsColumn.number_column("amount")]
+        casted_columns = self._cast_columns(original_columns, {"amount": tf.decimal()})
+
+        series = ToPandasDfResultHandler._create_series([10.5, 20.3, None], casted_columns[0], 0, 1)
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("10.5")
+
+    def test_cast_to_decimal_with_python_decimal(self) -> None:
+        from decimal import Decimal as PythonDecimal
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        from pylegend.core.language import type_factory as tf
+
+        original_columns = [PrimitiveTdsColumn.number_column("amount")]
+        casted_columns = self._cast_columns(original_columns, {"amount": tf.decimal()})
+
+        series = ToPandasDfResultHandler._create_series(
+            [PythonDecimal("1.23"), PythonDecimal("4.56")], casted_columns[0], 0, 1
+        )
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("1.23")
+
+    def test_cast_to_numeric(self) -> None:
+        from decimal import Decimal as PythonDecimal
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        from pylegend.core.language import type_factory as tf
+
+        original_columns = [PrimitiveTdsColumn.decimal_column("amount")]
+        casted_columns = self._cast_columns(original_columns, {"amount": tf.numeric(10, 2)})
+
+        series = ToPandasDfResultHandler._create_series([99.99, 100.01], casted_columns[0], 0, 1)
+        assert series.dtype == "object"
+        assert series.iloc[0] == PythonDecimal("99.99")
+
+    def test_cast_to_varchar(self) -> None:
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        from pylegend.core.language import type_factory as tf
+
+        original_columns = [PrimitiveTdsColumn.string_column("name")]
+        casted_columns = self._cast_columns(original_columns, {"name": tf.varchar(200)})
+
+        series = ToPandasDfResultHandler._create_series(["alice", "bob"], casted_columns[0], 0, 1)
+        assert series.dtype == "object"
+        assert list(series) == ["alice", "bob"]
+
+    def test_cast_to_timestamp(self) -> None:
+        import pandas as pd
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        from pylegend.core.language import type_factory as tf
+
+        original_columns = [PrimitiveTdsColumn.datetime_column("ts")]
+        casted_columns = self._cast_columns(original_columns, {"ts": tf.timestamp()})
+
+        series = ToPandasDfResultHandler._create_series(
+            ["2026-01-15T10:30:00.000000000"], casted_columns[0], 0, 1
+        )
+        assert pd.api.types.is_datetime64_any_dtype(series)
+
+    def test_cast_multiple_columns_at_once(self) -> None:
+        from pylegend.extensions.tds.result_handler.to_pandas_df_result_handler import ToPandasDfResultHandler
+        from pylegend.core.language import type_factory as tf
+
+        original_columns = [
+            PrimitiveTdsColumn.integer_column("Order Id"),
+            PrimitiveTdsColumn.string_column("Ship Name"),
+        ]
+        casted_columns = self._cast_columns(original_columns, {
+            "Order Id": tf.bigint(),
+            "Ship Name": tf.varchar(200),
+        })
+
+        assert casted_columns[0].get_type() == "BigInt"
+        assert casted_columns[1].get_type() == "Varchar"
+
+        # Interleaved data: [row0_col0, row0_col1, row1_col0, row1_col1, ...]
+        all_values = [101, "Ship A", 102, "Ship B", 103, "Ship C"]
+        s0 = ToPandasDfResultHandler._create_series(all_values, casted_columns[0], 0, 2)
+        s1 = ToPandasDfResultHandler._create_series(all_values, casted_columns[1], 1, 2)
+
+        assert s0.dtype.name == "Int64"
+        assert list(s0) == [101, 102, 103]
+        assert s1.dtype == "object"
+        assert list(s1) == ["Ship A", "Ship B", "Ship C"]
