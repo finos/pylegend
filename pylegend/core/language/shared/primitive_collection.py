@@ -865,7 +865,7 @@ class PyLegendDecimalCollection(PyLegendNumberCollection):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal()
+            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal(10, 2)
             frame.groupby("Ship Name")["id_dec"].aggregate(
                 lambda x: x.max()
             ).to_pandas().head(3)
@@ -892,7 +892,7 @@ class PyLegendDecimalCollection(PyLegendNumberCollection):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal()
+            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal(10, 2)
             frame.groupby("Ship Name")["id_dec"].aggregate(
                 lambda x: x.min()
             ).to_pandas().head(3)
@@ -919,7 +919,7 @@ class PyLegendDecimalCollection(PyLegendNumberCollection):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal()
+            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal(10, 2)
             frame.groupby("Ship Name")["id_dec"].aggregate(
                 lambda x: x.sum()
             ).to_pandas().head(3)
@@ -946,7 +946,7 @@ class PyLegendDecimalCollection(PyLegendNumberCollection):
             import pylegend
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal()
+            frame["id_dec"] = frame["Order Id"].to_string().parse_decimal(10, 2)
             frame.groupby("Order Id")["id_dec"].aggregate(
                 lambda x: x.distinct_value()
             ).to_pandas().head(3)
