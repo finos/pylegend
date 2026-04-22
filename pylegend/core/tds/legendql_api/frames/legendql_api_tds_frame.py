@@ -1390,40 +1390,21 @@ class LegendQLApiTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         --------
         .. ipython:: python
 
-            from pylegend import type_factory as tf
-            from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-            from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import (
-                LegendQLApiTableSpecInputFrame
-            )
+            import pylegend
+            from pylegend.core.language import type_factory as tf
 
-            frame = LegendQLApiTableSpecInputFrame(
-                ['db', 'schema', 'order'],
-                [
-                    PrimitiveTdsColumn.integer_column("Order Id"),
-                    PrimitiveTdsColumn.date_column("Order Date"),
-                    PrimitiveTdsColumn.string_column("Ship Name"),
-                    PrimitiveTdsColumn.float_column("Amount"),
-                    PrimitiveTdsColumn.decimal_column("Discount"),
-                ]
-            )
+            frame = pylegend.samples.legendql_api.northwind_orders_frame()
 
-            # Cast using simple types
-            cast_frame_1 = frame.cast({
-                "Order Date": tf.datetime(),
-                "Order Id": tf.number(),
-                "Amount": tf.number(),
-            })
-            print(cast_frame_1.to_pure_query())
+            # Widen an integer column to BigInt
+            casted = frame.cast({"Order Id": tf.bigint()})
+            casted.head(3).to_pandas()
 
-            # Cast using precise primitive types (including parameterized)
-            cast_frame_2 = frame.cast({
-                "Order Date": tf.timestamp(),
+            # Cast multiple columns at once
+            casted = frame.cast({
                 "Order Id": tf.bigint(),
                 "Ship Name": tf.varchar(200),
-                "Amount": tf.float4(),
-                "Discount": tf.numeric(10, 2),
             })
-            print(cast_frame_2.to_pure_query())
+            casted.head(3).to_pandas()
 
         """
         pass  # pragma: no cover
