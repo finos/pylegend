@@ -28,6 +28,7 @@ from pylegend.core.language.shared.functions import (
     most_recent_day_of_week,
     previous_day_of_week
 )
+from pylegend.core.language.shared.operations.date_operation_expressions import DayOfWeek
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
@@ -303,6 +304,20 @@ class TestPyLegendDate:
                'DATE_PART(\'dow\', "root".col2)'
         assert self.__generate_pure_string(lambda x: x.get_date("col2").dayOfWeekNumber()) == \
                'toOne($t.col2)->dayOfWeekNumber()'
+
+    def test_day_of_week_enum(self) -> None:
+        assert DayOfWeek.Monday.value == 1
+        assert DayOfWeek.Tuesday.value == 2
+        assert DayOfWeek.Wednesday.value == 3
+        assert DayOfWeek.Thursday.value == 4
+        assert DayOfWeek.Friday.value == 5
+        assert DayOfWeek.Saturday.value == 6
+        assert DayOfWeek.Sunday.value == 7
+        assert len(DayOfWeek) == 7
+        assert DayOfWeek(1) == DayOfWeek.Monday
+        assert DayOfWeek(7) == DayOfWeek.Sunday
+        assert DayOfWeek.Monday.name == "Monday"
+        assert DayOfWeek.Sunday.name == "Sunday"
 
     def test_today(self) -> None:
         assert self.__generate_sql_string(lambda x: today()) == \

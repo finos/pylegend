@@ -113,7 +113,10 @@ from pylegend.core.language.legacy_api.legacy_api_custom_expressions import (
     olap_agg,
     olap_rank,
 )
-from pylegend.core.language.shared.operations.date_operation_expressions import DurationUnit
+from pylegend.core.language.shared.operations.date_operation_expressions import (
+    DurationUnit,
+    DayOfWeek
+)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendPrimitive",
@@ -162,6 +165,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateTimeColumnExpression",
     "PyLegendStrictDateColumnExpression",
     "DurationUnit",
+    "DayOfWeek",
 
     "PyLegendBooleanLiteralExpression",
     "PyLegendStringLiteralExpression",
