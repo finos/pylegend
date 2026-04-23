@@ -162,6 +162,6 @@ class ToPandasDfResultHandler(ResultHandler[pd.DataFrame]):
             series = pd.to_datetime(series, format="ISO8601")
 
         if column.get_type() in DECIMAL_TYPES:
-            series = series.apply(lambda x: PythonDecimal(str(x)) if x is not np.nan else np.nan)  # type: ignore
+            series = series.apply(lambda x: PythonDecimal(str(x)) if pd.notna(x) else np.nan)
 
         return series

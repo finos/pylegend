@@ -151,9 +151,17 @@ class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
             frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
             config: FrameToSqlConfig
     ) -> Expression:
+        sign, digits, exponent = self.__value.as_tuple()
+        num_digits = len(digits)
+        if exponent < 0:  # type: ignore
+            scale = -exponent  # type: ignore
+            precision = max(num_digits, scale + 1)
+        else:
+            scale = 0
+            precision = num_digits + exponent  # type: ignore
         return Cast(
             expression=StringLiteral(value=str(self.__value), quoted=False),
-            type_=ColumnType(name="DECIMAL", parameters=[])
+            type_=ColumnType(name="DECIMAL", parameters=[precision, scale])
         )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:

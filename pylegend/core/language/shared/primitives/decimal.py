@@ -342,7 +342,7 @@ class PyLegendDecimal(PyLegendNumber):
             from decimal import Decimal
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["abs_val"] = abs(frame["Order Id"].to_decimal() - Decimal("10255"))
+            frame["abs_val"] = abs(frame["Order Id"].to_decimal() - Decimal("10.5"))
             frame.head(3).to_pandas()
 
         """
@@ -495,7 +495,7 @@ class PyLegendDecimal(PyLegendNumber):
             from decimal import Decimal
             frame = pylegend.samples.pandas_api.northwind_orders_frame()
 
-            frame["id_div"] = frame["Order Id"].to_decimal().divide(Decimal("3"), 4)
+            frame["id_div"] = frame["Order Id"].to_decimal().divide(Decimal("3.0"), 4)
             frame.head(3).to_pandas()
 
         """

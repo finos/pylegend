@@ -189,7 +189,7 @@ class TestPyLegendBoolean:
         assert self.__generate_sql_string(
             lambda x: x.get_boolean("col1").case(Decimal("1.5"), Decimal("2.5"))
         ) == ("CASE\n    WHEN\n        \"root\".col1\n    THEN\n        "
-              "CAST('1.5' AS DECIMAL)\n    ELSE\n        CAST('2.5' AS DECIMAL)\nEND")
+              "CAST('1.5' AS DECIMAL(2, 1))\n    ELSE\n        CAST('2.5' AS DECIMAL(2, 1))\nEND")
         assert self.__generate_pure_string(
             lambda x: x.get_boolean("col1").case(Decimal("1.5"), Decimal("2.5"))
         ) == 'if(toOne($t.col1), |1.5D, |2.5D)'

@@ -184,7 +184,7 @@ class TestAssignFunction:
             SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
-                CAST('9.99' AS DECIMAL) AS "decimalcol"
+                CAST('9.99' AS DECIMAL(3, 2)) AS "decimalcol"
             FROM
                 test_schema.test_table AS "root"''')
         assert frame.to_sql_query(FrameToSqlConfig()) == expected_sql

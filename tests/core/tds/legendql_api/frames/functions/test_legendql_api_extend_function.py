@@ -174,7 +174,7 @@ class TestExtendAppliedFunction:
             SELECT
                 "root".col1 AS "col1",
                 "root".col2 AS "col2",
-                ("root".col1 + CAST('1.5' AS DECIMAL)) AS "col3"
+                ("root".col1 + CAST('1.5' AS DECIMAL(2, 1))) AS "col3"
             FROM
                 test_schema.test_table AS "root"'''
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
