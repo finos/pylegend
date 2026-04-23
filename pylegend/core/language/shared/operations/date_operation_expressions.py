@@ -104,7 +104,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateTimeBucketExpression",
     "PyLegendPreviousDayOfWeekExpression",
     "PyLegendMostRecentDayOfWeekExpression",
-    "DurationUnit"
+    "DurationUnit",
+    "DayOfWeek",
 ]
 
 
@@ -119,6 +120,16 @@ class DurationUnit(Enum):
     MILLISECONDS = 8
     MICROSECONDS = 9
     NANOSECONDS = 10
+
+
+class DayOfWeek(Enum):
+    Monday = 1
+    Tuesday = 2
+    Wednesday = 3
+    Thursday = 4
+    Friday = 5
+    Saturday = 6
+    Sunday = 7
 
 
 class PyLegendFirstDayOfYearExpression(PyLegendUnaryExpression, PyLegendExpressionDateReturn):
