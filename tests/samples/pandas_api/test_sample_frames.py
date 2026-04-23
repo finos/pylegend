@@ -34,7 +34,7 @@ def test_northwind_orders_frame() -> None:
 
 @pytest.mark.skip(reason="Legend engine takes DECIMAL(5, 2) as default instead of DECIMAL(10, 2)")
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on windows")
-def test_decimal_collection_parse_decimal_precision() -> None:
+def test_decimal_collection_parse_decimal_precision() -> None:  # pragma: no cover
     frame = northwind_orders_frame()
     frame["id_dec"] = frame["Order Id"].to_string().parse_decimal(10, 2)  # type: ignore
     result = frame.groupby("Ship Name")["id_dec"].aggregate(
