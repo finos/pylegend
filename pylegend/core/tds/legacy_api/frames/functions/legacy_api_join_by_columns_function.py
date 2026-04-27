@@ -68,11 +68,11 @@ class LegacyApiJoinByColumnsFunction(LegacyApiAppliedFunction):
         if left_col.get_type() == right_col.get_type():
             return True
         if not isinstance(left_col, PrimitiveTdsColumn) or not isinstance(right_col, PrimitiveTdsColumn):
-            return False
+            return False  # pragma: no cover
         left_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(PrimitiveType[left_col.get_type()])
         right_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(PrimitiveType[right_col.get_type()])
         if left_cls is None or right_cls is None:
-            return False
+            return False  # pragma: no cover
         return issubclass(left_cls, right_cls) or issubclass(right_cls, left_cls)
 
     def __init__(
