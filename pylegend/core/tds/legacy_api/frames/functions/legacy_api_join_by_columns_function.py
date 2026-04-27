@@ -38,7 +38,8 @@ from pylegend.core.sql.metamodel import (
     ComparisonOperator,
     Expression,
 )
-from pylegend.core.tds.tds_column import TdsColumn
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, PrimitiveType
+from pylegend.core.tds.cast_helpers import PRIMITIVE_TYPE_TO_PYLEGEND_CLASS
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legacy_api.frames.legacy_api_base_tds_frame import LegacyApiBaseTdsFrame
@@ -61,6 +62,18 @@ class LegacyApiJoinByColumnsFunction(LegacyApiAppliedFunction):
     @classmethod
     def name(cls) -> str:
         return "join_by_columns"
+
+    @classmethod
+    def _is_join_type_compatible(cls, left_col: TdsColumn, right_col: TdsColumn) -> bool:
+        if left_col.get_type() == right_col.get_type():
+            return True
+        if not isinstance(left_col, PrimitiveTdsColumn) or not isinstance(right_col, PrimitiveTdsColumn):
+            return False
+        left_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(PrimitiveType[left_col.get_type()])
+        right_cls = PRIMITIVE_TYPE_TO_PYLEGEND_CLASS.get(PrimitiveType[right_col.get_type()])
+        if left_cls is None or right_cls is None:
+            return False
+        return issubclass(left_cls, right_cls) or issubclass(right_cls, left_cls)
 
     def __init__(
             self,
@@ -233,9 +246,10 @@ class LegacyApiJoinByColumnsFunction(LegacyApiAppliedFunction):
             left_col = list(filter(lambda c: c.get_name() == x, self.__base_frame.columns()))[0]
             right_col = list(filter(lambda c: c.get_name() == y, self.__other_frame.columns()))[0]
 
-            if left_col.get_type() != right_col.get_type():
+            if not self._is_join_type_compatible(left_col, right_col):
                 raise ValueError(
-                    f"Trying to join on columns with different types -  Left Col: {left_col}, Right Col: {right_col}"
+                    f"Trying to join on columns with incompatible types - "
+                    f" Left Col: {left_col}, Right Col: {right_col}"
                 )
 
             if x == y:
