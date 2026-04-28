@@ -87,9 +87,24 @@ class TestJoinByColumnsAppliedFunction:
         frame2: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], cols2)
         with pytest.raises(ValueError) as r:
             frame1.join_by_columns(frame2, ["col1"], ["col3"])
-        assert r.value.args[0] == ("Trying to join on columns with different types -  "
-                                   "Left Col: TdsColumn(Name: col1, Type: Integer), "
+        assert r.value.args[0] == ("Trying to join on columns with incompatible types - "
+                                   " Left Col: TdsColumn(Name: col1, Type: Integer), "
                                    "Right Col: TdsColumn(Name: col3, Type: String)")
+
+    def test_join_by_columns_subtype_compatibility(self) -> None:
+        int_col = [PrimitiveTdsColumn.integer_column("col1"), PrimitiveTdsColumn.string_column("col2")]
+        num_col = [PrimitiveTdsColumn.number_column("col3"), PrimitiveTdsColumn.string_column("col4")]
+        str_col = [PrimitiveTdsColumn.string_column("col5"), PrimitiveTdsColumn.string_column("col6")]
+
+        int_frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 't1'], int_col)
+        num_frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 't2'], num_col)
+        str_frame: LegacyApiTdsFrame = LegacyApiTableSpecInputFrame(['test_schema', 't3'], str_col)
+
+        int_frame.join_by_columns(num_frame, ["col1"], ["col3"])
+        num_frame.join_by_columns(int_frame, ["col3"], ["col1"])
+
+        with pytest.raises(ValueError, match="incompatible types"):
+            int_frame.join_by_columns(str_frame, ["col1"], ["col5"])
 
     def test_join_by_columns_error_on_duplicated_columns_not_being_joined(self) -> None:
         cols1 = [
