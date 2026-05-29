@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pylegend"
-version = "1.1.0"
+version = "1.1.1"
 description = "Python language binding for Legend data management platform"
 authors = ["PyLegend Maintainers <legend@finos.org>"]
 license = "Apache-2.0"
@@ -12,7 +12,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.14"
+python = ">=3.9,<3.15"
 requests = ">=2.27.1"
 ijson = ">=3.1.4"
 pandas = [
