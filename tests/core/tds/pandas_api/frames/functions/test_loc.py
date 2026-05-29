@@ -101,7 +101,7 @@ class TestLocFunction:
             expected_pure)
 
         # slice
-        newframe = frame.loc[:, 'col1':'col2']  # type: ignore
+        newframe = frame.loc[:, 'col1':'col2']
         expected_sql = '''\
             SELECT
                 "root".col1 AS "col1",
@@ -227,7 +227,7 @@ class TestLocFunction:
         assert json.loads(res)["result"] == expected
 
         # empty frame
-        newframe = frame.loc[:, 'Last Name':'First Name']  # type: ignore
+        newframe = frame.loc[:, 'Last Name':'First Name']
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': []}
         res = newframe.execute_frame_to_string()
