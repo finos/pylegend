@@ -13,7 +13,10 @@
 # limitations under the License.
 
 import json
+import os
+import pytest
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.project_cooridnates import VersionedProjectCoordinates
 from pylegend._typing import PyLegendDict, PyLegendUnion
 
 
@@ -111,6 +114,39 @@ class TestLegendClientE2E:
         }"""
 
         assert json.loads(b"".join(res))["result"] == json.loads(expected)
+
+    @pytest.mark.skipif(os.environ.get("JAVA_HOME") is None, reason="JAVA_HOME unset; requires legend_test_server")
+    @pytest.mark.xfail(
+        reason="Pure expression form for Legend services is not yet resolved (RESEARCH.md Open Question 1). "
+               "The .all() grammar is accepted by the parser but rejected by the engine's plan generator. "
+               "To be resolved in Plan 04 once the correct service Pure root expression is confirmed."
+    )
+    def test_e2e_pure_schema_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        coords = VersionedProjectCoordinates(
+            "org.finos.legend.pylegend", "pylegend-test-models", "0.0.1-SNAPSHOT"
+        )
+        res = client.get_pure_string_schema("|pylegend::test::SimplePersonService.all()", coords)
+        assert ", ".join([str(x) for x in res]) == \
+            "TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), " \
+            "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String)"
+
+    @pytest.mark.skipif(os.environ.get("JAVA_HOME") is None, reason="JAVA_HOME unset; requires legend_test_server")
+    @pytest.mark.xfail(
+        reason="Pure expression form for Legend services is not yet resolved (RESEARCH.md Open Question 1). "
+               "The .all() grammar is accepted by the parser but rejected by the engine's plan generator. "
+               "To be resolved in Plan 04 once the correct service Pure root expression is confirmed."
+    )
+    def test_e2e_pure_execute_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        coords = VersionedProjectCoordinates(
+            "org.finos.legend.pylegend", "pylegend-test-models", "0.0.1-SNAPSHOT"
+        )
+        res = client.execute_pure_string("|pylegend::test::SimplePersonService.all()", coords)
+        parsed = json.loads(b"".join(res))
+        assert parsed["result"]["columns"] == ["First Name", "Last Name", "Age", "Firm/Legal Name"]
+        assert parsed["result"]["rows"][0]["values"] == ["Peter", "Smith", 23, "Firm X"]
+        assert len(parsed["result"]["rows"]) == 7
 
     def test_e2e_parse_model_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
