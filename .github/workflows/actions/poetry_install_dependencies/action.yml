@@ -12,22 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Poetry Install Dependencies
+name: Install Dependencies
 
-description: Poetry Install Dependencies
+description: Install Dependencies
 
 runs:
   using: "composite"
   steps:
-    - name: Poetry Install Dependencies
+    - name: Install Dependencies
       shell: bash
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          source .venv/Scripts/activate
-        else
-          source .venv/bin/activate
-        fi
-        echo "Poetry executable is:" $(which poetry)
-        echo "Running poetry install"
-        poetry install --with dev
+        echo "Running uv sync"
+        uv sync
         echo "Done with installing dependencies"
