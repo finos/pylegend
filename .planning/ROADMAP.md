@@ -37,7 +37,7 @@ Plans:
 
 - [x] 01-01-PLAN.md — Register Execute JAX-RS resource in PyLegendSqlServer.java; rebuild test server JAR via Maven (Wave 1)
 - [x] 01-02-PLAN.md — Implement to_pure() bodies for LegendServiceInputFrameAbstract and LegendFunctionInputFrameAbstract with unit + integration tests (Wave 1)
-- [ ] 01-03-PLAN.md — Add LegendClient.execute_pure_string and get_pure_string_schema (plus _build_execute_input helper) and Pure e2e tests (Wave 2)
+- [x] 01-03-PLAN.md — Add LegendClient.execute_pure_string and get_pure_string_schema (plus _build_execute_input helper) and Pure e2e tests (Wave 2)
 - [ ] 01-04-PLAN.md — Switch LegendQL service/function input frames to Pure schema fetch; override execute_frame on LegendQLApiBaseTdsFrame to route through execute_pure_string; integration tests + end-of-phase verification (Wave 3)
 
 ### Phase 2: Remove Legacy Code
@@ -89,7 +89,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fix Pure Foundation | 2/4 | In Progress|  |
+| 1. Fix Pure Foundation | 3/4 | In Progress|  |
 | 2. Remove Legacy Code | 0/TBD | Not started | - |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
