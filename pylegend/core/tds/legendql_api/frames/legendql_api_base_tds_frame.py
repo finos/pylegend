@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import ABCMeta
+from typing import TYPE_CHECKING
 
 from pylegend._typing import (
     PyLegendSequence,
@@ -45,6 +46,9 @@ from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQ
 from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.core.tds.tds_column import TdsColumn
 
+if TYPE_CHECKING:
+    from pylegend.core.project_cooridnates import ProjectCoordinates
+
 __all__: PyLegendSequence[str] = [
     "LegendQLApiBaseTdsFrame"
 ]
@@ -67,7 +71,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
         )
         return result_handler.handle_result(self, result)  # type: ignore[return-value]
 
-    def _get_legendql_input_project_coordinates(self) -> "ProjectCoordinates":  # noqa: F821
+    def _get_legendql_input_project_coordinates(self) -> "ProjectCoordinates":
         from pylegend.core.project_cooridnates import ProjectCoordinates
         from pylegend.extensions.tds.abstract.legend_service_input_frame import LegendServiceInputFrameAbstract
         from pylegend.extensions.tds.abstract.legend_function_input_frame import LegendFunctionInputFrameAbstract

@@ -28,7 +28,7 @@ from pylegend._typing import (
     PyLegendList,
 )
 from pylegend.core.project_cooridnates import ProjectCoordinates, VersionedProjectCoordinates
-from pylegend.core.tds.tds_column import TdsColumn, tds_columns_from_json
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, PrimitiveType, tds_columns_from_json
 
 
 __all__: PyLegendSequence[str] = [
@@ -126,7 +126,7 @@ class LegendClient(ServiceClient):
                 raise RuntimeError(
                     "Unexpected resultType JSON shape from generatePlan: " + repr(str(plan_json))[:200], e
                 )
-            return tds_columns_from_json(json.dumps(result_type))
+            return self._tds_columns_from_plan_result_type(result_type)
         except RuntimeError as pure_err:
             LOGGER.debug("Pure generatePlan failed (%s); attempting depot-based schema", pure_err)
             if self.__depot_server_host is not None and self.__depot_server_port is not None:
@@ -146,7 +146,7 @@ class LegendClient(ServiceClient):
                         "Unexpected resultType JSON shape from depot generatePlan: "
                         + repr(str(plan_json2))[:200], e2
                     )
-                return tds_columns_from_json(json.dumps(result_type2))
+                return self._tds_columns_from_plan_result_type(result_type2)
             LOGGER.debug("No depot configured; falling back to SQL schema")
             sql_query = self._pure_to_sql_fallback(pure, project_coordinates)
             return self.get_sql_string_schema(sql_query)
@@ -248,7 +248,7 @@ class LegendClient(ServiceClient):
                 if (elem.get("_type") == "service"
                         and elem.get("name") == service_name
                         and elem.get("package", "") == service_pkg):
-                    execution = elem.get("execution", {})
+                    execution: PyLegendDict[str, object] = elem.get("execution", {})  # type: ignore[assignment]
                     return {
                         "function": execution["func"],
                         "model": model_pointer,
@@ -324,6 +324,43 @@ class LegendClient(ServiceClient):
         raise RuntimeError(
             f"Cannot construct SQL fallback for Pure string '{pure[:80]}'"
         )
+
+    def _tds_columns_from_plan_result_type(
+            self,
+            result_type: "PyLegendDict[str, object]"
+    ) -> PyLegendSequence[TdsColumn]:
+        """Parse TdsColumn list from Pure generatePlan resultType JSON.
+
+        The Pure execution plan result type has shape:
+          {"_type": "tds", "tdsColumns": [{"name": "...", "type": "...", ...}]}
+        whereas the SQL schema endpoint returns:
+          {"columns": [{"_type": "primitiveSchemaColumn", "name": "...", "type": "..."}]}
+        This method handles the Pure plan format specifically.
+        """
+        try:
+            result_columns: PyLegendList[TdsColumn] = []
+            raw_tds_cols = result_type.get("tdsColumns") or result_type.get("columns")
+            tds_cols: PyLegendList[PyLegendDict[str, object]] = raw_tds_cols  # type: ignore[assignment]
+            if tds_cols is None:
+                raise RuntimeError(
+                    "Neither 'tdsColumns' nor 'columns' found in plan result_type: "
+                    + repr(str(result_type))[:200]
+                )
+            for col in tds_cols:
+                col_type_str: str = str(col["type"])
+                col_name: str = str(col["name"])
+                try:
+                    prim_type = PrimitiveType[col_type_str]
+                    result_columns.append(PrimitiveTdsColumn(col_name, prim_type))
+                except KeyError:
+                    result_columns.append(
+                        PrimitiveTdsColumn(col_name, PrimitiveType.String)
+                    )
+            return result_columns
+        except Exception as e:
+            raise RuntimeError(
+                "Unable to parse tds columns from plan result_type: " + repr(str(result_type))[:200], e
+            )
 
     def _build_execute_input(
             self,
