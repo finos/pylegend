@@ -98,18 +98,58 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PURE-01–05 | Phase 1 | Pending |
-| REMV-01–05 | Phase 2 | Pending |
-| IBIS-01–06 | Phase 3 | Pending |
-| QLOP-01–18 | Phase 4 | Pending |
-| COMPAT-01–08 | Phase 5 | Pending |
-| TEST-01–04 | Phases 1, 3, 5, 6 | Pending |
+| PURE-01 | Phase 1 | Pending |
+| PURE-02 | Phase 1 | Pending |
+| PURE-03 | Phase 1 | Pending |
+| PURE-04 | Phase 1 | Pending |
+| PURE-05 | Phase 1 | Pending |
+| TEST-01 | Phase 1 | Pending |
+| TEST-02 | Phase 1 | Pending |
+| REMV-01 | Phase 2 | Pending |
+| REMV-02 | Phase 2 | Pending |
+| REMV-03 | Phase 2 | Pending |
+| REMV-04 | Phase 2 | Pending |
+| REMV-05 | Phase 2 | Pending |
+| IBIS-01 | Phase 3 | Pending |
+| IBIS-02 | Phase 3 | Pending |
+| IBIS-03 | Phase 3 | Pending |
+| IBIS-04 | Phase 3 | Pending |
+| IBIS-05 | Phase 3 | Pending |
+| IBIS-06 | Phase 3 | Pending |
+| QLOP-01 | Phase 3 | Pending |
+| QLOP-02 | Phase 3 | Pending |
+| QLOP-03 | Phase 3 | Pending |
+| QLOP-04 | Phase 3 | Pending |
+| QLOP-05 | Phase 3 | Pending |
+| QLOP-06 | Phase 3 | Pending |
+| QLOP-07 | Phase 3 | Pending |
+| QLOP-08 | Phase 3 | Pending |
+| QLOP-09 | Phase 3 | Pending |
+| QLOP-10 | Phase 3 | Pending |
+| QLOP-11 | Phase 3 | Pending |
+| QLOP-12 | Phase 3 | Pending |
+| QLOP-13 | Phase 3 | Pending |
+| QLOP-14 | Phase 3 | Pending |
+| QLOP-15 | Phase 3 | Pending |
+| QLOP-16 | Phase 3 | Pending |
+| QLOP-17 | Phase 3 | Pending |
+| QLOP-18 | Phase 3 | Pending |
+| COMPAT-01 | Phase 4 | Pending |
+| COMPAT-02 | Phase 4 | Pending |
+| COMPAT-03 | Phase 4 | Pending |
+| COMPAT-04 | Phase 4 | Pending |
+| COMPAT-05 | Phase 4 | Pending |
+| COMPAT-06 | Phase 4 | Pending |
+| COMPAT-07 | Phase 4 | Pending |
+| COMPAT-08 | Phase 4 | Pending |
+| TEST-03 | Phase 4 | Pending |
+| TEST-04 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 48 total
-- Mapped to phases: 48
-- Unmapped: 0 ✓
+- v1 requirements: 46 total
+- Mapped to phases: 46
+- Unmapped: 0 (verified)
 
 ---
 *Requirements defined: 2026-05-31*
-*Last updated: 2026-05-31 after initial definition*
+*Last updated: 2026-05-30 after roadmap creation (traceability corrected to 4-phase structure)*
