@@ -32,13 +32,23 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Running the existing LegendQL integration tests against a Legend engine produces results via Pure execution (no SQL path invoked)
   4. The Legend PCT matrix remains green after these changes
 
-**Plans**: 4 plans
-Plans:
+**Plans**: 5 plansPlans:
+**Wave 1**
 
 - [x] 01-01-PLAN.md — Register Execute JAX-RS resource in PyLegendSqlServer.java; rebuild test server JAR via Maven (Wave 1)
 - [x] 01-02-PLAN.md — Implement to_pure() bodies for LegendServiceInputFrameAbstract and LegendFunctionInputFrameAbstract with unit + integration tests (Wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [x] 01-03-PLAN.md — Add LegendClient.execute_pure_string and get_pure_string_schema (plus _build_execute_input helper) and Pure e2e tests (Wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [x] 01-04-PLAN.md — Switch LegendQL service/function input frames to Pure schema fetch; override execute_frame on LegendQLApiBaseTdsFrame to route through execute_pure_string; integration tests + end-of-phase verification (Wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 01-05-PLAN.md — GAP CLOSURE: Guard execute_frame override on LegendQLApiBaseTdsFrame for non-service/function frames (fix test_table_spec_frame_execution_error); remove stale xfail decorators from test_e2e_pure_schema_api and test_e2e_pure_execute_api (Wave 4)
 
 ### Phase 2: Remove Legacy Code
 
