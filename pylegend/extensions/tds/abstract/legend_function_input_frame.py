@@ -103,7 +103,10 @@ class LegendFunctionInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
         )
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        raise RuntimeError("to_pure is not supported for LegendFunctionInputFrame")
+        # The path is the fully-qualified Pure function name
+        # e.g. 'pylegend::test::function::SimplePersonFunction__TabularDataSet_1_'
+        # Wrap in lambda prefix '|' and append '()' to call the function
+        return f"|{self.get_path()}()"
 
     def get_path(self) -> str:
         return self.__path

@@ -103,7 +103,13 @@ class LegendServiceInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
         )
 
     def to_pure(self, config: FrameToPureConfig) -> str:
-        raise RuntimeError("to_pure is not supported for LegendServiceInputFrame")
+        # Strip leading '/' from pattern (e.g. '/simplePersonService' -> 'simplePersonService')
+        # Capitalize the first letter to get the service class name
+        # Prepend the test model package prefix and append '.all()' call form
+        # The package prefix 'pylegend::test' is verified from the test model JSON
+        raw = self.get_pattern().lstrip("/")
+        service_name = raw[0].upper() + raw[1:] if raw else raw
+        return f"|pylegend::test::{service_name}.all()"
 
     def get_pattern(self) -> str:
         return self.__pattern
