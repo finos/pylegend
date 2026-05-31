@@ -28,7 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `LegendClient` exposes `execute_pure_string()` and `get_pure_string_schema()` methods that communicate with the Legend engine over the correct HTTP endpoint
   3. Running the existing LegendQL integration tests against a Legend engine produces results via Pure execution (no SQL path invoked)
   4. The Legend PCT matrix remains green after these changes
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 01-01-PLAN.md — Register Execute JAX-RS resource in PyLegendSqlServer.java; rebuild test server JAR via Maven (Wave 1)
+- [ ] 01-02-PLAN.md — Implement to_pure() bodies for LegendServiceInputFrameAbstract and LegendFunctionInputFrameAbstract with unit + integration tests (Wave 1)
+- [ ] 01-03-PLAN.md — Add LegendClient.execute_pure_string and get_pure_string_schema (plus _build_execute_input helper) and Pure e2e tests (Wave 2)
+- [ ] 01-04-PLAN.md — Switch LegendQL service/function input frames to Pure schema fetch; override execute_frame on LegendQLApiBaseTdsFrame to route through execute_pure_string; integration tests + end-of-phase verification (Wave 3)
 
 ### Phase 2: Remove Legacy Code
 **Goal**: The codebase contains only the LegendQL API and the Pure execution path; all Legacy API, Pandas API, SQL metamodel, and associated dev dependencies are gone
@@ -70,7 +75,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fix Pure Foundation | 0/TBD | Not started | - |
+| 1. Fix Pure Foundation | 0/4 | Not started | - |
 | 2. Remove Legacy Code | 0/TBD | Not started | - |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
