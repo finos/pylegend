@@ -29,25 +29,16 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Install Poetry
+    - name: Install uv
       run: |
-        echo "Install poetry"
-        pip install poetry
+        echo "Install uv"
+        pip install uv
       shell: bash
 
     - name: Setup Virtual Environment
       run: |
         echo "Python version is:" $(python --version)
-        echo "Creating and activating virtual environment"
-        python -m venv .venv
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          source .venv/Scripts/activate
-        else
-          source .venv/bin/activate
-        fi
-        echo "Done with activating virtual environment"
-        echo "Python executable is:" $(which python)
-        echo "Update pip and setuptools"
-        python -m pip install --upgrade pip setuptools
+        echo "Creating virtual environment"
+        uv venv .venv
         echo "Setup complete"
       shell: bash

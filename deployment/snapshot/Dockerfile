@@ -32,4 +32,5 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python
 WORKDIR /workspace
 COPY . /workspace
 
-RUN pip install -e .
+RUN pip install uv
+RUN uv pip install --system -e .
