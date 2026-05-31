@@ -42,6 +42,7 @@ from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApi
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 from pylegend.core.tds.cast_helpers import CastTarget
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
+from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.core.tds.tds_column import TdsColumn
 
 __all__: PyLegendSequence[str] = [
@@ -54,6 +55,35 @@ R = PyLegendTypeVar('R')
 class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):
     def __init__(self, columns: PyLegendSequence[TdsColumn]) -> None:
         BaseTdsFrame.__init__(self, columns=columns)
+
+    def execute_frame(
+            self,
+            result_handler: ResultHandler[R],
+            chunk_size: PyLegendOptional[int] = None
+    ) -> R:
+        project_coordinates = self._get_legendql_input_project_coordinates()
+        result = self.get_legend_client().execute_pure_string(
+            self.to_pure_query(), project_coordinates, chunk_size=chunk_size
+        )
+        return result_handler.handle_result(self, result)  # type: ignore[return-value]
+
+    def _get_legendql_input_project_coordinates(self) -> "ProjectCoordinates":  # noqa: F821
+        from pylegend.core.project_cooridnates import ProjectCoordinates
+        from pylegend.extensions.tds.abstract.legend_service_input_frame import LegendServiceInputFrameAbstract
+        from pylegend.extensions.tds.abstract.legend_function_input_frame import LegendFunctionInputFrameAbstract
+        coords_list: PyLegendList["ProjectCoordinates"] = []
+        for frame in self.get_all_tds_frames():
+            if isinstance(frame, (LegendServiceInputFrameAbstract, LegendFunctionInputFrameAbstract)):
+                c = frame.get_project_coordinates()
+                if not any(c is existing for existing in coords_list):
+                    coords_list.append(c)
+        n = len(coords_list)
+        if n != 1:
+            raise RuntimeError(
+                "Expected exactly one LegendQL service/function input frame with project_coordinates, "
+                f"found {n}"
+            )
+        return coords_list[0]
 
     def head(self, row_count: int = 5) -> "LegendQLApiTdsFrame":
         from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import (

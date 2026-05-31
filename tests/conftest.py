@@ -96,7 +96,7 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
 
     LOGGER.info(f"Legend Test Server started in {(datetime.datetime.now() - start).seconds} seconds ...")
 
-    yield {"engine_port": engine_port}
+    yield {"engine_port": engine_port, "metadata_port": metadata_port}
 
     LOGGER.info("Terminate Legend Test Server ....")
     engine_process.terminate()

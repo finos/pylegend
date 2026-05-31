@@ -18,6 +18,7 @@ from pylegend._typing import (
 from pylegend.core.tds.legendql_api.frames.legendql_api_input_tds_frame import LegendQLApiExecutableInputTdsFrame
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.extensions.tds.abstract.legend_service_input_frame import LegendServiceInputFrameAbstract
 
 
@@ -38,7 +39,7 @@ class LegendQLApiLegendServiceInputFrame(LegendServiceInputFrameAbstract, Legend
         LegendQLApiExecutableInputTdsFrame.__init__(
             self,
             legend_client=legend_client,
-            columns=legend_client.get_sql_string_schema(self.to_sql_query())
+            columns=legend_client.get_pure_string_schema(self.to_pure(FrameToPureConfig()), project_coordinates)
         )
         LegendQLApiLegendServiceInputFrame.set_initialized(self, True)
 
