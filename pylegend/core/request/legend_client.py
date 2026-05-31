@@ -20,9 +20,11 @@ import json
 from pylegend.core.request.response_reader import ResponseReader
 from pylegend.core.request.auth import AuthScheme, LocalhostEmptyAuthScheme
 from pylegend._typing import (
+    PyLegendDict,
     PyLegendSequence,
     PyLegendOptional,
 )
+from pylegend.core.project_cooridnates import ProjectCoordinates, VersionedProjectCoordinates
 from pylegend.core.tds.tds_column import TdsColumn, tds_columns_from_json
 
 
@@ -77,6 +79,82 @@ class LegendClient(ServiceClient):
             stream=True
         ).iter_content(chunk_size=chunk_size)
         return ResponseReader(iter_content)
+
+    def get_pure_string_schema(
+            self,
+            pure: str,
+            project_coordinates: ProjectCoordinates
+    ) -> PyLegendSequence[TdsColumn]:
+        lambda_response = super()._execute_service(
+            method=RequestMethod.POST,
+            path="pure/v1/grammar/grammarToJson/lambda",
+            data=pure,
+            headers={"Content-Type": "text/plain"},
+            stream=False
+        )
+        lambda_json: PyLegendDict[str, object] = json.loads(lambda_response.text)
+        execute_input = self._build_execute_input(lambda_json, project_coordinates)
+        plan_response = super()._execute_service(
+            method=RequestMethod.POST,
+            path="pure/v1/execution/generatePlan",
+            data=json.dumps(execute_input),
+            headers={"Content-Type": "application/json"},
+            stream=False
+        )
+        plan_json = json.loads(plan_response.text)
+        try:
+            result_type = plan_json["rootExecutionNode"]["resultType"]
+        except (KeyError, TypeError) as e:
+            raise RuntimeError(
+                "Unexpected resultType JSON shape from generatePlan: " + repr(str(plan_json))[:200], e
+            )
+        return tds_columns_from_json(json.dumps(result_type))
+
+    def execute_pure_string(
+            self,
+            pure: str,
+            project_coordinates: ProjectCoordinates,
+            chunk_size: PyLegendOptional[int] = None
+    ) -> ResponseReader:
+        lambda_response = super()._execute_service(
+            method=RequestMethod.POST,
+            path="pure/v1/grammar/grammarToJson/lambda",
+            data=pure,
+            headers={"Content-Type": "text/plain"},
+            stream=False
+        )
+        lambda_json: PyLegendDict[str, object] = json.loads(lambda_response.text)
+        execute_input = self._build_execute_input(lambda_json, project_coordinates)
+        iter_content = super()._execute_service(
+            method=RequestMethod.POST,
+            path="pure/v1/execution/execute",
+            data=json.dumps(execute_input),
+            headers={"Content-Type": "application/json"},
+            stream=True
+        ).iter_content(chunk_size=chunk_size)
+        return ResponseReader(iter_content)
+
+    def _build_execute_input(
+            self,
+            lambda_json: "PyLegendDict[str, object]",
+            project_coordinates: ProjectCoordinates
+    ) -> "PyLegendDict[str, object]":
+        if not isinstance(project_coordinates, VersionedProjectCoordinates):
+            raise RuntimeError(
+                "Pure execution requires VersionedProjectCoordinates; "
+                "got " + type(project_coordinates).__name__
+            )
+        sdlc_info: PyLegendDict[str, object] = {
+            "_type": "alloy",
+            "groupId": project_coordinates.get_group_id(),
+            "artifactId": project_coordinates.get_artifact_id(),
+            "version": project_coordinates.get_version(),
+        }
+        return {
+            "function": lambda_json,
+            "model": {"_type": "pointer", "sdlcInfo": sdlc_info},
+            "context": {"_type": "BaseExecutionContext"},
+        }
 
     def parse_model(
             self,
