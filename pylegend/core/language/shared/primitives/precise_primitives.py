@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language.shared.primitives.integer import PyLegendInteger
 from pylegend.core.language.shared.primitives.string import PyLegendString
@@ -28,11 +27,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionDecimalReturn,
 )
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -58,26 +52,12 @@ class PyLegendTinyInt(PyLegendInteger):
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
-
 
 class PyLegendUTinyInt(PyLegendInteger):
     """Precise primitive: UTinyInt – unsigned 8-bit integer (0 .. 255)."""
 
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
 class PyLegendSmallInt(PyLegendInteger):
@@ -86,26 +66,12 @@ class PyLegendSmallInt(PyLegendInteger):
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
-
 
 class PyLegendUSmallInt(PyLegendInteger):
     """Precise primitive: USmallInt – unsigned 16-bit integer (0 .. 65535)."""
 
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
 class PyLegendInt(PyLegendInteger):
@@ -114,26 +80,12 @@ class PyLegendInt(PyLegendInteger):
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
-
 
 class PyLegendUInt(PyLegendInteger):
     """Precise primitive: UInt – unsigned 32-bit integer."""
 
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
 class PyLegendBigInt(PyLegendInteger):
@@ -142,26 +94,12 @@ class PyLegendBigInt(PyLegendInteger):
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
-
 
 class PyLegendUBigInt(PyLegendInteger):
     """Precise primitive: UBigInt – unsigned 64-bit integer."""
 
     def __init__(self, value: PyLegendExpressionIntegerReturn) -> None:
         super().__init__(value)
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
 class PyLegendVarchar(PyLegendString):
@@ -176,26 +114,12 @@ class PyLegendVarchar(PyLegendString):
     def max_length(self) -> int:
         return self.__max_length  # pragma: no cover
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
-
 
 class PyLegendTimestamp(PyLegendDateTime):
     """Precise primitive: Timestamp – extends DateTime."""
 
     def __init__(self, value: PyLegendExpressionDateTimeReturn) -> None:
         super().__init__(value)
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
 class PyLegendFloat4(PyLegendFloat):
@@ -204,26 +128,12 @@ class PyLegendFloat4(PyLegendFloat):
     def __init__(self, value: PyLegendExpressionFloatReturn) -> None:
         super().__init__(value)
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
-
 
 class PyLegendDouble(PyLegendFloat):
     """Precise primitive: Double – double-precision float."""
 
     def __init__(self, value: PyLegendExpressionFloatReturn) -> None:
         super().__init__(value)
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
 
 class PyLegendNumeric(PyLegendDecimal):
@@ -247,10 +157,3 @@ class PyLegendNumeric(PyLegendDecimal):
     @property
     def scale(self) -> int:
         return self.__scale  # pragma: no cover
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)

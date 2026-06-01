@@ -15,7 +15,6 @@
 from datetime import datetime
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.language.shared.operations.date_operation_expressions import PyLegendDateTimeBucketExpression
@@ -29,12 +28,7 @@ from pylegend.core.language.shared.literal_expressions import (
     PyLegendIntegerLiteralExpression,
     PyLegendStringLiteralExpression,
 )
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification
-)
 from pylegend.utils.grammar_method import grammar_method
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 
 __all__: PyLegendSequence[str] = [
@@ -65,13 +59,6 @@ class PyLegendDateTime(PyLegendDate):
     ) -> None:
         super().__init__(value)
         self.__value = value
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     def value(self) -> PyLegendExpressionDateTimeReturn:
         return self.__value

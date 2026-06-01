@@ -33,19 +33,13 @@ checks, string conversion, ``in_list``).
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
     TYPE_CHECKING,
 )
 from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.expression import PyLegendExpressionIntegerReturn
 from pylegend.core.language.shared.literal_expressions import PyLegendIntegerLiteralExpression
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification
-)
 from pylegend.utils.grammar_method import grammar_method
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.shared.operations.integer_operation_expressions import (
     PyLegendIntegerAddExpression,
     PyLegendIntegerAbsoluteExpression,
@@ -83,13 +77,6 @@ class PyLegendInteger(PyLegendNumber):
     def char(self) -> "PyLegendString":
         from pylegend.core.language.shared.primitives.string import PyLegendString
         return PyLegendString(PyLegendIntegerCharExpression(self.__value_copy))
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     def value(self) -> PyLegendExpressionIntegerReturn:
         return self.__value_copy
