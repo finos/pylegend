@@ -74,8 +74,6 @@ from pylegend.core.language.shared.column_expressions import (
     PyLegendDateTimeColumnExpression,
     PyLegendStrictDateColumnExpression,
 )
-from pylegend.core.language.legacy_api.legacy_api_tds_row import LegacyApiTdsRow
-from pylegend.core.language.legacy_api.aggregate_specification import LegacyApiAggregateSpecification, agg
 from pylegend.core.language.shared.primitive_collection import (
     PyLegendPrimitiveCollection,
     PyLegendIntegerCollection,
@@ -105,13 +103,6 @@ from pylegend.core.language.shared.variable_expressions import (
     PyLegendDateVariableExpression,
     PyLegendStrictDateVariableExpression,
     PyLegendDateTimeVariableExpression,
-)
-from pylegend.core.language.legacy_api.legacy_api_custom_expressions import (
-    LegacyApiOLAPGroupByOperation,
-    LegacyApiOLAPAggregation,
-    LegacyApiOLAPRank,
-    olap_agg,
-    olap_rank,
 )
 from pylegend.core.language.shared.operations.date_operation_expressions import (
     DurationUnit,
@@ -175,16 +166,6 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateTimeLiteralExpression",
     "PyLegendStrictDateLiteralExpression",
     "convert_literal_to_literal_expression",
-
-    "LegacyApiTdsRow",
-    "LegacyApiAggregateSpecification",
-    "agg",
-
-    "LegacyApiOLAPGroupByOperation",
-    "LegacyApiOLAPAggregation",
-    "LegacyApiOLAPRank",
-    "olap_agg",
-    "olap_rank",
 
     "PyLegendPrimitiveCollection",
     "PyLegendIntegerCollection",
