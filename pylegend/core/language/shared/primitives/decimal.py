@@ -48,7 +48,7 @@ from pylegend.core.sql.metamodel import (
     Expression,
     QuerySpecification
 )
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
+from pylegend.utils.grammar_method import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.language.shared.operations.decimal_operation_expressions import (
     PyLegendDecimalAbsoluteExpression,
