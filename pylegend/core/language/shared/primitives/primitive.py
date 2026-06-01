@@ -37,7 +37,7 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
     PyLegendPrimitiveToStringExpression,
     PyLegendInListExpression,
 )
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
+from pylegend.utils.grammar_method import grammar_method
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
