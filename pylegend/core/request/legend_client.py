@@ -147,9 +147,7 @@ class LegendClient(ServiceClient):
                         + repr(str(plan_json2))[:200], e2
                     )
                 return self._tds_columns_from_plan_result_type(result_type2)
-            LOGGER.debug("No depot configured; falling back to SQL schema")
-            sql_query = self._pure_to_sql_fallback(pure, project_coordinates)
-            return self.get_sql_string_schema(sql_query)
+            raise
 
     def execute_pure_string(
             self,
@@ -187,8 +185,7 @@ class LegendClient(ServiceClient):
                     stream=True
                 ).iter_content(chunk_size=chunk_size)
                 return ResponseReader(iter_content2)
-            LOGGER.debug("No depot configured; falling back to SQL execution")
-            return self.execute_sql_string(self._pure_to_sql_fallback(pure, project_coordinates), chunk_size)
+            raise
 
     def _get_model_context_data(
             self,
@@ -281,48 +278,6 @@ class LegendClient(ServiceClient):
             raise RuntimeError(f"Function '{func_full_path}' not found in depot model for {project_coordinates}")
         raise RuntimeError(
             f"Pure string '{pure[:80]}' does not match known service or function patterns for depot execution"
-        )
-
-    def _pure_to_sql_fallback(
-            self,
-            pure: str,
-            project_coordinates: ProjectCoordinates
-    ) -> str:
-        if not isinstance(project_coordinates, VersionedProjectCoordinates):
-            raise RuntimeError(
-                "SQL fallback requires VersionedProjectCoordinates; "
-                "got " + type(project_coordinates).__name__
-            )
-        import re
-        # Service pattern: |pkg::ServiceName.all()
-        service_match = re.match(r"^\|(.+)\.all\(\)$", pure.strip())
-        if service_match:
-            service_full_path = service_match.group(1)
-            service_name = service_full_path.rsplit("::", 1)[-1]
-            # Convert ServiceName to /serviceName (lowercase first char)
-            pattern = "/" + service_name[0].lower() + service_name[1:]
-            coords_str = (
-                f"{project_coordinates.get_group_id()}"
-                f":{project_coordinates.get_artifact_id()}"
-                f":{project_coordinates.get_version()}"
-            )
-            return (
-                f"SELECT * FROM service(pattern => '{pattern}', coordinates => '{coords_str}')"
-            )
-        # Function pattern: |pkg::FunctionPath()
-        func_match = re.match(r"^\|(.+)\(\)$", pure.strip())
-        if func_match:
-            func_full_path = func_match.group(1)
-            coords_str = (
-                f"{project_coordinates.get_group_id()}"
-                f":{project_coordinates.get_artifact_id()}"
-                f":{project_coordinates.get_version()}"
-            )
-            return (
-                f"SELECT * FROM func(path => '{func_full_path}', coordinates => '{coords_str}')"
-            )
-        raise RuntimeError(
-            f"Cannot construct SQL fallback for Pure string '{pure[:80]}'"
         )
 
     def _tds_columns_from_plan_result_type(

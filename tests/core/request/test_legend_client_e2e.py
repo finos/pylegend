@@ -116,13 +116,11 @@ class TestLegendClientE2E:
         assert json.loads(b"".join(res))["result"] == json.loads(expected)
 
     @pytest.mark.skipif(os.environ.get("JAVA_HOME") is None, reason="JAVA_HOME unset; requires legend_test_server")
-    @pytest.mark.xfail(
-        reason="Pure expression form for Legend services is not yet resolved (RESEARCH.md Open Question 1). "
-               "The .all() grammar is accepted by the parser but rejected by the engine's plan generator. "
-               "To be resolved in Plan 04 once the correct service Pure root expression is confirmed."
-    )
     def test_e2e_pure_schema_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        client = LegendClient(
+            "localhost", legend_test_server["engine_port"], secure_http=False,
+            depot_server_host="localhost", depot_server_port=legend_test_server["metadata_port"]
+        )
         coords = VersionedProjectCoordinates(
             "org.finos.legend.pylegend", "pylegend-test-models", "0.0.1-SNAPSHOT"
         )
@@ -132,13 +130,11 @@ class TestLegendClientE2E:
             "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String)"
 
     @pytest.mark.skipif(os.environ.get("JAVA_HOME") is None, reason="JAVA_HOME unset; requires legend_test_server")
-    @pytest.mark.xfail(
-        reason="Pure expression form for Legend services is not yet resolved (RESEARCH.md Open Question 1). "
-               "The .all() grammar is accepted by the parser but rejected by the engine's plan generator. "
-               "To be resolved in Plan 04 once the correct service Pure root expression is confirmed."
-    )
     def test_e2e_pure_execute_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
+        client = LegendClient(
+            "localhost", legend_test_server["engine_port"], secure_http=False,
+            depot_server_host="localhost", depot_server_port=legend_test_server["metadata_port"]
+        )
         coords = VersionedProjectCoordinates(
             "org.finos.legend.pylegend", "pylegend-test-models", "0.0.1-SNAPSHOT"
         )
