@@ -12,49 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
 from abc import ABCMeta, abstractmethod
-import pandas as pd
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendTypeVar,
-    PyLegendOptional,
 )
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.database.sql_to_string import SqlToStringGenerator
-from pylegend.core.tds.result_handler import ResultHandler
-from pylegend.extensions.tds.result_handler import PandasDfReadConfig
-
-postgres_ext = 'pylegend.extensions.database.vendors.postgres.postgres_sql_to_string'
-importlib.import_module(postgres_ext)
 
 __all__: PyLegendSequence[str] = [
     "PyLegendTdsFrame",
-    "FrameToSqlConfig",
     "FrameToPureConfig",
 ]
-
-
-class FrameToSqlConfig:
-    database_type: str
-    pretty: bool
-
-    __sql_to_string_generator: SqlToStringGenerator
-
-    def __init__(
-            self,
-            database_type: str = "Postgres",
-            pretty: bool = True
-    ) -> None:
-        self.database_type = database_type
-        self.pretty = pretty
-
-        self.__sql_to_string_generator = SqlToStringGenerator.find_sql_to_string_generator_for_db_type(
-            self.database_type
-        )
-
-    def sql_to_string_generator(self) -> SqlToStringGenerator:
-        return self.__sql_to_string_generator
 
 
 class FrameToPureConfig:
@@ -82,9 +49,6 @@ class FrameToPureConfig:
             return " " if return_space_if_not_pretty else ""
 
 
-R = PyLegendTypeVar('R')
-
-
 class PyLegendTdsFrame(metaclass=ABCMeta):
 
     @abstractmethod
@@ -96,46 +60,5 @@ class PyLegendTdsFrame(metaclass=ABCMeta):
         print("Columns:\n" + "\n".join(col_lines))  # pragma: no cover
 
     @abstractmethod
-    def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        pass  # pragma: no cover
-
-    @abstractmethod
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         pass  # pragma: no cover
-
-    @abstractmethod
-    def execute_frame(
-            self,
-            result_handler: ResultHandler[R],
-            chunk_size: PyLegendOptional[int] = None
-    ) -> R:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def execute_frame_to_string(
-            self,
-            chunk_size: PyLegendOptional[int] = None
-    ) -> str:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def execute_frame_to_pandas_df(
-            self,
-            chunk_size: PyLegendOptional[int] = None,
-            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
-    ) -> pd.DataFrame:
-        pass  # pragma: no cover
-
-    def to_pandas_df(
-            self,
-            chunk_size: PyLegendOptional[int] = None,
-            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
-    ) -> pd.DataFrame:
-        return self.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover
-
-    def to_pandas(
-            self,
-            chunk_size: PyLegendOptional[int] = None,
-            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
-    ) -> pd.DataFrame:
-        return self.execute_frame_to_pandas_df(chunk_size, pandas_df_read_config)  # pragma: no cover

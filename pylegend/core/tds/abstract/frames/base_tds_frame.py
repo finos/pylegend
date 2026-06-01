@@ -13,34 +13,17 @@
 # limitations under the License.
 
 from abc import ABCMeta, abstractmethod
-import pandas as pd
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendTypeVar,
-    PyLegendOptional,
-)
-from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.database.sql_to_string import (
-    SqlToStringConfig,
-    SqlToStringFormat
 )
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, PyLegendTdsFrame
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.result_handler import (
-    ResultHandler,
-    ToStringResultHandler,
-)
-from pylegend.extensions.tds.result_handler import (
-    ToPandasDfResultHandler,
-    PandasDfReadConfig,
-)
+
 __all__: PyLegendSequence[str] = [
     "BaseTdsFrame"
 ]
-
-R = PyLegendTypeVar('R')
 
 
 class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
@@ -57,17 +40,8 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
         return [c.copy() for c in self.__columns]
 
     @abstractmethod
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        pass  # pragma: no cover
-
-    @abstractmethod
     def get_all_tds_frames(self) -> PyLegendSequence["BaseTdsFrame"]:
         pass  # pragma: no cover
-
-    def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        query = self.to_sql_query_object(config)
-        sql_to_string_config = SqlToStringConfig(format_=SqlToStringFormat(pretty=config.pretty))
-        return config.sql_to_string_generator().generate_sql_string(query, sql_to_string_config)
 
     @abstractmethod
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -102,27 +76,3 @@ class BaseTdsFrame(PyLegendTdsFrame, metaclass=ABCMeta):
                 (", ".join([str(f) for f in all_legend_clients]) + "]")
             )
         return all_legend_clients[0]
-
-    def execute_frame(
-            self,
-            result_handler: ResultHandler[R],
-            chunk_size: PyLegendOptional[int] = None
-    ) -> R:
-        result = self.get_legend_client().execute_sql_string(self.to_sql_query(), chunk_size=chunk_size)
-        return result_handler.handle_result(self, result)
-
-    def execute_frame_to_string(
-            self,
-            chunk_size: PyLegendOptional[int] = None
-    ) -> str:
-        return self.execute_frame(ToStringResultHandler(), chunk_size)
-
-    def execute_frame_to_pandas_df(
-            self,
-            chunk_size: PyLegendOptional[int] = None,
-            pandas_df_read_config: PandasDfReadConfig = PandasDfReadConfig()
-    ) -> pd.DataFrame:
-        return self.execute_frame(
-            ToPandasDfResultHandler(pandas_df_read_config),
-            chunk_size
-        )
