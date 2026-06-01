@@ -132,7 +132,7 @@ class TestSortAppliedFunction:
                ('#Table(test_schema.test_table)#->limit(10)->sort([descending(~col2)])')
 
     def test_e2e_sort_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.sort(lambda r: r["Firm/Legal Name"])
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
@@ -146,7 +146,7 @@ class TestSortAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_sort_function_no_top_multi(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.sort(lambda r: [r["Firm/Legal Name"], r["First Name"].ascending()])
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Fabrice', 'Roberts', 34, 'Firm A']},
@@ -160,7 +160,7 @@ class TestSortAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_sort_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.sort(lambda r: [r["Firm/Legal Name"].descending()])
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
@@ -174,7 +174,7 @@ class TestSortAppliedFunction:
 
     def test_e2e_sort_function_existing_top_multi(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.sort(lambda r: [r["Firm/Legal Name"].descending(), r["First Name"].ascending()])
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

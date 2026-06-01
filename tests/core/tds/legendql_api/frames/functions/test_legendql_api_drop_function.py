@@ -139,7 +139,7 @@ class TestDropAppliedFunction:
         assert v.value.args[0] == "Row count argument of drop function cannot be negative"
 
     def test_e2e_drop_function_no_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.drop(3)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Anthony', 'Allen', 22, 'Firm X']},
@@ -151,7 +151,7 @@ class TestDropAppliedFunction:
 
     def test_e2e_drop_function_existing_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> \
             None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.drop(3)
         frame = frame.drop(1)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
@@ -163,7 +163,7 @@ class TestDropAppliedFunction:
 
     def test_e2e_drop_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> \
             None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(3)
         frame = frame.drop(1)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

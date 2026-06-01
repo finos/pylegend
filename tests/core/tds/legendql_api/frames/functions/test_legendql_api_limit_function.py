@@ -79,7 +79,7 @@ class TestLimitAppliedFunction:
         assert v.value.args[0] == "Row count argument of head/limit function cannot be negative"
 
     def test_e2e_limit_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.limit(3)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -89,7 +89,7 @@ class TestLimitAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_limit_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.limit(3)
         frame = frame.limit(10)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

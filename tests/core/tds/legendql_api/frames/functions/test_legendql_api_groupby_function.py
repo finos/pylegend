@@ -1462,7 +1462,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
                     '->groupBy(~[col1], ~[DistVal:{r | $r.col2}:{c | $c->uniqueValueOnly()}])')
 
     def test_e2e_group_by(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             ("Employee Count", lambda r: r["First Name"], lambda c: c.count()),
@@ -1478,7 +1478,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_with_limit(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.head(5)
         frame = frame.group_by(
             ["Firm/Legal Name"],
@@ -1493,7 +1493,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_on_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             lambda r: [],
             ("Total Employees", lambda r: 1, lambda c: c.count()),
@@ -1506,7 +1506,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
 
     def test_e2e_group_by_multi_grouping_cols(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Firm/Legal Name", "First Name"],
             ("Employee Count", lambda r: r["Last Name"], lambda c: c.count()),
@@ -1526,7 +1526,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
 
     @pytest.mark.skip(reason="Legend server doesn't execute this SQL as group by clause has derivation")
     def test_e2e_group_by_on_extended_col(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.extend(lambda x: ("Last Name Gen", x['Last Name'] + '_Gen'))  # type: ignore
         frame = frame.group_by(
             ["Firm/Legal Name", "Last Name Gen"],
@@ -1544,7 +1544,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_multi_aggregations(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
@@ -1564,7 +1564,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_distinct_count_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.head(5)
         frame = frame.group_by(
             ["Firm/Legal Name"],
@@ -1579,7 +1579,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_average_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             ("Average Qty", lambda r: r["Quantity"], lambda c: c.average()),  # type: ignore
@@ -1595,7 +1595,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_average_agg_pre_op(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             ("Average Qty", lambda r: r["Quantity"] + 20, lambda c: c.average()),  # type: ignore
@@ -1612,7 +1612,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
 
     def test_e2e_group_by_average_agg_post_op(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             ("Average Qty", lambda r: r["Quantity"], lambda c: c.average() + 2),  # type: ignore
@@ -1628,7 +1628,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_integer_max_min_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1649,7 +1649,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_float_max_min_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1670,7 +1670,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_number_max_min_sum_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1692,7 +1692,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
 
     def test_e2e_group_by_std_dev_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1714,7 +1714,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
 
     def test_e2e_group_by_variance_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1735,7 +1735,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_string_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Firm/Legal Name"],
             [
@@ -1756,7 +1756,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_strictdate_max_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [
@@ -1776,7 +1776,7 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert json.loads(res)["result"] == expected
 
     def test_e2e_group_by_date_max_min_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame: LegendQLApiTdsFrame = simple_trade_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame = frame.group_by(
             ["Product/Name"],
             [

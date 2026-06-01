@@ -194,7 +194,7 @@ class TestFilterAppliedFunction:
 
     @pytest.mark.skip(reason="Literal not supported ")
     def test_e2e_filter_function_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.filter(lambda r: 1 == 2)  # type: ignore
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': []}
@@ -202,7 +202,7 @@ class TestFilterAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.filter(lambda r: r.get_integer("Age") < 25)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -213,7 +213,7 @@ class TestFilterAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_filter_function_chained(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.filter(lambda r: (r.get_integer("Age") < 25))
         frame = frame.filter(lambda r: (r.get_integer("Age") < 23))
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
@@ -225,7 +225,7 @@ class TestFilterAppliedFunction:
 
     def test_e2e_filter_function_with_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(3)
         frame = frame.filter(lambda r: (r.get_integer("Age") < 25) | (r.get_integer("Age") >= 35))
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

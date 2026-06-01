@@ -165,7 +165,7 @@ class TestConcatenateAppliedFunction:
                 '->concatenate(#Table(test_schema.test_table)#->drop(2)->limit(2))')
 
     def test_e2e_concatenate_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.concatenate(frame).select(lambda r: [r["First Name"], r["Firm/Legal Name"]])
         expected = {'columns': ['First Name', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Firm X']},
@@ -187,7 +187,7 @@ class TestConcatenateAppliedFunction:
 
     def test_e2e_concatenate_function_complex(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
 
         frame1 = frame.select(["First Name", "Firm/Legal Name", "Age"])
         frame1 = frame1.head(3)

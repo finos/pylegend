@@ -158,7 +158,7 @@ class TestSelectAppliedFunction:
                ('#Table(test_schema.test_table)#->distinct()->select(~[col1])')
 
     def test_e2e_select_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.select(lambda r: [r["First Name"], r["Firm/Legal Name"]])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -174,7 +174,7 @@ class TestSelectAppliedFunction:
 
     def test_e2e_select_function_column_order(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.select(["Firm/Legal Name", "First Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \

@@ -362,7 +362,7 @@ class TestExtendAppliedFunction:
                 '->extend(~\'Sum col\':{r | $r.col1}:{c | $c->sum()})->extend(~\'Simple col 2\':{r | 2})')
 
     def test_e2e_extend_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.extend(("Upper", lambda r: r.get_string("First Name").upper()))
         assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
                 "[TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), "
@@ -380,7 +380,7 @@ class TestExtendAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_extend_function_multi(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.extend([
             ("Upper", lambda r: r.get_string("First Name").upper()),
             ("AgeCheck", lambda r: r.get_integer('Age') < 25)
@@ -406,7 +406,7 @@ class TestExtendAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_extend_function_literals(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select(["Last Name"])
         frame = frame.extend([
             ("col3", lambda r: 1),
@@ -431,7 +431,7 @@ class TestExtendAppliedFunction:
 
     @pytest.mark.skip(reason="Server does not handle window functions of this form yet")
     def test_e2e_extend_function_with_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.extend([
             ("Count", lambda r: 1, lambda c: c.count())
         ])
@@ -452,7 +452,7 @@ class TestExtendAppliedFunction:
 
     @pytest.mark.skip(reason="Server does not handle window functions of this form yet")
     def test_e2e_extend_function_multi_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.extend([
             ("AgeSum", lambda r: r['Age'], lambda c: c.sum()),  # type: ignore
             ("DistinctCount", lambda r: r["Last Name"], lambda c: c.distinct_count())
@@ -474,7 +474,7 @@ class TestExtendAppliedFunction:
 
     @pytest.mark.skip(reason="Server does not handle window functions of this form yet")
     def test_e2e_extend_function_mixed(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.extend([
             ("Upper", lambda r: r.get_string("First Name").upper()),
             ("Count", lambda r: 1, lambda c: c.count())

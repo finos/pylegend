@@ -176,7 +176,7 @@ class TestDistinctAppliedFunction:
                ('#Table(test_schema.test_table)#->limit(5)->distinct()')
 
     def test_e2e_distinct_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select(["First Name", "Firm/Legal Name"])
         distinct_all_frame = frame.distinct()
         distinct_two_col_expected = {'columns': ['First Name', 'Firm/Legal Name'],
@@ -204,7 +204,7 @@ class TestDistinctAppliedFunction:
 
     def test_e2e_distinct_function_existing_top(self,
                                                 legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select(["First Name", "Firm/Legal Name"])
         frame = frame.head(3)
         frame = frame.distinct()

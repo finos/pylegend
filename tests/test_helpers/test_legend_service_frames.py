@@ -90,7 +90,7 @@ def simple_person_service_frame_pandas_api(engine_port: int) -> PandasApiLegendS
     )
 
 
-def simple_person_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+def simple_person_service_frame_legendql_api(engine_port: int, metadata_port: int) -> LegendQLApiLegendServiceInputFrame:
     return LegendQLApiLegendServiceInputFrame(
         pattern="/simplePersonService",
         project_coordinates=VersionedProjectCoordinates(
@@ -98,7 +98,10 @@ def simple_person_service_frame_legendql_api(engine_port: int) -> LegendQLApiLeg
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+        legend_client=LegendClient(
+            "localhost", engine_port, secure_http=False,
+            depot_server_host="localhost", depot_server_port=metadata_port
+        )
     )
 
 
@@ -114,7 +117,7 @@ def simple_trade_service_frame_pandas_api(engine_port: int) -> PandasApiLegendSe
     )
 
 
-def simple_trade_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+def simple_trade_service_frame_legendql_api(engine_port: int, metadata_port: int) -> LegendQLApiLegendServiceInputFrame:
     return LegendQLApiLegendServiceInputFrame(
         pattern="/simpleTradeService",
         project_coordinates=VersionedProjectCoordinates(
@@ -122,11 +125,14 @@ def simple_trade_service_frame_legendql_api(engine_port: int) -> LegendQLApiLege
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+        legend_client=LegendClient(
+            "localhost", engine_port, secure_http=False,
+            depot_server_host="localhost", depot_server_port=metadata_port
+        )
     )
 
 
-def simple_product_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+def simple_product_service_frame_legendql_api(engine_port: int, metadata_port: int) -> LegendQLApiLegendServiceInputFrame:
     return LegendQLApiLegendServiceInputFrame(
         pattern="/simpleProductService",
         project_coordinates=VersionedProjectCoordinates(
@@ -134,11 +140,14 @@ def simple_product_service_frame_legendql_api(engine_port: int) -> LegendQLApiLe
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+        legend_client=LegendClient(
+            "localhost", engine_port, secure_http=False,
+            depot_server_host="localhost", depot_server_port=metadata_port
+        )
     )
 
 
-def simple_relation_person_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+def simple_relation_person_service_frame_legendql_api(engine_port: int, metadata_port: int) -> LegendQLApiLegendServiceInputFrame:
     return LegendQLApiLegendServiceInputFrame(
         pattern="/simpleRelationPersonService",
         project_coordinates=VersionedProjectCoordinates(
@@ -146,11 +155,14 @@ def simple_relation_person_service_frame_legendql_api(engine_port: int) -> Legen
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+        legend_client=LegendClient(
+            "localhost", engine_port, secure_http=False,
+            depot_server_host="localhost", depot_server_port=metadata_port
+        )
     )
 
 
-def simple_relation_trade_service_frame_legendql_api(engine_port: int) -> LegendQLApiLegendServiceInputFrame:
+def simple_relation_trade_service_frame_legendql_api(engine_port: int, metadata_port: int) -> LegendQLApiLegendServiceInputFrame:
     return LegendQLApiLegendServiceInputFrame(
         pattern="/simpleRelationTradeService",
         project_coordinates=VersionedProjectCoordinates(
@@ -158,7 +170,10 @@ def simple_relation_trade_service_frame_legendql_api(engine_port: int) -> Legend
             artifact_id="pylegend-test-models",
             version="0.0.1-SNAPSHOT"
         ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
+        legend_client=LegendClient(
+            "localhost", engine_port, secure_http=False,
+            depot_server_host="localhost", depot_server_port=metadata_port
+        )
     )
 
 

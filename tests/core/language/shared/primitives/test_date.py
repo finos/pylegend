@@ -562,7 +562,7 @@ class TestPyLegendDate:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
-            legend_test_server["engine_port"]
+            legend_test_server["engine_port"], legend_test_server["metadata_port"]
         )
 
         frame = frame.select([
@@ -613,7 +613,7 @@ class TestPyLegendDate:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
-            legend_test_server["engine_port"]
+            legend_test_server["engine_port"], legend_test_server["metadata_port"]
         )
 
         frame = frame.select([
@@ -662,7 +662,7 @@ class TestPyLegendDate:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
-            legend_test_server["engine_port"]
+            legend_test_server["engine_port"], legend_test_server["metadata_port"]
         )
 
         frame = frame.select([
@@ -707,7 +707,7 @@ class TestPyLegendDate:
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
         frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(
-            legend_test_server["engine_port"]
+            legend_test_server["engine_port"], legend_test_server["metadata_port"]
         )
 
         frame = frame.select([

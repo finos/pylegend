@@ -109,7 +109,7 @@ class TestSliceAppliedFunction:
                ('#Table(test_schema.test_table)#->drop(10)->slice(2, 10)')
 
     def test_e2e_slice_function_no_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.slice(2, 5)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['John', 'Hill', 12, 'Firm X']},
@@ -120,7 +120,7 @@ class TestSliceAppliedFunction:
 
     def test_e2e_slice_function_existing_offset(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.drop(3)
         frame = frame.slice(1, 3)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

@@ -233,7 +233,7 @@ class TestProjectAppliedFunction:
                 'col5:{r | \'Hello\'}, col6:{r | true}])')
 
     def test_e2e_project_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.project(("Upper", lambda r: r.get_string("First Name").upper()))
         assert ("[" + ", ".join([str(c) for c in frame.columns()]) + "]" ==
                 "[TdsColumn(Name: Upper, Type: String)]")
@@ -249,7 +249,7 @@ class TestProjectAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_project_function_multi(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.project([
             ("Upper", lambda r: r.get_string("First Name").upper()),
             ("AgeCheck", lambda r: r.get_integer('Age') < 25)
@@ -268,7 +268,7 @@ class TestProjectAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_project_function_literals(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select(["Last Name"])
         frame = frame.project([
             ("Last Name", lambda r: r.get_string("Last Name")),

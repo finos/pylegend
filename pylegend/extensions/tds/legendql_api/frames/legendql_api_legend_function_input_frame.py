@@ -13,14 +13,18 @@
 # limitations under the License.
 
 from pylegend._typing import (
-    PyLegendSequence
+    PyLegendSequence,
+    PyLegendOptional,
+    PyLegendTypeVar,
 )
 from pylegend.core.tds.legendql_api.frames.legendql_api_input_tds_frame import LegendQLApiExecutableInputTdsFrame
 from pylegend.core.project_cooridnates import ProjectCoordinates
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.tds.tds_frame import FrameToPureConfig
+from pylegend.core.tds.result_handler import ResultHandler
 from pylegend.extensions.tds.abstract.legend_function_input_frame import LegendFunctionInputFrameAbstract
 
+R = PyLegendTypeVar('R')
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiLegendFunctionInputFrame"
@@ -42,6 +46,18 @@ class LegendQLApiLegendFunctionInputFrame(LegendFunctionInputFrameAbstract, Lege
             columns=legend_client.get_pure_string_schema(self.to_pure(FrameToPureConfig()), project_coordinates)
         )
         LegendFunctionInputFrameAbstract.set_initialized(self, True)
+
+    def execute_frame(
+            self,
+            result_handler: ResultHandler[R],
+            chunk_size: PyLegendOptional[int] = None
+    ) -> R:
+        result = self.get_legend_client().execute_pure_string(
+            self.to_pure(FrameToPureConfig()),
+            self.get_project_coordinates(),
+            chunk_size=chunk_size
+        )
+        return result_handler.handle_result(self, result)
 
     def __str__(self) -> str:
         return f"LegendQLApiLegendFunctionInputFrame({'.'.join(self.get_path())})"

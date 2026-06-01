@@ -135,7 +135,7 @@ class TestRenameColumnsAppliedFunction:
                 '->rename(~col1, ~col4)->rename(~col2, ~\'col5 with spaces\')')
 
     def test_e2e_rename_columns_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.rename(lambda r: [(r["First Name"], "Name"), (r["Firm/Legal Name"], "Firm Name")])
         frame = frame.select(["Name", "Firm Name"])

@@ -753,7 +753,7 @@ class TestWindowExtendAppliedFunction:
         )
 
     def test_e2e_window_extend_function_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select([
             "Id",
             "Date",
@@ -792,7 +792,7 @@ class TestWindowExtendAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_window_extend_function_rank(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select([
             "Id",
             "Date",
@@ -839,7 +839,7 @@ class TestWindowExtendAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_window_extend_function_rows(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select([
             "Id",
             "Date",
@@ -880,7 +880,7 @@ class TestWindowExtendAppliedFunction:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]
     ) -> None:
-        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select([
             "Id",
             "Date",
@@ -917,7 +917,7 @@ class TestWindowExtendAppliedFunction:
     def test_e2e_window_extend_function_window_frame_numeric_range_agg(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select([
             "Id",
             "Date",
@@ -956,7 +956,7 @@ class TestWindowExtendAppliedFunction:
     def test_e2e_window_extend_function_window_frame_duration_range_agg(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_relation_trade_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select([
             "Id",
             "Date",

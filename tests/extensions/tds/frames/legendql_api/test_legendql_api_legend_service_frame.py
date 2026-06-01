@@ -39,7 +39,7 @@ class TestLegendQLApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         sql = frame.to_sql_query(FrameToSqlConfig())
 
         expected = '''\
@@ -60,7 +60,7 @@ class TestLegendQLApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -76,7 +76,7 @@ class TestLegendQLApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_trade_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = simple_trade_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['Id',
                                 'Date',
@@ -156,7 +156,7 @@ class TestLegendQLApiLegendServiceFrame:
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
-        frame = simple_product_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame = simple_product_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         res = frame.execute_frame_to_string()
         expected = {'columns': ['Name', 'Synonyms/Name', 'Synonyms/Type'],
                     'rows': [{'values': ['Firm X', 'CUSIP1', 'CUSIP']},
