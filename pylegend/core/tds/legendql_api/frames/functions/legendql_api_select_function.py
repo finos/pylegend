@@ -15,7 +15,6 @@
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
-    PyLegendTuple,
     PyLegendCallable,
     PyLegendUnion,
 )
@@ -23,14 +22,7 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import infer_columns_from_frame
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-    SelectItem
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.language.shared.helpers import escape_column_name
@@ -63,34 +55,6 @@ class LegendQLApiSelectFunction(LegendQLApiAppliedFunction):
     ) -> None:
         self.__base_frame = base_frame
         self.__column_name_list = infer_columns_from_frame(base_frame, columns, "'select' function 'columns'")
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        columns_to_retain = [db_extension.quote_identifier(x) for x in self.__column_name_list]
-
-        sub_query_required = (len(base_query.groupBy) > 0) or (len(base_query.orderBy) > 0) or \
-                             (base_query.having is not None) or base_query.select.distinct
-
-        if sub_query_required:
-            new_query = create_sub_query(base_query, config, "root", columns_to_retain=columns_to_retain)
-            return new_query
-        else:
-            new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
-            for col in base_query.select.selectItems:
-                if not isinstance(col, SingleColumn):
-                    raise ValueError("Select operation not supported for queries "
-                                     "with columns other than SingleColumn")  # pragma: no cover
-                if col.alias is None:
-                    raise ValueError("Select operation not supported for queries "
-                                     "with SingleColumns with missing alias")  # pragma: no cover
-                if col.alias in columns_to_retain:
-                    new_cols_with_index.append((columns_to_retain.index(col.alias), col))
-
-            new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
-            new_query = copy_query(base_query)
-            new_query.select.selectItems = new_select_items
-            return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         escaped_columns = []

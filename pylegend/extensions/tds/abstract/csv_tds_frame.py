@@ -22,10 +22,7 @@ from io import StringIO
 from pylegend.core.tds.tds_column import (
     PrimitiveType,
     PrimitiveTdsColumn)
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig, PyLegendTdsFrame
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-)
+from pylegend.core.tds.tds_frame import FrameToPureConfig, PyLegendTdsFrame
 import pandas as pd
 
 __all__: PyLegendSequence[str] = [
@@ -84,9 +81,6 @@ class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
     ) -> None:
         super().__init__(columns=tds_columns_from_csv_string(csv_string))  # type: ignore[call-arg]
         self.__csv_string = csv_string
-
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        raise RuntimeError("SQL generation for csv tds frames is not supported yet.")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return f"#TDS\n{self.__csv_string}#"

@@ -23,14 +23,7 @@ from pylegend.core.language import PyLegendColumnExpression
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import LegendQLApiPrimitive
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-    SelectItem,
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.language.shared.helpers import escape_column_name
@@ -114,31 +107,6 @@ class LegendQLApiRenameFunction(LegendQLApiAppliedFunction):
 
         self.__column_names = col_names
         self.__renamed_column_names = renamed_col_names
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        quoted_column_names_to_change = [db_extension.quote_identifier(s) for s in self.__column_names]
-        quoted_renamed_column_names = [db_extension.quote_identifier(s) for s in self.__renamed_column_names]
-
-        new_select_items: PyLegendList[SelectItem] = []
-        for col in base_query.select.selectItems:
-            if not isinstance(col, SingleColumn):
-                raise ValueError("Rename columns operation not supported for queries "
-                                 "with columns other than SingleColumn")  # pragma: no cover
-            if col.alias is None:
-                raise ValueError("Rename columns operation not supported for queries "
-                                 "with SingleColumns with missing alias")  # pragma: no cover
-            if col.alias in quoted_column_names_to_change:
-                new_alias = quoted_renamed_column_names[quoted_column_names_to_change.index(col.alias)]
-                new_select_items.append(SingleColumn(alias=new_alias, expression=col.expression))
-            else:
-                new_select_items.append(col)
-
-        new_query = copy_query(base_query)
-        new_query.select.selectItems = new_select_items
-        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +

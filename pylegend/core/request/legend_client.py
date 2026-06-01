@@ -28,7 +28,7 @@ from pylegend._typing import (
     PyLegendList,
 )
 from pylegend.core.project_cooridnates import ProjectCoordinates, VersionedProjectCoordinates
-from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, PrimitiveType, tds_columns_from_json
+from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, PrimitiveType
 
 
 __all__: PyLegendSequence[str] = [
@@ -68,34 +68,6 @@ class LegendClient(ServiceClient):
         )
         self.__depot_server_host = depot_server_host
         self.__depot_server_port = depot_server_port
-
-    def get_sql_string_schema(
-            self,
-            sql: str
-    ) -> PyLegendSequence[TdsColumn]:
-        response = super()._execute_service(
-            method=RequestMethod.POST,
-            path="sql/v1/execution/schema",
-            data=json.dumps({"sql": sql}),
-            headers={"Content-Type": "application/json"},
-            stream=False
-        )
-        response_text: str = response.text
-        return tds_columns_from_json(response_text)
-
-    def execute_sql_string(
-            self,
-            sql: str,
-            chunk_size: PyLegendOptional[int] = None
-    ) -> ResponseReader:
-        iter_content = super()._execute_service(
-            method=RequestMethod.POST,
-            path="sql/v1/execution/execute",
-            data=json.dumps({"sql": sql}),
-            headers={"Content-Type": "application/json"},
-            stream=True
-        ).iter_content(chunk_size=chunk_size)
-        return ResponseReader(iter_content)
 
     def get_pure_string_schema(
             self,

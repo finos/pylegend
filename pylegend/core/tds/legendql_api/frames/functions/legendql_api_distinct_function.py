@@ -20,12 +20,7 @@ from pylegend._typing import (
     PyLegendCallable
 )
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.language.legendql_api.legendql_api_custom_expressions import LegendQLApiPrimitive
@@ -61,27 +56,6 @@ class LegendQLApiDistinctFunction(LegendQLApiAppliedFunction):
         self.__base_frame = base_frame
         self.__column_name_list = infer_columns_from_frame(base_frame, columns,
                                                            "'distinct' function 'columns'") if columns is not None else None
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None) or (
-                self.__column_name_list is not None)
-
-        quoted_columns = None
-        if self.__column_name_list is not None:
-            db_extension = config.sql_to_string_generator().get_db_extension()
-            quoted_columns = [
-                db_extension.quote_identifier(col)
-                for col in self.__column_name_list
-            ]
-
-        new_query = (
-            create_sub_query(base_query, config, "root", quoted_columns) if should_create_sub_query else
-            copy_query(base_query)
-        )
-        new_query.select.distinct = True
-
-        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         columns_expr = (

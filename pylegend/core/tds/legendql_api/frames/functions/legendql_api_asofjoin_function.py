@@ -26,15 +26,11 @@ from pylegend.core.language import (
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.language.shared.helpers import generate_pure_lambda
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-)
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiAsOfJoinFunction"
@@ -68,9 +64,6 @@ class LegendQLApiAsOfJoinFunction(LegendQLApiAppliedFunction):
         self.__other_frame = other_frame
         self.__match_function = match_function
         self.__join_condition = join_condition
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        raise RuntimeError("AsOfJoin SQL translation not supported yet")
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         left_row = LegendQLApiTdsRow.from_tds_frame("l", self.__base_frame)
