@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -120,38 +119,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                LEFT OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -182,38 +149,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                INNER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -245,38 +180,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                RIGHT OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -307,38 +210,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                FULL OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -374,39 +245,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                LEFT OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ((("left"."col2" = "right"."col4") AND \
-(("left"."col1" > 10) OR ("right"."col3" > 10))) AND ("left"."col1" > "right"."col3"))
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#

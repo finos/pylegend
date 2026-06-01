@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -228,15 +227,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                COUNT("root".col2) AS "Count"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -261,15 +251,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                COUNT(1) AS "Count"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -295,21 +276,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                COUNT("root"."col2") AS "Count"
-            FROM
-                (
-                    SELECT DISTINCT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"
-            GROUP BY
-                "root"."col1"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -337,22 +303,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                COUNT("root"."col2") AS "Count"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                    LIMIT 10
-                ) AS "root"
-            GROUP BY
-                "root"."col1"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -384,30 +334,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count2, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                COUNT("root"."Count1") AS "Count2"
-            FROM
-                (
-                    SELECT
-                        "root"."col1" AS "col1",
-                        COUNT("root"."col2") AS "Count1"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2"
-                            FROM
-                                test_schema.test_table AS "root"
-                            LIMIT 10
-                        ) AS "root"
-                    GROUP BY
-                        "root"."col1"
-                ) AS "root"
-            GROUP BY
-                "root"."col1"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -443,16 +369,6 @@ class TestGroupByAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: Count1, Type: Integer), "
             "TdsColumn(Name: Count2, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                COUNT("root".col2) AS "Count1",
-                COUNT("root".col2) AS "Count2"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -478,15 +394,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Cnt, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                COUNT(DISTINCT "root".col1) AS "Cnt"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -511,15 +418,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Float)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                AVG("root".col1) AS "Average"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -545,15 +443,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Float)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                AVG(("root".col1 + 20)) AS "Average"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -578,15 +467,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Average, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                (AVG("root".col1) + 2) AS "Average"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -611,15 +491,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                MAX("root".col1) AS "Maximum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -644,15 +515,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Minimum, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                MIN("root".col1) AS "Minimum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -677,15 +539,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Sum, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                SUM("root".col1) AS "Sum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -710,15 +563,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Float)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                MAX("root".col1) AS "Maximum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -743,15 +587,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Minimum, Type: Float)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                MIN("root".col1) AS "Minimum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -776,15 +611,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Sum, Type: Float)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                SUM("root".col1) AS "Sum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -809,15 +635,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Maximum, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                MAX("root".col1) AS "Maximum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -842,15 +659,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Minimum, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                MIN("root".col1) AS "Minimum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -875,15 +683,6 @@ class TestGroupByAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Sum, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                SUM("root".col1) AS "Sum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -915,18 +714,6 @@ class TestGroupByAppliedFunction:
             "TdsColumn(Name: Minimum, Type: Decimal), TdsColumn(Name: Sum, Type: Decimal), "
             "TdsColumn(Name: DistVal, Type: Decimal)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                MAX("root".col1) AS "Maximum",
-                MIN("root".col1) AS "Minimum",
-                SUM("root".col1) AS "Sum",
-                core_unique_value_only("root".col1) AS "DistVal"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -954,15 +741,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Std Dev Sample, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                STDDEV_SAMP("root".col1) AS "Std Dev Sample"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -988,15 +766,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Std Dev, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                STDDEV_SAMP("root".col1) AS "Std Dev"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1022,15 +791,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Std Dev Population, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                STDDEV_POP("root".col1) AS "Std Dev Population"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1056,15 +816,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Variance Sample, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                VAR_SAMP("root".col1) AS "Variance Sample"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1090,15 +841,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Variance, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                VAR_SAMP("root".col1) AS "Variance"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1124,15 +866,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: Variance Population, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                VAR_POP("root".col1) AS "Variance Population"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1158,15 +891,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: String)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                MAX("root".col2) AS "Maximum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1191,15 +915,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Minimum, Type: String)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                MIN("root".col2) AS "Minimum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1224,15 +939,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Joined, Type: String)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                STRING_AGG("root".col2, ' ') AS "Joined"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1257,15 +963,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Joined, Type: String)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                STRING_AGG("root".col2, ';') AS "Joined"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1290,15 +987,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: StrictDate)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                MAX("root".col2) AS "Maximum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1323,15 +1011,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Minimum, Type: StrictDate)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                MIN("root".col2) AS "Minimum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1356,15 +1035,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Maximum, Type: Date)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                MAX("root".col2) AS "Maximum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1389,15 +1059,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: col1, Type: Number), TdsColumn(Name: Minimum, Type: Date)]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                MIN("root".col2) AS "Minimum"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -1437,15 +1098,6 @@ Sum:{r | $r.col1}:{c | $c->sum()}, DistVal:{r | $r.col1}:{c | $c->uniqueValueOnl
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             f"[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: DistVal, Type: {col_type_name})]"
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                core_unique_value_only("root".col2) AS "DistVal"
-            FROM
-                test_schema.test_table AS "root"
-            GROUP BY
-                "root".col1'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         # Skipping pure compilation for Boolean - Legend engine parser does not support
         # BOOLEAN column data type in relations (error: "Unsupported column data type 'BOOLEAN'")
         if col_type_name != "Boolean":

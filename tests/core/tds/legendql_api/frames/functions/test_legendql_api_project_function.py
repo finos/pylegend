@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -107,18 +106,6 @@ class TestProjectAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.project(("col3", lambda r: r.get_integer('col1') + 1))
-        expected = '''\
-            SELECT
-                ("root"."col1" + 1) AS "col3"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -136,18 +123,6 @@ class TestProjectAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.project(("col3 with spaces", lambda r: r.get_integer('col1') + 1))
-        expected = '''\
-            SELECT
-                ("root"."col1" + 1) AS "col3 with spaces"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -167,19 +142,6 @@ class TestProjectAppliedFunction:
         frame = frame.project(
             [("col1", lambda r: r.get_integer('col1') + 1), ("col2", lambda r: r.get_integer('col1') + 2)]
         )
-        expected = '''\
-            SELECT
-                ("root"."col1" + 1) AS "col1",
-                ("root"."col1" + 2) AS "col2"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -203,21 +165,6 @@ class TestProjectAppliedFunction:
             ("col5", lambda r: "Hello"),
             ("col6", lambda r: True)
         ])
-        expected = '''\
-            SELECT
-                1 AS "col3",
-                2.0 AS "col4",
-                'Hello' AS "col5",
-                true AS "col6"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#

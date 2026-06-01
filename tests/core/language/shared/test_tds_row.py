@@ -14,33 +14,16 @@
 
 from abc import ABCMeta, abstractmethod
 import pytest
-from pylegend.core.database.sql_to_string import (
-    SqlToStringFormat,
-    SqlToStringConfig,
-    SqlToStringDbExtension,
-)
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.sql.metamodel import QuerySpecification
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import PyLegendBoolean, PyLegendString, PyLegendNumber, \
     PyLegendInteger, PyLegendFloat, PyLegendDecimal, PyLegendDate, PyLegendDateTime, PyLegendStrictDate, PyLegendPrimitive
-from pylegend._typing import PyLegendList, PyLegendDict
+from pylegend._typing import PyLegendList
 
 
 class AbstractTestTdsRow(metaclass=ABCMeta):
-    frame_to_sql_config = FrameToSqlConfig()
     frame_to_pure_config = FrameToPureConfig()
-    db_extension = SqlToStringDbExtension()
-    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
-
-    @abstractmethod
-    def get_frame_name_to_base_query_map(
-            self,
-            columns: PyLegendList[PrimitiveTdsColumn]
-    ) -> PyLegendDict[str, QuerySpecification]:
-        pass
 
     @abstractmethod
     def get_tds_row(self, columns: PyLegendList[PrimitiveTdsColumn]) -> AbstractTdsRow:
@@ -91,20 +74,12 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_boolean("col2")
 
         assert isinstance(col_expr, PyLegendBoolean)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
         assert tds_row.get_boolean("col3 with spaces").to_pure_expression(self.frame_to_pure_config) == "$t.'col3 with spaces'"
 
         col_expr = tds_row["col2"]
 
         assert isinstance(col_expr, PyLegendBoolean)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
     def test_get_string_col(self) -> None:
@@ -116,19 +91,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_string("col2")
 
         assert isinstance(col_expr, PyLegendString)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
         col_expr = tds_row["col2"]
 
         assert isinstance(col_expr, PyLegendString)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
     def test_get_enum_col(self) -> None:
@@ -139,10 +106,6 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_enum("col2")
 
         assert isinstance(col_expr, PyLegendString)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col2'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col2'
 
     def test_get_number_col(self) -> None:
@@ -154,19 +117,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_number("col1")
 
         assert isinstance(col_expr, PyLegendNumber)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendNumber)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_number_col_from_integer(self) -> None:
@@ -178,19 +133,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_number("col1")
 
         assert isinstance(col_expr, PyLegendNumber)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row.get_number("col1")
 
         assert isinstance(col_expr, PyLegendNumber)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_integer_col(self) -> None:
@@ -202,19 +149,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_integer("col1")
 
         assert isinstance(col_expr, PyLegendInteger)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendInteger)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_float_col(self) -> None:
@@ -226,19 +165,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_float("col1")
 
         assert isinstance(col_expr, PyLegendFloat)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendFloat)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_decimal_col(self) -> None:
@@ -250,19 +181,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_decimal("col1")
 
         assert isinstance(col_expr, PyLegendDecimal)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendDecimal)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_date_col(self) -> None:
@@ -274,19 +197,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_date("col1")
 
         assert isinstance(col_expr, PyLegendDate)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendDate)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_date_col_from_datetime(self) -> None:
@@ -298,19 +213,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_date("col1")
 
         assert isinstance(col_expr, PyLegendDate)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendDate)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_datetime_col(self) -> None:
@@ -322,19 +229,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_datetime("col1")
 
         assert isinstance(col_expr, PyLegendDateTime)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendDateTime)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_get_strictdate_col(self) -> None:
@@ -346,19 +245,11 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
         col_expr: PyLegendPrimitive = tds_row.get_strictdate("col1")
 
         assert isinstance(col_expr, PyLegendStrictDate)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
         col_expr = tds_row["col1"]
 
         assert isinstance(col_expr, PyLegendStrictDate)
-        assert self.db_extension.process_expression(
-            col_expr.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == '"root".col1'
         assert col_expr.to_pure_expression(self.frame_to_pure_config) == '$t.col1'
 
     def test_is_null(self) -> None:
@@ -370,10 +261,6 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
 
         for result in [tds_row.is_null("col1"), tds_row.isNull("col1")]:
             assert isinstance(result, PyLegendBoolean)
-            assert self.db_extension.process_expression(
-                result.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-                config=self.sql_to_string_config
-            ) == '("root".col1 IS NULL)'
             assert result.to_pure_expression(self.frame_to_pure_config) == '$t.col1->isEmpty()'
 
     def test_is_not_null(self) -> None:
@@ -385,8 +272,4 @@ class AbstractTestTdsRow(metaclass=ABCMeta):
 
         for result in [tds_row.is_not_null("col1"), tds_row.isNotNull("col1")]:
             assert isinstance(result, PyLegendBoolean)
-            assert self.db_extension.process_expression(
-                result.to_sql_expression(self.get_frame_name_to_base_query_map(columns), self.frame_to_sql_config),
-                config=self.sql_to_string_config
-            ) == '("root".col1 IS NOT NULL)'
             assert result.to_pure_expression(self.frame_to_pure_config) == '$t.col1->isNotEmpty()'

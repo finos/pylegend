@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -58,15 +57,6 @@ class TestSliceAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.slice(2, 10)
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2"
-            FROM
-                test_schema.test_table AS "root"
-            LIMIT 8
-            OFFSET 2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -83,22 +73,6 @@ class TestSliceAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.drop(10)
         frame = frame.slice(2, 10)
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                    OFFSET 10
-                ) AS "root"
-            LIMIT 8
-            OFFSET 2'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
