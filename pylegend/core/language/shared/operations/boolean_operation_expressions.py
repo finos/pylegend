@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
@@ -32,18 +31,6 @@ from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.operations.nary_expression import PyLegendNaryExpression
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-    LogicalBinaryExpression,
-    LogicalBinaryType,
-    NotExpression,
-    ComparisonExpression,
-    ComparisonOperator,
-    SearchedCaseExpression,
-    WhenClause,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
@@ -71,15 +58,6 @@ __all__: PyLegendSequence[str] = [
 class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return LogicalBinaryExpression(LogicalBinaryType.OR, expression1, expression2)
-
-    @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} || {op2_expr})"
 
@@ -89,7 +67,6 @@ class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBo
             self,
             operand1,
             operand2,
-            PyLegendBooleanOrExpression.__to_sql_func,
             PyLegendBooleanOrExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -98,15 +75,6 @@ class PyLegendBooleanOrExpression(PyLegendBinaryExpression, PyLegendExpressionBo
 
 
 class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return LogicalBinaryExpression(LogicalBinaryType.AND, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -118,7 +86,6 @@ class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionB
             self,
             operand1,
             operand2,
-            PyLegendBooleanAndExpression.__to_sql_func,
             PyLegendBooleanAndExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -127,15 +94,6 @@ class PyLegendBooleanAndExpression(PyLegendBinaryExpression, PyLegendExpressionB
 
 
 class PyLegendBooleanLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -147,22 +105,12 @@ class PyLegendBooleanLessThanExpression(PyLegendBinaryExpression, PyLegendExpres
             self,
             operand1,
             operand2,
-            PyLegendBooleanLessThanExpression.__to_sql_func,
             PyLegendBooleanLessThanExpression.__to_pure_func,
             non_nullable=True
         )
 
 
 class PyLegendBooleanLessThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN_OR_EQUAL)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -174,22 +122,12 @@ class PyLegendBooleanLessThanEqualExpression(PyLegendBinaryExpression, PyLegendE
             self,
             operand1,
             operand2,
-            PyLegendBooleanLessThanEqualExpression.__to_sql_func,
             PyLegendBooleanLessThanEqualExpression.__to_pure_func,
             non_nullable=True
         )
 
 
 class PyLegendBooleanGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -201,22 +139,12 @@ class PyLegendBooleanGreaterThanExpression(PyLegendBinaryExpression, PyLegendExp
             self,
             operand1,
             operand2,
-            PyLegendBooleanGreaterThanExpression.__to_sql_func,
             PyLegendBooleanGreaterThanExpression.__to_pure_func,
             non_nullable=True
         )
 
 
 class PyLegendBooleanGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN_OR_EQUAL)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -228,22 +156,12 @@ class PyLegendBooleanGreaterThanEqualExpression(PyLegendBinaryExpression, PyLege
             self,
             operand1,
             operand2,
-            PyLegendBooleanGreaterThanEqualExpression.__to_sql_func,
             PyLegendBooleanGreaterThanEqualExpression.__to_pure_func,
             non_nullable=True
         )
 
 
 class PyLegendBooleanXorExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.NOT_EQUAL)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -255,7 +173,6 @@ class PyLegendBooleanXorExpression(PyLegendBinaryExpression, PyLegendExpressionB
             self,
             operand1,
             operand2,
-            PyLegendBooleanXorExpression.__to_sql_func,
             PyLegendBooleanXorExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -266,14 +183,6 @@ class PyLegendBooleanXorExpression(PyLegendBinaryExpression, PyLegendExpressionB
 class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return NotExpression(expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("not", [op_expr])
 
@@ -282,7 +191,6 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendBooleanNotExpression.__to_sql_func,
             PyLegendBooleanNotExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -292,18 +200,7 @@ class PyLegendBooleanNotExpression(PyLegendUnaryExpression, PyLegendExpressionBo
 class PyLegendCaseExpressionBase(PyLegendNaryExpression):
 
     @staticmethod
-    def __to_sql_func(
-            expressions: list[Expression],
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return SearchedCaseExpression(
-            whenClauses=[WhenClause(operand=expressions[0], result=expressions[1])],
-            defaultValue=expressions[2]
-        )
-
-    @staticmethod
-    def __to_pure_func(op_exprs: list[str], config: FrameToPureConfig) -> str:
+    def __to_pure_func(op_exprs: list, config: FrameToPureConfig) -> str:
         return f"if({op_exprs[0]}, |{op_exprs[1]}, |{op_exprs[2]})"
 
     def __init__(
@@ -315,7 +212,6 @@ class PyLegendCaseExpressionBase(PyLegendNaryExpression):
         PyLegendNaryExpression.__init__(
             self,
             [condition, if_true, if_false],
-            PyLegendCaseExpressionBase.__to_sql_func,
             PyLegendCaseExpressionBase.__to_pure_func,
             non_nullable=False,
             operands_non_nullable_flags=[True, False, False]

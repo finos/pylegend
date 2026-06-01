@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionNumberReturn,
@@ -24,39 +23,7 @@ from pylegend.core.language.shared.expression import (
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-    ArithmeticType,
-    ArithmeticExpression,
-    ComparisonOperator,
-    ComparisonExpression,
-    NegativeExpression,
-    FunctionCall,
-    QualifiedName
-)
-from pylegend.core.sql.metamodel_extension import (
-    AbsoluteExpression,
-    PowerExpression,
-    CeilExpression,
-    FloorExpression,
-    SqrtExpression,
-    CbrtExpression,
-    ExpExpression,
-    LogExpression,
-    RemainderExpression,
-    RoundExpression,
-    SineExpression,
-    ArcSineExpression,
-    CosineExpression,
-    ArcCosineExpression,
-    TanExpression,
-    ArcTanExpression,
-    ArcTan2Expression,
-    CotExpression,
-)
 
 
 __all__: PyLegendSequence[str] = [
@@ -100,15 +67,6 @@ __all__: PyLegendSequence[str] = [
 class PyLegendNumberAddExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
-
-    @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} + {op2_expr})"
 
@@ -118,7 +76,6 @@ class PyLegendNumberAddExpression(PyLegendBinaryExpression, PyLegendExpressionNu
             self,
             operand1,
             operand2,
-            PyLegendNumberAddExpression.__to_sql_func,
             PyLegendNumberAddExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -127,15 +84,6 @@ class PyLegendNumberAddExpression(PyLegendBinaryExpression, PyLegendExpressionNu
 
 
 class PyLegendNumberMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.MULTIPLY, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -147,7 +95,6 @@ class PyLegendNumberMultiplyExpression(PyLegendBinaryExpression, PyLegendExpress
             self,
             operand1,
             operand2,
-            PyLegendNumberMultiplyExpression.__to_sql_func,
             PyLegendNumberMultiplyExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -156,15 +103,6 @@ class PyLegendNumberMultiplyExpression(PyLegendBinaryExpression, PyLegendExpress
 
 
 class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.DIVIDE, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -176,7 +114,6 @@ class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressio
             self,
             operand1,
             operand2,
-            PyLegendNumberDivideExpression.__to_sql_func,
             PyLegendNumberDivideExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -185,15 +122,6 @@ class PyLegendNumberDivideExpression(PyLegendBinaryExpression, PyLegendExpressio
 
 
 class PyLegendNumberSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -205,7 +133,6 @@ class PyLegendNumberSubtractExpression(PyLegendBinaryExpression, PyLegendExpress
             self,
             operand1,
             operand2,
-            PyLegendNumberSubtractExpression.__to_sql_func,
             PyLegendNumberSubtractExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -214,15 +141,6 @@ class PyLegendNumberSubtractExpression(PyLegendBinaryExpression, PyLegendExpress
 
 
 class PyLegendNumberLessThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -234,22 +152,12 @@ class PyLegendNumberLessThanExpression(PyLegendBinaryExpression, PyLegendExpress
             self,
             operand1,
             operand2,
-            PyLegendNumberLessThanExpression.__to_sql_func,
             PyLegendNumberLessThanExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendNumberLessThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.LESS_THAN_OR_EQUAL)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -261,22 +169,12 @@ class PyLegendNumberLessThanEqualExpression(PyLegendBinaryExpression, PyLegendEx
             self,
             operand1,
             operand2,
-            PyLegendNumberLessThanEqualExpression.__to_sql_func,
             PyLegendNumberLessThanEqualExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendNumberGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -288,22 +186,12 @@ class PyLegendNumberGreaterThanExpression(PyLegendBinaryExpression, PyLegendExpr
             self,
             operand1,
             operand2,
-            PyLegendNumberGreaterThanExpression.__to_sql_func,
             PyLegendNumberGreaterThanExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendNumberGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.GREATER_THAN_OR_EQUAL)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -315,21 +203,12 @@ class PyLegendNumberGreaterThanEqualExpression(PyLegendBinaryExpression, PyLegen
             self,
             operand1,
             operand2,
-            PyLegendNumberGreaterThanEqualExpression.__to_sql_func,
             PyLegendNumberGreaterThanEqualExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendNumberNegativeExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return NegativeExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -340,7 +219,6 @@ class PyLegendNumberNegativeExpression(PyLegendUnaryExpression, PyLegendExpressi
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberNegativeExpression.__to_sql_func,
             PyLegendNumberNegativeExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -348,14 +226,6 @@ class PyLegendNumberNegativeExpression(PyLegendUnaryExpression, PyLegendExpressi
 
 
 class PyLegendNumberAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return AbsoluteExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -366,7 +236,6 @@ class PyLegendNumberAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressi
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberAbsoluteExpression.__to_sql_func,
             PyLegendNumberAbsoluteExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -374,15 +243,6 @@ class PyLegendNumberAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressi
 
 
 class PyLegendNumberPowerExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return PowerExpression(expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -394,7 +254,6 @@ class PyLegendNumberPowerExpression(PyLegendBinaryExpression, PyLegendExpression
             self,
             operand1,
             operand2,
-            PyLegendNumberPowerExpression.__to_sql_func,
             PyLegendNumberPowerExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -405,14 +264,6 @@ class PyLegendNumberPowerExpression(PyLegendBinaryExpression, PyLegendExpression
 class PyLegendNumberCeilExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CeilExpression(expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("ceiling", [op_expr])
 
@@ -421,7 +272,6 @@ class PyLegendNumberCeilExpression(PyLegendUnaryExpression, PyLegendExpressionIn
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberCeilExpression.__to_sql_func,
             PyLegendNumberCeilExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -429,14 +279,6 @@ class PyLegendNumberCeilExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 
 
 class PyLegendNumberFloorExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FloorExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -447,7 +289,6 @@ class PyLegendNumberFloorExpression(PyLegendUnaryExpression, PyLegendExpressionI
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberFloorExpression.__to_sql_func,
             PyLegendNumberFloorExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -455,14 +296,6 @@ class PyLegendNumberFloorExpression(PyLegendUnaryExpression, PyLegendExpressionI
 
 
 class PyLegendNumberSqrtExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return SqrtExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -473,7 +306,6 @@ class PyLegendNumberSqrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberSqrtExpression.__to_sql_func,
             PyLegendNumberSqrtExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -481,14 +313,6 @@ class PyLegendNumberSqrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
 
 
 class PyLegendNumberCbrtExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CbrtExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -499,7 +323,6 @@ class PyLegendNumberCbrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberCbrtExpression.__to_sql_func,
             PyLegendNumberCbrtExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -507,14 +330,6 @@ class PyLegendNumberCbrtExpression(PyLegendUnaryExpression, PyLegendExpressionNu
 
 
 class PyLegendNumberExpExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ExpExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -525,7 +340,6 @@ class PyLegendNumberExpExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberExpExpression.__to_sql_func,
             PyLegendNumberExpExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -533,14 +347,6 @@ class PyLegendNumberExpExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
 
 class PyLegendNumberLogExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return LogExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -551,7 +357,6 @@ class PyLegendNumberLogExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberLogExpression.__to_sql_func,
             PyLegendNumberLogExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -559,15 +364,6 @@ class PyLegendNumberLogExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
 
 class PyLegendNumberRemainderExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return RemainderExpression(expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -579,7 +375,6 @@ class PyLegendNumberRemainderExpression(PyLegendBinaryExpression, PyLegendExpres
             self,
             operand1,
             operand2,
-            PyLegendNumberRemainderExpression.__to_sql_func,
             PyLegendNumberRemainderExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -588,15 +383,6 @@ class PyLegendNumberRemainderExpression(PyLegendBinaryExpression, PyLegendExpres
 
 
 class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return RoundExpression(expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -610,7 +396,6 @@ class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpression
             self,
             operand1,
             operand2,
-            PyLegendNumberRoundExpression.__to_sql_func,
             PyLegendNumberRoundExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -624,14 +409,6 @@ class PyLegendNumberRoundExpression(PyLegendBinaryExpression, PyLegendExpression
 class PyLegendNumberSineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return SineExpression(expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("sin", [op_expr])
 
@@ -640,7 +417,6 @@ class PyLegendNumberSineExpression(PyLegendUnaryExpression, PyLegendExpressionNu
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberSineExpression.__to_sql_func,
             PyLegendNumberSineExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -648,14 +424,6 @@ class PyLegendNumberSineExpression(PyLegendUnaryExpression, PyLegendExpressionNu
 
 
 class PyLegendNumberArcSineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArcSineExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -666,7 +434,6 @@ class PyLegendNumberArcSineExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberArcSineExpression.__to_sql_func,
             PyLegendNumberArcSineExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -674,14 +441,6 @@ class PyLegendNumberArcSineExpression(PyLegendUnaryExpression, PyLegendExpressio
 
 
 class PyLegendNumberCosineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CosineExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -692,7 +451,6 @@ class PyLegendNumberCosineExpression(PyLegendUnaryExpression, PyLegendExpression
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberCosineExpression.__to_sql_func,
             PyLegendNumberCosineExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -700,14 +458,6 @@ class PyLegendNumberCosineExpression(PyLegendUnaryExpression, PyLegendExpression
 
 
 class PyLegendNumberArcCosineExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArcCosineExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -718,7 +468,6 @@ class PyLegendNumberArcCosineExpression(PyLegendUnaryExpression, PyLegendExpress
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberArcCosineExpression.__to_sql_func,
             PyLegendNumberArcCosineExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -726,14 +475,6 @@ class PyLegendNumberArcCosineExpression(PyLegendUnaryExpression, PyLegendExpress
 
 
 class PyLegendNumberTanExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return TanExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -744,7 +485,6 @@ class PyLegendNumberTanExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberTanExpression.__to_sql_func,
             PyLegendNumberTanExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -752,14 +492,6 @@ class PyLegendNumberTanExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
 
 class PyLegendNumberArcTanExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArcTanExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -770,7 +502,6 @@ class PyLegendNumberArcTanExpression(PyLegendUnaryExpression, PyLegendExpression
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberArcTanExpression.__to_sql_func,
             PyLegendNumberArcTanExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -778,15 +509,6 @@ class PyLegendNumberArcTanExpression(PyLegendUnaryExpression, PyLegendExpression
 
 
 class PyLegendNumberArcTan2Expression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArcTan2Expression(expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -798,7 +520,6 @@ class PyLegendNumberArcTan2Expression(PyLegendBinaryExpression, PyLegendExpressi
             self,
             operand1,
             operand2,
-            PyLegendNumberArcTan2Expression.__to_sql_func,
             PyLegendNumberArcTan2Expression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -809,14 +530,6 @@ class PyLegendNumberArcTan2Expression(PyLegendBinaryExpression, PyLegendExpressi
 class PyLegendNumberCotExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CotExpression(expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("cot", [op_expr])
 
@@ -825,7 +538,6 @@ class PyLegendNumberCotExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberCotExpression.__to_sql_func,
             PyLegendNumberCotExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -833,20 +545,6 @@ class PyLegendNumberCotExpression(PyLegendUnaryExpression, PyLegendExpressionNum
 
 
 class PyLegendNumberLog10Expression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["LOG"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -857,7 +555,6 @@ class PyLegendNumberLog10Expression(PyLegendUnaryExpression, PyLegendExpressionN
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberLog10Expression.__to_sql_func,
             PyLegendNumberLog10Expression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -865,20 +562,6 @@ class PyLegendNumberLog10Expression(PyLegendUnaryExpression, PyLegendExpressionN
 
 
 class PyLegendNumberDegreesExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["DEGREES"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -889,7 +572,6 @@ class PyLegendNumberDegreesExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberDegreesExpression.__to_sql_func,
             PyLegendNumberDegreesExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -897,20 +579,6 @@ class PyLegendNumberDegreesExpression(PyLegendUnaryExpression, PyLegendExpressio
 
 
 class PyLegendNumberRadiansExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["RADIANS"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -921,7 +589,6 @@ class PyLegendNumberRadiansExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberRadiansExpression.__to_sql_func,
             PyLegendNumberRadiansExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -929,20 +596,6 @@ class PyLegendNumberRadiansExpression(PyLegendUnaryExpression, PyLegendExpressio
 
 
 class PyLegendNumberSignExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["SIGN"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -953,7 +606,6 @@ class PyLegendNumberSignExpression(PyLegendUnaryExpression, PyLegendExpressionNu
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberSignExpression.__to_sql_func,
             PyLegendNumberSignExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -961,20 +613,6 @@ class PyLegendNumberSignExpression(PyLegendUnaryExpression, PyLegendExpressionNu
 
 
 class PyLegendNumberHyperbolicSinExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["SINH"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -985,7 +623,6 @@ class PyLegendNumberHyperbolicSinExpression(PyLegendUnaryExpression, PyLegendExp
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberHyperbolicSinExpression.__to_sql_func,
             PyLegendNumberHyperbolicSinExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -993,20 +630,6 @@ class PyLegendNumberHyperbolicSinExpression(PyLegendUnaryExpression, PyLegendExp
 
 
 class PyLegendNumberHyperbolicCosExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["COSH"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -1017,7 +640,6 @@ class PyLegendNumberHyperbolicCosExpression(PyLegendUnaryExpression, PyLegendExp
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberHyperbolicCosExpression.__to_sql_func,
             PyLegendNumberHyperbolicCosExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -1025,20 +647,6 @@ class PyLegendNumberHyperbolicCosExpression(PyLegendUnaryExpression, PyLegendExp
 
 
 class PyLegendNumberHyperbolicTanExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["TANH"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -1049,7 +657,6 @@ class PyLegendNumberHyperbolicTanExpression(PyLegendUnaryExpression, PyLegendExp
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberHyperbolicTanExpression.__to_sql_func,
             PyLegendNumberHyperbolicTanExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,

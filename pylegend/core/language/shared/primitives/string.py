@@ -33,7 +33,6 @@ and ``in_list``.
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
     PyLegendOptional
 )
@@ -49,12 +48,7 @@ from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
 from pylegend.core.language.shared.primitives.datetime import PyLegendDateTime
 from pylegend.core.language.shared.expression import PyLegendExpressionStringReturn
 from pylegend.core.language.shared.literal_expressions import PyLegendStringLiteralExpression
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification
-)
 from pylegend.utils.grammar_method import grammar_method
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.language.shared.operations.string_operation_expressions import (
     PyLegendStringLengthExpression,
@@ -1456,13 +1450,6 @@ class PyLegendString(PyLegendPrimitive):
         PyLegendString.__validate_param_to_be_str_or_str_expr(other, "String greater than equal (>=) parameter")
         other_op = PyLegendStringLiteralExpression(other) if isinstance(other, str) else other.__value
         return PyLegendBoolean(PyLegendStringGreaterThanEqualExpression(self.__value, other_op))
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.__value.to_pure_expression(config)

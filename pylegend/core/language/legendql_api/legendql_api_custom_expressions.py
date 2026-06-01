@@ -49,11 +49,7 @@ from pylegend.core.language.shared.pylegend_custom_expressions import (
     PyLegendCumeDistExpression as LegendQLApiCumeDistExpression,
     PyLegendNtileExpression as LegendQLApiNtileExpression,
 )
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    FrameBound, SortItemOrdering, SortItemNullOrdering, SortItem, SingleColumn, Expression,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from typing import TYPE_CHECKING
 
 __all__: PyLegendSequence[str] = [
@@ -153,29 +149,6 @@ class LegendQLApiSortInfo:
         self.__column = column_expr.get_column()
         self.__direction = direction
 
-    def to_sql_node(
-            self,
-            query: QuerySpecification,
-            config: FrameToSqlConfig
-    ) -> SortItem:
-        return SortItem(
-            sortKey=self.__find_column_expression(query, config),
-            ordering=(SortItemOrdering.ASCENDING if self.__direction == LegendQLApiSortDirection.ASC
-                      else SortItemOrdering.DESCENDING),
-            nullOrdering=SortItemNullOrdering.UNDEFINED
-        )
-
-    def __find_column_expression(self, query: QuerySpecification, config: FrameToSqlConfig) -> Expression:
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        filtered = [
-            s for s in query.select.selectItems
-            if (isinstance(s, SingleColumn) and
-                s.alias == db_extension.quote_identifier(self.__column))
-        ]
-        if len(filtered) == 0:
-            raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
-        return filtered[0].expression
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         func = 'ascending' if self.__direction == LegendQLApiSortDirection.ASC else 'descending'
         return f"{func}(~{escape_column_name(self.__column)})"
@@ -224,23 +197,6 @@ class LegendQLApiWindowFrameBound:
             expr += f", DurationUnit.{self.__duration_unit.to_pure_expression(config)}"
 
         return expr
-
-    def to_sql_node(
-            self,
-            query: QuerySpecification,
-            config: FrameToSqlConfig,
-    ) -> FrameBound:
-        value = (convert_literal_to_literal_expression(abs(self.__row_offset))
-                 .to_sql_expression({"w": query}, config)) \
-            if self.__row_offset is not None else None
-
-        frame_bound_type = self.__bound_type.to_sql_node(query, config)
-
-        duration_unit = self.__duration_unit.to_sql_node(
-            query,
-            config) if self.__duration_unit is not None else None
-
-        return FrameBound(frame_bound_type, value, duration_unit)
 
 
 class LegendQLApiPartialFrame(PyLegendPartialFrame):
