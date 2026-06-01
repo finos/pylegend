@@ -48,7 +48,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-05-PLAN.md — GAP CLOSURE: Delete execute_frame override and _get_legendql_input_project_coordinates from LegendQLApiBaseTdsFrame (fix test_table_spec_frame_execution_error by removing the root cause); remove SQL fallback from LegendClient.execute_pure_string and get_pure_string_schema; remove stale xfail decorators from test_e2e_pure_* (Wave 4)
+- [x] 01-05-PLAN.md — GAP CLOSURE: Delete execute_frame override and _get_legendql_input_project_coordinates from LegendQLApiBaseTdsFrame (fix test_table_spec_frame_execution_error by removing the root cause); remove SQL fallback from LegendClient.execute_pure_string and get_pure_string_schema; remove stale xfail decorators from test_e2e_pure_* (Wave 4)
 
 ### Phase 2: Remove Legacy Code and SQL Layer
 
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fix Pure Foundation | 4/4 | Complete   | 2026-05-31 |
+| 1. Fix Pure Foundation | 5/5 | Complete   | 2026-06-01 |
 | 2. Remove Legacy Code | 0/TBD | Not started | - |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
