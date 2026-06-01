@@ -15,17 +15,10 @@
 from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
-)
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    Expression,
-    SingleColumn,
 )
 from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame,
     FrameToPureConfig,
-    FrameToSqlConfig,
 )
 from pylegend.core.tds.tds_column import TdsColumn, PrimitiveTdsColumn, EnumTdsColumn
 from pylegend.core.language import (
@@ -248,20 +241,3 @@ class AbstractTdsRow(metaclass=ABCMeta):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__frame_name}"
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        query = frame_name_to_base_query_map[self.__frame_name]
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        filtered = [
-            s for s in query.select.selectItems
-            if (isinstance(s, SingleColumn) and
-                s.alias == db_extension.quote_identifier(column))
-        ]
-        if len(filtered) == 0:
-            raise RuntimeError("Cannot find column: " + column)  # pragma: no cover
-        return filtered[0].expression

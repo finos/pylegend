@@ -18,7 +18,6 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendOptional,
     PyLegendList,
-    PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.language.shared.expression import (
@@ -27,26 +26,8 @@ from pylegend.core.language.shared.expression import (
 )
 from pylegend.core.language.shared.helpers import escape_column_name
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
-from pylegend.core.sql.metamodel import (
-    Expression,
-    FrameBound,
-    FrameBoundType,
-    FunctionCall,
-    QualifiedName,
-    QuerySpecification,
-    SingleColumn,
-    SortItem,
-    SortItemNullOrdering,
-    SortItemOrdering,
-    StringLiteral,
-    Window,
-    WindowFrame,
-    WindowFrameMode,
-    IntegerLiteral,
-)
 from pylegend.core.tds.tds_frame import (
     FrameToPureConfig,
-    FrameToSqlConfig,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -81,40 +62,14 @@ class PyLegendSortDirection(Enum):
 class PyLegendSortInfo:
     __column: str
     __direction: PyLegendSortDirection
-    __null_ordering: SortItemNullOrdering
 
     def __init__(
             self,
             column_name: str,
             direction: PyLegendSortDirection,
-            null_ordering: SortItemNullOrdering = SortItemNullOrdering.UNDEFINED
     ) -> None:
         self.__column = column_name
         self.__direction = direction
-        self.__null_ordering = null_ordering
-
-    def to_sql_node(
-            self,
-            query: QuerySpecification,
-            config: FrameToSqlConfig
-    ) -> SortItem:
-        return SortItem(
-            sortKey=self.__find_column_expression(query, config),
-            ordering=(SortItemOrdering.ASCENDING if self.__direction == PyLegendSortDirection.ASC
-                      else SortItemOrdering.DESCENDING),
-            nullOrdering=self.__null_ordering
-        )
-
-    def __find_column_expression(self, query: QuerySpecification, config: FrameToSqlConfig) -> Expression:
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        filtered = [
-            s for s in query.select.selectItems
-            if (isinstance(s, SingleColumn) and
-                s.alias == db_extension.quote_identifier(self.__column))
-        ]
-        if len(filtered) == 0:
-            raise RuntimeError("Cannot find column: " + self.__column)  # pragma: no cover
-        return filtered[0].expression
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         func = 'ascending' if self.__direction == PyLegendSortDirection.ASC else 'descending'
@@ -140,25 +95,6 @@ class PyLegendDurationUnit(Enum):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.name
 
-    def to_sql_node(
-            self,
-            query: QuerySpecification,
-            config: FrameToSqlConfig,
-    ) -> StringLiteral:
-        mapping = {
-            PyLegendDurationUnit.YEARS: "YEAR",
-            PyLegendDurationUnit.MONTHS: "MONTH",
-            PyLegendDurationUnit.WEEKS: "WEEK",
-            PyLegendDurationUnit.DAYS: "DAY",
-            PyLegendDurationUnit.HOURS: "HOUR",
-            PyLegendDurationUnit.MINUTES: "MINUTE",
-            PyLegendDurationUnit.SECONDS: "SECOND",
-            PyLegendDurationUnit.MILLISECONDS: "MILLISECOND",
-            PyLegendDurationUnit.MICROSECONDS: "MICROSECOND",
-            PyLegendDurationUnit.NANOSECONDS: "NANOSECOND",
-        }
-        return StringLiteral(mapping[self], quoted=False)
-
     @classmethod
     def from_string(cls, value: str) -> "PyLegendDurationUnit":
         try:
@@ -180,16 +116,6 @@ class PyLegendFrameBoundType(Enum):
     CURRENT_ROW = 3
     FOLLOWING = 4
     UNBOUNDED_FOLLOWING = 5
-
-    def to_sql_node(self, query: QuerySpecification, config: FrameToSqlConfig) -> FrameBoundType:
-        _map = {
-            PyLegendFrameBoundType.UNBOUNDED_PRECEDING: FrameBoundType.UNBOUNDED_PRECEDING,
-            PyLegendFrameBoundType.PRECEDING: FrameBoundType.PRECEDING,
-            PyLegendFrameBoundType.CURRENT_ROW: FrameBoundType.CURRENT_ROW,
-            PyLegendFrameBoundType.FOLLOWING: FrameBoundType.FOLLOWING,
-            PyLegendFrameBoundType.UNBOUNDED_FOLLOWING: FrameBoundType.UNBOUNDED_FOLLOWING,
-        }
-        return _map[self]
 
     def to_pure_expression(self) -> str:
         _map = {
@@ -216,28 +142,6 @@ class PyLegendFrameBound:
         self.type_ = type_
         self.value = value
         self.duration_unit = duration_unit
-
-    def to_sql_node(
-        self,
-        query: QuerySpecification,
-        config: FrameToSqlConfig,
-    ) -> FrameBound:
-        value_expression: PyLegendOptional[Expression] = None
-        if self.value is not None:
-            abs_val: PyLegendUnion[int, float, PythonDecimal] = abs(self.value)  # type: ignore
-            value_expression = (
-                convert_literal_to_literal_expression(abs_val)
-                .to_sql_expression({"w": query}, config)
-            )
-        duration_unit_node = (
-            self.duration_unit.to_sql_node(query, config)
-            if self.duration_unit is not None else None
-        )
-        return FrameBound(
-            type_=self.type_.to_sql_node(query, config),
-            value=value_expression,
-            duration_unit=duration_unit_node,
-        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         if self.type_ in (PyLegendFrameBoundType.UNBOUNDED_PRECEDING,
@@ -274,13 +178,6 @@ class PyLegendWindowFrameMode(Enum):
     RANGE = 1
     ROWS = 2
 
-    def to_sql_node(self) -> WindowFrameMode:
-        _map = {
-            PyLegendWindowFrameMode.RANGE: WindowFrameMode.RANGE,
-            PyLegendWindowFrameMode.ROWS: WindowFrameMode.ROWS,
-        }
-        return _map[self]
-
     def to_pure_expression(self) -> str:
         _map = {
             PyLegendWindowFrameMode.RANGE: "_range",
@@ -303,20 +200,6 @@ class PyLegendWindowFrame:
         self.mode = mode
         self.start = start
         self.end = end
-
-    def to_sql_node(
-        self,
-        query: QuerySpecification,
-        config: FrameToSqlConfig,
-    ) -> WindowFrame:
-        return WindowFrame(
-            mode=self.mode.to_sql_node(),
-            start=self.start.to_sql_node(query, config),
-            end=(
-                None if self.end is None
-                else self.end.to_sql_node(query, config)
-            ),
-        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         mode_expr = self.mode.to_pure_expression()
@@ -346,39 +229,6 @@ class PyLegendWindow:
         self.__partition_by = partition_by
         self.__order_by = order_by
         self.__frame = frame
-
-    def to_sql_node(
-            self,
-            query: QuerySpecification,
-            config: FrameToSqlConfig
-    ) -> Window:
-        return Window(
-            windowRef=None,
-            partitions=(
-                [] if self.__partition_by is None else
-                [PyLegendWindow.__find_column_expression(query, col, config) for col in self.__partition_by]
-            ),
-            orderBy=(
-                [] if self.__order_by is None else
-                [sort_info.to_sql_node(query, config) for sort_info in self.__order_by]
-            ),
-            windowFrame=(
-                None if self.__frame is None
-                else self.__frame.to_sql_node(query, config)
-            ),
-        )
-
-    @staticmethod
-    def __find_column_expression(query: QuerySpecification, col: str, config: FrameToSqlConfig) -> Expression:
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        filtered = [
-            s for s in query.select.selectItems
-            if (isinstance(s, SingleColumn) and
-                s.alias == db_extension.quote_identifier(col))
-        ]
-        if len(filtered) == 0:
-            raise RuntimeError("Cannot find column: " + col)  # pragma: no cover
-        return filtered[0].expression
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         partitions_str = (
@@ -442,15 +292,6 @@ class PyLegendRowNumberExpression(PyLegendExpressionIntegerReturn):
         self.__partial_frame = partial_frame
         self.__row = row
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["row_number"]), distinct=False, arguments=[], filter_=None, window=None
-        )
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}"
                 f"->rowNumber({self.__row.to_pure_expression(config)})")  # type: ignore
@@ -470,15 +311,6 @@ class PyLegendRankExpression(PyLegendExpressionIntegerReturn):
         self.__partial_frame = partial_frame
         self.__window_ref = window_ref
         self.__row = row
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["rank"]), distinct=False, arguments=[], filter_=None, window=None
-        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->rank("
@@ -501,15 +333,6 @@ class PyLegendDenseRankExpression(PyLegendExpressionIntegerReturn):
         self.__window_ref = window_ref
         self.__row = row
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["dense_rank"]), distinct=False, arguments=[], filter_=None, window=None
-        )
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->denseRank("
                 f"{self.__window_ref.to_pure_expression(config)}, "
@@ -530,15 +353,6 @@ class PyLegendPercentRankExpression(PyLegendExpressionFloatReturn):
         self.__partial_frame = partial_frame
         self.__window_ref = window_ref
         self.__row = row
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["percent_rank"]), distinct=False, arguments=[], filter_=None, window=None
-        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->percentRank("
@@ -561,15 +375,6 @@ class PyLegendCumeDistExpression(PyLegendExpressionFloatReturn):
         self.__window_ref = window_ref
         self.__row = row
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["cume_dist"]), distinct=False, arguments=[], filter_=None, window=None
-        )
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->cumulativeDistribution("
                 f"{self.__window_ref.to_pure_expression(config)}, "
@@ -590,19 +395,6 @@ class PyLegendNtileExpression(PyLegendExpressionIntegerReturn):
         self.__partial_frame = partial_frame
         self.__row = row
         self.__num_buckets = num_buckets
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["ntile"]),
-            distinct=False,
-            arguments=[IntegerLiteral(self.__num_buckets)],
-            filter_=None,
-            window=None
-        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}"

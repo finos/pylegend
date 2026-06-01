@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionFloatReturn,
@@ -23,19 +22,6 @@ from pylegend.core.language.shared.operations.binary_expression import PyLegendB
 from pylegend.core.language.shared.operations.nullary_expression import PyLegendNullaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-    ArithmeticType,
-    ArithmeticExpression,
-    NegativeExpression,
-    FunctionCall,
-    QualifiedName,
-)
-from pylegend.core.sql.metamodel_extension import (
-    AbsoluteExpression,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
@@ -52,15 +38,6 @@ __all__: PyLegendSequence[str] = [
 class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
-
-    @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} + {op2_expr})"
 
@@ -70,7 +47,6 @@ class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFlo
             self,
             operand1,
             operand2,
-            PyLegendFloatAddExpression.__to_sql_func,
             PyLegendFloatAddExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -79,15 +55,6 @@ class PyLegendFloatAddExpression(PyLegendBinaryExpression, PyLegendExpressionFlo
 
 
 class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -99,7 +66,6 @@ class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressi
             self,
             operand1,
             operand2,
-            PyLegendFloatSubtractExpression.__to_sql_func,
             PyLegendFloatSubtractExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -108,15 +74,6 @@ class PyLegendFloatSubtractExpression(PyLegendBinaryExpression, PyLegendExpressi
 
 
 class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.MULTIPLY, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -128,7 +85,6 @@ class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressi
             self,
             operand1,
             operand2,
-            PyLegendFloatMultiplyExpression.__to_sql_func,
             PyLegendFloatMultiplyExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -139,14 +95,6 @@ class PyLegendFloatMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressi
 class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return AbsoluteExpression(expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("abs", [op_expr])
 
@@ -155,7 +103,6 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendFloatAbsoluteExpression.__to_sql_func,
             PyLegendFloatAbsoluteExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True
@@ -163,14 +110,6 @@ class PyLegendFloatAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressio
 
 
 class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return NegativeExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -181,7 +120,6 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendFloatNegativeExpression.__to_sql_func,
             PyLegendFloatNegativeExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -191,19 +129,6 @@ class PyLegendFloatNegativeExpression(PyLegendUnaryExpression, PyLegendExpressio
 class PyLegendFloatPiExpression(PyLegendNullaryExpression, PyLegendExpressionFloatReturn):
 
     @staticmethod
-    def __to_sql_func(
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["PI"]),
-            distinct=False,
-            arguments=[],
-            filter_=None,
-            window=None
-        )
-
-    @staticmethod
     def __to_pure_func(config: FrameToPureConfig) -> str:
         return "pi()"
 
@@ -211,7 +136,6 @@ class PyLegendFloatPiExpression(PyLegendNullaryExpression, PyLegendExpressionFlo
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendNullaryExpression.__init__(
             self,
-            PyLegendFloatPiExpression.__to_sql_func,
             PyLegendFloatPiExpression.__to_pure_func,
             non_nullable=True
         )

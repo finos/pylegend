@@ -15,7 +15,6 @@
 from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendCallable,
     PyLegendList,
     PyLegendOptional
@@ -24,11 +23,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpression,
 )
 from pylegend.core.language.shared.helpers import expr_has_matching_start_and_end_parentheses
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 __all__: PyLegendSequence[str] = [
@@ -38,10 +32,6 @@ __all__: PyLegendSequence[str] = [
 
 class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
     __operands: PyLegendList[PyLegendExpression]
-    __to_sql_func: PyLegendCallable[
-        [PyLegendList[Expression], PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
-        Expression
-    ]
     __to_pure_func: PyLegendCallable[
         [PyLegendList[str], FrameToPureConfig],
         str
@@ -52,10 +42,6 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
     def __init__(
             self,
             operands: PyLegendList[PyLegendExpression],
-            to_sql_func: PyLegendCallable[
-                [PyLegendList[Expression], PyLegendDict[str, QuerySpecification], FrameToSqlConfig],
-                Expression
-            ],
             to_pure_func: PyLegendCallable[
                 [PyLegendList[str], FrameToPureConfig],
                 str
@@ -64,7 +50,6 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
             operands_non_nullable_flags: PyLegendOptional[PyLegendList[bool]] = None
     ) -> None:
         self.__operands = operands
-        self.__to_sql_func = to_sql_func
         self.__to_pure_func = to_pure_func
         self.__non_nullable = non_nullable
         self.__operands_non_nullable_flags = (
@@ -72,17 +57,6 @@ class PyLegendNaryExpression(PyLegendExpression, metaclass=ABCMeta):
             if operands_non_nullable_flags is not None
             else [False] * len(operands)
         )
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        sql_operands = [
-            operand.to_sql_expression(frame_name_to_base_query_map, config)
-            for operand in self.__operands
-        ]
-        return self.__to_sql_func(sql_operands, frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         from pylegend.core.language.pandas_api.pandas_api_series import Series

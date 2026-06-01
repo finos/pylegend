@@ -17,7 +17,6 @@ from decimal import Decimal as PythonDecimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.language.shared.expression import (
@@ -31,18 +30,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionStrictDateReturn,
     PyLegendExpressionNullReturn,
 )
-from pylegend.core.sql.metamodel import (
-    Expression,
-    BooleanLiteral,
-    StringLiteral,
-    IntegerLiteral,
-    DoubleLiteral,
-    QuerySpecification,
-    Cast,
-    ColumnType,
-    NullLiteral,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
@@ -65,13 +52,6 @@ class PyLegendBooleanLiteralExpression(PyLegendExpressionBooleanReturn):
     def __init__(self, value: bool) -> None:
         self.__value = value
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return BooleanLiteral(value=self.__value)
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return "true" if self.__value else "false"
 
@@ -84,13 +64,6 @@ class PyLegendStringLiteralExpression(PyLegendExpressionStringReturn):
 
     def __init__(self, value: str) -> None:
         self.__value = value
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return StringLiteral(value=self.__value, quoted=False)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         escaped = self.__value.replace("'", "\\'")
@@ -106,13 +79,6 @@ class PyLegendIntegerLiteralExpression(PyLegendExpressionIntegerReturn):
     def __init__(self, value: int) -> None:
         self.__value = value
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return IntegerLiteral(value=self.__value)
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
 
@@ -126,13 +92,6 @@ class PyLegendFloatLiteralExpression(PyLegendExpressionFloatReturn):
     def __init__(self, value: float) -> None:
         self.__value = value
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return DoubleLiteral(value=self.__value)
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"minus({abs(self.__value)})" if self.__value < 0 else str(self.__value)
 
@@ -145,24 +104,6 @@ class PyLegendDecimalLiteralExpression(PyLegendExpressionDecimalReturn):
 
     def __init__(self, value: PythonDecimal) -> None:
         self.__value = value
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        sign, digits, exponent = self.__value.as_tuple()
-        num_digits = len(digits)
-        if exponent < 0:  # type: ignore
-            scale = -exponent  # type: ignore
-            precision = max(num_digits, scale + 1)
-        else:
-            scale = 0
-            precision = num_digits + exponent  # type: ignore
-        return Cast(
-            expression=StringLiteral(value=str(self.__value), quoted=False),
-            type_=ColumnType(name="DECIMAL", parameters=[precision, scale])
-        )
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         s = str(self.__value)
@@ -180,16 +121,6 @@ class PyLegendDateTimeLiteralExpression(PyLegendExpressionDateTimeReturn):
     def __init__(self, value: datetime) -> None:
         self.__value = value
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(
-            expression=StringLiteral(value=self.__value.isoformat(), quoted=False),
-            type_=ColumnType(name="TIMESTAMP", parameters=[])
-        )
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"%{self.__value.isoformat()}"
 
@@ -203,16 +134,6 @@ class PyLegendStrictDateLiteralExpression(PyLegendExpressionStrictDateReturn):
     def __init__(self, value: date) -> None:
         self.__value = value
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(
-            expression=StringLiteral(value=self.__value.isoformat(), quoted=False),
-            type_=ColumnType(name="DATE", parameters=[])
-        )
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"%{self.__value.isoformat()}"
 
@@ -225,13 +146,6 @@ class PyLegendNullLiteralExpression(PyLegendExpressionNullReturn):
 
     def __init__(self) -> None:
         return
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return NullLiteral()
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return "[]"

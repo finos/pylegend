@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language import (
     PyLegendBoolean,
@@ -42,14 +41,7 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiWindowReference,
 )
 from pylegend.core.language.shared.tds_row import AbstractTdsRow
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    Expression,
-    FunctionCall,
-    QualifiedName,
-    IntegerLiteral
-)
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToPureConfig
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiTdsRow",
@@ -140,20 +132,6 @@ class LegendQLApiLeadRow(LegendQLApiTdsRow):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__partial_frame.to_pure_expression(config)}->lead({self.__row.to_pure_expression(config)})"
 
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["lead"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
-
 
 class LegendQLApiLagRow(LegendQLApiTdsRow):
     __partial_frame: LegendQLApiPartialFrame
@@ -170,20 +148,6 @@ class LegendQLApiLagRow(LegendQLApiTdsRow):
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"{self.__partial_frame.to_pure_expression(config)}->lag({self.__row.to_pure_expression(config)})"
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["lag"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
 
 
 class LegendQLApiFirstRow(LegendQLApiTdsRow):
@@ -206,20 +170,6 @@ class LegendQLApiFirstRow(LegendQLApiTdsRow):
         return (f"{self.__partial_frame.to_pure_expression(config)}->first("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
 
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["first_value"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
-
 
 class LegendQLApiLastRow(LegendQLApiTdsRow):
     __partial_frame: LegendQLApiPartialFrame
@@ -240,20 +190,6 @@ class LegendQLApiLastRow(LegendQLApiTdsRow):
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return (f"{self.__partial_frame.to_pure_expression(config)}->last("
                 f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)})")
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["last_value"]),
-            distinct=False,
-            arguments=[super().column_sql_expression(column, frame_name_to_base_query_map, config)],
-            filter_=None,
-            window=None
-        )
 
 
 class LegendQLApiNthRow(LegendQLApiTdsRow):
@@ -279,21 +215,4 @@ class LegendQLApiNthRow(LegendQLApiTdsRow):
         return (
             f"{self.__partial_frame.to_pure_expression(config)}->nth("
             f"{self.__window_ref.to_pure_expression(config)}, {self.__row.to_pure_expression(config)}, {self.__offset})"
-        )
-
-    def column_sql_expression(
-            self,
-            column: str,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["nth_value"]),
-            distinct=False,
-            arguments=[
-                super().column_sql_expression(column, frame_name_to_base_query_map, config),
-                IntegerLiteral(self.__offset)
-            ],
-            filter_=None,
-            window=None
         )
