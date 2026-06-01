@@ -14,29 +14,13 @@
 
 from abc import ABCMeta
 from pylegend._typing import (
-    PyLegendList,
     PyLegendSequence,
 )
 from pylegend.core.tds.tds_frame import (
     PyLegendTdsFrame,
-    FrameToSqlConfig,
     FrameToPureConfig,
 )
 from pylegend.core.project_cooridnates import ProjectCoordinates
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    TableFunction,
-    Select,
-    AllColumns,
-    FunctionCall,
-    QualifiedName,
-    NamedArgumentExpression,
-    StringLiteral,
-    AliasedRelation,
-    SingleColumn,
-    QualifiedNameReference,
-    Expression,
-)
 
 __all__: PyLegendSequence[str] = [
     "LegendFunctionInputFrameAbstract",
@@ -55,52 +39,6 @@ class LegendFunctionInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
     ) -> None:
         self.__path = path
         self.__project_coordinates = project_coordinates
-
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        root_alias = db_extension.quote_identifier("root")
-        args: PyLegendList[Expression] = [
-            NamedArgumentExpression(
-                name="path",
-                expression=StringLiteral(value=self.__path, quoted=False)
-            )
-        ]
-        args += self.__project_coordinates.sql_params()
-        func_call = FunctionCall(
-            name=QualifiedName(["func"]),
-            distinct=False,
-            filter_=None,
-            window=None,
-            arguments=args
-        )
-
-        return QuerySpecification(
-            select=Select(
-                selectItems=[
-                    SingleColumn(
-                        alias=db_extension.quote_identifier(x.get_name()),
-                        expression=QualifiedNameReference(
-                            name=QualifiedName(parts=[root_alias, db_extension.quote_identifier(x.get_name())])
-                        )
-                    )
-                    for x in self.columns()
-                ] if self.__initialized else [AllColumns(prefix=root_alias)],
-                distinct=False
-            ),
-            from_=[
-                AliasedRelation(
-                    relation=TableFunction(functionCall=func_call),
-                    alias=root_alias,
-                    columnNames=[x.get_name() for x in self.columns()] if self.__initialized else []
-                )
-            ],
-            where=None,
-            groupBy=[],
-            having=None,
-            orderBy=[],
-            limit=None,
-            offset=None
-        )
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         # The path is the fully-qualified Pure function name

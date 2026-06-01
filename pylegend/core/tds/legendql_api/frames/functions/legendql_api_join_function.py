@@ -20,29 +20,12 @@ from pylegend._typing import (
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query, extract_columns_for_subquery
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    Select,
-    SelectItem,
-    SingleColumn,
-    AliasedRelation,
-    TableSubquery,
-    Query,
-    Join,
-    JoinType,
-    JoinOn,
-    QualifiedNameReference,
-    QualifiedName,
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.core.language import (
     PyLegendBoolean,
-    PyLegendBooleanLiteralExpression,
     PyLegendPrimitive,
     convert_literal_to_literal_expression,
 )
@@ -77,76 +60,6 @@ class LegendQLApiJoinFunction(LegendQLApiAppliedFunction):
         self.__other_frame = other_frame
         self.__join_condition = join_condition
         self.__join_type = join_type
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        base_query = copy_query(self.__base_frame.to_sql_query_object(config))
-        other_query = copy_query(self.__other_frame.to_sql_query_object(config))
-
-        join_type = (
-            JoinType.INNER if self.__join_type.lower() == 'inner' else (
-                JoinType.LEFT if self.__join_type.lower() in ('left_outer', 'leftouter') else (
-                    JoinType.RIGHT if self.__join_type.lower() in ('right_outer', 'rightouter') else
-                    JoinType.FULL
-                )
-            )
-        )
-
-        left_row = LegendQLApiTdsRow.from_tds_frame('left', self.__base_frame)
-        right_row = LegendQLApiTdsRow.from_tds_frame('right', self.__other_frame)
-
-        join_expr = self.__join_condition(left_row, right_row)
-        if isinstance(join_expr, bool):
-            join_expr = PyLegendBoolean(PyLegendBooleanLiteralExpression(join_expr))
-        join_sql_expr = join_expr.to_sql_expression(
-            {
-                'left': create_sub_query(base_query, config, 'left'),
-                'right': create_sub_query(other_query, config, 'right'),
-            },
-            config
-        )
-
-        left_alias = db_extension.quote_identifier('left')
-        right_alias = db_extension.quote_identifier('right')
-        new_select_items: PyLegendList[SelectItem] = []
-        for c in self.__base_frame.columns():
-            q = db_extension.quote_identifier(c.get_name())
-            new_select_items.append(SingleColumn(q, QualifiedNameReference(name=QualifiedName(parts=[left_alias, q]))))
-        for c in self.__other_frame.columns():
-            q = db_extension.quote_identifier(c.get_name())
-            new_select_items.append(SingleColumn(q, QualifiedNameReference(name=QualifiedName(parts=[right_alias, q]))))
-
-        join_query = QuerySpecification(
-            select=Select(
-                selectItems=new_select_items,
-                distinct=False
-            ),
-            from_=[
-                Join(
-                    type_=join_type,
-                    left=AliasedRelation(
-                        relation=TableSubquery(query=Query(queryBody=base_query, limit=None, offset=None, orderBy=[])),
-                        alias=left_alias,
-                        columnNames=extract_columns_for_subquery(base_query)
-                    ),
-                    right=AliasedRelation(
-                        relation=TableSubquery(query=Query(queryBody=other_query, limit=None, offset=None, orderBy=[])),
-                        alias=right_alias,
-                        columnNames=extract_columns_for_subquery(other_query)
-                    ),
-                    criteria=JoinOn(expression=join_sql_expr)
-                )
-            ],
-            where=None,
-            groupBy=[],
-            having=None,
-            orderBy=[],
-            limit=None,
-            offset=None
-        )
-
-        wrapped_join_query = create_sub_query(join_query, config, "root")
-        return wrapped_join_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         left_row = LegendQLApiTdsRow.from_tds_frame("l", self.__base_frame)

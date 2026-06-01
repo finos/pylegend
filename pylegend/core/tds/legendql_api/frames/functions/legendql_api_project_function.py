@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from datetime import date, datetime
-from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
@@ -23,14 +22,7 @@ from pylegend._typing import (
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import create_sub_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-    SelectItem,
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.language import (
@@ -112,25 +104,6 @@ class LegendQLApiProjectFunction(LegendQLApiAppliedFunction):
                     f"Element at index {i} (0-indexed) is incompatible"
                 )
         self.__new_column_expressions = col_expressions
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        new_query = create_sub_query(base_query, config, "root")
-        new_select_items: PyLegendList[SelectItem] = []
-        for c in self.__new_column_expressions:
-            if isinstance(c[1], (bool, int, float, str, date, datetime, PythonDecimal)):
-                col_sql_expr = convert_literal_to_literal_expression(c[1]).to_sql_expression(
-                    {"r": new_query},
-                    config
-                )
-            else:
-                col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
-            new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=col_sql_expr)
-            )
-        new_query.select.selectItems = new_select_items
-        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         def render_single_column_expression(

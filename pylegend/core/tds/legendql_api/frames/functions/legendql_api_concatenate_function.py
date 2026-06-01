@@ -17,20 +17,7 @@ from pylegend._typing import (
     PyLegendSequence
 )
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    Union,
-    AliasedRelation,
-    SingleColumn,
-    Select,
-    QualifiedNameReference,
-    QualifiedName,
-    TableSubquery,
-    Query,
-)
-from pylegend.core.tds.sql_query_helpers import create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
@@ -54,49 +41,6 @@ class LegendQLApiConcatenateFunction(LegendQLApiAppliedFunction):
         if not isinstance(other, LegendQLApiBaseTdsFrame):
             raise ValueError("Expected LegendQLApiBaseTdsFrame")  # pragma: no cover
         self.__other_frame = other
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-        other_query = self.__other_frame.to_sql_query_object(config)
-
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        root_alias = db_extension.quote_identifier("root")
-        columns = [db_extension.quote_identifier(c.get_name()) for c in self.__base_frame.columns()]
-
-        return QuerySpecification(
-            select=Select(
-                selectItems=[
-                    SingleColumn(
-                        alias=x,
-                        expression=QualifiedNameReference(name=QualifiedName(parts=[root_alias, x]))
-                    )
-                    for x in columns
-                ],
-                distinct=False
-            ),
-            from_=[
-                AliasedRelation(
-                    relation=TableSubquery(
-                        query=Query(
-                            queryBody=Union(
-                                left=create_sub_query(base_query, config, "left"),
-                                right=create_sub_query(other_query, config, "right"),
-                                distinct=False
-                            ),
-                            limit=None, offset=None, orderBy=[]
-                        )
-                    ),
-                    alias=root_alias,
-                    columnNames=columns
-                )
-            ],
-            where=None,
-            groupBy=[],
-            having=None,
-            orderBy=[],
-            limit=None,
-            offset=None
-        )
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}"

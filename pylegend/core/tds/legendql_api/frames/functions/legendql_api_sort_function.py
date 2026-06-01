@@ -23,16 +23,11 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiSortInfo,
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-)
 from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import infer_sorts_from_frame
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
 from pylegend.core.tds.tds_column import TdsColumn
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 
 __all__: PyLegendSequence[str] = [
     "LegendQLApiSortFunction"
@@ -65,16 +60,6 @@ class LegendQLApiSortFunction(LegendQLApiAppliedFunction):
     ) -> None:
         self.__base_frame = base_frame
         self.__sort_infos = infer_sorts_from_frame(base_frame, sort_infos, "'sort' function sort_infos")
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = (base_query.offset is not None) or (base_query.limit is not None)
-        new_query = (
-            create_sub_query(base_query, config, "root") if should_create_sub_query else
-            copy_query(base_query)
-        )
-        new_query.orderBy = [i.to_sql_node(query=new_query, config=config) for i in self.__sort_infos]
-        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return (f"{self.__base_frame.to_pure(config)}{config.separator(1)}" +

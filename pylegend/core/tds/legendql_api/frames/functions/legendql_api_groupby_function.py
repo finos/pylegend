@@ -32,14 +32,7 @@ from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApi
 from pylegend.core.tds.abstract.function_helpers import tds_column_for_primitive
 from pylegend.core.tds.legendql_api.frames.functions.legendql_api_function_helpers import infer_columns_from_frame
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-    SelectItem
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
@@ -152,47 +145,6 @@ class LegendQLApiGroupByFunction(LegendQLApiAppliedFunction):
                 raise TypeError(error)
 
         self.__aggregates_list = aggregates_list
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        base_query = self.__base_frame.to_sql_query_object(config)
-
-        should_create_sub_query = (len(base_query.groupBy) > 0) or base_query.select.distinct or \
-                                  (base_query.offset is not None) or (base_query.limit is not None)
-
-        columns_to_retain = [db_extension.quote_identifier(x) for x in self.__grouping_column_name_list]
-        if should_create_sub_query:
-            new_query = create_sub_query(base_query, config, "root")
-        else:
-            new_query = copy_query(base_query)
-
-        new_cols_with_index: PyLegendList[PyLegendTuple[int, 'SelectItem']] = []
-        for col in new_query.select.selectItems:
-            if not isinstance(col, SingleColumn):
-                raise ValueError("Group By operation not supported for queries "
-                                 "with columns other than SingleColumn")  # pragma: no cover
-            if col.alias is None:
-                raise ValueError("Group By operation not supported for queries "
-                                 "with SingleColumns with missing alias")  # pragma: no cover
-            if col.alias in columns_to_retain:
-                new_cols_with_index.append((columns_to_retain.index(col.alias), col))
-
-        new_select_items = [y[1] for y in sorted(new_cols_with_index, key=lambda x: x[0])]
-
-        tds_row = LegendQLApiTdsRow.from_tds_frame("r", self.__base_frame)
-        for agg in self.__aggregates_list:
-            agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
-
-            new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr)
-            )
-
-        new_query.select.selectItems = new_select_items
-        new_query.groupBy = [
-            (lambda x: x[c])(tds_row).to_sql_expression({"r": new_query}, config)
-            for c in self.__grouping_column_name_list
-        ]
-        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         group_strings = []

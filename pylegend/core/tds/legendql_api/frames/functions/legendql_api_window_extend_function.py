@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from datetime import date, datetime
-from decimal import Decimal as PythonDecimal
 from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
@@ -27,15 +26,8 @@ from pylegend.core.language.legendql_api.legendql_api_custom_expressions import 
     LegendQLApiWindowReference
 )
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
-from pylegend.core.sql.metamodel_extension import WindowExpression
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.language import (
@@ -184,43 +176,6 @@ class LegendQLApiWindowExtendFunction(LegendQLApiAppliedFunction):
                     f"Element at index {i} (0-indexed) is incompatible"
                 )
         self.__new_column_expressions = col_expressions
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        base_query = self.__base_frame.to_sql_query_object(config)
-        should_create_sub_query = True
-        db_extension = config.sql_to_string_generator().get_db_extension()
-
-        new_query = (
-            create_sub_query(base_query, config, "root") if should_create_sub_query else
-            copy_query(base_query)
-        )
-
-        for c in self.__new_column_expressions:
-            if len(c) == 2:
-                if isinstance(c[1], (bool, int, float, str, date, datetime, PythonDecimal)):
-                    col_sql_expr = convert_literal_to_literal_expression(c[1]).to_sql_expression(
-                        {"r": new_query},
-                        config
-                    )
-                else:
-                    col_sql_expr = c[1].to_sql_expression({"r": new_query}, config)
-                window_expr = WindowExpression(
-                    nested=col_sql_expr,
-                    window=self.__window.to_sql_node(new_query, config),
-                )
-                new_query.select.selectItems.append(
-                    SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr)
-                )
-            else:
-                agg_sql_expr = c[2].to_sql_expression({"r": new_query}, config)
-                window_expr = WindowExpression(
-                    nested=agg_sql_expr,
-                    window=self.__window.to_sql_node(new_query, config),
-                )
-                new_query.select.selectItems.append(
-                    SingleColumn(alias=db_extension.quote_identifier(c[0]), expression=window_expr)
-                )
-        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         def render_single_column_expression(

@@ -17,13 +17,10 @@ from pylegend._typing import (
     PyLegendList,
     PyLegendSequence,
 )
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-)
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.cast_helpers import CastTarget, validate_and_build_cast_columns, pure_type_spec, _normalize_target
 from pylegend.core.language.shared.helpers import escape_column_name
 
@@ -48,9 +45,6 @@ class LegendQLApiCastFunction(LegendQLApiAppliedFunction):
     ) -> None:
         self.__base_frame = base_frame
         self.__column_type_map = column_type_map
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self.__base_frame.to_sql_query_object(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         base_pure = self.__base_frame.to_pure(config)
