@@ -48,19 +48,20 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 01-05-PLAN.md — GAP CLOSURE: Guard execute_frame override on LegendQLApiBaseTdsFrame for non-service/function frames (fix test_table_spec_frame_execution_error); remove stale xfail decorators from test_e2e_pure_schema_api and test_e2e_pure_execute_api (Wave 4)
+- [ ] 01-05-PLAN.md — GAP CLOSURE: Delete execute_frame override and _get_legendql_input_project_coordinates from LegendQLApiBaseTdsFrame (fix test_table_spec_frame_execution_error by removing the root cause); remove SQL fallback from LegendClient.execute_pure_string and get_pure_string_schema; remove stale xfail decorators from test_e2e_pure_* (Wave 4)
 
-### Phase 2: Remove Legacy Code
+### Phase 2: Remove Legacy Code and SQL Layer
 
-**Goal**: The codebase contains only the LegendQL API and the Pure execution path; all Legacy API, Pandas API, SQL metamodel, and associated dev dependencies are gone
+**Goal**: The codebase contains only the LegendQL API and the Pure HTTP methods on LegendClient; Legacy API, Pandas API, the entire SQL metamodel, SQL execution paths, and associated dependencies are deleted
 **Depends on**: Phase 1
 **Requirements**: REMV-01, REMV-02, REMV-03, REMV-04, REMV-05
+**Rationale**: The only real PyLegend consumer uses `to_pure()` for Pure expression generation (reverse PCT tests), not SQL execution. Nobody executes queries via SQL. Deleting the SQL layer now removes substantial dead weight and clarifies the codebase before building the Ibis backend. Legacy and Pandas API deletion is safe immediately; the SQL metamodel can go at the same time since LegendQL's SQL fallback was already removed in Phase 1 (Plan 05).
 **Success Criteria** (what must be TRUE):
 
   1. `legacy_api/`, `pandas_api/`, `core/sql/`, `core/database/`, and `extensions/database/vendors/` directories do not exist in the repository
-  2. `pyproject.toml` no longer lists `sqlalchemy`, `pg8000`, `pymysql`, `cryptography`, or `mockito` as dependencies
-  3. `testcontainers` appears only under dev dependencies (not runtime)
-  4. `import pylegend` succeeds and the test suite passes with no import errors related to removed modules
+  2. `BaseTdsFrame.execute_frame`, `BaseTdsFrame.to_sql_query()`, `execute_sql_string`, and `get_sql_string_schema` on `LegendClient` do not exist
+  3. `pyproject.toml` runtime deps are reduced to `requests`, `ijson`, and `testcontainers` (moved to dev); `pandas`, `numpy`, `sqlalchemy`, `pg8000`, `pymysql`, `cryptography`, `mockito` are removed entirely
+  4. `import pylegend` succeeds and the LegendQL + Pure test suite passes with no import errors
 
 **Plans**: TBD
 
@@ -80,13 +81,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### Phase 4: Rewire LegendQL + Cleanup
 
-**Goal**: `LegendQLApiTdsFrame` operations build Ibis expressions internally and route through the Ibis backend; all dead code is deleted and the CI matrix is confirmed green across the full Python version range
+**Goal**: `LegendQLApiTdsFrame` operations build Ibis expressions internally and route through the Ibis backend; the CI matrix is confirmed green across the full Python version range
 **Depends on**: Phase 3
 **Requirements**: COMPAT-01, COMPAT-02, COMPAT-03, COMPAT-04, COMPAT-05, COMPAT-06, COMPAT-07, COMPAT-08, TEST-03, TEST-04
 **Success Criteria** (what must be TRUE):
 
   1. All `LegendQLApiTdsFrame` operation method signatures and return types are unchanged from 1.x — existing callers using `legend_service_frame()`, `legend_function_frame()`, and all frame operations require no code changes
-  2. `to_pure_query()` on any `LegendQLApiTdsFrame` produces the same Pure string as in 1.x; calling `to_sql_query()` emits a `DeprecationWarning` rather than silently succeeding
+  2. `to_pure_query()` on any `LegendQLApiTdsFrame` produces the same Pure string as in 1.x; `to_sql_query()` no longer exists
   3. `FrameToSqlConfig`, `to_sql_query_object()`, `AppliedFunction.to_sql()`, and `AppliedFunction.to_pure()` recursive-descent code are absent from the codebase
   4. The CI matrix passes on Python 3.9–3.14 across Ubuntu and Windows; `as_of_join` has at least one integration test or is marked `xfail` with a tracking comment
 
