@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: context exhaustion at 76% (2026-06-01)
-last_updated: "2026-06-01T15:28:38.978Z"
-last_activity: 2026-06-01 -- Phase 01 execution started
+last_updated: "2026-06-01T18:58:06.253Z"
+last_activity: 2026-06-01 -- Phase 02 execution started
 progress:
   total_phases: 4
-  completed_phases: 0
-  total_plans: 5
-  completed_plans: 4
-  percent: 0
+  completed_phases: 1
+  total_plans: 10
+  completed_plans: 5
+  percent: 25
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-31)
 
 **Core value:** Internal library teams and Legend PCT tests can build and execute TDS queries against a Legend engine using familiar Python APIs without maintaining knowledge of the underlying Pure or engine protocol.
-**Current focus:** Phase 01 — fix-pure-foundation
+**Current focus:** Phase 02 — Remove Legacy Code and SQL Layer
 
 ## Current Position
 
-Phase: 01 (fix-pure-foundation) — EXECUTING
+Phase: 02 (Remove Legacy Code and SQL Layer) — EXECUTING
 Plan: 1 of 5
-Status: Ready to execute
-Last activity: 2026-06-01 -- Phase 01 execution started
+Status: Executing Phase 02
+Last activity: 2026-06-01 -- Phase 02 execution started
 
 Progress: [░░░░░░░░░░] 0%
 

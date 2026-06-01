@@ -67,7 +67,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Re-home grammar_method to pylegend/utils; update 10 primitive imports; delete all Legacy/Pandas/SQL directory trees, test mirrors, and 3 orphaned files (Wave 1)
+- [x] 02-01-PLAN.md — Re-home grammar_method to pylegend/utils; update 10 primitive imports; delete all Legacy/Pandas/SQL directory trees, test mirrors, and 3 orphaned files (Wave 1)
 
 **Wave 2** *(blocked on Wave 1)*
 
@@ -121,6 +121,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Pure Foundation | 5/5 | Complete   | 2026-06-01 |
-| 2. Remove Legacy Code | 0/5 | Planned | - |
+| 2. Remove Legacy Code | 1/5 | In Progress|  |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
