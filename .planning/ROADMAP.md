@@ -63,7 +63,27 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `pyproject.toml` runtime deps are reduced to `requests`, `ijson`, and `testcontainers` (moved to dev); `pandas`, `numpy`, `sqlalchemy`, `pg8000`, `pymysql`, `cryptography`, `mockito` are removed entirely
   4. `import pylegend` succeeds and the LegendQL + Pure test suite passes with no import errors
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Re-home grammar_method to pylegend/utils; update 10 primitive imports; delete all Legacy/Pandas/SQL directory trees, test mirrors, and 3 orphaned files (Wave 1)
+
+**Wave 2** *(blocked on Wave 1)*
+
+- [ ] 02-02-PLAN.md — Remove SQL metamodel imports and to_sql_expression from shared language layer (primitives, operations, expressions, project_cooridnates, legendql language files) (Wave 2)
+
+**Wave 3** *(blocked on Wave 2)*
+
+- [ ] 02-03-PLAN.md — Remove SQL/pandas surface from frame abstractions, LegendClient, extension bases, 17 LegendQL function files, and public __init__.py files; restore import pylegend (Wave 3)
+
+**Wave 4** *(blocked on Wave 3)*
+
+- [ ] 02-04-PLAN.md — Remove SQL assertions/fixtures from retained test files (LegendQL function tests, shared-language tests, client tests, tds_row test); confirm full pytest collection (Wave 4)
+
+**Wave 5** *(blocked on Wave 4)*
+
+- [ ] 02-05-PLAN.md — Trim pyproject.toml runtime deps to requests+ijson, move testcontainers to dev, remove SQL/pandas/mocking deps; uv sync + full test suite as final acceptance gate (Wave 5)
 
 ### Phase 3: Ibis Backend
 
@@ -101,6 +121,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Pure Foundation | 5/5 | Complete   | 2026-06-01 |
-| 2. Remove Legacy Code | 0/TBD | Not started | - |
+| 2. Remove Legacy Code | 0/5 | Planned | - |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
