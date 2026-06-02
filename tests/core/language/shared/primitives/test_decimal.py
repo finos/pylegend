@@ -233,6 +233,7 @@ class TestPyLegendDecimalUnit:
         PrimitiveTdsColumn.decimal_column("col2")
     ])
     tds_row = TestTdsRow.from_tds_frame("t", test_frame)
+    frame_to_pure_config = FrameToPureConfig()
 
     def test_decimal_validate_param_to_be_decimal(self) -> None:
         """Covers PyLegendDecimal.__validate__param_to_be_decimal (decimal.py line 172)"""

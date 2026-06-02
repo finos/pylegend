@@ -55,20 +55,16 @@ class PyLegendBinaryExpression(PyLegendExpression, metaclass=ABCMeta):
         self.__second_operand_needs_to_be_non_nullable = second_operand_needs_to_be_non_nullable
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
-        from pylegend.core.language.pandas_api.pandas_api_series import Series
-        from pylegend.core.language.pandas_api.pandas_api_groupby_series import GroupbySeries
         op1_expr = self.__operand1.to_pure_expression(config)
         if self.__first_operand_needs_to_be_non_nullable:
             op1_expr = (
-                op1_expr if self.__operand1.is_non_nullable()
-                or (isinstance(self.__operand1, (Series, GroupbySeries)) and self.__operand1.expr is not None) else
+                op1_expr if self.__operand1.is_non_nullable() else
                 f"toOne({op1_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op1_expr) else op1_expr})"
             )
         op2_expr = self.__operand2.to_pure_expression(config)
         if self.__second_operand_needs_to_be_non_nullable:
             op2_expr = (
-                op2_expr if self.__operand2.is_non_nullable()
-                or (isinstance(self.__operand2, (Series, GroupbySeries)) and self.__operand2.expr is not None) else
+                op2_expr if self.__operand2.is_non_nullable() else
                 f"toOne({op2_expr[1:-1] if expr_has_matching_start_and_end_parentheses(op2_expr) else op2_expr})"
             )
         return self.__to_pure_func(op1_expr, op2_expr, config)

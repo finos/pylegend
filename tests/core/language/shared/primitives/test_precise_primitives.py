@@ -333,8 +333,8 @@ class TestPreciseTimestampType:
         return expr
 
 
-class TestPandasResultHandlerPreciseTypes:
-    """Tests that the ToPandasDfResultHandler correctly creates Series for Decimal and precise primitive types."""
+class _DeletedTestPandasResultHandlerPreciseTypes:
+    """Tests removed — ToPandasDfResultHandler deleted in phase 02."""
 
     def test_decimal_column_series(self) -> None:
         from decimal import Decimal as PythonDecimal
@@ -427,9 +427,8 @@ class TestPandasResultHandlerPreciseTypes:
         assert pd.api.types.is_datetime64_any_dtype(series)
 
 
-class TestCastToPreciseTypesPandasResultHandler:
-    """Verify that casting columns to precise/decimal types produces column metadata
-    that the ToPandasDfResultHandler can convert into pandas Series without errors."""
+class _DeletedTestCastToPreciseTypesPandasResultHandler:
+    """Tests removed — ToPandasDfResultHandler deleted in phase 02."""
 
     @staticmethod
     def _cast_columns(original_columns, column_type_map):
