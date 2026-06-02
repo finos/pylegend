@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mockito  # type: ignore
+from unittest.mock import patch
 import requests
 from pylegend import (
     HeaderTokenAuthScheme,
@@ -35,27 +35,22 @@ class TestHeaderCopySession:
 
 class TestHeaderTokenAuth:
 
-    @staticmethod
-    def setup_method() -> None:
-        mockito.when(requests).Session().thenReturn(TestHeaderCopySession())
-
-    @staticmethod
-    def teardown_method() -> None:
-        mockito.unstub()
-
     def test_header_token_auth(self) -> None:
         def token_provider() -> str:
             return 'TEST-AUTH-TOKEN'
 
-        client = ServiceClient(
-            host="localhost",
-            port=80,
-            secure_http=False,
-            path_prefix=None,
-            auth_scheme=HeaderTokenAuthScheme(header_name="TEST-AUTH-TOKEN-HEADER-NAME", token_provider=token_provider),
-            retry_count=1
-        )
-        response = client._execute_service(method=RequestMethod.GET, path="path")
+        with patch('requests.Session', return_value=TestHeaderCopySession()):
+            client = ServiceClient(
+                host="localhost",
+                port=80,
+                secure_http=False,
+                path_prefix=None,
+                auth_scheme=HeaderTokenAuthScheme(
+                    header_name="TEST-AUTH-TOKEN-HEADER-NAME", token_provider=token_provider
+                ),
+                retry_count=1
+            )
+            response = client._execute_service(method=RequestMethod.GET, path="path")
         assert response.url == "http://localhost:80/path"
         assert response.text == "OK"
         assert str(response.headers) == "{'TEST-AUTH-TOKEN-HEADER-NAME': 'TEST-AUTH-TOKEN'}"
@@ -64,19 +59,20 @@ class TestHeaderTokenAuth:
         def token_provider() -> str:
             return 'TEST-AUTH-TOKEN'
 
-        client = ServiceClient(
-            host="localhost",
-            port=80,
-            secure_http=False,
-            path_prefix=None,
-            auth_scheme=HeaderTokenAuthScheme(
-                header_name="TEST-AUTH-TOKEN-HEADER-NAME",
-                token_provider=token_provider,
-                query_params={"auth_client": "token_auth"}
-            ),
-            retry_count=1
-        )
-        response = client._execute_service(method=RequestMethod.GET, path="path")
+        with patch('requests.Session', return_value=TestHeaderCopySession()):
+            client = ServiceClient(
+                host="localhost",
+                port=80,
+                secure_http=False,
+                path_prefix=None,
+                auth_scheme=HeaderTokenAuthScheme(
+                    header_name="TEST-AUTH-TOKEN-HEADER-NAME",
+                    token_provider=token_provider,
+                    query_params={"auth_client": "token_auth"}
+                ),
+                retry_count=1
+            )
+            response = client._execute_service(method=RequestMethod.GET, path="path")
         assert response.url == "http://localhost:80/path?auth_client=token_auth"
         assert response.text == "OK"
         assert str(response.headers) == "{'TEST-AUTH-TOKEN-HEADER-NAME': 'TEST-AUTH-TOKEN'}"
@@ -84,27 +80,20 @@ class TestHeaderTokenAuth:
 
 class TestCookieAuth:
 
-    @staticmethod
-    def setup_method() -> None:
-        mockito.when(requests).Session().thenReturn(TestHeaderCopySession())
-
-    @staticmethod
-    def teardown_method() -> None:
-        mockito.unstub()
-
     def test_cookie_auth(self) -> None:
         def cookie_provider() -> str:
             return 'TEST-SSO'
 
-        client = ServiceClient(
-            host="localhost",
-            port=80,
-            secure_http=False,
-            path_prefix=None,
-            auth_scheme=CookieAuthScheme(cookie_name="LegendSSO", cookie_provider=cookie_provider),
-            retry_count=1
-        )
-        response = client._execute_service(method=RequestMethod.GET, path="path")
+        with patch('requests.Session', return_value=TestHeaderCopySession()):
+            client = ServiceClient(
+                host="localhost",
+                port=80,
+                secure_http=False,
+                path_prefix=None,
+                auth_scheme=CookieAuthScheme(cookie_name="LegendSSO", cookie_provider=cookie_provider),
+                retry_count=1
+            )
+            response = client._execute_service(method=RequestMethod.GET, path="path")
         assert response.url == "http://localhost:80/path"
         assert response.text == "OK"
         assert str(response.headers) == "{'Cookie': 'LegendSSO=TEST-SSO'}"
@@ -113,19 +102,20 @@ class TestCookieAuth:
         def cookie_provider() -> str:
             return 'TEST-SSO'
 
-        client = ServiceClient(
-            host="localhost",
-            port=80,
-            secure_http=False,
-            path_prefix=None,
-            auth_scheme=CookieAuthScheme(
-                cookie_name="LegendSSO",
-                cookie_provider=cookie_provider,
-                query_params={'auth_client': 'cookie_auth'}
-            ),
-            retry_count=1
-        )
-        response = client._execute_service(method=RequestMethod.GET, path="path")
+        with patch('requests.Session', return_value=TestHeaderCopySession()):
+            client = ServiceClient(
+                host="localhost",
+                port=80,
+                secure_http=False,
+                path_prefix=None,
+                auth_scheme=CookieAuthScheme(
+                    cookie_name="LegendSSO",
+                    cookie_provider=cookie_provider,
+                    query_params={'auth_client': 'cookie_auth'}
+                ),
+                retry_count=1
+            )
+            response = client._execute_service(method=RequestMethod.GET, path="path")
         assert response.url == "http://localhost:80/path?auth_client=cookie_auth"
         assert response.text == "OK"
         assert str(response.headers) == "{'Cookie': 'LegendSSO=TEST-SSO'}"
@@ -134,21 +124,22 @@ class TestCookieAuth:
         def cookie_provider() -> str:
             return 'TEST-SSO'
 
-        client = ServiceClient(
-            host="engine.test.domain.com",
-            port=80,
-            secure_http=False,
-            path_prefix=None,
-            auth_scheme=CookieAuthScheme(
-                cookie_name="LegendSSO",
-                cookie_provider=cookie_provider,
-                query_params={'auth_client': 'cookie_auth'},
-                domain=".test.other.domain.com",
-                path="/path"
-            ),
-            retry_count=1
-        )
-        response = client._execute_service(method=RequestMethod.GET, path="path")
+        with patch('requests.Session', return_value=TestHeaderCopySession()):
+            client = ServiceClient(
+                host="engine.test.domain.com",
+                port=80,
+                secure_http=False,
+                path_prefix=None,
+                auth_scheme=CookieAuthScheme(
+                    cookie_name="LegendSSO",
+                    cookie_provider=cookie_provider,
+                    query_params={'auth_client': 'cookie_auth'},
+                    domain=".test.other.domain.com",
+                    path="/path"
+                ),
+                retry_count=1
+            )
+            response = client._execute_service(method=RequestMethod.GET, path="path")
         assert response.url == "http://engine.test.domain.com:80/path?auth_client=cookie_auth"
         assert response.text == "OK"
         assert str(response.headers) == "{}"
@@ -157,21 +148,22 @@ class TestCookieAuth:
         def cookie_provider() -> str:
             return 'TEST-SSO'
 
-        client = ServiceClient(
-            host="engine.test.domain.com",
-            port=80,
-            secure_http=False,
-            path_prefix=None,
-            auth_scheme=CookieAuthScheme(
-                cookie_name="LegendSSO",
-                cookie_provider=cookie_provider,
-                query_params={'auth_client': 'cookie_auth'},
-                domain=".test.domain.com",
-                path="/path"
-            ),
-            retry_count=1
-        )
-        response = client._execute_service(method=RequestMethod.GET, path="path")
+        with patch('requests.Session', return_value=TestHeaderCopySession()):
+            client = ServiceClient(
+                host="engine.test.domain.com",
+                port=80,
+                secure_http=False,
+                path_prefix=None,
+                auth_scheme=CookieAuthScheme(
+                    cookie_name="LegendSSO",
+                    cookie_provider=cookie_provider,
+                    query_params={'auth_client': 'cookie_auth'},
+                    domain=".test.domain.com",
+                    path="/path"
+                ),
+                retry_count=1
+            )
+            response = client._execute_service(method=RequestMethod.GET, path="path")
         assert response.url == "http://engine.test.domain.com:80/path?auth_client=cookie_auth"
         assert response.text == "OK"
         assert str(response.headers) == "{'Cookie': 'LegendSSO=TEST-SSO'}"

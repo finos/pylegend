@@ -14,6 +14,7 @@
 from abc import ABCMeta
 import csv
 import re
+from datetime import datetime
 from pylegend._typing import (
     PyLegendSequence,
     PyLegendList,
@@ -23,7 +24,6 @@ from pylegend.core.tds.tds_column import (
     PrimitiveType,
     PrimitiveTdsColumn)
 from pylegend.core.tds.tds_frame import FrameToPureConfig, PyLegendTdsFrame
-import pandas as pd
 
 __all__: PyLegendSequence[str] = [
     "CsvInputFrameAbstract",
@@ -33,6 +33,12 @@ __all__: PyLegendSequence[str] = [
 # Matches a Pure decimal literal: digits with optional decimal point, ending in 'd' or 'D'
 # e.g. "21d", "31.0d", "101.0D", "3.14d"
 _PURE_DECIMAL_SUFFIX_RE = re.compile(r'^(\d+(?:\.\d+)?)[dD]$')
+
+_DATE_FORMATS = [
+    "%Y-%m-%d %H:%M:%S",
+    "%Y-%m-%dT%H:%M:%S.%f%z",
+    "%Y-%m-%d",
+]
 
 
 def _strip_decimal_suffix(csv_string: str) -> tuple[str, set[str]]:
@@ -72,6 +78,61 @@ def _strip_decimal_suffix(csv_string: str) -> tuple[str, set[str]]:
     return out.getvalue(), decimal_columns
 
 
+def _infer_column_type(values: PyLegendList[str], col_name: str, decimal_columns: set[str]) -> PrimitiveType:
+    """Infer a PrimitiveType from a list of raw string values (may include empty strings for nulls)."""
+    if col_name in decimal_columns:
+        return PrimitiveType.Decimal  # pragma: no cover
+
+    non_null = [v for v in values if v.strip() != ""]
+    if not non_null:
+        return PrimitiveType.String
+
+    # Boolean check: all non-null values are True/False (case-insensitive)
+    if all(v.strip().lower() in ("true", "false") for v in non_null):
+        return PrimitiveType.Boolean
+
+    # Integer check
+    if all(_is_integer(v) for v in non_null):
+        return PrimitiveType.Integer
+
+    # Float check
+    if all(_is_float(v) for v in non_null):
+        return PrimitiveType.Float
+
+    # Date/Datetime check
+    if all(_is_date_or_datetime(v) for v in non_null):
+        return PrimitiveType.Date
+
+    return PrimitiveType.String
+
+
+def _is_integer(val: str) -> bool:
+    try:
+        int(val.strip())
+        return True
+    except ValueError:
+        return False
+
+
+def _is_float(val: str) -> bool:
+    try:
+        float(val.strip())
+        return True
+    except ValueError:
+        return False
+
+
+def _is_date_or_datetime(val: str) -> bool:
+    v = val.strip()
+    for fmt in _DATE_FORMATS:
+        try:
+            datetime.strptime(v, fmt)
+            return True
+        except ValueError:
+            continue
+    return False
+
+
 class CsvInputFrameAbstract(PyLegendTdsFrame, metaclass=ABCMeta):
     __csv_string: str
 
@@ -90,34 +151,25 @@ def tds_columns_from_csv_string(
         csv_string: str
 ) -> PyLegendList[PrimitiveTdsColumn]:
     cleaned_csv, decimal_columns = _strip_decimal_suffix(csv_string)
-    df = pd.read_csv(StringIO(cleaned_csv))
+    reader = csv.reader(StringIO(cleaned_csv.strip()))
+    rows = list(reader)
+
+    if not rows or not rows[0]:
+        raise ValueError("No columns to parse from file")
+
+    headers = [h.strip() for h in rows[0]]
+    data_rows = [
+        [cell.strip() for cell in row]
+        for row in rows[1:]
+        if any(cell.strip() for cell in row)
+    ]
+
     tds_columns = []
-    dt = pd.api.types
-
-    for col in df.columns:
-        col_name = str(col).strip()
-        dtype = df[col].dtype
-
-        if col_name in decimal_columns:
-            primitive_type = PrimitiveType.Decimal  # pragma: no cover
-
-        elif dt.is_bool_dtype(dtype):
-            primitive_type = PrimitiveType.Boolean
-
-        elif dt.is_integer_dtype(dtype):
-            primitive_type = PrimitiveType.Integer
-
-        elif dt.is_float_dtype(dtype):
-            primitive_type = PrimitiveType.Float
-
-        elif is_strict_date_or_datetime(df[col]):
-            primitive_type = PrimitiveType.Date
-
-        else:
-            primitive_type = PrimitiveType.String
-
+    for col_idx, col_name in enumerate(headers):
+        col_values = [row[col_idx] if col_idx < len(row) else "" for row in data_rows]
+        primitive_type = _infer_column_type(col_values, col_name, decimal_columns)
         tds_columns.append(
-            PrimitiveTdsColumn(name=_remove_quotes_if_present(col), _type=primitive_type)
+            PrimitiveTdsColumn(name=_remove_quotes_if_present(col_name), _type=primitive_type)
         )
 
     return tds_columns
@@ -127,23 +179,3 @@ def _remove_quotes_if_present(col_name: str) -> str:
     if len(col_name) >= 2 and col_name[0] == col_name[-1] and col_name[0] in ("'", '"'):
         return col_name[1:-1]
     return col_name
-
-
-def is_strict_date_or_datetime(col: pd.Series) -> bool:  # type: ignore[explicit-any]
-    try:
-        pd.to_datetime(col, format="%Y-%m-%d %H:%M:%S", exact=True, errors="raise")
-        return True
-    except (ValueError, TypeError):
-        pass
-
-    try:
-        pd.to_datetime(col, format="%Y-%m-%dT%H:%M:%S.%f%z", exact=True, errors="raise")
-        return True  # pragma: no cover
-    except (ValueError, TypeError):
-        pass
-
-    try:
-        pd.to_datetime(col, format="%Y-%m-%d", exact=True, errors="raise")
-        return True
-    except (ValueError, TypeError):
-        return False

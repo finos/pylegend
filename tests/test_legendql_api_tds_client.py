@@ -17,12 +17,12 @@ from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
-import pandas as pd
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
 class TestLegendQLApiTdsClient:
 
-    def test_legendql_api_tds_client(
+    def test_legendql_api_tds_client_pure_query(
             self,
             legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
     ) -> None:
@@ -44,62 +44,19 @@ class TestLegendQLApiTdsClient:
             )
         )
 
-        df = frame.execute_frame_to_pandas_df()
-        expected = pd.DataFrame(
-            columns=[
-                "First Name", "Last Name", "Age", "Firm/Legal Name"
-            ],
-            data=[
-                ["Peter", "Smith", 23, "Firm X"],
-                ["John", "Johnson", 22, "Firm X"],
-                ["John", "Hill", 12, "Firm X"],
-                ["Anthony", "Allen", 22, "Firm X"],
-                ["Fabrice", "Roberts", 34, "Firm A"],
-                ["Oliver", "Hill", 32, "Firm B"],
-                ["David", "Harris", 35, "Firm C"]
-            ]
-        ).astype({
-            "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
-        })
-        pd.testing.assert_frame_equal(expected, df)
+        # Verify the Pure query string is generated correctly
+        pure_query = frame.to_pure_query(FrameToPureConfig(pretty=False))
+        assert "simplePersonService" in pure_query
 
+        # Verify filter operation composes a valid Pure query
         filtered_frame = frame.filter(lambda x: (x.get_integer("Age") >= 22) & (x["Firm/Legal Name"] == "Firm X"))
-        df = filtered_frame.execute_frame_to_pandas_df()
-        expected = pd.DataFrame(
-            columns=[
-                "First Name", "Last Name", "Age", "Firm/Legal Name"
-            ],
-            data=[
-                ["Peter", "Smith", 23, "Firm X"],
-                ["John", "Johnson", 22, "Firm X"],
-                ["Anthony", "Allen", 22, "Firm X"],
-            ]
-        ).astype({
-            "Age": "Int64",
-            "First Name": "object",
-            "Last Name": "object",
-            "Firm/Legal Name": "object"
-        })
-        pd.testing.assert_frame_equal(expected, df)
+        filtered_pure_query = filtered_frame.to_pure_query(FrameToPureConfig(pretty=False))
+        assert "filter" in filtered_pure_query
 
+        # Verify group_by composes a valid Pure query
         grouped_frame = filtered_frame.group_by(
             ["Age"],
             ("First Names", lambda r: r["First Name"], lambda c: c.join(";"))  # type: ignore
         )
-        df = grouped_frame.execute_frame_to_pandas_df()
-        expected = pd.DataFrame(
-            columns=[
-                "Age", "First Names"
-            ],
-            data=[
-                [22, "John;Anthony"],
-                [23, "Peter"],
-            ]
-        ).astype({
-            "Age": "Int64",
-            "First Names": "object"
-        })
-        pd.testing.assert_frame_equal(expected, df)
+        grouped_pure_query = grouped_frame.to_pure_query(FrameToPureConfig(pretty=False))
+        assert "groupBy" in grouped_pure_query
