@@ -13,13 +13,6 @@
 # limitations under the License.
 
 import pytest
-from pylegend.core.database.sql_to_string import (
-    SqlToStringFormat,
-    SqlToStringConfig,
-    SqlToStringDbExtension,
-)
-from pylegend.core.language import DurationUnit
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
@@ -28,85 +21,35 @@ from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
 
 
 class TestPyLegendStrictDate:
-    frame_to_sql_config = FrameToSqlConfig()
     frame_to_pure_config = FrameToPureConfig()
-    db_extension = SqlToStringDbExtension()
-    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
     test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
         PrimitiveTdsColumn.strictdate_column("col1"),
         PrimitiveTdsColumn.strictdate_column("col2")
     ])
     tds_row = TestTdsRow.from_tds_frame("t", test_frame)
-    base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_strictdate_col_access(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2")) == '"root".col2'
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2")) == '$t.col2'
 
     def test_date_time_bucket_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1, "YEARS")) == \
-               'make_date(1970,1,1) + (FLOOR((EXTRACT(YEAR FROM "root".col2) - 1970) / 1) * 1) * INTERVAL \'1 year\''
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").time_bucket(1, "YEARS")) == \
                'toOne($t.col2)->timeBucket(1, DurationUnit.\'YEARS\')'
 
-        with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1.0, "YEARS"))
-        assert t.value.args[0] == (
-            'time bucket quantity parameter should be a int or an integer expression (PyLegendInteger).'
-            ' Got value 1.0 of type: <class \'float\'>')
-
-        with pytest.raises(ValueError) as v:
-            self.__generate_sql_string(lambda x: x.get_strictdate("col2").time_bucket(1, "HOURS"))
-        assert v.value.args[0] == 'Unknown duration unit - HOURS. Supported values are - YEARS, MONTHS, WEEKS, DAYS'
-
     def test_strictdate_timedelta_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(2, "YEARS")) == \
-               '("root".col2::DATE + (INTERVAL \'2 YEARS\'))::DATE'
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(-2, "MONTHS")) == \
-               '("root".col2::DATE + (INTERVAL \'-2 MONTHS\'))::DATE'
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(3, "WEEKS")) == \
-               '("root".col2::DATE + (INTERVAL \'3 WEEKS\'))::DATE'
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(10, "DAYS")) == \
-               '("root".col2::DATE + (INTERVAL \'10 DAYS\'))::DATE'
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").timedelta(2, "YEARS")) == \
                'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").timedelta(-2, "YEARS")) == \
                'toOne($t.col2)->adjust(minus(2), DurationUnit.\'YEARS\')'
 
-        with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(1.0, "YEARS"))
-        assert t.value.args[0] == (
-            'timedelta number parameter should be a int or an integer expression (PyLegendInteger).'
-            ' Got value 1.0 of type: <class \'float\'>')
-
-        with pytest.raises(ValueError) as v:
-            self.__generate_sql_string(lambda x: x.get_strictdate("col2").timedelta(2, "Invalid"))
-        assert v.value.args[0] == ("Unknown duration unit - Invalid. Supported values are - YEARS, MONTHS, WEEKS, "
-                                   "DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS")
-
     def test_strictdate_adjust_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(2, "YEARS")) == \
-               '("root".col2::DATE + (INTERVAL \'2 YEARS\'))::DATE'
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(-3, "MONTHS")) == \
-               '("root".col2::DATE + (INTERVAL \'-3 MONTHS\'))::DATE'
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(5, "DAYS")) == \
-               '("root".col2::DATE + (INTERVAL \'5 DAYS\'))::DATE'
-        assert self.__generate_sql_string(lambda x: x.get_strictdate("col2").adjust(5, DurationUnit.DAYS)) == \
-               '("root".col2::DATE + (INTERVAL \'5 DAYS\'))::DATE'
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").adjust(2, "YEARS")) == \
                'toOne($t.col2)->adjust(2, DurationUnit.\'YEARS\')'
         assert self.__generate_pure_string(lambda x: x.get_strictdate("col2").adjust(-2, "YEARS")) == \
                'toOne($t.col2)->adjust(minus(2), DurationUnit.\'YEARS\')'
-
-    def __generate_sql_string(self, f) -> str:  # type: ignore
-        return self.db_extension.process_expression(
-            f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        )
 
     def __generate_pure_string(self, f) -> str:  # type: ignore
         expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))

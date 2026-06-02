@@ -22,9 +22,8 @@ from pylegend._typing import (
     PyLegendUnion,
 )
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToPureConfig, FrameToSqlConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.project_cooridnates import VersionedProjectCoordinates
-from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.extensions.tds.abstract.legend_service_input_frame import LegendServiceInputFrameAbstract
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 
@@ -50,23 +49,8 @@ class _PureOnlyServiceFrame(LegendServiceInputFrameAbstract):
     def get_all_tds_frames(self) -> PyLegendSequence[BaseTdsFrame]:
         return [self]
 
-    def to_sql_query(self, config: FrameToSqlConfig = FrameToSqlConfig()) -> str:
-        return ""
-
     def to_pure_query(self, config: FrameToPureConfig = FrameToPureConfig()) -> str:
         return self.to_pure(config)
-
-    def execute_frame(self, result_handler: object, chunk_size: object = None) -> object:  # type: ignore[override]
-        raise NotImplementedError("Not needed for Pure tests")
-
-    def execute_frame_to_string(self, chunk_size: object = None) -> str:  # type: ignore[override]
-        raise NotImplementedError("Not needed for Pure tests")
-
-    def execute_frame_to_pandas_df(self, chunk_size: object = None, pandas_df_read_config: object = None) -> object:  # type: ignore[override]
-        raise NotImplementedError("Not needed for Pure tests")
-
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return super().to_sql_query_object(config)
 
 
 class TestLegendServiceInputFramePure:
