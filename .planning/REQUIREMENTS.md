@@ -15,11 +15,11 @@
 
 ### Removals
 
-- [ ] **REMV-01**: Legacy API (`LegacyApiTdsClient`, all `legacy_api/` modules) is removed from the codebase
-- [ ] **REMV-02**: Pandas API (`PandasApiTdsClient`, all `pandas_api/` modules) is removed from the codebase
-- [ ] **REMV-03**: SQL metamodel layer (`core/sql/`, `core/database/`, `extensions/database/vendors/`) is removed from the codebase
-- [ ] **REMV-04**: SQL-related dev dependencies (`sqlalchemy`, `pg8000`, `pymysql`, `cryptography`, `mockito`) are removed from `pyproject.toml`
-- [ ] **REMV-05**: `testcontainers` is moved from runtime dependency to dev-only dependency
+- [x] **REMV-01**: Legacy API (`LegacyApiTdsClient`, all `legacy_api/` modules) is removed from the codebase
+- [x] **REMV-02**: Pandas API (`PandasApiTdsClient`, all `pandas_api/` modules) is removed from the codebase
+- [x] **REMV-03**: SQL metamodel layer (`core/sql/`, `core/database/`, `extensions/database/vendors/`) is removed from the codebase
+- [x] **REMV-04**: SQL-related dev dependencies (`sqlalchemy`, `pg8000`, `pymysql`, `cryptography`, `mockito`) are removed from `pyproject.toml`
+- [x] **REMV-05**: `testcontainers` is moved from runtime dependency to dev-only dependency
 
 ### Ibis Backend
 
@@ -105,11 +105,11 @@
 | PURE-05 | Phase 1 | Pending |
 | TEST-01 | Phase 1 | Pending |
 | TEST-02 | Phase 1 | Pending |
-| REMV-01 | Phase 2 | Pending |
-| REMV-02 | Phase 2 | Pending |
-| REMV-03 | Phase 2 | Pending |
-| REMV-04 | Phase 2 | Pending |
-| REMV-05 | Phase 2 | Pending |
+| REMV-01 | Phase 2 | Complete |
+| REMV-02 | Phase 2 | Complete |
+| REMV-03 | Phase 2 | Complete |
+| REMV-04 | Phase 2 | Complete |
+| REMV-05 | Phase 2 | Complete |
 | IBIS-01 | Phase 3 | Pending |
 | IBIS-02 | Phase 3 | Pending |
 | IBIS-03 | Phase 3 | Pending |
@@ -146,6 +146,7 @@
 | TEST-04 | Phase 4 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 46 total
 - Mapped to phases: 46
 - Unmapped: 0 (verified)

@@ -121,6 +121,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Pure Foundation | 5/5 | Complete   | 2026-06-01 |
-| 2. Remove Legacy Code | 5/5 | Complete   | 2026-06-02 |
+| 2. Remove Legacy Code | 5/5 | Complete    | 2026-06-02 |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
