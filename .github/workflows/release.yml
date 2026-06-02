@@ -37,13 +37,7 @@ jobs:
         id: validate_and_set_image_tag
         shell: bash
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-          echo "Poetry executable is:" $(which poetry)
-          project_version=$(poetry version --short)
+          project_version=$(python -c "import tomllib; data = tomllib.load(open('pyproject.toml', 'rb')); print(data['project']['version'])")
           release_version=${GITHUB_REF#refs/*/pylegend-}
           if [ ${project_version} == ${release_version} ]; then
             echo "Version matches"
@@ -111,13 +105,9 @@ jobs:
           PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
           PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-          echo "Poetry executable is:" $(which poetry)
-          poetry publish --build --username "$PYPI_USERNAME" --password "$PYPI_PASSWORD"
+          echo "Building and publishing to PyPI"
+          uv build
+          uv publish --username "$PYPI_USERNAME" --password "$PYPI_PASSWORD"
 
   docker_build_push:
     name: Build-Push Docker Image

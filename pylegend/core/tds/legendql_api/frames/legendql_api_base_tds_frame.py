@@ -16,7 +16,6 @@ from abc import ABCMeta
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendTypeVar,
     PyLegendCallable,
     PyLegendUnion,
     PyLegendList,
@@ -47,8 +46,6 @@ from pylegend.core.tds.tds_column import TdsColumn
 __all__: PyLegendSequence[str] = [
     "LegendQLApiBaseTdsFrame"
 ]
-
-R = PyLegendTypeVar('R')
 
 
 class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMeta):

@@ -15,10 +15,6 @@
 from pylegend._typing import (
     PyLegendSequence,
 )
-from pylegend.legacy_api_tds_client import (
-    LegacyApiTdsClient,
-    legacy_api_tds_client,
-)
 from pylegend.legendql_api_tds_client import (
     LegendQLApiTdsClient,
     legendql_api_tds_client,
@@ -37,12 +33,9 @@ from pylegend.core.project_cooridnates import (
     GroupWorkspaceProjectCoordinates,
 )
 from pylegend.core.language import (
-    agg,
     now,
     today,
     current_user,
-    olap_rank,
-    olap_agg,
 )
 from pylegend import samples
 from pylegend.core.language import type_factory
@@ -53,9 +46,6 @@ __all__: PyLegendSequence[str] = [
 
     "LegendQLApiTdsClient",
     "legendql_api_tds_client",
-
-    "LegacyApiTdsClient",
-    "legacy_api_tds_client",
 
     "LegendClient",
     "AuthScheme",
@@ -68,12 +58,9 @@ __all__: PyLegendSequence[str] = [
     "PersonalWorkspaceProjectCoordinates",
     "GroupWorkspaceProjectCoordinates",
 
-    "agg",
     "now",
     "today",
     "current_user",
-    "olap_rank",
-    "olap_agg",
 
     "samples",
     "type_factory",

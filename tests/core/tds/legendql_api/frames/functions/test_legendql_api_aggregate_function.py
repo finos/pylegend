@@ -15,7 +15,6 @@
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -91,12 +90,6 @@ class TestAggregateAppliedFunction:
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == (
             "[TdsColumn(Name: Count, Type: Integer)]"
         )
-        expected = '''\
-            SELECT
-                COUNT("root".col3) AS "Count"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -110,12 +103,6 @@ class TestAggregateAppliedFunction:
         frame = frame_base.aggregate(
             ("Count", lambda r: 1, lambda col: col.count())
         )
-        expected = '''\
-            SELECT
-                COUNT(1) AS "Count"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->aggregate(~[Count:{r | 1}:{c | $c->count()}])')
 
@@ -135,19 +122,6 @@ class TestAggregateAppliedFunction:
             "TdsColumn(Name: Min, Type: Integer), TdsColumn(Name: Cnt, Type: Integer), "
             "TdsColumn(Name: StdDev, Type: Number), TdsColumn(Name: Var, Type: Number)]"
         )
-        expected = '''\
-            SELECT
-                COUNT("root".col3) AS "Count",
-                SUM("root".col1) AS "Total",
-                AVG("root".col2) AS "Avg",
-                MAX("root".col1) AS "Max",
-                MIN("root".col1) AS "Min",
-                COUNT(DISTINCT "root".col1) AS "Cnt",
-                STDDEV_SAMP("root".col2) AS "StdDev",
-                VAR_SAMP("root".col2) AS "Var"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
             '#Table(test_schema.test_table)#->aggregate(~['
             'Count:{r | $r.col3}:{c | $c->count()}, '
@@ -163,19 +137,6 @@ class TestAggregateAppliedFunction:
         frame = frame_base.distinct().aggregate(
             ("Count", lambda r: r.col3, lambda col: col.count())
         )
-        expected = '''\
-            SELECT
-                COUNT("root"."col3") AS "Count"
-            FROM
-                (
-                    SELECT DISTINCT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->distinct()'
                 '->aggregate(~[Count:{r | $r.col3}:{c | $c->count()}])')
@@ -183,20 +144,6 @@ class TestAggregateAppliedFunction:
         frame = frame_base.head(10).aggregate(
             ("Count", lambda r: r.col3, lambda col: col.count())
         )
-        expected = '''\
-            SELECT
-                COUNT("root"."col3") AS "Count"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3"
-                    FROM
-                        test_schema.test_table AS "root"
-                    LIMIT 10
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == \
                ('#Table(test_schema.test_table)#->limit(10)'
                 '->aggregate(~[Count:{r | $r.col3}:{c | $c->count()}])')

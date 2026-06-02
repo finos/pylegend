@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
 from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendList,
-)
-from pylegend.core.sql.metamodel import (
-    NamedArgumentExpression,
-    StringLiteral,
 )
 
 __all__: PyLegendSequence[str] = [
@@ -32,10 +26,7 @@ __all__: PyLegendSequence[str] = [
 
 
 class ProjectCoordinates(metaclass=ABCMeta):
-
-    @abc.abstractmethod
-    def sql_params(self) -> PyLegendList[NamedArgumentExpression]:
-        pass
+    pass
 
 
 class VersionedProjectCoordinates(ProjectCoordinates):
@@ -56,17 +47,6 @@ class VersionedProjectCoordinates(ProjectCoordinates):
 
     def get_version(self) -> str:
         return self.__version
-
-    def sql_params(self) -> PyLegendList[NamedArgumentExpression]:
-        return [
-            NamedArgumentExpression(
-                name="coordinates",
-                expression=StringLiteral(
-                    value=f"{self.__group_id}:{self.__artifact_id}:{self.__version}",
-                    quoted=False
-                )
-            )
-        ]
 
 
 class WorkspaceProjectCoordinates(ProjectCoordinates, metaclass=ABCMeta):
@@ -89,18 +69,6 @@ class PersonalWorkspaceProjectCoordinates(WorkspaceProjectCoordinates):
     def get_workspace(self) -> str:
         return self.__workspace
 
-    def sql_params(self) -> PyLegendList[NamedArgumentExpression]:
-        return [
-            NamedArgumentExpression(
-                name="project",
-                expression=StringLiteral(value=self.get_project_id(), quoted=False)
-            ),
-            NamedArgumentExpression(
-                name="workspace",
-                expression=StringLiteral(value=self.__workspace, quoted=False)
-            )
-        ]
-
 
 class GroupWorkspaceProjectCoordinates(WorkspaceProjectCoordinates):
     __group_workspace: str
@@ -111,15 +79,3 @@ class GroupWorkspaceProjectCoordinates(WorkspaceProjectCoordinates):
 
     def get_group_workspace(self) -> str:
         return self.__group_workspace
-
-    def sql_params(self) -> PyLegendList[NamedArgumentExpression]:
-        return [
-            NamedArgumentExpression(
-                name="project",
-                expression=StringLiteral(value=self.get_project_id(), quoted=False)
-            ),
-            NamedArgumentExpression(
-                name="groupWorkspace",
-                expression=StringLiteral(value=self.__group_workspace, quoted=False)
-            )
-        ]

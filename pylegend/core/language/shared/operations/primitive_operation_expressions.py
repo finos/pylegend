@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendList,
 )
 from pylegend.core.language.shared.expression import (
@@ -26,19 +25,6 @@ from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.nary_expression import PyLegendNaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-    ComparisonExpression,
-    ComparisonOperator,
-    IsNullPredicate,
-    IsNotNullPredicate,
-    Cast,
-    ColumnType,
-    InPredicate,
-    InListExpression,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
@@ -55,15 +41,6 @@ __all__: PyLegendSequence[str] = [
 class PyLegendPrimitiveEqualsExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.EQUAL)
-
-    @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} == {op2_expr})"
 
@@ -73,22 +50,12 @@ class PyLegendPrimitiveEqualsExpression(PyLegendBinaryExpression, PyLegendExpres
             self,
             operand1,
             operand2,
-            PyLegendPrimitiveEqualsExpression.__to_sql_func,
             PyLegendPrimitiveEqualsExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendPrimitiveNotEqualsExpression(PyLegendBinaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ComparisonExpression(expression1, expression2, ComparisonOperator.NOT_EQUAL)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -100,21 +67,12 @@ class PyLegendPrimitiveNotEqualsExpression(PyLegendBinaryExpression, PyLegendExp
             self,
             operand1,
             operand2,
-            PyLegendPrimitiveNotEqualsExpression.__to_sql_func,
             PyLegendPrimitiveNotEqualsExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendIsEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return IsNullPredicate(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -125,21 +83,12 @@ class PyLegendIsEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBoole
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendIsEmptyExpression.__to_sql_func,
             PyLegendIsEmptyExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendIsNotEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return IsNotNullPredicate(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -150,21 +99,12 @@ class PyLegendIsNotEmptyExpression(PyLegendUnaryExpression, PyLegendExpressionBo
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendIsNotEmptyExpression.__to_sql_func,
             PyLegendIsNotEmptyExpression.__to_pure_func,
             non_nullable=True,
         )
 
 
 class PyLegendPrimitiveToStringExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(expression, ColumnType(name="TEXT", parameters=[]))
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -175,7 +115,6 @@ class PyLegendPrimitiveToStringExpression(PyLegendUnaryExpression, PyLegendExpre
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendPrimitiveToStringExpression.__to_sql_func,
             PyLegendPrimitiveToStringExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -183,17 +122,6 @@ class PyLegendPrimitiveToStringExpression(PyLegendUnaryExpression, PyLegendExpre
 
 
 class PyLegendInListExpression(PyLegendNaryExpression, PyLegendExpressionBooleanReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expressions: list[Expression],
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return InPredicate(
-            value=expressions[0],
-            valueList=InListExpression(values=expressions[1:])
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: list[str], config: FrameToPureConfig) -> str:
@@ -204,7 +132,6 @@ class PyLegendInListExpression(PyLegendNaryExpression, PyLegendExpressionBoolean
         PyLegendNaryExpression.__init__(
             self,
             operands,
-            PyLegendInListExpression.__to_sql_func,
             PyLegendInListExpression.__to_pure_func,
             non_nullable=True
         )

@@ -14,9 +14,7 @@
 
 import json
 import pytest
-from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
 from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
@@ -35,14 +33,6 @@ class TestLimitAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.limit(10)
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2"
-            FROM
-                test_schema.test_table AS "root"
-            LIMIT 10'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
     def test_sql_gen_limit_function_existing_top(self) -> None:
         columns = [
@@ -52,21 +42,6 @@ class TestLimitAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.limit(10)
         frame = frame.limit(20)
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                    LIMIT 10
-                ) AS "root"
-            LIMIT 20'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
     def test_limit_function_negative_row_count_error(self) -> None:
         columns = [
@@ -79,7 +54,7 @@ class TestLimitAppliedFunction:
         assert v.value.args[0] == "Row count argument of head/limit function cannot be negative"
 
     def test_e2e_limit_function_no_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.limit(3)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -89,7 +64,7 @@ class TestLimitAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_limit_function_existing_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.limit(3)
         frame = frame.limit(10)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

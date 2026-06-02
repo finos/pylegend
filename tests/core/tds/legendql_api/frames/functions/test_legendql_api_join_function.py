@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -120,38 +119,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                LEFT OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -182,38 +149,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                INNER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -245,38 +180,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                RIGHT OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -307,38 +210,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                FULL OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ("left"."col2" = "right"."col4")
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -374,39 +245,6 @@ class TestJoinAppliedFunction:
             "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col2, Type: String), "
             "TdsColumn(Name: col3, Type: Integer), TdsColumn(Name: col4, Type: String)]"
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        "root"."col4" AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "left"."col1" AS "col1",
-                                "left"."col2" AS "col2",
-                                "right"."col3" AS "col3",
-                                "right"."col4" AS "col4"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2"
-                                    FROM
-                                        test_schema.test_table1 AS "root"
-                                ) AS "left"
-                                LEFT OUTER JOIN
-                                    (
-                                        SELECT
-                                            "root".col3 AS "col3",
-                                            "root".col4 AS "col4"
-                                        FROM
-                                            test_schema.test_table2 AS "root"
-                                    ) AS "right"
-                                    ON ((("left"."col2" = "right"."col4") AND \
-(("left"."col1" > 10) OR ("right"."col3" > 10))) AND ("left"."col1" > "right"."col3"))
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table1)#
@@ -422,10 +260,10 @@ class TestJoinAppliedFunction:
                 '{l, r | (($l.col2 == $r.col4) && (($l.col1 > 10) || ($r.col3 > 10))) && ($l.col1 > $r.col3)})')
 
     def test_e2e_join(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame1 = frame1.select(['Last Name', 'First Name'])
         frame1 = frame1.rename(('Last Name', 'Last Name 1'))
-        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame2 = frame2.select(['Age', 'Last Name'])
         frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'])
@@ -449,10 +287,10 @@ class TestJoinAppliedFunction:
         )["result"] == expected
 
     def test_e2e_join_inner(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame1 = frame1.select(['Last Name', 'First Name'])
         frame1 = frame1.rename(('Last Name', 'Last Name 1'))
-        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame2 = frame2.filter(lambda x: x['First Name'] == 'John')
         frame2 = frame2.select(['Age', 'Last Name'])
         frame2 = frame2.rename(('Last Name', 'Last Name 2'))
@@ -471,11 +309,11 @@ class TestJoinAppliedFunction:
         )["result"] == expected
 
     def test_e2e_join_right_outer(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame1 = frame1.filter(lambda x: x['First Name'] == 'John')
         frame1 = frame1.select(['Last Name', 'First Name'])
         frame1 = frame1.rename(('Last Name', 'Last Name 1'))
-        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame2 = frame2.select(['Age', 'Last Name'])
         frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'], 'RIGHT_OUTER')
@@ -497,11 +335,11 @@ class TestJoinAppliedFunction:
         )["result"] == expected
 
     def test_e2e_join_full(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame1 = frame1.filter(lambda x: x['First Name'] == 'John')
         frame1 = frame1.select(['Last Name', 'First Name'])
         frame1 = frame1.rename(('Last Name', 'Last Name 1'))
-        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame2 = frame2.filter(lambda x: x['First Name'] == 'Peter')
         frame2 = frame2.select(['Age', 'Last Name'])
         frame2 = frame2.rename(('Last Name', 'Last Name 2'))
@@ -520,11 +358,11 @@ class TestJoinAppliedFunction:
         )["result"] == expected
 
     def test_e2e_join_true_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame1 = frame1.head(2)
         frame1 = frame1.select(['Last Name', 'First Name'])
         frame1 = frame1.rename(('Last Name', 'Last Name 1'))
-        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame2 = frame2.head(2)
         frame2 = frame2.select(['Age', 'Last Name'])
         frame2 = frame2.rename(('Last Name', 'Last Name 2'))
@@ -541,11 +379,11 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_join_false_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame1 = frame1.head(2)
         frame1 = frame1.select(['Last Name', 'First Name'])
         frame1 = frame1.rename(('Last Name', 'Last Name 1'))
-        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame2 = frame2.head(2)
         frame2 = frame2.select(['Age', 'Last Name'])
         frame2 = frame2.rename(('Last Name', 'Last Name 2'))
@@ -560,10 +398,10 @@ class TestJoinAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_join_by_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame1: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame1 = frame1.select(['Last Name', 'First Name'])
         frame1 = frame1.rename(('Last Name', 'Last Name 1'))
-        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'])
+        frame2: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server['engine_port'], legend_test_server['metadata_port'])
         frame2 = frame2.select(['Age', 'Last Name'])
         frame2 = frame2.rename(('Last Name', 'Last Name 2'))
         frame = frame1.join(frame2, lambda x, y: x['Last Name 1'] == y['Last Name 2'])

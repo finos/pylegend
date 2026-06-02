@@ -17,39 +17,22 @@ from pylegend.core.project_cooridnates import (
     PersonalWorkspaceProjectCoordinates,
     GroupWorkspaceProjectCoordinates,
 )
-from pylegend.core.database.sql_to_string import (
-    SqlToStringDbExtension,
-    SqlToStringConfig,
-    SqlToStringFormat
-)
 
 
 class TestProjectCoordinates:
-    extension = SqlToStringDbExtension()
-    config = SqlToStringConfig(SqlToStringFormat())
 
     def test_versioned_project_coordinates(self) -> None:
         c = VersionedProjectCoordinates("org.test.group", "test-artifact", "1.0.0")
-        params = c.sql_params()
-        assert len(params) == 1
-        assert [self.extension.process_expression(p, config=self.config) for p in params] == [
-            "coordinates => 'org.test.group:test-artifact:1.0.0'"
-        ]
+        assert c.get_group_id() == "org.test.group"
+        assert c.get_artifact_id() == "test-artifact"
+        assert c.get_version() == "1.0.0"
 
     def test_personal_workspace_coordinates(self) -> None:
         c = PersonalWorkspaceProjectCoordinates("PROD-test_project", "test-workspace")
-        params = c.sql_params()
-        assert len(params) == 2
-        assert [self.extension.process_expression(p, config=self.config) for p in params] == [
-            "project => 'PROD-test_project'",
-            "workspace => 'test-workspace'"
-        ]
+        assert c.get_project_id() == "PROD-test_project"
+        assert c.get_workspace() == "test-workspace"
 
     def test_group_workspace_coordinates(self) -> None:
         c = GroupWorkspaceProjectCoordinates("PROD-test_project", "test-group-workspace")
-        params = c.sql_params()
-        assert len(params) == 2
-        assert [self.extension.process_expression(p, config=self.config) for p in params] == [
-            "project => 'PROD-test_project'",
-            "groupWorkspace => 'test-group-workspace'"
-        ]
+        assert c.get_project_id() == "PROD-test_project"
+        assert c.get_group_workspace() == "test-group-workspace"

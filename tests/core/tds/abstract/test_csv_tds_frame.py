@@ -18,14 +18,13 @@ from pylegend.extensions.tds.abstract.csv_tds_frame import tds_columns_from_csv_
 from pylegend.core.tds.tds_column import (
     PrimitiveType,
 )
-import pandas as pd
 
 
 class TestCsvTdsColumn:
 
     def test_tds_columns_from_csv_string(self) -> None:
         with pytest.raises(
-                pd.errors.EmptyDataError,
+                ValueError,
                 match="No columns to parse from file"):
             tds_columns_from_csv_string("")
 

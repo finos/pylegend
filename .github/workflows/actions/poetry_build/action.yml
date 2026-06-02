@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Poetry Build
+name: Build
 
-description: Poetry Build
+description: Build
 
 runs:
   using: "composite"
@@ -24,30 +24,19 @@ runs:
       with:
         python-version: 3.12
 
-    - name: Poetry Install Dependencies
+    - name: Install Dependencies
       uses: ./.github/workflows/actions/poetry_install_dependencies
 
-    - name: Poetry Version Bump
+    - name: Version Bump
       shell: bash
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          source .venv/Scripts/activate
-        else
-          source .venv/bin/activate
-        fi
-        echo "Poetry executable is:" $(which poetry)
-        poetry version $(poetry version --short).dev$GITHUB_RUN_NUMBER
-        echo "Updated version is:" $(poetry version --short)
+        current_version=$(python -c "import tomllib; data = tomllib.load(open('pyproject.toml', 'rb')); print(data['project']['version'])")
+        uv version "${current_version}.dev${GITHUB_RUN_NUMBER}"
+        echo "Updated version is:" $(python -c "import tomllib; data = tomllib.load(open('pyproject.toml', 'rb')); print(data['project']['version'])")
 
-    - name: Poetry Build
+    - name: Build
       shell: bash
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          source .venv/Scripts/activate
-        else
-          source .venv/bin/activate
-        fi
-        echo "Poetry executable is:" $(which poetry)
-        echo "Running poetry build"
-        poetry build
-        echo "Done with poetry build"
+        echo "Running uv build"
+        uv build
+        echo "Done with build"

@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -88,15 +87,6 @@ class TestFilterAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.filter(lambda x: x.get_string("col2").startswith('A'))
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2"
-            FROM
-                test_schema.test_table AS "root"
-            WHERE
-                ("root".col2 LIKE \'A%\')'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -112,15 +102,6 @@ class TestFilterAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.filter(lambda x: 1 == 2)   # type: ignore
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2"
-            FROM
-                test_schema.test_table AS "root"
-            WHERE
-                false'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -137,15 +118,6 @@ class TestFilterAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.filter(lambda x: x.get_string("col2").startswith('A'))
         frame = frame.filter(lambda x: x.get_integer("col1") > 10)
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2"
-            FROM
-                test_schema.test_table AS "root"
-            WHERE
-                (("root".col2 LIKE \'A%\') AND ("root".col1 > 10))'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -165,22 +137,6 @@ class TestFilterAppliedFunction:
         frame = frame.head(10)
         frame = frame.filter(lambda x: x.get_string("col2").startswith('A'))
         frame = frame.filter(lambda x: x.get_integer("col1") > 10)
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                    LIMIT 10
-                ) AS "root"
-            WHERE
-                (("root"."col2" LIKE \'A%\') AND ("root"."col1" > 10))'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -194,7 +150,7 @@ class TestFilterAppliedFunction:
 
     @pytest.mark.skip(reason="Literal not supported ")
     def test_e2e_filter_function_literal(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.filter(lambda r: 1 == 2)  # type: ignore
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': []}
@@ -202,7 +158,7 @@ class TestFilterAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_filter_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.filter(lambda r: r.get_integer("Age") < 25)
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
                     'rows': [{'values': ['Peter', 'Smith', 23, 'Firm X']},
@@ -213,7 +169,7 @@ class TestFilterAppliedFunction:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_filter_function_chained(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.filter(lambda r: (r.get_integer("Age") < 25))
         frame = frame.filter(lambda r: (r.get_integer("Age") < 23))
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],
@@ -225,7 +181,7 @@ class TestFilterAppliedFunction:
 
     def test_e2e_filter_function_with_top(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]])\
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(3)
         frame = frame.filter(lambda r: (r.get_integer("Age") < 25) | (r.get_integer("Age") >= 35))
         expected = {'columns': ['First Name', 'Last Name', 'Age', 'Firm/Legal Name'],

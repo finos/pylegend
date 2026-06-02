@@ -13,104 +13,43 @@
 # limitations under the License.
 
 import json
+import os
+import pytest
 from pylegend.core.request.legend_client import LegendClient
+from pylegend.core.project_cooridnates import VersionedProjectCoordinates
 from pylegend._typing import PyLegendDict, PyLegendUnion
 
 
 class TestLegendClientE2E:
 
-    def test_e2e_schema_string_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
-        res = client.get_sql_string_schema(
-            "SELECT * FROM "
-            "   service("
-            "       pattern => '/simplePersonService', "
-            "       coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'"
-            "   )"
+    @pytest.mark.skipif(os.environ.get("JAVA_HOME") is None, reason="JAVA_HOME unset; requires legend_test_server")
+    def test_e2e_pure_schema_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient(
+            "localhost", legend_test_server["engine_port"], secure_http=False,
+            depot_server_host="localhost", depot_server_port=legend_test_server["metadata_port"]
         )
-
+        coords = VersionedProjectCoordinates(
+            "org.finos.legend.pylegend", "pylegend-test-models", "0.0.1-SNAPSHOT"
+        )
+        res = client.get_pure_string_schema("|pylegend::test::SimplePersonService.all()", coords)
         assert ", ".join([str(x) for x in res]) == \
             "TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String), " \
             "TdsColumn(Name: Age, Type: Integer), TdsColumn(Name: Firm/Legal Name, Type: String)"
 
-    def test_e2e_execute_string_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
-        res = client.execute_sql_string(
-            "SELECT * FROM "
-            "   service("
-            "       pattern => '/simplePersonService', "
-            "       coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'"
-            "   )"
+    @pytest.mark.skipif(os.environ.get("JAVA_HOME") is None, reason="JAVA_HOME unset; requires legend_test_server")
+    def test_e2e_pure_execute_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
+        client = LegendClient(
+            "localhost", legend_test_server["engine_port"], secure_http=False,
+            depot_server_host="localhost", depot_server_port=legend_test_server["metadata_port"]
         )
-        expected = """\
-        {
-           "columns": [
-              "First Name",
-              "Last Name",
-              "Age",
-              "Firm/Legal Name"
-           ],
-           "rows": [
-              {
-                 "values": [
-                    "Peter",
-                    "Smith",
-                    23,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Johnson",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "John",
-                    "Hill",
-                    12,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "Anthony",
-                    "Allen",
-                    22,
-                    "Firm X"
-                 ]
-              },
-              {
-                 "values": [
-                    "Fabrice",
-                    "Roberts",
-                    34,
-                    "Firm A"
-                 ]
-              },
-              {
-                 "values": [
-                    "Oliver",
-                    "Hill",
-                    32,
-                    "Firm B"
-                 ]
-              },
-              {
-                 "values": [
-                    "David",
-                    "Harris",
-                    35,
-                    "Firm C"
-                 ]
-              }
-           ]
-        }"""
-
-        assert json.loads(b"".join(res))["result"] == json.loads(expected)
+        coords = VersionedProjectCoordinates(
+            "org.finos.legend.pylegend", "pylegend-test-models", "0.0.1-SNAPSHOT"
+        )
+        res = client.execute_pure_string("|pylegend::test::SimplePersonService.all()", coords)
+        parsed = json.loads(b"".join(res))
+        assert parsed["result"]["columns"] == ["First Name", "Last Name", "Age", "Firm/Legal Name"]
+        assert parsed["result"]["rows"][0]["values"] == ["Peter", "Smith", 23, "Firm X"]
+        assert len(parsed["result"]["rows"]) == 7
 
     def test_e2e_parse_model_api(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)

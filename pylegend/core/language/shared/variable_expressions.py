@@ -15,7 +15,6 @@
 from abc import ABCMeta
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
@@ -28,11 +27,6 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
 )
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
@@ -56,13 +50,6 @@ class PyLegendVariableExpression(PyLegendExpression, metaclass=ABCMeta):
         if not name.isidentifier():
             raise ValueError(f"Invalid variable name: '{name}'. Should be a valid identifier")
         self.__name = name
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        raise RuntimeError("SQL translation for variable expression not supported!")
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return f"${self.__name}"

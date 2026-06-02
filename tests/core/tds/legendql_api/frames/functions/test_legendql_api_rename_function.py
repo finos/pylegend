@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -99,13 +98,6 @@ class TestRenameColumnsAppliedFunction:
             frame1 = frame.rename(variation)  # type: ignore
             assert "[" + ", ".join([str(c) for c in frame1.columns()]) + "]" == \
                    "[TdsColumn(Name: col1, Type: Integer), TdsColumn(Name: col3, Type: String)]"
-            expected = '''\
-                SELECT
-                    "root".col1 AS "col1",
-                    "root".col2 AS "col3"
-                FROM
-                    test_schema.test_table AS "root"'''
-            assert frame1.to_sql_query(FrameToSqlConfig()) == dedent(expected)
             assert generate_pure_query_and_compile(frame1, FrameToPureConfig(), self.legend_client) == dedent(
                 '''\
                 #Table(test_schema.test_table)#
@@ -117,13 +109,6 @@ class TestRenameColumnsAppliedFunction:
         frame = frame.rename([("col1", "col4"), ("col2", "col5 with spaces")])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: col4, Type: Integer), TdsColumn(Name: col5 with spaces, Type: String)]"
-        expected = '''\
-            SELECT
-                "root".col1 AS "col4",
-                "root".col2 AS "col5 with spaces"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -135,7 +120,7 @@ class TestRenameColumnsAppliedFunction:
                 '->rename(~col1, ~col4)->rename(~col2, ~\'col5 with spaces\')')
 
     def test_e2e_rename_columns_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.rename(lambda r: [(r["First Name"], "Name"), (r["Firm/Legal Name"], "Firm Name")])
         frame = frame.select(["Name", "Firm Name"])

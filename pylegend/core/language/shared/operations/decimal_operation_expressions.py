@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionDecimalReturn,
@@ -25,20 +24,6 @@ from pylegend.core.language.shared.expression import (
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-    ArithmeticType,
-    ArithmeticExpression,
-    NegativeExpression,
-    Cast,
-    ColumnType,
-)
-from pylegend.core.sql.metamodel_extension import (
-    AbsoluteExpression,
-    RoundExpression,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 
 
@@ -58,15 +43,6 @@ __all__: PyLegendSequence[str] = [
 class PyLegendDecimalAddExpression(PyLegendBinaryExpression, PyLegendExpressionDecimalReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.ADD, expression1, expression2)
-
-    @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return f"({op1_expr} + {op2_expr})"
 
@@ -76,7 +52,6 @@ class PyLegendDecimalAddExpression(PyLegendBinaryExpression, PyLegendExpressionD
             self,
             operand1,
             operand2,
-            PyLegendDecimalAddExpression.__to_sql_func,
             PyLegendDecimalAddExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -85,15 +60,6 @@ class PyLegendDecimalAddExpression(PyLegendBinaryExpression, PyLegendExpressionD
 
 
 class PyLegendDecimalSubtractExpression(PyLegendBinaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.SUBTRACT, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -105,7 +71,6 @@ class PyLegendDecimalSubtractExpression(PyLegendBinaryExpression, PyLegendExpres
             self,
             operand1,
             operand2,
-            PyLegendDecimalSubtractExpression.__to_sql_func,
             PyLegendDecimalSubtractExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -114,15 +79,6 @@ class PyLegendDecimalSubtractExpression(PyLegendBinaryExpression, PyLegendExpres
 
 
 class PyLegendDecimalMultiplyExpression(PyLegendBinaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ArithmeticExpression(ArithmeticType.MULTIPLY, expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -134,7 +90,6 @@ class PyLegendDecimalMultiplyExpression(PyLegendBinaryExpression, PyLegendExpres
             self,
             operand1,
             operand2,
-            PyLegendDecimalMultiplyExpression.__to_sql_func,
             PyLegendDecimalMultiplyExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -158,16 +113,6 @@ class PyLegendDecimalDivideScaledExpression(PyLegendExpressionDecimalReturn):
         self.__operand2 = operand2
         self.__scale = scale
 
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        op1 = self.__operand1.to_sql_expression(frame_name_to_base_query_map, config)
-        op2 = self.__operand2.to_sql_expression(frame_name_to_base_query_map, config)
-        scale = self.__scale.to_sql_expression(frame_name_to_base_query_map, config)
-        return RoundExpression(ArithmeticExpression(ArithmeticType.DIVIDE, op1, op2), scale)
-
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         from pylegend.core.language.shared.helpers import expr_has_matching_start_and_end_parentheses
         from pylegend.core.language.pandas_api.pandas_api_series import Series
@@ -190,14 +135,6 @@ class PyLegendDecimalDivideScaledExpression(PyLegendExpressionDecimalReturn):
 class PyLegendDecimalAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return AbsoluteExpression(expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("abs", [op_expr])
 
@@ -206,7 +143,6 @@ class PyLegendDecimalAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpress
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDecimalAbsoluteExpression.__to_sql_func,
             PyLegendDecimalAbsoluteExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True
@@ -214,14 +150,6 @@ class PyLegendDecimalAbsoluteExpression(PyLegendUnaryExpression, PyLegendExpress
 
 
 class PyLegendDecimalNegativeExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return NegativeExpression(expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -232,7 +160,6 @@ class PyLegendDecimalNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDecimalNegativeExpression.__to_sql_func,
             PyLegendDecimalNegativeExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -240,15 +167,6 @@ class PyLegendDecimalNegativeExpression(PyLegendUnaryExpression, PyLegendExpress
 
 
 class PyLegendDecimalRoundExpression(PyLegendBinaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return RoundExpression(expression1, expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -262,7 +180,6 @@ class PyLegendDecimalRoundExpression(PyLegendBinaryExpression, PyLegendExpressio
             self,
             operand1,
             operand2,
-            PyLegendDecimalRoundExpression.__to_sql_func,
             PyLegendDecimalRoundExpression.__to_pure_func,
             non_nullable=True,
             first_operand_needs_to_be_non_nullable=True,
@@ -273,14 +190,6 @@ class PyLegendDecimalRoundExpression(PyLegendBinaryExpression, PyLegendExpressio
 class PyLegendNumberToDecimalExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(expression, ColumnType(name="DECIMAL", parameters=[]))
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("toDecimal", [op_expr])
 
@@ -289,7 +198,6 @@ class PyLegendNumberToDecimalExpression(PyLegendUnaryExpression, PyLegendExpress
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberToDecimalExpression.__to_sql_func,
             PyLegendNumberToDecimalExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,
@@ -297,14 +205,6 @@ class PyLegendNumberToDecimalExpression(PyLegendUnaryExpression, PyLegendExpress
 
 
 class PyLegendNumberToFloatExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return Cast(expression, ColumnType(name="DOUBLE PRECISION", parameters=[]))
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -315,7 +215,6 @@ class PyLegendNumberToFloatExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberToFloatExpression.__to_sql_func,
             PyLegendNumberToFloatExpression.__to_pure_func,
             non_nullable=True,
             operand_needs_to_be_non_nullable=True,

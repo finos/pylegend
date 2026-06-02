@@ -16,9 +16,7 @@ from abc import ABCMeta, abstractmethod
 from pylegend._typing import (
     PyLegendSequence,
 )
-from pylegend.core.sql.metamodel import QuerySpecification
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.abstract.frames.base_tds_frame import BaseTdsFrame
 
@@ -33,10 +31,6 @@ class AppliedFunction(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def name(cls) -> str:
-        pass  # pragma: no cover
-
-    @abstractmethod
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
         pass  # pragma: no cover
 
     def to_pure(self, config: FrameToPureConfig) -> str:
@@ -66,9 +60,6 @@ class AppliedFunctionTdsFrame(BaseTdsFrame, metaclass=ABCMeta):
         applied_function.validate()
         super().__init__(columns=applied_function.calculate_columns())
         self.__applied_function = applied_function
-
-    def to_sql_query_object(self, config: FrameToSqlConfig) -> QuerySpecification:
-        return self.__applied_function.to_sql(config)
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         return self.__applied_function.to_pure(config)

@@ -31,14 +31,7 @@ from decimal import Decimal as PythonDecimal
 from pylegend.core.language.legendql_api.legendql_api_tds_row import LegendQLApiTdsRow
 from pylegend.core.tds.abstract.function_helpers import tds_column_for_primitive
 from pylegend.core.tds.legendql_api.frames.legendql_api_applied_function_tds_frame import LegendQLApiAppliedFunction
-from pylegend.core.tds.sql_query_helpers import copy_query, create_sub_query
-from pylegend.core.sql.metamodel import (
-    QuerySpecification,
-    SingleColumn,
-    SelectItem,
-)
 from pylegend.core.tds.tds_column import TdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_base_tds_frame import LegendQLApiBaseTdsFrame
 from pylegend.core.language.shared.helpers import escape_column_name, generate_pure_lambda
@@ -139,28 +132,6 @@ class LegendQLApiAggregateFunction(LegendQLApiAppliedFunction):
                 raise TypeError(error)
 
         self.__aggregates_list = aggregates_list
-
-    def to_sql(self, config: FrameToSqlConfig) -> QuerySpecification:
-        db_extension = config.sql_to_string_generator().get_db_extension()
-        base_query = self.__base_frame.to_sql_query_object(config)
-
-        should_create_sub_query = (len(base_query.groupBy) > 0) or base_query.select.distinct or \
-                                  (base_query.offset is not None) or (base_query.limit is not None)
-
-        if should_create_sub_query:
-            new_query = create_sub_query(base_query, config, "root")
-        else:
-            new_query = copy_query(base_query)
-
-        new_select_items: PyLegendList[SelectItem] = []
-        for agg in self.__aggregates_list:
-            agg_sql_expr = agg[2].to_sql_expression({"r": new_query}, config)
-            new_select_items.append(
-                SingleColumn(alias=db_extension.quote_identifier(agg[0]), expression=agg_sql_expr)
-            )
-
-        new_query.select.selectItems = new_select_items
-        return new_query
 
     def to_pure(self, config: FrameToPureConfig) -> str:
         agg_strings = []

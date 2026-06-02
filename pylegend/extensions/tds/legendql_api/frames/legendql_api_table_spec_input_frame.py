@@ -33,4 +33,4 @@ class LegendQLApiTableSpecInputFrame(TableSpecInputFrameAbstract, LegendQLApiNon
         LegendQLApiNonExecutableInputTdsFrame.__init__(self, columns=columns)
 
     def __str__(self) -> str:
-        return f"LegendQLApiTableSpecInputFrame({'.'.join(self.table.parts)})"
+        return f"LegendQLApiTableSpecInputFrame({'.'.join(self.table)})"

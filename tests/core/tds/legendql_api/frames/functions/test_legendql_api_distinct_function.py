@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -44,23 +43,7 @@ class TestDistinctAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         distinct_frame = frame.distinct()
-        expected = '''\
-                    SELECT DISTINCT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3"
-                    FROM
-                        test_schema.test_table AS "root"'''
-        assert distinct_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
 
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                "root".col3 AS "col3"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(distinct_frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -71,19 +54,6 @@ class TestDistinctAppliedFunction:
 
         distinct_col1_frame = frame.distinct("col1")
 
-        expected = '''\
-                   SELECT DISTINCT
-                       "root"."col1" AS "col1"
-                   FROM
-                       (
-                           SELECT
-                               "root".col1 AS "col1",
-                               "root".col2 AS "col2",
-                               "root".col3 AS "col3"
-                           FROM
-                               test_schema.test_table AS "root"
-                       ) AS "root"'''
-        assert distinct_col1_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert len(distinct_col1_frame.columns()) == 1 and distinct_col1_frame.columns()[0].get_name() == "col1"
         assert generate_pure_query_and_compile(distinct_col1_frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
@@ -93,20 +63,6 @@ class TestDistinctAppliedFunction:
 
         distinct_col1_col2_frame = frame.distinct(['col1', 'col2'])
 
-        expected = '''\
-                   SELECT DISTINCT
-                       "root"."col1" AS "col1",
-                       "root"."col2" AS "col2"
-                   FROM
-                       (
-                           SELECT
-                               "root".col1 AS "col1",
-                               "root".col2 AS "col2",
-                               "root".col3 AS "col3"
-                           FROM
-                               test_schema.test_table AS "root"
-                       ) AS "root"'''
-        assert distinct_col1_col2_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert (
                 len(distinct_col1_col2_frame.columns()) == 2 and
                 {col.get_name() for col in distinct_col1_col2_frame.columns()} == {"col1", "col2"})
@@ -119,21 +75,6 @@ class TestDistinctAppliedFunction:
 
         distinct_all_col_frame = frame.distinct(lambda r: [r.col3, r["col1"], r.col2])
 
-        expected = '''\
-                   SELECT DISTINCT
-                       "root"."col3" AS "col3",
-                       "root"."col1" AS "col1",
-                       "root"."col2" AS "col2"
-                   FROM
-                       (
-                           SELECT
-                               "root".col1 AS "col1",
-                               "root".col2 AS "col2",
-                               "root".col3 AS "col3"
-                           FROM
-                               test_schema.test_table AS "root"
-                       ) AS "root"'''
-        assert distinct_all_col_frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert len(distinct_all_col_frame.columns()) == 3 and {col.get_name() for col in
                                                                distinct_all_col_frame.columns()} == {"col1", "col2",
                                                                                                      "col3"}
@@ -152,20 +93,6 @@ class TestDistinctAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.head(5)
         frame = frame.distinct()
-        expected = '''\
-            SELECT DISTINCT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                    LIMIT 5
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -176,7 +103,7 @@ class TestDistinctAppliedFunction:
                ('#Table(test_schema.test_table)#->limit(5)->distinct()')
 
     def test_e2e_distinct_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select(["First Name", "Firm/Legal Name"])
         distinct_all_frame = frame.distinct()
         distinct_two_col_expected = {'columns': ['First Name', 'Firm/Legal Name'],
@@ -204,7 +131,7 @@ class TestDistinctAppliedFunction:
 
     def test_e2e_distinct_function_existing_top(self,
                                                 legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.select(["First Name", "Firm/Legal Name"])
         frame = frame.head(3)
         frame = frame.distinct()

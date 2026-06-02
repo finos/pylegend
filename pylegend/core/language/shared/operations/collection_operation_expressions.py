@@ -14,7 +14,6 @@
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
@@ -31,37 +30,7 @@ from pylegend.core.language.shared.expression import (
 from pylegend.core.language.shared.operations.unary_expression import PyLegendUnaryExpression
 from pylegend.core.language.shared.helpers import generate_pure_functional_call
 from pylegend.core.language.shared.operations.binary_expression import PyLegendBinaryExpression
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification,
-    FunctionCall,
-    QualifiedName,
-)
-from pylegend.core.sql.metamodel_extension import (
-    CountExpression,
-    DistinctCountExpression,
-    AverageExpression,
-    MaxExpression,
-    MinExpression,
-    SumExpression,
-    StdDevSampleExpression,
-    StdDevPopulationExpression,
-    VarianceSampleExpression,
-    VariancePopulationExpression,
-    CorrExpression,
-    CovarPopulationExpression,
-    CovarSampleExpression,
-    JoinStringsExpression,
-    MedianExpression,
-    ModeExpression,
-    PercentileContExpression,
-    PercentileDiscExpression,
-    WavgExpression,
-    MaxByExpression,
-    MinByExpression,
-)
 
 
 __all__: PyLegendSequence[str] = [
@@ -116,14 +85,6 @@ __all__: PyLegendSequence[str] = [
 class PyLegendCountExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CountExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("count", [op_expr])
 
@@ -132,20 +93,11 @@ class PyLegendCountExpression(PyLegendUnaryExpression, PyLegendExpressionInteger
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendCountExpression.__to_sql_func,
             PyLegendCountExpression.__to_pure_func
         )
 
 
 class PyLegendDistinctCountExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return DistinctCountExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -159,20 +111,11 @@ class PyLegendDistinctCountExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDistinctCountExpression.__to_sql_func,
             PyLegendDistinctCountExpression.__to_pure_func
         )
 
 
 class PyLegendAverageExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return AverageExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -183,7 +126,6 @@ class PyLegendAverageExpression(PyLegendUnaryExpression, PyLegendExpressionFloat
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendAverageExpression.__to_sql_func,
             PyLegendAverageExpression.__to_pure_func
         )
 
@@ -191,14 +133,6 @@ class PyLegendAverageExpression(PyLegendUnaryExpression, PyLegendExpressionFloat
 class PyLegendIntegerMaxExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
@@ -207,7 +141,6 @@ class PyLegendIntegerMaxExpression(PyLegendUnaryExpression, PyLegendExpressionIn
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendIntegerMaxExpression.__to_sql_func,
             PyLegendIntegerMaxExpression.__to_pure_func
         )
 
@@ -215,14 +148,6 @@ class PyLegendIntegerMaxExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 class PyLegendIntegerMinExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
@@ -231,7 +156,6 @@ class PyLegendIntegerMinExpression(PyLegendUnaryExpression, PyLegendExpressionIn
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendIntegerMinExpression.__to_sql_func,
             PyLegendIntegerMinExpression.__to_pure_func
         )
 
@@ -239,14 +163,6 @@ class PyLegendIntegerMinExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 class PyLegendIntegerSumExpression(PyLegendUnaryExpression, PyLegendExpressionIntegerReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return SumExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("sum", [op_expr])
 
@@ -255,7 +171,6 @@ class PyLegendIntegerSumExpression(PyLegendUnaryExpression, PyLegendExpressionIn
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendIntegerSumExpression.__to_sql_func,
             PyLegendIntegerSumExpression.__to_pure_func
         )
 
@@ -263,14 +178,6 @@ class PyLegendIntegerSumExpression(PyLegendUnaryExpression, PyLegendExpressionIn
 class PyLegendFloatMaxExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
@@ -279,7 +186,6 @@ class PyLegendFloatMaxExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendFloatMaxExpression.__to_sql_func,
             PyLegendFloatMaxExpression.__to_pure_func
         )
 
@@ -287,14 +193,6 @@ class PyLegendFloatMaxExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
 class PyLegendFloatMinExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
@@ -303,20 +201,11 @@ class PyLegendFloatMinExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendFloatMinExpression.__to_sql_func,
             PyLegendFloatMinExpression.__to_pure_func
         )
 
 
 class PyLegendFloatSumExpression(PyLegendUnaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return SumExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -327,20 +216,11 @@ class PyLegendFloatSumExpression(PyLegendUnaryExpression, PyLegendExpressionFloa
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendFloatSumExpression.__to_sql_func,
             PyLegendFloatSumExpression.__to_pure_func
         )
 
 
 class PyLegendNumberMaxExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -351,20 +231,11 @@ class PyLegendNumberMaxExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberMaxExpression.__to_sql_func,
             PyLegendNumberMaxExpression.__to_pure_func
         )
 
 
 class PyLegendNumberMinExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -375,20 +246,11 @@ class PyLegendNumberMinExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberMinExpression.__to_sql_func,
             PyLegendNumberMinExpression.__to_pure_func
         )
 
 
 class PyLegendNumberSumExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return SumExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -399,20 +261,11 @@ class PyLegendNumberSumExpression(PyLegendUnaryExpression, PyLegendExpressionNum
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendNumberSumExpression.__to_sql_func,
             PyLegendNumberSumExpression.__to_pure_func
         )
 
 
 class PyLegendStdDevSampleExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return StdDevSampleExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -423,20 +276,11 @@ class PyLegendStdDevSampleExpression(PyLegendUnaryExpression, PyLegendExpression
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStdDevSampleExpression.__to_sql_func,
             PyLegendStdDevSampleExpression.__to_pure_func
         )
 
 
 class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return StdDevPopulationExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -447,20 +291,11 @@ class PyLegendStdDevPopulationExpression(PyLegendUnaryExpression, PyLegendExpres
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStdDevPopulationExpression.__to_sql_func,
             PyLegendStdDevPopulationExpression.__to_pure_func
         )
 
 
 class PyLegendVarianceSampleExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return VarianceSampleExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -471,20 +306,11 @@ class PyLegendVarianceSampleExpression(PyLegendUnaryExpression, PyLegendExpressi
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendVarianceSampleExpression.__to_sql_func,
             PyLegendVarianceSampleExpression.__to_pure_func
         )
 
 
 class PyLegendVariancePopulationExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return VariancePopulationExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -495,20 +321,11 @@ class PyLegendVariancePopulationExpression(PyLegendUnaryExpression, PyLegendExpr
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendVariancePopulationExpression.__to_sql_func,
             PyLegendVariancePopulationExpression.__to_pure_func
         )
 
 
 class PyLegendMedianExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MedianExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -519,20 +336,11 @@ class PyLegendMedianExpression(PyLegendUnaryExpression, PyLegendExpressionNumber
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendMedianExpression.__to_sql_func,
             PyLegendMedianExpression.__to_pure_func
         )
 
 
 class PyLegendModeExpression(PyLegendUnaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return ModeExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -543,7 +351,6 @@ class PyLegendModeExpression(PyLegendUnaryExpression, PyLegendExpressionNumberRe
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendModeExpression.__to_sql_func,
             PyLegendModeExpression.__to_pure_func
         )
 
@@ -558,23 +365,8 @@ class PyLegendPercentileContExpression(PyLegendUnaryExpression, PyLegendExpressi
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            self._to_sql_func,
             self._to_pure_func,
         )
-
-    def _to_sql_func(
-            self,
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        from pylegend.core.sql.metamodel import DoubleLiteral
-        if not self._ascending:
-            raise NotImplementedError(  # pragma: no cover
-                "SQL generation for PyLegendPercentileContExpression with ascending=False "
-                "is not supported"
-            )
-        return PercentileContExpression(value=expression, percentile=DoubleLiteral(value=self._percentile))
 
     def _to_pure_func(self, op_expr: str, config: FrameToPureConfig) -> str:
         asc_str = "true" if self._ascending else "false"
@@ -595,23 +387,8 @@ class PyLegendPercentileDiscExpression(PyLegendUnaryExpression, PyLegendExpressi
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            self._to_sql_func,
             self._to_pure_func,
         )
-
-    def _to_sql_func(
-            self,
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        from pylegend.core.sql.metamodel import DoubleLiteral
-        if not self._ascending:
-            raise NotImplementedError(  # pragma: no cover
-                "SQL generation for PyLegendPercentileDiscExpression with ascending=False "
-                "is not supported"
-            )
-        return PercentileDiscExpression(value=expression, percentile=DoubleLiteral(value=self._percentile))
 
     def _to_pure_func(self, op_expr: str, config: FrameToPureConfig) -> str:
         asc_str = "true" if self._ascending else "false"
@@ -625,14 +402,6 @@ class PyLegendPercentileDiscExpression(PyLegendUnaryExpression, PyLegendExpressi
 class PyLegendStringMaxExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
@@ -641,20 +410,11 @@ class PyLegendStringMaxExpression(PyLegendUnaryExpression, PyLegendExpressionStr
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringMaxExpression.__to_sql_func,
             PyLegendStringMaxExpression.__to_pure_func
         )
 
 
 class PyLegendStringMinExpression(PyLegendUnaryExpression, PyLegendExpressionStringReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -665,21 +425,11 @@ class PyLegendStringMinExpression(PyLegendUnaryExpression, PyLegendExpressionStr
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStringMinExpression.__to_sql_func,
             PyLegendStringMinExpression.__to_pure_func
         )
 
 
 class PyLegendJoinStringsExpression(PyLegendBinaryExpression, PyLegendExpressionStringReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return JoinStringsExpression(value=expression1, other=expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -691,7 +441,6 @@ class PyLegendJoinStringsExpression(PyLegendBinaryExpression, PyLegendExpression
             self,
             operand1,
             operand2,
-            PyLegendJoinStringsExpression.__to_sql_func,
             PyLegendJoinStringsExpression.__to_pure_func
         )
 
@@ -699,14 +448,6 @@ class PyLegendJoinStringsExpression(PyLegendBinaryExpression, PyLegendExpression
 class PyLegendStrictDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressionStrictDateReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("max", [op_expr])
 
@@ -715,7 +456,6 @@ class PyLegendStrictDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStrictDateMaxExpression.__to_sql_func,
             PyLegendStrictDateMaxExpression.__to_pure_func
         )
 
@@ -723,14 +463,6 @@ class PyLegendStrictDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressio
 class PyLegendStrictDateMinExpression(PyLegendUnaryExpression, PyLegendExpressionStrictDateReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinExpression(value=expression)
-
-    @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("min", [op_expr])
 
@@ -739,20 +471,11 @@ class PyLegendStrictDateMinExpression(PyLegendUnaryExpression, PyLegendExpressio
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendStrictDateMinExpression.__to_sql_func,
             PyLegendStrictDateMinExpression.__to_pure_func
         )
 
 
 class PyLegendDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressionDateReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -763,20 +486,11 @@ class PyLegendDateMaxExpression(PyLegendUnaryExpression, PyLegendExpressionDateR
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDateMaxExpression.__to_sql_func,
             PyLegendDateMaxExpression.__to_pure_func
         )
 
 
 class PyLegendDateMinExpression(PyLegendUnaryExpression, PyLegendExpressionDateReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -787,26 +501,11 @@ class PyLegendDateMinExpression(PyLegendUnaryExpression, PyLegendExpressionDateR
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDateMinExpression.__to_sql_func,
             PyLegendDateMinExpression.__to_pure_func
         )
 
 
 class PyLegendUniqueValueOnlyExpressionBase(PyLegendUnaryExpression):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return FunctionCall(
-            name=QualifiedName(parts=["core_unique_value_only"]),
-            distinct=False,
-            arguments=[expression],
-            filter_=None,
-            window=None
-        )
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -815,7 +514,6 @@ class PyLegendUniqueValueOnlyExpressionBase(PyLegendUnaryExpression):
     def __init__(self, operand: PyLegendExpression) -> None:
         PyLegendUnaryExpression.__init__(
             self, operand,
-            PyLegendUniqueValueOnlyExpressionBase.__to_sql_func,
             PyLegendUniqueValueOnlyExpressionBase.__to_pure_func
         )
 
@@ -855,7 +553,8 @@ class PyLegendStringUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionB
         PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
 
 
-class PyLegendStrictDateUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionStrictDateReturn):
+class PyLegendStrictDateUniqueValueOnlyExpression(
+        PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionStrictDateReturn):
 
     def __init__(self, operand: PyLegendExpressionStrictDateReturn) -> None:
         PyLegendExpressionStrictDateReturn.__init__(self)
@@ -869,7 +568,8 @@ class PyLegendDateUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBas
         PyLegendUniqueValueOnlyExpressionBase.__init__(self, operand)
 
 
-class PyLegendDateTimeUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionDateTimeReturn):
+class PyLegendDateTimeUniqueValueOnlyExpression(
+        PyLegendUniqueValueOnlyExpressionBase, PyLegendExpressionDateTimeReturn):
 
     def __init__(self, operand: PyLegendExpressionDateTimeReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
@@ -877,14 +577,6 @@ class PyLegendDateTimeUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpressio
 
 
 class PyLegendDecimalMaxExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -895,20 +587,11 @@ class PyLegendDecimalMaxExpression(PyLegendUnaryExpression, PyLegendExpressionDe
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDecimalMaxExpression.__to_sql_func,
             PyLegendDecimalMaxExpression.__to_pure_func
         )
 
 
 class PyLegendDecimalMinExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -919,20 +602,11 @@ class PyLegendDecimalMinExpression(PyLegendUnaryExpression, PyLegendExpressionDe
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDecimalMinExpression.__to_sql_func,
             PyLegendDecimalMinExpression.__to_pure_func
         )
 
 
 class PyLegendDecimalSumExpression(PyLegendUnaryExpression, PyLegendExpressionDecimalReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return SumExpression(value=expression)
 
     @staticmethod
     def __to_pure_func(op_expr: str, config: FrameToPureConfig) -> str:
@@ -943,7 +617,6 @@ class PyLegendDecimalSumExpression(PyLegendUnaryExpression, PyLegendExpressionDe
         PyLegendUnaryExpression.__init__(
             self,
             operand,
-            PyLegendDecimalSumExpression.__to_sql_func,
             PyLegendDecimalSumExpression.__to_pure_func
         )
 
@@ -958,15 +631,6 @@ class PyLegendDecimalUniqueValueOnlyExpression(PyLegendUniqueValueOnlyExpression
 class PyLegendCorrExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
 
     @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CorrExpression(value=expression1, other=expression2)
-
-    @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
         return generate_pure_functional_call("corr", [op1_expr, op2_expr])
 
@@ -976,21 +640,11 @@ class PyLegendCorrExpression(PyLegendBinaryExpression, PyLegendExpressionFloatRe
             self,
             operand1,
             operand2,
-            PyLegendCorrExpression.__to_sql_func,
             PyLegendCorrExpression.__to_pure_func
         )
 
 
 class PyLegendCovarPopulationExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CovarPopulationExpression(value=expression1, other=expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -1002,21 +656,11 @@ class PyLegendCovarPopulationExpression(PyLegendBinaryExpression, PyLegendExpres
             self,
             operand1,
             operand2,
-            PyLegendCovarPopulationExpression.__to_sql_func,
             PyLegendCovarPopulationExpression.__to_pure_func
         )
 
 
 class PyLegendCovarSampleExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return CovarSampleExpression(value=expression1, other=expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -1028,21 +672,11 @@ class PyLegendCovarSampleExpression(PyLegendBinaryExpression, PyLegendExpression
             self,
             operand1,
             operand2,
-            PyLegendCovarSampleExpression.__to_sql_func,
             PyLegendCovarSampleExpression.__to_pure_func
         )
 
 
 class PyLegendWavgExpression(PyLegendBinaryExpression, PyLegendExpressionFloatReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return WavgExpression(value=expression1, weight=expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -1054,21 +688,11 @@ class PyLegendWavgExpression(PyLegendBinaryExpression, PyLegendExpressionFloatRe
             self,
             operand1,
             operand2,
-            PyLegendWavgExpression.__to_sql_func,
             PyLegendWavgExpression.__to_pure_func
         )
 
 
 class PyLegendMaxByExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MaxByExpression(value=expression1, by=expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -1080,21 +704,11 @@ class PyLegendMaxByExpression(PyLegendBinaryExpression, PyLegendExpressionNumber
             self,
             operand1,
             operand2,
-            PyLegendMaxByExpression.__to_sql_func,
             PyLegendMaxByExpression.__to_pure_func
         )
 
 
 class PyLegendMinByExpression(PyLegendBinaryExpression, PyLegendExpressionNumberReturn):
-
-    @staticmethod
-    def __to_sql_func(
-            expression1: Expression,
-            expression2: Expression,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return MinByExpression(value=expression1, by=expression2)
 
     @staticmethod
     def __to_pure_func(op1_expr: str, op2_expr: str, config: FrameToPureConfig) -> str:
@@ -1106,6 +720,5 @@ class PyLegendMinByExpression(PyLegendBinaryExpression, PyLegendExpressionNumber
             self,
             operand1,
             operand2,
-            PyLegendMinByExpression.__to_sql_func,
             PyLegendMinByExpression.__to_pure_func
         )

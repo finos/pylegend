@@ -34,7 +34,6 @@ checks, string conversion, ``in_list``).
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
     PyLegendOptional,
     TYPE_CHECKING,
@@ -44,12 +43,7 @@ from pylegend.core.language.shared.primitives.number import PyLegendNumber
 from pylegend.core.language.shared.expression import (
     PyLegendExpressionDecimalReturn,
 )
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification
-)
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.utils.grammar_method import grammar_method
 from pylegend.core.language.shared.operations.decimal_operation_expressions import (
     PyLegendDecimalAbsoluteExpression,
     PyLegendDecimalAddExpression,
@@ -515,13 +509,6 @@ class PyLegendDecimal(PyLegendNumber):
         if isinstance(val, (PythonDecimal)):
             return PyLegendDecimalLiteralExpression(val)
         return val.__value_copy
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return super().to_sql_expression(frame_name_to_base_query_map, config)
 
     def value(self) -> PyLegendExpressionDecimalReturn:
         return self.__value_copy

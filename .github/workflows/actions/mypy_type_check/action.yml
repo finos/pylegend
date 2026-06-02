@@ -30,17 +30,8 @@ runs:
     - name: MyPy Type Check
       shell: bash
       run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          source .venv/Scripts/activate
-        else
-          source .venv/bin/activate
-        fi
-        echo "Installing mypy"
-        pip install mypy
-        echo "Done with installing mypy"
-        echo "MyPy executable is:" $(which mypy)
         echo "Running mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg"
-        mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg 
+        uv run --with mypy mypy ./.github/workflows/ --config-file=./.github/workflows/typing/config.cfg
         echo "Running mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg"
-        mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg
+        uv run --with mypy mypy ./pylegend/ ./tests/ --config-file=./.github/workflows/typing/config.cfg
         echo "Done with typing check"

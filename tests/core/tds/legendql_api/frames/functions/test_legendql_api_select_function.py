@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -43,12 +42,6 @@ class TestSelectAppliedFunction:
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.select(lambda r: r.col1)
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -82,13 +75,6 @@ class TestSelectAppliedFunction:
         frame = frame.select(lambda r: [r.col2, r.col1])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
                "[TdsColumn(Name: col2, Type: String), TdsColumn(Name: col1, Type: Integer)]"
-        expected = '''\
-            SELECT
-                "root".col2 AS "col2",
-                "root".col1 AS "col1"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -136,18 +122,6 @@ class TestSelectAppliedFunction:
         frame = frame.distinct()
         frame = frame.select(lambda r: r.col1)
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == "[TdsColumn(Name: col1, Type: Integer)]"
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1"
-            FROM
-                (
-                    SELECT DISTINCT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -158,7 +132,7 @@ class TestSelectAppliedFunction:
                ('#Table(test_schema.test_table)#->distinct()->select(~[col1])')
 
     def test_e2e_select_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.select(lambda r: [r["First Name"], r["Firm/Legal Name"]])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \
@@ -174,7 +148,7 @@ class TestSelectAppliedFunction:
 
     def test_e2e_select_function_column_order(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) \
             -> None:
-        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"])
+        frame: LegendQLApiTdsFrame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.head(5)
         frame = frame.select(["Firm/Legal Name", "First Name"])
         assert "[" + ", ".join([str(c) for c in frame.columns()]) + "]" == \

@@ -18,14 +18,9 @@ from decimal import Decimal as PythonDecimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
     PyLegendList,
     TYPE_CHECKING,
-)
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification
 )
 from pylegend.core.language.shared.expression import PyLegendExpression
 from pylegend.core.language.shared.literal_expressions import convert_literal_to_literal_expression
@@ -37,8 +32,7 @@ from pylegend.core.language.shared.operations.primitive_operation_expressions im
     PyLegendPrimitiveToStringExpression,
     PyLegendInListExpression,
 )
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.utils.grammar_method import grammar_method
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives.boolean import PyLegendBoolean
@@ -51,14 +45,6 @@ __all__: PyLegendSequence[str] = [
 
 
 class PyLegendPrimitive(metaclass=ABCMeta):
-
-    @abstractmethod
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        pass
 
     @abstractmethod
     def to_pure_expression(self, config: FrameToPureConfig) -> str:

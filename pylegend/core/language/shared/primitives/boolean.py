@@ -33,7 +33,6 @@ string conversion, and ``in_list``.
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.language.shared.primitives.primitive import PyLegendPrimitive, PyLegendPrimitiveOrPythonPrimitive
@@ -73,12 +72,7 @@ from pylegend.core.language.shared.operations.boolean_operation_expressions impo
     PyLegendDateTimeCaseExpression,
     PyLegendStrictDateCaseExpression
 )
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification
-)
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.utils.grammar_method import grammar_method
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from datetime import date, datetime
 
@@ -96,13 +90,6 @@ class PyLegendBoolean(PyLegendPrimitive):
             value: PyLegendExpressionBooleanReturn
     ) -> None:
         self.__value = value
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.__value.to_pure_expression(config)

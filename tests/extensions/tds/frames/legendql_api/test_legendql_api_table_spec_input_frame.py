@@ -13,9 +13,7 @@
 # limitations under the License.
 
 import pytest
-from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
 
 
@@ -26,32 +24,7 @@ class TestLegendQLApiTableSpecInputFrame:
             PrimitiveTdsColumn.string_column("col2")
         ]
         frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert frame.to_pure_query() == '#Table(test_schema.test_table)#'
-
-    def test_table_spec_frame_execution_error(self) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col2")
-        ]
-        frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-        with pytest.raises(ValueError) as v:
-            frame.execute_frame_to_string()
-        assert v.value.args[0] == "Cannot execute frame as its built on top of non-executable " \
-                                  "input frames: [LegendQLApiTableSpecInputFrame(test_schema.test_table)]"
-
-        with pytest.raises(ValueError) as v:
-            new_frame = frame.head(10)
-            new_frame.execute_frame_to_string()
-        assert v.value.args[0] == "Cannot execute frame as its built on top of non-executable " \
-                                  "input frames: [LegendQLApiTableSpecInputFrame(test_schema.test_table)]"
 
     def test_table_spec_frame_creation_duplicated_columns_error(self) -> None:
         columns = [

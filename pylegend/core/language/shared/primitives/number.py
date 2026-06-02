@@ -35,7 +35,6 @@ string conversion, and ``in_list``.
 
 from pylegend._typing import (
     PyLegendSequence,
-    PyLegendDict,
     PyLegendUnion,
     PyLegendOptional,
     TYPE_CHECKING,
@@ -86,12 +85,7 @@ from pylegend.core.language.shared.operations.number_operation_expressions impor
     PyLegendNumberHyperbolicCosExpression,
     PyLegendNumberHyperbolicTanExpression
 )
-from pylegend.core.sql.metamodel import (
-    Expression,
-    QuerySpecification
-)
-from pylegend.core.tds.pandas_api.frames.helpers.series_helper import grammar_method
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
+from pylegend.utils.grammar_method import grammar_method
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 if TYPE_CHECKING:
     from pylegend.core.language.shared.primitives.integer import PyLegendInteger
@@ -113,13 +107,6 @@ class PyLegendNumber(PyLegendPrimitive):
             value: PyLegendExpressionNumberReturn
     ) -> None:
         self.__value = value
-
-    def to_sql_expression(
-            self,
-            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
-            config: FrameToSqlConfig
-    ) -> Expression:
-        return self.__value.to_sql_expression(frame_name_to_base_query_map, config)
 
     def to_pure_expression(self, config: FrameToPureConfig) -> str:
         return self.__value.to_pure_expression(config)
