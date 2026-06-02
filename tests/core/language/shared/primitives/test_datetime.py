@@ -13,12 +13,6 @@
 # limitations under the License.
 
 import pytest
-from pylegend.core.database.sql_to_string import (
-    SqlToStringFormat,
-    SqlToStringConfig,
-    SqlToStringDbExtension,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.request.legend_client import LegendClient
@@ -27,57 +21,23 @@ from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
 
 
 class TestPyLegendDateTime:
-    frame_to_sql_config = FrameToSqlConfig()
     frame_to_pure_config = FrameToPureConfig()
-    db_extension = SqlToStringDbExtension()
-    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
     test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
         PrimitiveTdsColumn.datetime_column("col1"),
         PrimitiveTdsColumn.datetime_column("col2")
     ])
     tds_row = TestTdsRow.from_tds_frame("t", test_frame)
-    base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_datetime_col_access(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2")) == '"root".col2'
         assert self.__generate_pure_string(lambda x: x.get_datetime("col1")) == '$t.col1'
 
     def test_date_time_bucket_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "YEARS")) == \
-               ('((make_date(1970,1,1) + '
-                '(FLOOR((EXTRACT(YEAR FROM "root".col2) - 1970) / 2) * 2) * INTERVAL \'1 year\') + INTERVAL \'0 second\')')
         assert self.__generate_pure_string(lambda x: x.get_datetime("col2").time_bucket(2, "YEARS")) == \
                'toOne($t.col2)->timeBucket(2, DurationUnit.\'YEARS\')'
-
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "MONTHS")) == \
-               ('((make_date(1970,1,1) + (FLOOR(((EXTRACT(YEAR FROM "root".col2) - 1970) * 12 + '
-                '(EXTRACT(MONTH FROM "root".col2) - 1)) / 2) * 2) * INTERVAL \'1 month\') + INTERVAL \'0 second\')')
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "WEEKS")) == \
-               ('((make_date(1969,12,29) + (FLOOR((EXTRACT(EPOCH FROM "root".col2) - '
-                'EXTRACT(EPOCH FROM make_date(1969,12,29))) / (86400 * 2 * 7))) *'
-                ' (2 * 7) * INTERVAL \'1 day\') + INTERVAL \'0 second\')')
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "DAYS")) == \
-               ('((make_date(1970,1,1) + '
-                '(FLOOR((EXTRACT(EPOCH FROM "root".col2) / 86400) / 2) * 2) * INTERVAL \'1 day\') + INTERVAL \'0 second\')')
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "HOURS")) == \
-               ('(make_date(1970,1,1) + '
-                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 3600)) * (2 * 3600)) * INTERVAL \'1 second\')')
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "MINUTES")) == \
-               ('(make_date(1970,1,1) + '
-                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 60)) * (2 * 60)) * INTERVAL \'1 second\')')
-        assert self.__generate_sql_string(lambda x: x.get_datetime("col2").time_bucket(2, "SECONDS")) == \
-               ('(make_date(1970,1,1) + '
-                '(FLOOR(EXTRACT(EPOCH FROM "root".col2) / (2 * 1)) * (2 * 1)) * INTERVAL \'1 second\')')
-
-    def __generate_sql_string(self, f) -> str:  # type: ignore
-        return self.db_extension.process_expression(
-            f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        )
 
     def __generate_pure_string(self, f) -> str:  # type: ignore
         expr = str(f(self.tds_row).to_pure_expression(self.frame_to_pure_config))

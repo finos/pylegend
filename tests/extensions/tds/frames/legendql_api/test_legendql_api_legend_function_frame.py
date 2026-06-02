@@ -14,14 +14,13 @@
 
 import json
 import pytest
-from textwrap import dedent
 from typing import List
 from pylegend._typing import (
     PyLegendDict,
     PyLegendUnion,
 )
 from pylegend.core.request.legend_client import LegendClient
-from pylegend.core.tds.tds_frame import FrameToSqlConfig, FrameToPureConfig
+from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.project_cooridnates import VersionedProjectCoordinates
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_legend_function_input_frame import (
     LegendQLApiLegendFunctionInputFrame,
@@ -29,35 +28,6 @@ from pylegend.extensions.tds.legendql_api.frames.legendql_api_legend_function_in
 
 
 class TestLegendQLApiLegendFunctionFrame:
-
-    def test_legendql_api_legend_function_frame_sql_gen(
-            self,
-            legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]
-    ) -> None:
-        frame = LegendQLApiLegendFunctionInputFrame(
-            path="pylegend::test::function::SimplePersonFunction__TabularDataSet_1_",
-            project_coordinates=VersionedProjectCoordinates(
-                group_id="org.finos.legend.pylegend",
-                artifact_id="pylegend-test-models",
-                version="0.0.1-SNAPSHOT"
-            ),
-            legend_client=LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
-        )
-        sql = frame.to_sql_query(FrameToSqlConfig())
-
-        expected = '''\
-        SELECT
-            "root"."First Name" AS "First Name",
-            "root"."Last Name" AS "Last Name",
-            "root"."Age" AS "Age",
-            "root"."Firm/Legal Name" AS "Firm/Legal Name"
-        FROM
-            func(
-                path => 'pylegend::test::function::SimplePersonFunction__TabularDataSet_1_',
-                coordinates => 'org.finos.legend.pylegend:pylegend-test-models:0.0.1-SNAPSHOT'
-            ) AS "root"'''
-
-        assert sql == dedent(expected)
 
     def test_legendql_api_legend_function_frame_execution(
             self,

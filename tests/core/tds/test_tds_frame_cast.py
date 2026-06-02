@@ -15,7 +15,6 @@
 # type: ignore
 
 import json
-from textwrap import dedent
 
 import pytest
 
@@ -31,35 +30,22 @@ from pylegend.core.tds.tds_column import (
     TdsColumn,
     EnumTdsColumn,
 )
-from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToSqlConfig, FrameToPureConfig
-from pylegend.core.tds.pandas_api.frames.pandas_api_tds_frame import PandasApiTdsFrame
-from pylegend.extensions.tds.pandas_api.frames.pandas_api_table_spec_input_frame import PandasApiTableSpecInputFrame
+from pylegend.core.tds.tds_frame import PyLegendTdsFrame, FrameToPureConfig
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
-from pylegend.extensions.tds.legacy_api.frames.legacy_api_table_spec_input_frame import LegacyApiTableSpecInputFrame
 from tests.test_helpers import generate_pure_query_and_compile
-from tests.test_helpers.test_legend_service_frames import (
-    simple_person_service_frame_pandas_api,
-)
+from tests.test_helpers.test_legend_service_frames import simple_person_service_frame_legendql_api
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.language import type_factory as tf
-
-
-def _pandas_frame(columns: PyLegendSequence[TdsColumn]) -> PyLegendTdsFrame:
-    return PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
 
 def _legendql_frame(columns: PyLegendSequence[TdsColumn]) -> PyLegendTdsFrame:
     return LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
 
-def _legacy_frame(columns: PyLegendSequence[TdsColumn]) -> PyLegendTdsFrame:
-    return LegacyApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
-
-
 _ALL_FRAME_FACTORIES = pytest.mark.parametrize(
     "frame_factory",
-    [_pandas_frame, _legendql_frame, _legacy_frame],
-    ids=["pandas_api", "legendql_api", "legacy_api"],
+    [_legendql_frame],
+    ids=["legendql_api"],
 )
 
 
@@ -328,28 +314,6 @@ class TestTdsFrameCastQueryGeneration:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     @_ALL_FRAME_FACTORIES
-    def test_cast_sql_generation(
-            self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
-    ) -> None:
-        columns = [
-            PrimitiveTdsColumn.integer_column("col1"),
-            PrimitiveTdsColumn.string_column("col 2"),
-            PrimitiveTdsColumn.float_column("col3"),
-        ]
-        frame = frame_factory(columns)
-        result = frame.cast({"col1": tf.bigint(), "col3": tf.double()})
-
-        expected_sql = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col 2 AS "col 2",
-                "root".col3 AS "col3"
-            FROM
-                test_schema.test_table AS "root"'''
-
-        assert result.to_sql_query(FrameToSqlConfig()) == dedent(expected_sql)
-
-    @_ALL_FRAME_FACTORIES
     def test_cast_pure_generation(
             self, frame_factory: PyLegendCallable[[PyLegendSequence[TdsColumn]], PyLegendTdsFrame]
     ) -> None:
@@ -373,7 +337,7 @@ class TestTdsFrameCastQueryGeneration:
             PrimitiveTdsColumn.integer_column("Age"),
             PrimitiveTdsColumn.string_column("Name")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], varchar_cols)
+        frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], varchar_cols)
         frame = frame.cast({"Name": tf.varchar(200)})
         frame["Name"] = frame["Name"].len()
 
@@ -503,7 +467,7 @@ class TestTdsFrameCastE2E:
     def _cast_age_and_add_one(
             self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]], target_type
     ) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.cast({"Age": target_type})
         frame['Age'] = frame['Age'] + 1
         expected = {"columns": self._COLUMNS, "rows": self._AGE_PLUS_1_ROWS}
@@ -541,7 +505,7 @@ class TestTdsFrameCastE2E:
         self._cast_age_and_add_one(legend_test_server, tf.number())
 
     def test_e2e_cast_varchar(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.cast({"First Name": tf.varchar(200)})
         frame["First Name"] = frame["First Name"].len()
 
@@ -561,7 +525,7 @@ class TestTdsFrameCastE2E:
         assert json.loads(res)["result"] == expected
 
     def test_e2e_cast_decimal_groupby(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
-        frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
+        frame = simple_person_service_frame_legendql_api(legend_test_server["engine_port"], legend_test_server["metadata_port"])
         frame = frame.cast({"Age": tf.number()})
         frame = frame.cast({"Age": tf.decimal()})
         frame['Age'] = frame['Age'] + PythonDecimal("1")

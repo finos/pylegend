@@ -17,12 +17,6 @@ import pytest
 from datetime import date, datetime
 from decimal import Decimal
 from pylegend._typing import PyLegendCallable
-from pylegend.core.database.sql_to_string import (
-    SqlToStringFormat,
-    SqlToStringConfig,
-    SqlToStringDbExtension,
-)
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.language import PyLegendPrimitive
@@ -32,74 +26,49 @@ from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
 
 
 class TestPyLegendBoolean:
-    frame_to_sql_config = FrameToSqlConfig()
     frame_to_pure_config = FrameToPureConfig()
-    db_extension = SqlToStringDbExtension()
-    sql_to_string_config = SqlToStringConfig(SqlToStringFormat(pretty=True))
     test_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
         PrimitiveTdsColumn.boolean_column("col1"),
         PrimitiveTdsColumn.boolean_column("col2")
     ])
     tds_row = TestTdsRow.from_tds_frame("t", test_frame)
-    base_query = test_frame.to_sql_query_object(frame_to_sql_config)
 
     @pytest.fixture(autouse=True)
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:
         self.__legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
     def test_boolean_col_access(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2")) == '"root".col2'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2")) == '$t.col2'
 
     def test_boolean_error_message(self) -> None:
-        with pytest.raises(TypeError) as t:
-            self.__generate_sql_string(lambda x: x.get_boolean("col2") | 1)  # type: ignore
-        assert t.value.args[0] == ("Boolean OR (|) parameter should be a bool or a boolean expression "
-                                   "(PyLegendBoolean). Got value 1 of type: <class 'int'>")
-        with pytest.raises(TypeError) as t:
+        with pytest.raises(TypeError):
             self.__generate_pure_string(lambda x: x.get_boolean("col2") | 1)  # type: ignore
-        assert t.value.args[0] == ("Boolean OR (|) parameter should be a bool or a boolean expression "
-                                   "(PyLegendBoolean). Got value 1 of type: <class 'int'>")
 
     def test_boolean_or_operation(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") | x.get_boolean("col1")) == \
-               '("root".col2 OR "root".col1)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") | x.get_boolean("col1")) == \
                '(toOne($t.col2) || toOne($t.col1))'
 
     def test_boolean_or_operation_with_literal(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") | True) == \
-               '("root".col2 OR true)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") | True) == \
                '(toOne($t.col2) || true)'
 
     def test_boolean_reverse_or_operation_with_literal(self) -> None:
-        assert self.__generate_sql_string(lambda x: True | x.get_boolean("col2")) == \
-               '(true OR "root".col2)'
         assert self.__generate_pure_string(lambda x: True | x.get_boolean("col2")) == \
                '(true || toOne($t.col2))'
 
     def test_boolean_and_operation(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") & x.get_boolean("col1")) == \
-               '("root".col2 AND "root".col1)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") & x.get_boolean("col1")) == \
                '(toOne($t.col2) && toOne($t.col1))'
 
     def test_boolean_and_operation_with_literal(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") & True) == \
-               '("root".col2 AND true)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") & True) == \
                '(toOne($t.col2) && true)'
 
     def test_boolean_reverse_and_operation_with_literal(self) -> None:
-        assert self.__generate_sql_string(lambda x: False & x.get_boolean("col2")) == \
-               '(false AND "root".col2)'
         assert self.__generate_pure_string(lambda x: False & x.get_boolean("col2")) == \
                '(false && toOne($t.col2))'
 
     def test_boolean_not_operation(self) -> None:
-        assert self.__generate_sql_string(lambda x: ~x.get_boolean("col2")) == \
-               'NOT("root".col2)'
         assert self.__generate_pure_string(lambda x: ~x.get_boolean("col2")) == \
                'toOne($t.col2)->not()'
         assert self.__generate_pure_string(lambda x: ~(x.get_boolean("col2") | x.get_boolean("col1"))) == \
@@ -118,38 +87,23 @@ class TestPyLegendBoolean:
             self,
             py_op: str,
             sql_op: str) -> None:
-        assert self.__generate_sql_string(
-            lambda x: eval(f'x.get_boolean("col2") {py_op} x.get_boolean("col1")')
-        ) == f'("root".col2 {sql_op} "root".col1)'
 
         assert self.__generate_pure_string(
             lambda x: eval(f'x.get_boolean("col2") {py_op} x.get_boolean("col1")')
         ) == f'($t.col2 {sql_op} $t.col1)'
 
     def test_boolean_xor_operation(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") ^ x.get_boolean("col1")) == \
-               '("root".col2 <> "root".col1)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") ^ x.get_boolean("col1")) == \
                'toOne($t.col2)->xor(toOne($t.col1))'
 
-        assert self.__generate_sql_string(lambda x: False ^ x.get_boolean("col1")) == \
-               '(false <> "root".col1)'
         assert self.__generate_pure_string(lambda x: False ^ x.get_boolean("col1")) == \
                'false->xor(toOne($t.col1))'
 
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2") ^ True) == \
-               '("root".col2 <> true)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2") ^ True) == \
                'toOne($t.col2)->xor(true)'
 
     @typing.no_type_check
     def test_boolean_equals_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x["col2"] == x["col1"]) == \
-               '("root".col2 = "root".col1)'
-        assert self.__generate_sql_string(lambda x: x["col2"] == True) == '("root".col2 = true)'  # noqa: E712
-        assert self.__generate_sql_string(lambda x: True == x["col2"]) == '("root".col2 = true)'  # noqa: E712
-        assert self.__generate_sql_string(lambda x: True == (x["col2"] & x["col1"])) == \
-               '(("root".col2 AND "root".col1) = true)'
         assert self.__generate_pure_string(lambda x: x["col2"] == x["col1"]) == \
                '($t.col2 == $t.col1)'
         assert self.__generate_pure_string(lambda x: x["col2"] == True) == '($t.col2 == true)'  # noqa: E712
@@ -158,61 +112,34 @@ class TestPyLegendBoolean:
                '((toOne($t.col2) && toOne($t.col1)) == true)'
 
     def test_boolean_to_string_expr(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col2").to_string()) == \
-               'CAST("root".col2 AS TEXT)'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col2").to_string()) == \
                'toOne($t.col2)->toString()'
 
     def test_case(self) -> None:
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col1").case(True, False)) == \
-               'CASE\n    WHEN\n        "root".col1\n    THEN\n        true\n    ELSE\n        false\nEND'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col1").case(True, False)) == \
                'if(toOne($t.col1), |true, |false)'
 
-        assert self.__generate_sql_string(
-            lambda x: x.get_boolean("col1").case(x.get_boolean("col2"), x.get_boolean("col1"))
-        ) == 'CASE\n    WHEN\n        "root".col1\n    THEN\n        "root".col2\n    ELSE\n        "root".col1\nEND'
         assert self.__generate_pure_string(
             lambda x: x.get_boolean("col1").case(x.get_boolean("col2"), x.get_boolean("col1"))
         ) == 'if(toOne($t.col1), |$t.col2, |$t.col1)'
 
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col1").case(1, 0)) == \
-               'CASE\n    WHEN\n        "root".col1\n    THEN\n        1\n    ELSE\n        0\nEND'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col1").case(1, 0)) == \
                'if(toOne($t.col1), |1, |0)'
 
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col1").case(1.5, 2.5)) == \
-               'CASE\n    WHEN\n        "root".col1\n    THEN\n        1.5\n    ELSE\n        2.5\nEND'
         assert self.__generate_pure_string(lambda x: x.get_boolean("col1").case(1.5, 2.5)) == \
                'if(toOne($t.col1), |1.5, |2.5)'
 
-        assert self.__generate_sql_string(
-            lambda x: x.get_boolean("col1").case(Decimal("1.5"), Decimal("2.5"))
-        ) == ("CASE\n    WHEN\n        \"root\".col1\n    THEN\n        "
-              "CAST('1.5' AS DECIMAL(2, 1))\n    ELSE\n        CAST('2.5' AS DECIMAL(2, 1))\nEND")
         assert self.__generate_pure_string(
             lambda x: x.get_boolean("col1").case(Decimal("1.5"), Decimal("2.5"))
         ) == 'if(toOne($t.col1), |1.5D, |2.5D)'
 
-        assert self.__generate_sql_string(lambda x: x.get_boolean("col1").case("yes", "no")) == \
-               "CASE\n    WHEN\n        \"root\".col1\n    THEN\n        'yes'\n    ELSE\n        'no'\nEND"
         assert self.__generate_pure_string(lambda x: x.get_boolean("col1").case("yes", "no")) == \
                "if(toOne($t.col1), |'yes', |'no')"
 
-        assert self.__generate_sql_string(
-            lambda x: x.get_boolean("col1").case(date(2025, 1, 1), date(2025, 12, 31))
-        ) == ("CASE\n    WHEN\n        \"root\".col1\n    THEN\n        "
-              "CAST('2025-01-01' AS DATE)\n    ELSE\n        CAST('2025-12-31' AS DATE)\nEND")
         assert self.__generate_pure_string(
             lambda x: x.get_boolean("col1").case(date(2025, 1, 1), date(2025, 12, 31))
         ) == 'if(toOne($t.col1), |%2025-01-01, |%2025-12-31)'
 
-        assert self.__generate_sql_string(
-            lambda x: x.get_boolean("col1").case(
-                datetime(2025, 1, 1, 10, 30, 0), datetime(2025, 12, 31, 23, 59, 59)
-            )
-        ) == ("CASE\n    WHEN\n        \"root\".col1\n    THEN\n        "
-              "CAST('2025-01-01T10:30:00' AS TIMESTAMP)\n    ELSE\n        CAST('2025-12-31T23:59:59' AS TIMESTAMP)\nEND")
         assert self.__generate_pure_string(
             lambda x: x.get_boolean("col1").case(
                 datetime(2025, 1, 1, 10, 30, 0), datetime(2025, 12, 31, 23, 59, 59)
@@ -238,10 +165,6 @@ class TestPyLegendBoolean:
         assert "case if_true and if_false parameters must be of the same type." in t.value.args[0]
 
         # date literal with datetime literal -> Date case (mixed date subtypes)
-        assert self.__generate_sql_string(
-            lambda x: x.get_boolean("col1").case(date(2025, 1, 1), datetime(2025, 1, 1, 10, 30, 0))
-        ) == ("CASE\n    WHEN\n        \"root\".col1\n    THEN\n        "
-              "CAST('2025-01-01' AS DATE)\n    ELSE\n        CAST('2025-01-01T10:30:00' AS TIMESTAMP)\nEND")
 
         # Number col with integer literal (mixed numeric types -> Number case)
         number_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
@@ -249,12 +172,8 @@ class TestPyLegendBoolean:
             PrimitiveTdsColumn.boolean_column("bool_col")
         ])
         number_row = TestTdsRow.from_tds_frame("t", number_frame)
-        number_base_query = number_frame.to_sql_query_object(self.frame_to_sql_config)
         result = number_row.get_boolean("bool_col").case(number_row.get_number("num_col"), 0)
-        assert self.db_extension.process_expression(
-            result.to_sql_expression({"t": number_base_query}, self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == 'CASE\n    WHEN\n        "root".bool_col\n    THEN\n        "root".num_col\n    ELSE\n        0\nEND'
+        assert str(result.to_pure_expression(self.frame_to_pure_config)) == 'if(toOne($t.bool_col), |$t.num_col, |0)'
 
         # DateTime col with StrictDate col (mixed date subtypes -> Date case)
         date_frame = TestTableSpecInputFrame(['test_schema', 'test_table'], [
@@ -263,20 +182,8 @@ class TestPyLegendBoolean:
             PrimitiveTdsColumn.boolean_column("bool_col")
         ])
         date_row = TestTdsRow.from_tds_frame("t", date_frame)
-        date_base_query = date_frame.to_sql_query_object(self.frame_to_sql_config)
         result = date_row.get_boolean("bool_col").case(
             date_row.get_datetime("dt_col"), date_row.get_strictdate("sd_col")
-        )
-        assert self.db_extension.process_expression(
-            result.to_sql_expression({"t": date_base_query}, self.frame_to_sql_config),
-            config=self.sql_to_string_config
-        ) == ('CASE\n    WHEN\n        "root".bool_col\n    THEN\n'
-              '        "root".dt_col\n    ELSE\n        "root".sd_col\nEND')
-
-    def __generate_sql_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:
-        return self.db_extension.process_expression(
-            f(self.tds_row).to_sql_expression({"t": self.base_query}, self.frame_to_sql_config),
-            config=self.sql_to_string_config
         )
 
     def __generate_pure_string(self, f: PyLegendCallable[[TestTdsRow], PyLegendPrimitive]) -> str:

@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -164,22 +163,6 @@ class TestWindowExtendAppliedFunction:
             frame.window(partition_by="col2"),
             ("col4", lambda p, w, r: r.get_integer('col1') + 1)
         )
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2",
-                "root"."col3" AS "col3",
-                ("root"."col1" + 1) OVER (PARTITION BY "root"."col2") AS "col4"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -201,22 +184,6 @@ class TestWindowExtendAppliedFunction:
             frame.window(order_by="col3"),
             ("col4 with spaces", lambda p, w, r: r.get_integer('col1') + 1)
         )
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2",
-                "root"."col3" AS "col3",
-                ("root"."col1" + 1) OVER (ORDER BY "root"."col3") AS "col4 with spaces"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -240,23 +207,6 @@ class TestWindowExtendAppliedFunction:
                 ("col5", lambda p, w, r: r.get_integer('col1') + 2),
             ]
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        ("root"."col1" + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
-                        ("root"."col1" + 2) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                "root".col3 AS "col3"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -282,26 +232,6 @@ class TestWindowExtendAppliedFunction:
             frame.window(partition_by=lambda r: [r.col2, r.col3], order_by=lambda r: [r.col4.descending(), r.col5]),
             ("col6", lambda p, w, r: r.get_integer('col1') + 1)
         )
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2",
-                "root"."col3" AS "col3",
-                "root"."col4" AS "col4",
-                "root"."col5" AS "col5",
-                ("root"."col1" + 1) OVER (PARTITION BY "root"."col2", "root"."col3" ORDER BY "root"."col4" DESC, "root"."col5") AS "col6"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3",
-                        "root".col4 AS "col4",
-                        "root".col5 AS "col5"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''   # noqa: E501
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -322,22 +252,6 @@ class TestWindowExtendAppliedFunction:
             frame.window(partition_by="col2", order_by="col3"),
             ("col4", lambda p, w, r: r['col1'], lambda c: c.sum())  # type: ignore
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        SUM("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                "root".col3 AS "col3"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -361,23 +275,6 @@ class TestWindowExtendAppliedFunction:
                 ("col5", lambda p, w, r: 1, lambda c: c.count()),
             ]
         )
-        expected = '''\
-                    SELECT
-                        "root"."col1" AS "col1",
-                        "root"."col2" AS "col2",
-                        "root"."col3" AS "col3",
-                        SUM("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
-                        COUNT(1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5"
-                    FROM
-                        (
-                            SELECT
-                                "root".col1 AS "col1",
-                                "root".col2 AS "col2",
-                                "root".col3 AS "col3"
-                            FROM
-                                test_schema.test_table AS "root"
-                        ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -405,24 +302,6 @@ class TestWindowExtendAppliedFunction:
                 ("col6", lambda p, w, r: r.get_integer('col1') + 2),
             ]
         )
-        expected = '''\
-                            SELECT
-                                "root"."col1" AS "col1",
-                                "root"."col2" AS "col2",
-                                "root"."col3" AS "col3",
-                                ("root"."col1" + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
-                                COUNT(1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5",
-                                ("root"."col1" + 2) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col6"
-                            FROM
-                                (
-                                    SELECT
-                                        "root".col1 AS "col1",
-                                        "root".col2 AS "col2",
-                                        "root".col3 AS "col3"
-                                    FROM
-                                        test_schema.test_table AS "root"
-                                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -459,32 +338,6 @@ class TestWindowExtendAppliedFunction:
                 ("col14", lambda p, w, r: p.nth(w, r, 10).col1),
             ]
         )
-        expected = '''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2",
-                "root"."col3" AS "col3",
-                row_number() OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col4",
-                rank() OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col5",
-                (dense_rank() + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col6",
-                percent_rank() OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col7",
-                ROUND(cume_dist(), 2) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col8",
-                ntile(10) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col9",
-                lead("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col10",
-                (lag("root"."col1") + 1) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col11",
-                first_value("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col12",
-                last_value("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col13",
-                nth_value("root"."col1", 10) OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3") AS "col14"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -512,72 +365,59 @@ class TestWindowExtendAppliedFunction:
                 'col13:{p,w,r | $p->last($w, $r).col1}, col14:{p,w,r | $p->nth($w, $r, 10).col1}])')
 
     @pytest.mark.parametrize(
-        "frame_builder, pure_expr, sql_expression",
+        "frame_builder, pure_expr",
         [
             (
                     lambda f: f.rows("unbounded", "unbounded"),
                     "rows(unbounded(), unbounded())",
-                    "ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
                     lambda f: f.rows(-1, "unbounded"),
                     "rows(minus(1), unbounded())",
-                    "ROWS BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
                     lambda f: f.rows(-1, 0),
                     "rows(minus(1), 0)",
-                    "ROWS BETWEEN 1 PRECEDING AND CURRENT ROW",
             ),
             (
                     lambda f: f.rows(0, 1),
                     "rows(0, 1)",
-                    "ROWS BETWEEN CURRENT ROW AND 1 FOLLOWING",
             ),
             (
                     lambda f: f.rows(-1, 1),
                     "rows(minus(1), 1)",
-                    "ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING",
             ),
             (
                     lambda f: f.range(number_start="unbounded", number_end="unbounded"),
                     "_range(unbounded(), unbounded())",
-                    "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
                     lambda f: f.range(number_start="unbounded", number_end=-1),
                     "_range(unbounded(), minus(1))",
-                    "RANGE BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING",
             ),
             (
                     lambda f: f.range(number_start=-1, number_end="unbounded"),
                     "_range(minus(1), unbounded())",
-                    "RANGE BETWEEN 1 PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
                     lambda f: f.range(number_start=-1, number_end=0),
                     "_range(minus(1), 0)",
-                    "RANGE BETWEEN 1 PRECEDING AND CURRENT ROW",
             ),
             (
                     lambda f: f.range(number_start=0, number_end=1),
                     "_range(0, 1)",
-                    "RANGE BETWEEN CURRENT ROW AND 1 FOLLOWING",
             ),
             (
                     lambda f: f.range(number_start=-1, number_end=1),
                     "_range(minus(1), 1)",
-                    "RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING",
             ),
             (
                     lambda f: f.range(duration_start="unbounded", duration_end="unbounded"),
                     "_range(unbounded(), unbounded())",
-                    "RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
                     lambda f: f.range(duration_start=-1, duration_start_unit="DAYS", duration_end="unbounded"),
                     "_range(minus(1), DurationUnit.DAYS, unbounded())",
-                    "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND UNBOUNDED FOLLOWING",
             ),
             (
                     lambda f: f.range(
@@ -586,7 +426,6 @@ class TestWindowExtendAppliedFunction:
                         duration_end=1,
                         duration_end_unit="MONTHS"),
                     "_range(minus(1), DurationUnit.DAYS, 1, DurationUnit.MONTHS)",
-                    "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND INTERVAL '1 MONTH' FOLLOWING",
             ),
             (
                     lambda f: f.range(
@@ -596,7 +435,6 @@ class TestWindowExtendAppliedFunction:
                         duration_end_unit="HOURS"
                     ),
                     "_range(0, DurationUnit.DAYS, 1, DurationUnit.HOURS)",
-                    "RANGE BETWEEN CURRENT ROW AND INTERVAL '1 HOUR' FOLLOWING",
             ),
             (
                     lambda f: f.range(
@@ -606,7 +444,6 @@ class TestWindowExtendAppliedFunction:
                         duration_end_unit="HOURS"
                     ),
                     "_range(minus(1), DurationUnit.DAYS, 0, DurationUnit.HOURS)",
-                    "RANGE BETWEEN INTERVAL '1 DAY' PRECEDING AND CURRENT ROW",
             ),
         ],
     )
@@ -617,7 +454,6 @@ class TestWindowExtendAppliedFunction:
                 LegendQLApiWindowFrame
             ],
             pure_expr: str,
-            sql_expression: str,
     ) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
@@ -639,31 +475,11 @@ class TestWindowExtendAppliedFunction:
         #Table(test_schema.test_table)#
           ->extend(over(~[col2], [ascending(~col3)], {pure_expr}), ~col4:{{p,w,r | $r.col1}}:{{c | $c->sum()}})'''
 
-        expected_sql = f'''\
-            SELECT
-                "root"."col1" AS "col1",
-                "root"."col2" AS "col2",
-                "root"."col3" AS "col3",
-                SUM("root"."col1") OVER (PARTITION BY "root"."col2" ORDER BY "root"."col3" {sql_expression}) AS "col4"
-            FROM
-                (
-                    SELECT
-                        "root".col1 AS "col1",
-                        "root".col2 AS "col2",
-                        "root".col3 AS "col3"
-                    FROM
-                        test_schema.test_table AS "root"
-                ) AS "root"'''
-
         assert generate_pure_query_and_compile(
             frame2,
             FrameToPureConfig(),
             self.legend_client,
         ) == dedent(expected_pure)
-
-        assert frame2.to_sql_query(
-            FrameToSqlConfig()
-        ) == dedent(expected_sql)
 
     def test_query_gen_window_frame_exceptions(self) -> None:
         columns = [

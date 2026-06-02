@@ -16,7 +16,6 @@ import json
 import pytest
 from textwrap import dedent
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.legendql_api.frames.legendql_api_tds_frame import LegendQLApiTdsFrame
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_table_spec_input_frame import LegendQLApiTableSpecInputFrame
@@ -147,14 +146,6 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.extend(("col3", lambda r: r.get_integer('col1') + 1))
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                ("root".col1 + 1) AS "col3"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -170,14 +161,6 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.extend(("col3", lambda r: r.get_decimal('col1') + PythonDecimal("1.5")))
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                ("root".col1 + CAST('1.5' AS DECIMAL(2, 1))) AS "col3"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -193,14 +176,6 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.extend(("col3 with spaces", lambda r: r.get_integer('col1') + 1))
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                ("root".col1 + 1) AS "col3 with spaces"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -218,15 +193,6 @@ class TestExtendAppliedFunction:
         frame = frame.extend(
             [("col3", lambda r: r.get_integer('col1') + 1), ("col4", lambda r: r.get_integer('col1') + 2)]
         )
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                ("root".col1 + 1) AS "col3",
-                ("root".col1 + 2) AS "col4"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -250,17 +216,6 @@ class TestExtendAppliedFunction:
             ("col5", lambda r: "Hello"),
             ("col6", lambda r: True)
         ])
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                1 AS "col3",
-                2.0 AS "col4",
-                'Hello' AS "col5",
-                true AS "col6"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -282,14 +237,6 @@ class TestExtendAppliedFunction:
         ]
         frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
         frame = frame.extend(("Sum col", lambda r: r.col1, lambda c: c.sum()))  # type: ignore
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                SUM("root".col1) OVER () AS "Sum col"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -308,15 +255,6 @@ class TestExtendAppliedFunction:
             ("Count col", lambda r: 1, lambda c: c.count()),
             ("Sum col", lambda r: r.col1, lambda c: c.sum())  # type: ignore
         ])
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                COUNT(1) OVER () AS "Count col",
-                SUM("root".col1) OVER () AS "Sum col"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#
@@ -340,16 +278,6 @@ class TestExtendAppliedFunction:
             ("Sum col", lambda r: r.col1, lambda c: c.sum()),  # type: ignore
             ('Simple col 2', lambda r: 2)
         ])
-        expected = '''\
-            SELECT
-                "root".col1 AS "col1",
-                "root".col2 AS "col2",
-                1 AS "Simple col 1",
-                SUM("root".col1) OVER () AS "Sum col",
-                2 AS "Simple col 2"
-            FROM
-                test_schema.test_table AS "root"'''
-        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
             '''\
             #Table(test_schema.test_table)#

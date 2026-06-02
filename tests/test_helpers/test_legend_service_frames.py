@@ -17,77 +17,17 @@ from pylegend._typing import (
 )
 from pylegend.core.request.legend_client import LegendClient
 from pylegend.core.project_cooridnates import VersionedProjectCoordinates
-from pylegend.extensions.tds.legacy_api.frames.legacy_api_legend_service_input_frame import (
-    LegacyApiLegendServiceInputFrame
-)
 from pylegend.extensions.tds.legendql_api.frames.legendql_api_legend_service_input_frame import (
     LegendQLApiLegendServiceInputFrame
 )
-from pylegend.extensions.tds.pandas_api.frames.pandas_api_legend_service_input_frame import (
-    PandasApiLegendServiceInputFrame
-)
 
 __all__: PyLegendSequence[str] = [
-    "simple_person_service_frame_legacy_api",
-    "simple_trade_service_frame_legacy_api",
-    "simple_product_service_frame_legacy_api",
-    "simple_person_service_frame_pandas_api",
-    "simple_trade_service_frame_pandas_api",
     "simple_person_service_frame_legendql_api",
     "simple_trade_service_frame_legendql_api",
     "simple_product_service_frame_legendql_api",
     "simple_relation_person_service_frame_legendql_api",
     "simple_relation_trade_service_frame_legendql_api",
-    "simple_relation_person_service_frame_pandas_api",
 ]
-
-
-def simple_person_service_frame_legacy_api(engine_port: int) -> LegacyApiLegendServiceInputFrame:
-    return LegacyApiLegendServiceInputFrame(
-        pattern="/simplePersonService",
-        project_coordinates=VersionedProjectCoordinates(
-            group_id="org.finos.legend.pylegend",
-            artifact_id="pylegend-test-models",
-            version="0.0.1-SNAPSHOT"
-        ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
-    )
-
-
-def simple_trade_service_frame_legacy_api(engine_port: int) -> LegacyApiLegendServiceInputFrame:
-    return LegacyApiLegendServiceInputFrame(
-        pattern="/simpleTradeService",
-        project_coordinates=VersionedProjectCoordinates(
-            group_id="org.finos.legend.pylegend",
-            artifact_id="pylegend-test-models",
-            version="0.0.1-SNAPSHOT"
-        ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
-    )
-
-
-def simple_product_service_frame_legacy_api(engine_port: int) -> LegacyApiLegendServiceInputFrame:
-    return LegacyApiLegendServiceInputFrame(
-        pattern="/simpleProductService",
-        project_coordinates=VersionedProjectCoordinates(
-            group_id="org.finos.legend.pylegend",
-            artifact_id="pylegend-test-models",
-            version="0.0.1-SNAPSHOT"
-        ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
-    )
-
-
-def simple_person_service_frame_pandas_api(engine_port: int) -> PandasApiLegendServiceInputFrame:
-    return PandasApiLegendServiceInputFrame(
-        pattern="/simplePersonService",
-        project_coordinates=VersionedProjectCoordinates(
-            group_id="org.finos.legend.pylegend",
-            artifact_id="pylegend-test-models",
-            version="0.0.1-SNAPSHOT"
-        ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
-    )
 
 
 def simple_person_service_frame_legendql_api(engine_port: int, metadata_port: int) -> LegendQLApiLegendServiceInputFrame:
@@ -102,18 +42,6 @@ def simple_person_service_frame_legendql_api(engine_port: int, metadata_port: in
             "localhost", engine_port, secure_http=False,
             depot_server_host="localhost", depot_server_port=metadata_port
         )
-    )
-
-
-def simple_trade_service_frame_pandas_api(engine_port: int) -> PandasApiLegendServiceInputFrame:
-    return PandasApiLegendServiceInputFrame(
-        pattern="/simpleTradeService",
-        project_coordinates=VersionedProjectCoordinates(
-            group_id="org.finos.legend.pylegend",
-            artifact_id="pylegend-test-models",
-            version="0.0.1-SNAPSHOT"
-        ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
     )
 
 
@@ -174,16 +102,4 @@ def simple_relation_trade_service_frame_legendql_api(engine_port: int, metadata_
             "localhost", engine_port, secure_http=False,
             depot_server_host="localhost", depot_server_port=metadata_port
         )
-    )
-
-
-def simple_relation_person_service_frame_pandas_api(engine_port: int) -> PandasApiLegendServiceInputFrame:
-    return PandasApiLegendServiceInputFrame(
-        pattern="/simpleRelationPersonService",
-        project_coordinates=VersionedProjectCoordinates(
-            group_id="org.finos.legend.pylegend",
-            artifact_id="pylegend-test-models",
-            version="0.0.1-SNAPSHOT"
-        ),
-        legend_client=LegendClient("localhost", engine_port, secure_http=False)
     )
