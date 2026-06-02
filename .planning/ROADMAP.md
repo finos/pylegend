@@ -14,7 +14,7 @@ PyLegend 2.0 replaces the three-layer architecture (LegendQL + Legacy + Pandas A
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Fix Pure Foundation** - Fix broken `to_pure()` roots, wire `LegendClient` Pure execution, verify PCT is green (completed 2026-05-31)
-- [ ] **Phase 2: Remove Legacy Code** - Delete Legacy API, Pandas API, SQL metamodel layer, and obsolete dependencies
+- [x] **Phase 2: Remove Legacy Code** - Delete Legacy API, Pandas API, SQL metamodel layer, and obsolete dependencies (completed 2026-06-02)
 - [ ] **Phase 3: Ibis Backend** - Build backend skeleton, type mapping, and full Pure compiler covering all TdsFrame operations
 - [ ] **Phase 4: Rewire LegendQL + Cleanup** - Rewire LegendQL as Ibis wrapper, deprecate SQL surface, delete dead code, validate CI
 
@@ -83,7 +83,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 5** *(blocked on Wave 4)*
 
-- [ ] 02-05-PLAN.md — Trim pyproject.toml runtime deps to requests+ijson, move testcontainers to dev, remove SQL/pandas/mocking deps; uv sync + full test suite as final acceptance gate (Wave 5)
+- [x] 02-05-PLAN.md — Trim pyproject.toml runtime deps to requests+ijson, move testcontainers to dev, remove SQL/pandas/mocking deps; uv sync + full test suite as final acceptance gate (Wave 5)
 
 ### Phase 3: Ibis Backend
 
@@ -121,6 +121,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Pure Foundation | 5/5 | Complete   | 2026-06-01 |
-| 2. Remove Legacy Code | 4/5 | In Progress|  |
+| 2. Remove Legacy Code | 5/5 | Complete   | 2026-06-02 |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
