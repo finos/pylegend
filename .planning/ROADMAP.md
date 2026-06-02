@@ -79,7 +79,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 4** *(blocked on Wave 3)*
 
-- [ ] 02-04-PLAN.md — Remove SQL assertions/fixtures from retained test files (LegendQL function tests, shared-language tests, client tests, tds_row test); confirm full pytest collection (Wave 4)
+- [x] 02-04-PLAN.md — Remove SQL assertions/fixtures from retained test files (LegendQL function tests, shared-language tests, client tests, tds_row test); confirm full pytest collection (Wave 4)
 
 **Wave 5** *(blocked on Wave 4)*
 
@@ -121,6 +121,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Pure Foundation | 5/5 | Complete   | 2026-06-01 |
-| 2. Remove Legacy Code | 3/5 | In Progress|  |
+| 2. Remove Legacy Code | 4/5 | In Progress|  |
 | 3. Ibis Backend | 0/TBD | Not started | - |
 | 4. Rewire LegendQL + Cleanup | 0/TBD | Not started | - |
