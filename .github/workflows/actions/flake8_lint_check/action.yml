@@ -27,15 +27,12 @@ runs:
     - name: Flake8 Lint Check
       shell: bash
       run: |
+        uv sync --only-group lint
         if [ "$RUNNER_OS" == "Windows" ]; then
           source .venv/Scripts/activate
         else
           source .venv/bin/activate
         fi
-        echo "Installing flake8"
-        pip install flake8
-        pip install -e ./.github/workflows/lint/pylegend_copyright_checker
-        echo "Done with installing flake8"
         echo "Flake8 executable is:" $(which flake8)
         echo "Running flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics"
         flake8 ./.github/workflows/lint --count --max-line-length=127 --show-source --statistics

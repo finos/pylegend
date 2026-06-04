@@ -96,9 +96,6 @@ jobs:
         with:
           python-version: 3.12
 
-      - name: Poetry Install Dependencies
-        uses: ./.github/workflows/actions/poetry_install_dependencies
-
       - name: PyPi Publish
         shell: bash
         env:

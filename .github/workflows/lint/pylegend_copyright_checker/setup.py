@@ -16,6 +16,8 @@ import setuptools  # type: ignore
 
 setuptools.setup(
     name="pylegend-copyright-checker",
+    version="0.1.0",
+    py_modules=["pylegend_copyright_checker"],
     entry_points={
         "flake8.extension": [
             "L101 = pylegend_copyright_checker:PyLegendCopyrightCheckerPlugin",
