@@ -17,8 +17,10 @@ from decimal import Decimal
 from datetime import date, datetime
 from pylegend._typing import (
     PyLegendSequence,
+    PyLegendTuple,
 )
 from pylegend.core.language.shared.expression import (
+    PyLegendExpression,
     PyLegendExpressionStringReturn,
     PyLegendExpressionBooleanReturn,
     PyLegendExpressionNumberReturn,
@@ -110,7 +112,9 @@ def previous_day_of_week(day_of_week: str) -> PyLegendStrictDate:
     return PyLegendStrictDate(PyLegendPreviousDayOfWeekExpression(validated_day))
 
 
-def cases(*when_pairs: tuple, default: PyLegendPrimitiveOrPythonPrimitive) -> PyLegendPrimitive:
+def cases(
+        *when_pairs: PyLegendTuple[PyLegendPrimitiveOrPythonPrimitive, PyLegendPrimitiveOrPythonPrimitive],
+        default: PyLegendPrimitiveOrPythonPrimitive) -> PyLegendPrimitive:
     """
     Multi-branch conditional — SQL ``CASE WHEN … THEN … ELSE … END``.
 
@@ -171,7 +175,7 @@ def cases(*when_pairs: tuple, default: PyLegendPrimitiveOrPythonPrimitive) -> Py
     if not when_pairs:
         raise TypeError("cases() requires at least one (condition, value) pair.")
 
-    def resolve_value(param: PyLegendPrimitiveOrPythonPrimitive, label: str):  # type: ignore[no-untyped-def]
+    def resolve_value(param: PyLegendPrimitiveOrPythonPrimitive, label: str) -> "PyLegendExpression":
         if isinstance(param, (bool, int, float, str, date, datetime, Decimal)):
             return convert_literal_to_literal_expression(param)
         elif isinstance(param, PyLegendPrimitive):
@@ -216,23 +220,24 @@ def cases(*when_pairs: tuple, default: PyLegendPrimitiveOrPythonPrimitive) -> Py
         return all(isinstance(e, cls) for e in all_result_exprs)
 
     if all_match(PyLegendExpressionBooleanReturn):
-        return PyLegendBoolean(PyLegendBooleanMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendBoolean(PyLegendBooleanMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     elif all_match(PyLegendExpressionStringReturn):
-        return PyLegendString(PyLegendStringMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendString(PyLegendStringMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     elif all_match(PyLegendExpressionDateTimeReturn):
-        return PyLegendDateTime(PyLegendDateTimeMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendDateTime(PyLegendDateTimeMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     elif all_match(PyLegendExpressionStrictDateReturn):
-        return PyLegendStrictDate(PyLegendStrictDateMultiCaseExpression(resolved_pairs, default_expr))
+        expr = PyLegendStrictDateMultiCaseExpression(resolved_pairs, default_expr)  # type: ignore[arg-type]
+        return PyLegendStrictDate(expr)
     elif all_match(PyLegendExpressionDateReturn):
-        return PyLegendDate(PyLegendDateMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendDate(PyLegendDateMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     elif all_match(PyLegendExpressionDecimalReturn):
-        return PyLegendDecimal(PyLegendDecimalMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendDecimal(PyLegendDecimalMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     elif all_match(PyLegendExpressionFloatReturn):
-        return PyLegendFloat(PyLegendFloatMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendFloat(PyLegendFloatMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     elif all_match(PyLegendExpressionIntegerReturn):
-        return PyLegendInteger(PyLegendIntegerMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendInteger(PyLegendIntegerMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     elif all_match(PyLegendExpressionNumberReturn):
-        return PyLegendNumber(PyLegendNumberMultiCaseExpression(resolved_pairs, default_expr))
+        return PyLegendNumber(PyLegendNumberMultiCaseExpression(resolved_pairs, default_expr))  # type: ignore[arg-type]
     else:
         raise TypeError(
             "cases() all value branches (including default) must belong to the same type family."

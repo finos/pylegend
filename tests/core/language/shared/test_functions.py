@@ -13,9 +13,8 @@
 # limitations under the License.
 
 import pytest
-from datetime import date, datetime
-from decimal import Decimal
-from pylegend._typing import PyLegendCallable, PyLegendDict, PyLegendUnion
+from datetime import date
+from pylegend._typing import PyLegendDict, PyLegendUnion
 from pylegend.core.database.sql_to_string import (
     SqlToStringFormat,
     SqlToStringConfig,
@@ -135,7 +134,7 @@ class TestCasesFunction:
 
     def test_cases_no_pairs_raises(self) -> None:
         with pytest.raises(TypeError, match="at least one"):
-            pylegend.cases(default="x")  # type: ignore[call-arg]
+            pylegend.cases(default="x")
 
     def test_cases_non_tuple_pair_raises(self) -> None:
         with pytest.raises(TypeError, match="2-tuple"):
@@ -144,7 +143,7 @@ class TestCasesFunction:
     def test_cases_non_boolean_condition_raises(self) -> None:
         with pytest.raises(TypeError, match="boolean expression"):
             pylegend.cases(
-                (self.tds_row.get_string("s1"), "Rule1"),  # type: ignore[arg-type]
+                (self.tds_row.get_string("s1"), "Rule1"),
                 default="Default",
             )
 
@@ -175,14 +174,15 @@ class TestCasesFunction:
 
     def __pure_str(self, expr: PyLegendPrimitive) -> str:
         result = str(expr.to_pure_expression(self.frame_to_pure_config))
-        model_code = """
-        function test::testFunc(): Any[*]
-        {
-            []->toOne()->cast(
-                @meta::pure::metamodel::relation::Relation<(b1: Boolean[0..1], b2: Boolean[0..1], b3: Boolean[0..1], s1: String[0..1], i1: Integer[0..1])>
-            )
-            ->extend(~new_col:t|<<expression>>)
-        }
-        """
+        model_code = (
+            "function test::testFunc(): Any[*]\n"
+            "{\n"
+            "    []->toOne()->cast(\n"
+            "        @meta::pure::metamodel::relation::Relation"
+            "<(b1: Boolean[0..1], b2: Boolean[0..1], b3: Boolean[0..1])>\n"
+            "    )\n"
+            "    ->extend(~new_col:t|<<expression>>)\n"
+            "}"
+        )
         self.__legend_client.parse_and_compile_model(model_code.replace("<<expression>>", result))
         return result

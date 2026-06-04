@@ -16,6 +16,7 @@ from pylegend._typing import (
     PyLegendSequence,
     PyLegendDict,
     PyLegendList,
+    PyLegendTuple,
 )
 from pylegend.core.language.shared.expression import (
     PyLegendExpression,
@@ -420,7 +421,7 @@ class PyLegendMultiCaseExpressionBase(PyLegendNaryExpression):
 
     def __init__(
             self,
-            when_pairs: PyLegendList[tuple],
+            when_pairs: "_WhenPairs",
             default: PyLegendExpression,
     ) -> None:
         operands: PyLegendList[PyLegendExpression] = []
@@ -442,55 +443,58 @@ class PyLegendMultiCaseExpressionBase(PyLegendNaryExpression):
         )
 
 
+_WhenPairs = PyLegendList[PyLegendTuple[PyLegendExpressionBooleanReturn, PyLegendExpression]]
+
+
 class PyLegendBooleanMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionBooleanReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionBooleanReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionBooleanReturn) -> None:
         PyLegendExpressionBooleanReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendStringMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionStringReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionStringReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionStringReturn) -> None:
         PyLegendExpressionStringReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendNumberMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionNumberReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionNumberReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionNumberReturn) -> None:
         PyLegendExpressionNumberReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendIntegerMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionIntegerReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionIntegerReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionIntegerReturn) -> None:
         PyLegendExpressionIntegerReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendFloatMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionFloatReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionFloatReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionFloatReturn) -> None:
         PyLegendExpressionFloatReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendDecimalMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionDecimalReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionDecimalReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionDecimalReturn) -> None:
         PyLegendExpressionDecimalReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendDateMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionDateReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionDateReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionDateReturn) -> None:
         PyLegendExpressionDateReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendDateTimeMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionDateTimeReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionDateTimeReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionDateTimeReturn) -> None:
         PyLegendExpressionDateTimeReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
 
 
 class PyLegendStrictDateMultiCaseExpression(PyLegendMultiCaseExpressionBase, PyLegendExpressionStrictDateReturn):
-    def __init__(self, when_pairs: PyLegendList[tuple], default: PyLegendExpressionStrictDateReturn) -> None:
+    def __init__(self, when_pairs: _WhenPairs, default: PyLegendExpressionStrictDateReturn) -> None:
         PyLegendExpressionStrictDateReturn.__init__(self)
         PyLegendMultiCaseExpressionBase.__init__(self, when_pairs, default)
