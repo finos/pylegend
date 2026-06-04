@@ -15,6 +15,7 @@
 import json
 import pytest
 from textwrap import dedent
+import pylegend
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
@@ -428,6 +429,29 @@ class TestExtendAppliedFunction:
                              {'values': ['Harris', 1, 2.0, 'Hello', True]}]}
         res = frame.execute_frame_to_string()
         assert json.loads(res)["result"] == expected
+
+    def test_query_gen_extend_function_cases(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.string_column("attributes"),
+        ]
+        frame: LegendQLApiTdsFrame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        frame = frame.extend(
+            ("rule", lambda r: pylegend.cases(
+                (r.get_string("attributes") == "OPTION1", "Rule1"),
+                (r.get_string("attributes") == "OPTION2", "Rule2"),
+                (r.get_string("attributes") == "OPTION3", "Rule3"),
+                default="Default",
+            ))
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(), self.legend_client) == dedent(
+            '''\
+            #Table(test_schema.test_table)#
+              ->extend(~rule:{r | if(($r.attributes == 'OPTION1'), |'Rule1', |if(($r.attributes == 'OPTION2'), |'Rule2', |if(($r.attributes == 'OPTION3'), |'Rule3', |'Default')))})'''  # noqa: E501
+        )
+        assert generate_pure_query_and_compile(frame, FrameToPureConfig(pretty=False), self.legend_client) == (
+            "#Table(test_schema.test_table)#->extend(~rule:{r | if(($r.attributes == 'OPTION1'), |'Rule1', "
+            "|if(($r.attributes == 'OPTION2'), |'Rule2', |if(($r.attributes == 'OPTION3'), |'Rule3', |'Default')))})"
+        )
 
     @pytest.mark.skip(reason="Server does not handle window functions of this form yet")
     def test_e2e_extend_function_with_agg(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int, ]]) -> None:

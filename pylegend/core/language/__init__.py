@@ -94,6 +94,7 @@ from pylegend.core.language.shared.functions import (
     today,
     now,
     current_user,
+    cases,
 )
 from pylegend.core.language.shared.variable_expressions import (
     PyLegendVariableExpression,
@@ -202,6 +203,7 @@ __all__: PyLegendSequence[str] = [
     "today",
     "now",
     "current_user",
+    "cases",
 
     "PyLegendVariableExpression",
     "PyLegendBooleanVariableExpression",
