@@ -32,8 +32,9 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Poetry Install Dependencies
-      uses: ./.github/workflows/actions/poetry_install_dependencies
+    - name: Install Dependencies
+      shell: bash
+      run: uv sync --no-default-groups --group test
 
     - name: Set up JDK
       uses: actions/setup-java@v5

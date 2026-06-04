@@ -92,8 +92,24 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Poetry Build
-        uses: ./.github/workflows/actions/poetry_build
+      - name: Setup
+        uses: ./.github/workflows/actions/setup
+        with:
+          python-version: '3.12'
+
+      - name: Version Bump
+        shell: bash
+        run: |
+          current_version=$(python -c "import tomllib; data = tomllib.load(open('pyproject.toml', 'rb')); print(data['project']['version'])")
+          uv version "${current_version}.dev${GITHUB_RUN_NUMBER}"
+          echo "Updated version is:" $(python -c "import tomllib; data = tomllib.load(open('pyproject.toml', 'rb')); print(data['project']['version'])")
+
+      - name: Build
+        shell: bash
+        run: |
+          echo "Running uv build"
+          uv build
+          echo "Done with build"
 
       - name: Upload Built Artifacts
         if: always()
@@ -152,24 +168,18 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Poetry Install Dependencies
-        uses: ./.github/workflows/actions/poetry_install_dependencies
+      - name: Install Docs Dependencies
+        shell: bash
+        run: uv sync --no-default-groups --group docs
 
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
-
-      - name: Install Sphinx and extensions
-        shell: bash
-        run: |
-          source .venv/bin/activate
-          python -m pip install -U pip
-          pip install sphinx sphinx_rtd_theme IPython sphinx-autodoc-typehints tqdm nbsphinx nbformat jupyter ipykernel
-          python -m ipykernel install --user --name python3
 
       - name: Build Sphinx docs
         shell: bash
         run: |
           source .venv/bin/activate
+          python -m ipykernel install --user --name python3
           cd docs
           make clean
           make html
