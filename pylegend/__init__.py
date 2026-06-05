@@ -43,6 +43,7 @@ from pylegend.core.language import (
     current_user,
     olap_rank,
     olap_agg,
+    cases,
 )
 from pylegend import samples
 from pylegend.core.language import type_factory
@@ -74,6 +75,7 @@ __all__: PyLegendSequence[str] = [
     "current_user",
     "olap_rank",
     "olap_agg",
+    "cases",
 
     "samples",
     "type_factory",
