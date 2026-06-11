@@ -42,6 +42,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendUSmallInt",
     "PyLegendInt",
     "PyLegendUInt",
+    "PyLegendVariant",
+    "PyLegendBinary",
     "PyLegendBigInt",
     "PyLegendUBigInt",
     "PyLegendVarchar",
@@ -247,6 +249,44 @@ class PyLegendNumeric(PyLegendDecimal):
     @property
     def scale(self) -> int:
         return self.__scale  # pragma: no cover
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return super().to_sql_expression(frame_name_to_base_query_map, config)
+
+
+class PyLegendVariant(PyLegendString):
+    """Precise primitive: Variant – semi-structured / JSON column (Snowflake VARIANT, DuckDB JSON).
+
+    String-compatible so JSON-path operations and equality checks work without
+    a separate operation set.  Dedicated JSON-extraction helpers can be added
+    as follow-up PRs once the Pure built-ins are exposed.
+    """
+
+    def __init__(self, value: PyLegendExpressionStringReturn) -> None:
+        super().__init__(value)
+
+    def to_sql_expression(
+            self,
+            frame_name_to_base_query_map: PyLegendDict[str, QuerySpecification],
+            config: FrameToSqlConfig
+    ) -> Expression:
+        return super().to_sql_expression(frame_name_to_base_query_map, config)
+
+
+class PyLegendBinary(PyLegendString):
+    """Precise primitive: Binary – raw byte array column (BINARY / VARBINARY / BYTEA).
+
+    String-compatible because binary data is most commonly accessed via
+    hex-string representation in SQL.  Byte-level operations can be added
+    in follow-up PRs.
+    """
+
+    def __init__(self, value: PyLegendExpressionStringReturn) -> None:
+        super().__init__(value)
 
     def to_sql_expression(
             self,

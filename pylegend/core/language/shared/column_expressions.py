@@ -29,6 +29,7 @@ from pylegend.core.language.shared.expression import (
     PyLegendExpressionDateReturn,
     PyLegendExpressionDateTimeReturn,
     PyLegendExpressionStrictDateReturn,
+    PyLegendExpressionTimeReturn,
 )
 from pylegend.core.sql.metamodel import (
     Expression,
@@ -53,6 +54,9 @@ __all__: PyLegendSequence[str] = [
     "PyLegendDateColumnExpression",
     "PyLegendDateTimeColumnExpression",
     "PyLegendStrictDateColumnExpression",
+    "PyLegendTimeColumnExpression",
+    "PyLegendVariantColumnExpression",
+    "PyLegendBinaryColumnExpression",
 ]
 
 
@@ -127,6 +131,26 @@ class PyLegendDateTimeColumnExpression(PyLegendDateColumnExpression, PyLegendExp
 
 
 class PyLegendStrictDateColumnExpression(PyLegendDateColumnExpression, PyLegendExpressionStrictDateReturn):
+
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
+
+
+class PyLegendTimeColumnExpression(PyLegendColumnExpression, PyLegendExpressionTimeReturn):
+
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
+
+
+class PyLegendVariantColumnExpression(PyLegendColumnExpression, PyLegendExpressionStringReturn):
+    """Column expression for VARIANT/JSON columns; string-compatible for path-access operations."""
+
+    def __init__(self, row: "AbstractTdsRow", column: str) -> None:
+        super().__init__(row=row, column=column)
+
+
+class PyLegendBinaryColumnExpression(PyLegendColumnExpression, PyLegendExpressionStringReturn):
+    """Column expression for BINARY/VARBINARY columns; string-compatible for hex-string access."""
 
     def __init__(self, row: "AbstractTdsRow", column: str) -> None:
         super().__init__(row=row, column=column)
