@@ -51,6 +51,11 @@ __all__: PyLegendSequence[str] = [
     # Parameterized types
     "varchar",
     "numeric",
+
+    # Unstructured / binary types
+    "time",
+    "variant",
+    "binary",
 ]
 
 
@@ -179,3 +184,18 @@ def numeric(precision: builtins.int, scale: builtins.int) -> CastTarget:  # noqa
         frame.cast({"amount": pylegend.type_factory.numeric(10, 2)})
     """
     return (PrimitiveType.Numeric, precision, scale)  # type: ignore
+
+
+def time() -> CastTarget:
+    """Cast to Time (time-of-day without date; maps to SQL TIME)."""
+    return PrimitiveType.Time
+
+
+def variant() -> CastTarget:
+    """Cast to Variant (semi-structured / JSON; maps to Snowflake VARIANT or DuckDB JSON)."""
+    return PrimitiveType.Variant
+
+
+def binary() -> CastTarget:
+    """Cast to Binary (raw byte array; maps to SQL BINARY / VARBINARY / BYTEA)."""
+    return PrimitiveType.Binary

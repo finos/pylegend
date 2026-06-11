@@ -37,7 +37,8 @@ __all__: PyLegendSequence[str] = [
     "PyLegendExpressionDateReturn",
     "PyLegendExpressionDateTimeReturn",
     "PyLegendExpressionStrictDateReturn",
-    "PyLegendExpressionNullReturn"
+    "PyLegendExpressionNullReturn",
+    "PyLegendExpressionTimeReturn",
 ]
 
 
@@ -103,5 +104,12 @@ class PyLegendExpressionStrictDateReturn(PyLegendExpressionDateReturn, metaclass
 
 
 class PyLegendExpressionNullReturn(PyLegendExpression, metaclass=ABCMeta):
+    def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
+        return [self]
+
+
+class PyLegendExpressionTimeReturn(PyLegendExpression, metaclass=ABCMeta):
+    """Expression return type for TIME values (time-of-day without a date component)."""
+
     def get_leaf_expressions(self) -> PyLegendSequence["PyLegendExpression"]:
         return [self]

@@ -40,7 +40,10 @@ from pylegend.core.language.shared.primitives.precise_primitives import (
     PyLegendFloat4,
     PyLegendDouble,
     PyLegendNumeric,
+    PyLegendVariant,
+    PyLegendBinary,
 )
+from pylegend.core.language.shared.primitives.time import PyLegendTime
 
 
 __all__: PyLegendSequence[str] = [
@@ -68,4 +71,7 @@ __all__: PyLegendSequence[str] = [
     "PyLegendFloat4",
     "PyLegendDouble",
     "PyLegendNumeric",
+    "PyLegendTime",
+    "PyLegendVariant",
+    "PyLegendBinary",
 ]
