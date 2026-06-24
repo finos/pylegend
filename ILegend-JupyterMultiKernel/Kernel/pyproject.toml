@@ -1,0 +1,30 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=61.0"
+]
+
+[project]
+name = "ilegend_kernel"
+version = "0.0.9"
+authors = [ { name="Shanmukh raj MSS"} ]
+description = "Extensible Jupyter kernel for ILegend"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Developers",
+]
+dependencies = [
+  "jupyter_client",
+  "IPython",
+  "ipykernel",
+  "graphviz",
+  "beautifulsoup4",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ShanmukhEstrella/Legend-Jupyter"

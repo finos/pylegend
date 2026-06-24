@@ -1,0 +1,22 @@
+{
+  "name": "cell-kernel-selector",
+  "version": "0.1.0",
+  "description": "Adds a kernel dropdown to every code cell",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "keywords": ["jupyterlab-extension"],
+  "jupyterlab": {
+    "extension": true
+  },
+  "dependencies": {
+    "@jupyterlab/application": "^4.0.0",
+    "@jupyterlab/notebook": "^4.0.0",
+    "@lumino/widgets": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.0.0"
+  }
+}
