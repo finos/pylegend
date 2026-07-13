@@ -78,6 +78,7 @@ class PrimitiveType(Enum):
     Float4 = 21
     Double = 22
     Numeric = 23
+    Variant = 24
 
 
 class PrimitiveTdsColumn(TdsColumn):
@@ -183,6 +184,10 @@ class PrimitiveTdsColumn(TdsColumn):
     @classmethod
     def numeric_column(cls, name: str) -> "PrimitiveTdsColumn":
         return PrimitiveTdsColumn(name, PrimitiveType.Numeric)
+
+    @classmethod
+    def variant_column(cls, name: str) -> "PrimitiveTdsColumn":
+        return PrimitiveTdsColumn(name, PrimitiveType.Variant)
 
 
 class EnumTdsColumn(TdsColumn):
