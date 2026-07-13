@@ -39,6 +39,9 @@ class TestTdsColumn:
         c5 = PrimitiveTdsColumn('C5', PrimitiveType.Number)
         assert "TdsColumn(Name: C5, Type: Number)" == str(c5)
 
+        c6 = PrimitiveTdsColumn('C6', PrimitiveType.Variant)
+        assert "TdsColumn(Name: C6, Type: Variant)" == str(c6)
+
     def test_primitive_tds_column_creation_with_class_methods(self) -> None:
         c1 = PrimitiveTdsColumn.integer_column('C1')
         assert "TdsColumn(Name: C1, Type: Integer)" == str(c1)
@@ -54,6 +57,9 @@ class TestTdsColumn:
 
         c5 = PrimitiveTdsColumn.number_column('C5')
         assert "TdsColumn(Name: C5, Type: Number)" == str(c5)
+
+        c6 = PrimitiveTdsColumn.variant_column('C6')
+        assert "TdsColumn(Name: C6, Type: Variant)" == str(c6)
 
     def test_primitive_tds_column_copy(self) -> None:
         c1 = PrimitiveTdsColumn.integer_column('C1')
@@ -129,6 +135,17 @@ class TestTdsColumn:
         }"""
         assert ", ".join([str(x) for x in tds_columns_from_json(s)]) == \
                "TdsColumn(Name: First Name, Type: String), TdsColumn(Name: Last Name, Type: String)"
+
+        s = """{
+            "columns": [
+                {
+                    "_type": "primitiveSchemaColumn",
+                    "type": "Variant",
+                    "name": "Payload"
+                }
+            ]
+        }"""
+        assert ", ".join([str(x) for x in tds_columns_from_json(s)]) == "TdsColumn(Name: Payload, Type: Variant)"
 
         s = """{
             "columns": [

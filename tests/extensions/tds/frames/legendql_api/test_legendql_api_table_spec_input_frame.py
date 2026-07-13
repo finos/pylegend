@@ -35,6 +35,25 @@ class TestLegendQLApiTableSpecInputFrame:
         assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
         assert frame.to_pure_query() == '#Table(test_schema.test_table)#'
 
+    def test_table_spec_frame_creation_with_variant_column(self) -> None:
+        columns = [
+            PrimitiveTdsColumn.integer_column("col1"),
+            PrimitiveTdsColumn.variant_column("col2")
+        ]
+        frame = LegendQLApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
+        assert [str(c) for c in frame.columns()] == [
+            "TdsColumn(Name: col1, Type: Integer)",
+            "TdsColumn(Name: col2, Type: Variant)"
+        ]
+        expected = '''\
+            SELECT
+                "root".col1 AS "col1",
+                "root".col2 AS "col2"
+            FROM
+                test_schema.test_table AS "root"'''
+        assert frame.to_sql_query(FrameToSqlConfig()) == dedent(expected)
+        assert frame.to_pure_query() == '#Table(test_schema.test_table)#'
+
     def test_table_spec_frame_execution_error(self) -> None:
         columns = [
             PrimitiveTdsColumn.integer_column("col1"),
