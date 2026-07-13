@@ -1,6 +1,6 @@
 [project]
 name = "pylegend"
-version = "1.1.2"
+version = "1.1.3"
 description = "Python language binding for Legend data management platform"
 authors = [{ name = "PyLegend Maintainers", email = "legend@finos.org" }]
 requires-python = ">=3.9,<3.15"
