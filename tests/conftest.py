@@ -55,7 +55,8 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
           relative_path + '/resources/legend/server/pylegend_sql_server_config.json'
 
     LOGGER.info("Command: " + cmd)
-    engine_process = subprocess.Popen(
+    # Fixed argv built from test-local paths and dynamic ports, not user input.
+    engine_process = subprocess.Popen(  # noqa: S603
         shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, shell=False
     )
 
@@ -85,7 +86,9 @@ def legend_test_server() -> PyLegendGenerator[PyLegendDict[str, PyLegendUnion[in
     while True:
         try_count += 1
         try:
-            requests.get("http://localhost:" + str(engine_port) + "/api/server/v1/info").raise_for_status()
+            requests.get(
+                "http://localhost:" + str(engine_port) + "/api/server/v1/info", timeout=30
+            ).raise_for_status()
         except Exception:
             if try_count == 15:
                 raise RuntimeError("Unable to start legend server for testing")  # pragma: no cover

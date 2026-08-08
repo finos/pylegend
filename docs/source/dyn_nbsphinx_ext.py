@@ -50,7 +50,7 @@ def builder_inited_hook(app):
                         with open(path, 'r', encoding='utf-8') as f:
                             content = f.read()
                         tree = ast.parse(content)
-                    except Exception:
+                    except Exception:  # noqa: S112
                         continue
 
                     def extract_ipython_blocks(node, parent_name=""):
@@ -117,7 +117,7 @@ def builder_inited_hook(app):
 
                         if existing_source.strip() == new_source.strip():
                             should_run = False
-                    except Exception:
+                    except Exception:  # noqa: S110
                         pass
 
                 if should_run:
@@ -140,7 +140,7 @@ def builder_inited_hook(app):
                 setup_nb.cells.append(new_code_cell(setup_code))
                 try:
                     ep.preprocess(setup_nb, {'metadata': {'path': out_dir}}, km=km)
-                except Exception:
+                except Exception:  # noqa: S110
                     pass
 
                 for name, code_lines in tqdm(tasks_to_run, desc="[nbsphinx] Generating notebooks"):

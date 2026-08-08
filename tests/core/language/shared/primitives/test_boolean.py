@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import operator
 import typing
 import pytest
 from datetime import date, datetime
@@ -25,7 +26,7 @@ from pylegend.core.database.sql_to_string import (
 from pylegend.core.tds.tds_frame import FrameToSqlConfig
 from pylegend.core.tds.tds_frame import FrameToPureConfig
 from pylegend.core.tds.tds_column import PrimitiveTdsColumn
-from pylegend.core.language import PyLegendPrimitive
+from pylegend.core.language import PyLegendBoolean, PyLegendPrimitive
 from pylegend.core.request.legend_client import LegendClient
 from pylegend._typing import PyLegendDict, PyLegendUnion
 from tests.core.language.shared import TestTableSpecInputFrame, TestTdsRow
@@ -108,22 +109,22 @@ class TestPyLegendBoolean:
     @pytest.mark.parametrize(
         "py_op, sql_op",
         [
-            ("<",  "<"),
-            ("<=", "<="),
-            (">",  ">"),
-            (">=", ">="),
+            (operator.lt, "<"),
+            (operator.le, "<="),
+            (operator.gt, ">"),
+            (operator.ge, ">="),
         ],
     )
     def test_boolean_comparison_operations(
             self,
-            py_op: str,
+            py_op: PyLegendCallable[[PyLegendBoolean, PyLegendBoolean], PyLegendBoolean],
             sql_op: str) -> None:
         assert self.__generate_sql_string(
-            lambda x: eval(f'x.get_boolean("col2") {py_op} x.get_boolean("col1")')
+            lambda x: py_op(x.get_boolean("col2"), x.get_boolean("col1"))
         ) == f'("root".col2 {sql_op} "root".col1)'
 
         assert self.__generate_pure_string(
-            lambda x: eval(f'x.get_boolean("col2") {py_op} x.get_boolean("col1")')
+            lambda x: py_op(x.get_boolean("col2"), x.get_boolean("col1"))
         ) == f'($t.col2 {sql_op} $t.col1)'
 
     def test_boolean_xor_operation(self) -> None:

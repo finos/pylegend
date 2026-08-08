@@ -218,7 +218,7 @@ def _get_server_jar_path() -> Path:
     if not jar.exists():
         LOGGER.info("Downloading Legend server JAR %s...", _LEGEND_ENGINE_VERSION)
         try:
-            with requests.get(_LEGEND_JAR_URL, stream=True) as r, open(jar, 'wb') as f:
+            with requests.get(_LEGEND_JAR_URL, stream=True, timeout=60) as r, open(jar, 'wb') as f:
                 r.raise_for_status()
                 for chunk in r.iter_content(8192):
                     f.write(chunk)

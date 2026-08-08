@@ -19,7 +19,8 @@ import socket
 def generate_dynamic_port() -> int:
     min_port = 50352
     retry_count = 0
-    random = Random()
+    # Ports are only probed for availability, so a non-crypto RNG is fine.
+    random = Random()  # noqa: S311
     while retry_count < 10:
         retry_count += 1
         next_port = random.randint(min_port, min_port + 10000)
