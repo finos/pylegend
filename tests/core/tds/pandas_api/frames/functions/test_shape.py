@@ -29,7 +29,7 @@ class TestShapeFunction:
     def init_legend(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         self.legend_client = LegendClient("localhost", legend_test_server["engine_port"], secure_http=False)
 
-    def test_e2e_shape_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:  # noqa
+    def test_e2e_shape_function(self, legend_test_server: PyLegendDict[str, PyLegendUnion[int,]]) -> None:
         frame: PandasApiTdsFrame = simple_person_service_frame_pandas_api(legend_test_server["engine_port"])
 
         shape = frame.shape

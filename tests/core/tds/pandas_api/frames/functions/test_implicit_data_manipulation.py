@@ -548,7 +548,7 @@ class TestSeriesArithmetic:
         '''
         expected_pure = '''
             #Table(test_schema.test_table)#->project(~[col3:c|(toOne($c.col3)->year() + toOne($c.col4)->year())])
-        '''  # noqa: E501
+        '''
 
         assert combined_series.to_sql_query() == dedent(expected_sql).strip()
         assert (

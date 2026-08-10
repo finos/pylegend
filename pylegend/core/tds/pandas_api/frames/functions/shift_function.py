@@ -463,7 +463,7 @@ class DiffFunction(ShiftFunction):
             config: FrameToSqlConfig
     ) -> Expression:
         sql_expr = (
-            (self._shift_extended_frame[col_name] - self._shift_extended_frame[col_name + temp_column_name_suffix])  # type: ignore[operator]  # noqa: E501
+            (self._shift_extended_frame[col_name] - self._shift_extended_frame[col_name + temp_column_name_suffix])  # type: ignore[operator]
             .to_sql_expression(frame_name_to_base_query_map, config)
         )
         assert isinstance(sql_expr, Expression)
@@ -471,7 +471,7 @@ class DiffFunction(ShiftFunction):
 
     def _get_final_pure_expression(self, col_name: str, temp_column_name_suffix: str, config: FrameToPureConfig) -> str:
         pure_expr = (
-            (self._shift_extended_frame[col_name] - self._shift_extended_frame[col_name + temp_column_name_suffix])  # type: ignore[operator]  # noqa: E501
+            (self._shift_extended_frame[col_name] - self._shift_extended_frame[col_name + temp_column_name_suffix])  # type: ignore[operator]
             .to_pure_expression(config)
         )
         assert isinstance(pure_expr, str)
@@ -494,7 +494,7 @@ class PctChangeFunction(ShiftFunction):
             config: FrameToSqlConfig
     ) -> Expression:
         sql_expr = (
-            ((self._shift_extended_frame[col_name] / self._shift_extended_frame[col_name + temp_column_name_suffix]) - 1)  # type: ignore[operator]  # noqa: E501
+            ((self._shift_extended_frame[col_name] / self._shift_extended_frame[col_name + temp_column_name_suffix]) - 1)  # type: ignore[operator]
             .to_sql_expression(frame_name_to_base_query_map, config)
         )
         assert isinstance(sql_expr, Expression)
@@ -502,7 +502,7 @@ class PctChangeFunction(ShiftFunction):
 
     def _get_final_pure_expression(self, col_name: str, temp_column_name_suffix: str, config: FrameToPureConfig) -> str:
         pure_expr = (
-            ((self._shift_extended_frame[col_name] / self._shift_extended_frame[col_name + temp_column_name_suffix]) - 1)  # type: ignore[operator]  # noqa: E501
+            ((self._shift_extended_frame[col_name] / self._shift_extended_frame[col_name + temp_column_name_suffix]) - 1)  # type: ignore[operator]
             .to_pure_expression(config)
         )
         assert isinstance(pure_expr, str)

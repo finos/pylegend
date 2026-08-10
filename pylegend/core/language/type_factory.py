@@ -154,7 +154,7 @@ def timestamp() -> CastTarget:
     return PrimitiveType.Timestamp
 
 
-def varchar(max_length: builtins.int) -> CastTarget:  # noqa: F821
+def varchar(max_length: builtins.int) -> CastTarget:
     """Cast to Varchar with a given max length.
 
     Args:
@@ -167,7 +167,7 @@ def varchar(max_length: builtins.int) -> CastTarget:  # noqa: F821
     return (PrimitiveType.Varchar, max_length)  # type: ignore
 
 
-def numeric(precision: builtins.int, scale: builtins.int) -> CastTarget:  # noqa: F821
+def numeric(precision: builtins.int, scale: builtins.int) -> CastTarget:
     """Cast to Numeric with given precision and scale.
 
     Args:
