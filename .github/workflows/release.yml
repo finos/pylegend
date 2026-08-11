@@ -48,15 +48,23 @@ jobs:
           fi
 
   lint:
-    name: Flake8 Lint Check
+    name: Ruff Lint Check
     needs: [validate]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Flake8 Lint Check
-        uses: ./.github/workflows/actions/flake8_lint_check
+      # Pin Ruff to the version in uv.lock rather than floating to the latest release.
+      - name: Ruff Lint Check
+        uses: astral-sh/ruff-action@v4.1.0
+        with:
+          version-file: uv.lock
+
+      - name: Copyright Header Check
+        uses: apache/skywalking-eyes/header@v0.8.0
+        with:
+          mode: check
 
   typing_check:
     name: MyPy Type Check

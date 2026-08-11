@@ -1,0 +1,45 @@
+# Configuration for apache/skywalking-eyes, which checks that every Python source
+# file carries the project's Apache 2.0 copyright header.
+#
+# `content` is the header inserted by `license-eye header fix`; `pattern` is what
+# `check` matches against, and allows the copyright year to differ per file.
+#
+# Run locally with:
+#   docker run --rm -v "$PWD:/github/workspace" -w /github/workspace \
+#     ghcr.io/apache/skywalking-eyes/license-eye:latest header check
+
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-owner: Goldman Sachs
+    content: |
+      Copyright 2026 Goldman Sachs
+
+      Licensed under the Apache License, Version 2.0 (the "License");
+      you may not use this file except in compliance with the License.
+      You may obtain a copy of the License at
+
+           http://www.apache.org/licenses/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      See the License for the specific language governing permissions and
+      limitations under the License.
+    pattern: |
+      Copyright \d{4} Goldman Sachs
+
+      Licensed under the Apache License, Version 2\.0 \(the "License"\);
+      you may not use this file except in compliance with the License\.
+      You may obtain a copy of the License at
+
+           http://www\.apache\.org/licenses/LICENSE-2\.0
+
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.
+      See the License for the specific language governing permissions and
+      limitations under the License\.
+
+  paths:
+    - '**/*.py'

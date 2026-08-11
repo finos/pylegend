@@ -80,10 +80,10 @@ class TestPyLegendVariableExpressions:
             stub_params = {}
             param_strs = []
             for name, param in signature.parameters.items():
-                if param.annotation == int:
+                if param.annotation is int:
                     stub_params[name] = PyLegendInteger(PyLegendIntegerVariableExpression(name))
                     param_strs.append(f"{name}:Integer[0..1]")
-                elif param.annotation == str:
+                elif param.annotation is str:
                     stub_params[name] = PyLegendString(PyLegendStringVariableExpression(name))  # type: ignore
                     param_strs.append(f"{name}:String[0..1]")
                 else:

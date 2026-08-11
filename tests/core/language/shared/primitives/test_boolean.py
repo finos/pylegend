@@ -148,14 +148,16 @@ class TestPyLegendBoolean:
                '("root".col2 = "root".col1)'
         assert self.__generate_sql_string(lambda x: x["col2"] == True) == '("root".col2 = true)'  # noqa: E712
         assert self.__generate_sql_string(lambda x: True == x["col2"]) == '("root".col2 = true)'  # noqa: E712
-        assert self.__generate_sql_string(lambda x: True == (x["col2"] & x["col1"])) == \
-               '(("root".col2 AND "root".col1) = true)'
+        assert self.__generate_sql_string(
+            lambda x: True == (x["col2"] & x["col1"])  # noqa: E712
+        ) == '(("root".col2 AND "root".col1) = true)'
         assert self.__generate_pure_string(lambda x: x["col2"] == x["col1"]) == \
                '($t.col2 == $t.col1)'
         assert self.__generate_pure_string(lambda x: x["col2"] == True) == '($t.col2 == true)'  # noqa: E712
         assert self.__generate_pure_string(lambda x: True == x["col2"]) == '($t.col2 == true)'  # noqa: E712
-        assert self.__generate_pure_string(lambda x: True == (x["col2"] & x["col1"])) == \
-               '((toOne($t.col2) && toOne($t.col1)) == true)'
+        assert self.__generate_pure_string(
+            lambda x: True == (x["col2"] & x["col1"])  # noqa: E712
+        ) == '((toOne($t.col2) && toOne($t.col1)) == true)'
 
     def test_boolean_to_string_expr(self) -> None:
         assert self.__generate_sql_string(lambda x: x.get_boolean("col2").to_string()) == \
