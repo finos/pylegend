@@ -71,7 +71,8 @@ module-root = ""
 line-length = 127
 
 [tool.ruff.lint]
-select = ["E", "W", "F"]
+select = ["E", "W", "F", "S"]
+ignore = ["S101"]  # asserts are the norm in tests and used as invariant checks
 
 [build-system]
 requires = ["uv_build>=0.11.2,<0.12.0"]

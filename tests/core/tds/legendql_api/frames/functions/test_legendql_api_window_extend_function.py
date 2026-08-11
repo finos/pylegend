@@ -639,6 +639,7 @@ class TestWindowExtendAppliedFunction:
         #Table(test_schema.test_table)#
           ->extend(over(~[col2], [ascending(~col3)], {pure_expr}), ~col4:{{p,w,r | $r.col1}}:{{c | $c->sum()}})'''
 
+        # Expected SQL for an assertion, never executed.
         expected_sql = f'''\
             SELECT
                 "root"."col1" AS "col1",
@@ -653,7 +654,7 @@ class TestWindowExtendAppliedFunction:
                         "root".col3 AS "col3"
                     FROM
                         test_schema.test_table AS "root"
-                ) AS "root"'''
+                ) AS "root"'''  # noqa: S608
 
         assert generate_pure_query_and_compile(
             frame2,

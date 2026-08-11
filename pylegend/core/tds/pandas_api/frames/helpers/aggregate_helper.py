@@ -14,6 +14,7 @@
 
 import numpy as np
 import collections.abc
+import operator
 from pylegend._typing import (
     PyLegendCallable,
     PyLegendList,
@@ -177,9 +178,7 @@ def normalize_agg_func_to_callable(
     func_name = getattr(func, "__name__", "").lower()
     if func_name in _FLATTENED_FUNCTION_MAPPING and func_name != "<lambda>":
         internal = _FLATTENED_FUNCTION_MAPPING[func_name]
-        resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = eval(
-            f"lambda x: x.{internal}()"
-        )
+        resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = operator.methodcaller(internal)
         return resolved
 
     # Custom / anonymous callable — wrap with a type check
@@ -367,9 +366,7 @@ def _resolve_string_func(
             f"Available string functions are: {sorted(_FLATTENED_FUNCTION_MAPPING.keys())}"
         )  # pragma: no cover
     internal = _FLATTENED_FUNCTION_MAPPING[func_lower]
-    resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = eval(
-        f"lambda x: x.{internal}()"
-    )
+    resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = operator.methodcaller(internal)
     return resolved
 
 
@@ -384,9 +381,7 @@ def _resolve_numpy_func(
             f"Supported aggregate functions are: {sorted(_FLATTENED_FUNCTION_MAPPING.keys())}"
         )  # pragma: no cover
     internal = _FLATTENED_FUNCTION_MAPPING[func_name]
-    resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = eval(
-        f"lambda x: x.{internal}()"
-    )
+    resolved: PyLegendCallable[[PyLegendPrimitiveCollection], PyLegendPrimitive] = operator.methodcaller(internal)
     return resolved
 
 
