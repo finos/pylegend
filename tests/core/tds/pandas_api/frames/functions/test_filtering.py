@@ -49,7 +49,7 @@ class TestFilteringFunction:
             PrimitiveTdsColumn.float_column("col4"),
             PrimitiveTdsColumn.float_column("col5")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)  # noqa: F841
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         # Logical expression
         with pytest.raises(TypeError) as v:
@@ -71,7 +71,7 @@ class TestFilteringFunction:
             PrimitiveTdsColumn.float_column("col4"),
             PrimitiveTdsColumn.float_column("col5")
         ]
-        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)  # noqa: F841
+        frame: PandasApiTdsFrame = PandasApiTableSpecInputFrame(['test_schema', 'test_table'], columns)
 
         # str input
         with pytest.raises(KeyError) as v:
@@ -283,7 +283,7 @@ class TestFilteringFunction:
                "#Table(test_schema.test_table)#->filter(c|($c.col1 > $c.col2))"
 
         # Complex expression
-        newframe = frame[(frame['col1'] > 10) & (frame['col3'] < 5.5) | (frame['col5'] >= datetime.date(2003, 11, 10))]  # type: ignore  # noqa: E501
+        newframe = frame[(frame['col1'] > 10) & (frame['col3'] < 5.5) | (frame['col5'] >= datetime.date(2003, 11, 10))]  # type: ignore
         expected = '''\
                    SELECT
                        "root".col1 AS "col1",
@@ -508,7 +508,7 @@ class TestFilteringFunction:
         assert json.loads(res)["result"] == expected
 
         # Complex expression
-        newframe = frame[(frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John')]  # type: ignore  # noqa: E501
+        newframe = frame[(frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John')]  # type: ignore
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [
@@ -522,7 +522,7 @@ class TestFilteringFunction:
         assert json.loads(res)["result"] == expected
 
         # Complex expression with negation
-        newframe = frame[~((frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John'))]  # type: ignore  # noqa: E501
+        newframe = frame[~((frame['Age'] >= 22) & (frame['Firm/Legal Name'] == 'Firm X') | (frame['First Name'] == 'John'))]  # type: ignore
         expected = {
             "columns": ["First Name", "Last Name", "Age", "Firm/Legal Name"],
             "rows": [

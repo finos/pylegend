@@ -197,7 +197,7 @@ class TestRenameFunction:
             ~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3]
           )'''
         assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)  # noqa: E501
-        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3])"  # noqa: E501
+        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3])"
         assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(pretty=False), self.legend_client) == expected_pure_compact  # noqa: E501
 
         renamed_frame = frame.rename()
@@ -216,7 +216,7 @@ class TestRenameFunction:
                   )'''
         assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(), self.legend_client) == dedent(
             expected_pure_pretty)
-        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3])"  # noqa: E501
+        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[col1:x|$x.col1, col2:x|$x.col2, col3:x|$x.col3])"
         assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(pretty=False),
                                                self.legend_client) == expected_pure_compact
 
@@ -236,7 +236,7 @@ class TestRenameFunction:
             ~[COL1:x|$x.col1, COL2:x|$x.col2, COL3:x|$x.col3]
           )'''
         assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(), self.legend_client) == dedent(expected_pure_pretty)  # noqa: E501
-        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[COL1:x|$x.col1, COL2:x|$x.col2, COL3:x|$x.col3])"  # noqa: E501
+        expected_pure_compact = "#Table(test_schema.test_table)#->project(~[COL1:x|$x.col1, COL2:x|$x.col2, COL3:x|$x.col3])"
         assert generate_pure_query_and_compile(renamed_frame, FrameToPureConfig(pretty=False), self.legend_client) == expected_pure_compact  # noqa: E501
 
     def test_rename_chained(self) -> None:

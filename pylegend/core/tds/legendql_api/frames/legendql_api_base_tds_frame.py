@@ -398,7 +398,7 @@ class LegendQLApiBaseTdsFrame(LegendQLApiTdsFrame, BaseTdsFrame, metaclass=ABCMe
 
         return LegendQLApiWindowFrame(
             LegendQLApiWindowFrameMode.RANGE,
-            _infer_window_frame_bound(duration_start, is_start_bound=True, duration_unit=duration_start_unit),  # type: ignore[arg-type]  # noqa: E501
+            _infer_window_frame_bound(duration_start, is_start_bound=True, duration_unit=duration_start_unit),  # type: ignore[arg-type]
             _infer_window_frame_bound(duration_end, duration_unit=duration_end_unit)  # type: ignore[arg-type]
         )
 
