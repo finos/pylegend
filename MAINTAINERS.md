@@ -4,11 +4,11 @@ This file lists the maintainers of this repository.
 
 ## Current maintainers
 
-| GitHub Username | Name | Organization | Email |
-|----------------|------|--------------|-------|
-| @aormerod-gs | Andrew Ormerod | *please add organization* | *please add email* |
-| @davidharte-gs | *please add name* | *please add organization* | *please add email* |
-| @epsstan | Ephrim Stanley | *please add organization* | *please add email* |
+| GitHub Username | Name | Organization | Email (optional) |
+|----------------|------|--------------|------------------|
+| @aormerod-gs | Andrew Ormerod | *please add organization* |  |
+| @davidharte-gs | *please add name* | *please add organization* |  |
+| @epsstan | Ephrim Stanley | *please add organization* |  |
 | @pierredebelen | Pierre De Belen | *please add organization* | pierre.debelen@gmail.com |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
