@@ -40,7 +40,7 @@ class ToCsvFileResultHandler(ResultHandler[None]):
         if self.__file is None:
             self.__write_result(self.__csv_writer, frame, result, self.__parse_float_as_decimal)
         else:
-            with open(self.__file, 'w', newline='') as csvfile:
+            with open(self.__file, 'w', newline='', encoding='utf-8') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 self.__write_result(csv_writer, frame, result, self.__parse_float_as_decimal)
 
