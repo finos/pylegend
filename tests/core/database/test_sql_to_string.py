@@ -1697,3 +1697,30 @@ class TestSqlToStringDbExtensionProcessing:
         extension = SqlToStringDbExtension()
         config = SqlToStringConfig(SqlToStringFormat(pretty=False))
         assert (extension.process_expression(ConstantExpression('CURRENT_USER'), config) == "CURRENT_USER")
+
+    def test_sql_to_string_format_indent_count_validation(self) -> None:
+        fmt = SqlToStringFormat(pretty=True, indent_count=0)
+        assert fmt.separator() == "\n"
+        assert fmt.push_indent().separator() == "\n    "
+        assert fmt.push_indent().separator(-1) == "\n"
+        assert SqlToStringFormat(pretty=False, indent_count=2).separator() == " "
+
+        with pytest.raises(ValueError, match="indent_count must be non-negative"):
+            SqlToStringFormat(pretty=True, indent_count=-1)
+
+        with pytest.raises(ValueError, match="indent_count must be non-negative"):
+            SqlToStringFormat(pretty=False, indent_count=-5)
+
+        with pytest.raises(ValueError, match="Effective indent count"):
+            fmt.separator(-1)
+
+        with pytest.raises(ValueError, match="Effective indent count"):
+            fmt.push_indent().separator(-2)
+
+        mutated = SqlToStringFormat(pretty=True, indent_count=0)
+        mutated.indent_count = -1
+        with pytest.raises(ValueError, match="indent_count must be non-negative"):
+            mutated.push_indent()
+        with pytest.raises(ValueError, match="indent_count must be non-negative"):
+            mutated.separator(2)
+

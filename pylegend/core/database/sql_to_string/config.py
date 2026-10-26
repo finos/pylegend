@@ -18,13 +18,23 @@ class SqlToStringFormat:
     indent_count: int
 
     def __init__(self, pretty: bool = True, indent_count: int = 0) -> None:
+        if indent_count < 0:
+            raise ValueError(f"indent_count must be non-negative, got {indent_count}")
         self.pretty = pretty
         self.indent_count = indent_count
 
     def push_indent(self) -> "SqlToStringFormat":
+        if self.indent_count < 0:
+            raise ValueError(f"indent_count must be non-negative, got {self.indent_count}")
         return SqlToStringFormat(self.pretty, self.indent_count + 1)
 
     def separator(self, cnt: int = 0) -> str:
+        if self.indent_count < 0:
+            raise ValueError(f"indent_count must be non-negative, got {self.indent_count}")
+        if self.indent_count + cnt < 0:
+            raise ValueError(
+                f"Effective indent count (indent_count + cnt) must be non-negative, got {self.indent_count + cnt}"
+            )
         if self.pretty:
             return "\n" + "".join(["    " for _ in range(self.indent_count + cnt)])
         else:
