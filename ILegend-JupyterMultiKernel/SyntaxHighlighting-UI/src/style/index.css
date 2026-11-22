@@ -1,0 +1,37 @@
+/* src/style/index.css */
+
+/* Standard CodeMirror token styles */
+.cm-atom {
+  color: #d19a66;
+}
+
+.cm-builtin {
+  color: #61afef;
+  font-weight: bold;
+}
+
+.cm-comment {
+  color: #7f848e;
+  font-style: italic;
+}
+
+.cm-string {
+  color: #98c379;
+}
+
+.cm-number {
+  color: #dcdcaa;
+}
+
+.cm-operator {
+  color: #c678dd;
+}
+
+.cm-variable-2 {
+  color: #e5c07b;
+}
+
+.cm-error {
+  color: #e06c75;
+  text-decoration: underline wavy red;
+}
